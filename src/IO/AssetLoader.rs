@@ -14,14 +14,13 @@ use wgpu::Device;
 use wgpu::Queue;
 use wgpu::ShaderModule;
 
-use crate::texture;
+use crate::system_adapters::adapter_system_gpu::SYS_GPU;
 use crate::Collections::material::Material;
 use crate::Collections::material::ShaderDesc;
 use crate::Collections::material::ShaderTextureDesc;
 use crate::Collections::Mesh::Mesh;
 use crate::Collections::Mesh::Vertex;
 use crate::Window::state::State;
-use crate::Window::SystemWindow::SYS_GPU;
 
 use super::model_asset::Model_asset;
 use super::texture_asset::Texture_asset;
@@ -58,7 +57,7 @@ impl AssetLoader {
     // }
 }
 
-const PATH: &str = "assets";
+const PATH_MESH: &str = "assets/mesh";
 
 // private
 impl AssetLoader {
@@ -89,7 +88,7 @@ impl AssetLoader {
 
     pub fn load_jpg(path: &str) -> Option<Texture_asset> {
         // get the path using env path as base
-        let full_path = std::path::Path::new(PATH).join(path);
+        let full_path = std::path::Path::new(PATH_MESH).join(path);
 
         // unwrap into vec of bytes
         let bytes = std::fs::read(full_path);
@@ -130,7 +129,7 @@ impl AssetLoader {
         let Some(device) = &sys.device else { return None };
         let Some(queue) = &sys.queue else { return None };
         // get the path using env path as base
-        let full_path = std::path::Path::new(PATH).join(path);
+        let full_path = std::path::Path::new(PATH_MESH).join(path);
         let z = gltf::import(&full_path);
 
         match z {
@@ -144,7 +143,7 @@ impl AssetLoader {
                 let mut all_material: Vec<Material> = Vec::new();
                 // let shader_desc = ShaderDesc::new_from_module("../shader.wgsl", vec![ShaderTextureDesc::new("diffuse")]);
 
-                let shader_desc = AssetLoader::load_shader_desc("assets/my_shader.shader");
+                let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
 
                 if gltf.materials().len() == 0 {
                     all_material.push(Material::new(shader_desc.clone(), device));

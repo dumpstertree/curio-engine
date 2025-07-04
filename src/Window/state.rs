@@ -1,26 +1,10 @@
+use crate::system_adapters::adapter_system_gpu::SYS_GPU;
 use crate::texture;
-use crate::Collections::matrix4x4::Matrix4x4;
-use crate::Collections::GraphicsBufferCache::Graphics_buffer_cache;
-use crate::Collections::Mesh::Vertex;
+
 use crate::Window::CameraState::CameraState;
-use crate::Window::SystemWindow::SYS_GPU;
-use std::sync::Arc;
 use wgpu::util::DeviceExt;
-use wgpu::wgc::device::queue;
-use wgpu::Adapter;
 use wgpu::BindGroup;
 use wgpu::Buffer;
-use wgpu::Device;
-use wgpu::Surface;
-use winit::window;
-use winit::window::Window;
-
-use winit::{
-    application::ApplicationHandler,
-    event::*,
-    event_loop::{ActiveEventLoop, EventLoop},
-    keyboard::{KeyCode, PhysicalKey},
-};
 
 pub struct State {
     // pub box_queue: Box<wgpu::Queue>,
@@ -37,7 +21,7 @@ pub struct State {
 
 impl State {
     pub async fn new() -> State {
-        let mut guard_sys_gpu = SYS_GPU.lock().unwrap();
+        let guard_sys_gpu = SYS_GPU.lock().unwrap();
         //
         let Some(device) = &guard_sys_gpu.device else {
             panic!();
@@ -54,60 +38,17 @@ impl State {
         let Some(window) = &guard_sys_gpu.window else {
             panic!();
         };
-        // //
-        // pull from system
-        // let sys = SYS_GPU.lock().unwrap();
-
-        // println!("hit 01");
-        // let Some(device) = &sys.device else {
-        //     println!("failed 1");
-        //     panic!();
-        // };
-        // let Some(queue) = &sys.queue else {
-        //     println!("failed 2");
-        //     panic!();
-        // };
 
         let size = window.inner_size();
 
-        // //
-        // // The instance is a handle to our GPU
-        // // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
-        // let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-        //     backends: wgpu::Backends::PRIMARY,
-        //     ..Default::default()
-        // });
-
-        // let win2 = window.clone();
-        // let surface = instance.create_surface(window).unwrap();
-
-        // //
-        // let adapter = instance
-        //     .request_adapter(&wgpu::RequestAdapterOptions {
-        //         power_preference: wgpu::PowerPreference::default(),
-        //         compatible_surface: Some(&surface),
-        //         force_fallback_adapter: false,
-        //     })
-        //     .await
-        //     .unwrap();
-
-        // // setup the device
-        // let (device, queue) = adapter
-        //     .request_device(&wgpu::DeviceDescriptor {
-        //         label: None,
-        //         required_features: wgpu::Features::empty(),
-        //         // WebGL doesn't support all of wgpu's features, so if
-        //         // we're building for the web we'll have to disable some.
-        //         required_limits: wgpu::Limits::default(),
-        //         memory_hints: Default::default(),
-        //         trace: wgpu::Trace::Off, // Trace path
-        //     })
-        //     .await
-        //     .unwrap();
-
         let surface_caps = surface.get_capabilities(&adapter);
 
-        let surface_format = surface_caps.formats.iter().copied().find(|f| f.is_srgb()).unwrap_or(surface_caps.formats[0]);
+        let surface_format = surface_caps
+            .formats
+            .iter()
+            .copied()
+            .find(|f| f.is_srgb())
+            .unwrap_or(surface_caps.formats[0]);
         let mut config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
@@ -162,7 +103,6 @@ impl State {
         //Make sure you update the depth_texture after you update config. If you don't, your program will crash as the depth_texture will be a different size than the surface texture.
         // state.depth_texture = super::super::texture::Texture::create_depth_texture(&device, &state.config, "depth_texture");
 
-        println!("hit 4");
         State {
             // box_device: Box::new(device),
             // box_queue: Box::new(queue),

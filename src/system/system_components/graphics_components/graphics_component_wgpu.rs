@@ -1,11 +1,11 @@
 use crate::game_state::GameState;
 use crate::system::system_component::ISystemComponent;
 use crate::system::system_components::graphics_component::IGraphicsComponent;
+use crate::system_adapters::adapter_system_gpu::SYS_GPU;
 use crate::texture;
 use crate::Collections::matrix4x4::Matrix4x4;
 use crate::Collections::GraphicsBufferCache::Graphics_buffer_cache;
 use crate::Window::CameraState;
-use crate::Window::SystemWindow::SYS_GPU;
 use crate::{
     Collections::{DrawCall::DrawCall, Mesh::Vertex},
     Window::state::State,
