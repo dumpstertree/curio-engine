@@ -1,10 +1,8 @@
-use crate::system::system_components::graphics_components::graphics_component_wgpu::WGPUGraphicsComponent;
-use crate::system::system_components::{
-    gameplay_components::gameplay_component_default::{ECSSystem, GameplayComponentDefault},
-    input_components::input_component_default::InputComponentDefault,
-    time_components::time_component::TimeComponent,
-};
-
+use crate::system::system_components::gameplay_component_factory::SystemComponentGameplayFactory;
+use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystem;
+use crate::system::system_components::graphics_component_factory::SystemComponentGraphicsFactory;
+use crate::system::system_components::input_component_factory::SystemComponentInputFactory;
+use crate::system::system_components::time_component_factory::SystemComponentTimeFactory;
 use crate::Window::SystemWindow::SystemWindow;
 
 pub struct DumpsterEngine {}
@@ -16,12 +14,10 @@ impl DumpsterEngine {
     {
         // create systems
         let mut system_window = SystemWindow::new(vec![
-            // get generic values from factories
-            Box::new(InputComponentDefault::new()),
-            Box::new(WGPUGraphicsComponent::new()),
-            Box::new(TimeComponent::new()),
-            //apply the ecs systems
-            Box::new(GameplayComponentDefault::new(ecs_systems)),
+            SystemComponentTimeFactory::create(),
+            SystemComponentInputFactory::create(),
+            SystemComponentGraphicsFactory::create(),
+            SystemComponentGameplayFactory::create(ecs_systems),
         ]);
 
         // run the window

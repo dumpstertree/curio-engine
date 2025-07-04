@@ -11,8 +11,21 @@ use crate::{
 };
 
 pub struct FPSCameraECSSystem {}
-impl FPSCameraECSSystem {}
+impl FPSCameraECSSystem {
+    pub fn new() -> FPSCameraECSSystem {
+        FPSCameraECSSystem {}
+    }
+}
 impl ECSSystem<GameEvents> for FPSCameraECSSystem {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) -> bool {
+        true
+    }
+    fn enable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
+        println!("enable fps");
+    }
+    fn disable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
+        println!("disable fps");
+    }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
         // get the input direction
         let input = game_state.get_input();

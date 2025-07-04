@@ -42,18 +42,22 @@ mod system {
     pub(crate) mod system_component;
     pub mod system_components {
         pub(crate) mod gameplay_component;
+        pub(crate) mod gameplay_component_factory;
         pub mod gameplay_components {
             pub(crate) mod gameplay_component_default;
         }
         pub(crate) mod time_component;
+        pub(crate) mod time_component_factory;
         pub mod time_components {
             pub(crate) mod time_component;
         }
         pub(crate) mod graphics_component;
+        pub(crate) mod graphics_component_factory;
         pub mod graphics_components {
             pub(crate) mod graphics_component_wgpu;
         }
         pub(crate) mod input_component;
+        pub(crate) mod input_component_factory;
         pub mod input_components {
             pub(crate) mod input_component_default;
         }
@@ -76,7 +80,7 @@ pub fn run() {
     // run the engine
     DumpsterEngine::run(vec![
         Box::new(PostCameraECSSystem {}),
-        Box::new(FPSCameraECSSystem {}),
+        Box::new(FPSCameraECSSystem::new()),
         Box::new(TestECSSystem::new()),
     ]);
 }

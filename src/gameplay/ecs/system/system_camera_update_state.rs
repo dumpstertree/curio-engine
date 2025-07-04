@@ -12,6 +12,9 @@ use crate::{
 pub struct PostCameraECSSystem {}
 impl PostCameraECSSystem {}
 impl ECSSystem<GameEvents> for PostCameraECSSystem {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) -> bool {
+        true
+    }
     fn init(&mut self, game_state: &mut GameState, scene: &mut World, event_queue: &mut EventQueue<GameEvents>) {
         scene.spawn((Transform::default(), Camera::default()));
     }

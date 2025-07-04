@@ -1,6 +1,10 @@
 use std::time::Instant;
 
-use crate::{game_state::GameState, system::system_component::ISystemComponent, Window::state::State};
+use crate::{
+    game_state::GameState,
+    system::{system_component::ISystemComponent, system_components::time_component::time_component},
+    Window::state::State,
+};
 
 pub struct TimeComponent {
     instant: Instant,
@@ -11,6 +15,7 @@ impl TimeComponent {
         TimeComponent { instant: Instant::now() }
     }
 }
+impl time_component for TimeComponent {}
 impl ISystemComponent for TimeComponent {
     fn order(&self) -> i32 {
         1000

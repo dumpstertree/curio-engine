@@ -1,27 +1,17 @@
-use crate::system::system_component::ISystemComponent;
-use std::time::Instant;
-
-use cgmath::{point3, Quaternion};
-use hecs::World;
-
-use crate::{
-    game_state::GameState,
-    system::system_components::graphics_components::graphics_component_wgpu::DrawCallsState,
-    Collections::{matrix4x4::Matrix4x4, vector3::Vector3, DrawCall::DrawCall},
-    Window::state::State,
-    IO::{model_asset::Model_asset, AssetLoader::AssetLoader},
+use crate::system::{
+    system_component::ISystemComponent,
+    system_components::gameplay_component::{self, IGameplayComponent},
 };
 
-#[derive(Clone)]
-pub enum GameEvents {
-    A(String),
-    B(i64),
-}
+use hecs::World;
+
+use crate::{game_state::GameState, Window::state::State};
+
 pub struct GameplayComponentDefault<T>
 where
     T: Clone,
 {
-    ecs_systems: Vec<Box<dyn ECSSystem<T>>>,
+    ecs_systems: Vec<(Box<dyn ECSSystem<T>>, bool)>,
     scene: World,
     event_queue: EventQueue<T>,
 }
@@ -31,13 +21,19 @@ where
     T: Clone,
 {
     pub fn new(ecs_systems: Vec<Box<dyn ECSSystem<T>>>) -> GameplayComponentDefault<T> {
+        let mut systems_enabled: Vec<(Box<dyn ECSSystem<T>>, bool)> = Vec::new();
+        for x in ecs_systems {
+            systems_enabled.push((x, false));
+        }
+
         GameplayComponentDefault {
-            ecs_systems: ecs_systems,
+            ecs_systems: systems_enabled,
             scene: World::new(),
             event_queue: EventQueue::new(),
         }
     }
 }
+impl<T> IGameplayComponent for GameplayComponentDefault<T> where T: Clone {}
 impl<T> ISystemComponent for GameplayComponentDefault<T>
 where
     T: Clone,
@@ -48,7 +44,7 @@ where
     fn init(&mut self, state: &mut crate::Window::state::State, gs: &mut crate::game_state::GameState) {
         println!("init gameplay");
         for s in self.ecs_systems.iter_mut() {
-            s.init(gs, &mut self.scene, &mut self.event_queue);
+            s.0.as_mut().init(gs, &mut self.scene, &mut self.event_queue);
         }
     }
     fn render(&mut self, state: &mut State, game_state: &mut GameState) {
@@ -66,18 +62,38 @@ where
                     break;
                 };
                 for s in self.ecs_systems.iter_mut() {
-                    s.dequeue_event(game_state, &mut self.scene, &mut queue, &event);
+                    s.0.as_mut().dequeue_event(game_state, &mut self.scene, &mut queue, &event);
                 }
+            }
+            for s in self.ecs_systems.iter_mut() {
+                let was_enabled = s.1;
+                let is_enabled = s.0.is_enabled(game_state, &mut self.scene, &mut queue);
+                if was_enabled && !is_enabled {
+                    s.0.disable(game_state, &mut self.scene, &mut queue);
+                }
+                if !was_enabled && is_enabled {
+                    s.0.enable(game_state, &mut self.scene, &mut queue);
+                }
+                s.1 = is_enabled;
             }
             // run loops
             for s in self.ecs_systems.iter_mut() {
-                s.will_tick(game_state, &mut self.scene, &mut queue);
+                if !s.1 {
+                    continue;
+                }
+                s.0.as_mut().will_tick(game_state, &mut self.scene, &mut queue);
             }
             for s in self.ecs_systems.iter_mut() {
-                s.tick(game_state, &mut self.scene, &mut queue);
+                if !s.1 {
+                    continue;
+                }
+                s.0.as_mut().tick(game_state, &mut self.scene, &mut queue);
             }
             for s in self.ecs_systems.iter_mut() {
-                s.did_tick(game_state, &mut self.scene, &mut queue);
+                if !s.1 {
+                    continue;
+                }
+                s.0.as_mut().did_tick(game_state, &mut self.scene, &mut queue);
             }
             // dequeue commands
             while queue.cmd_queue.len() > 0 {
@@ -100,6 +116,9 @@ pub trait ECSSystem<T>
 where
     T: Clone,
 {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) -> bool;
+    fn enable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
+    fn disable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
     fn init(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
     fn will_tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
@@ -107,7 +126,7 @@ where
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>, event: &T) {}
 }
 
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 #[derive(Clone)]
 pub enum EngineCommands {
     Exit,

@@ -30,7 +30,7 @@ pub struct TimeState {
 impl TimeState {
     fn default() -> TimeState {
         TimeState {
-            target_frame_rate: 30.0,
+            target_frame_rate: 120.0,
             next_update: 0.0,
             time: 0.0,
             frame_num: 0,

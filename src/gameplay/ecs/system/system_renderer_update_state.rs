@@ -48,6 +48,12 @@ impl TestECSSystem {
     }
 }
 impl ECSSystem<GameEvents> for TestECSSystem {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) -> bool {
+        true
+    }
+    fn enable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
+        println!("enable render");
+    }
     fn init(&mut self, game_state: &mut GameState, scene: &mut World, event_queue: &mut EventQueue<GameEvents>) {
         // get assets again
         self.model_asset_0 = AssetLoader::load_gltf("Cube3.glb");
