@@ -1,43 +1,35 @@
 use std::collections::HashMap;
-use std::collections::HashSet;
-use std::fmt::Debug;
 use std::fs;
-use std::io::BufRead;
+use std::sync::Arc;
 
-use gltf::mesh::util::colors::RgbaU8;
-use image::DynamicImage;
-use image::ImageBuffer;
-use image::ImageFormat;
-use image::RgbImage;
-use image::Rgba;
 use wgpu::Device;
-use wgpu::Queue;
 use wgpu::ShaderModule;
 
 use crate::system_adapters::adapter_system_gpu::SYS_GPU;
 use crate::Collections::material::Material;
 use crate::Collections::material::ShaderDesc;
-use crate::Collections::material::ShaderTextureDesc;
 use crate::Collections::Mesh::Mesh;
 use crate::Collections::Mesh::Vertex;
-use crate::Window::state::State;
 
 use super::model_asset::Model_asset;
 use super::texture_asset::Texture_asset;
 
 pub struct AssetLoader {
-    // shader_cache: ShaderCache<'a>,
-    // path_texture: String,
-    // path_model: String,
-    // device: &'a Device,
-    // queue: &'a wgpu::Queue,
-    // state: &'a State,
+    asset_cache: HashMap<String, Arc<Model_asset>>, // shader_cache: ShaderCache<'a>,
+                                                    // path_texture: String,
+                                                    // path_model: String,
+                                                    // device: &'a Device,
+                                                    // queue: &'a wgpu::Queue,
+                                                    // state: &'a State,
 }
 // impl ISystemComponent for AssetLoader {
 //     fn init(&mut self, asset_loader: &mut AssetLoader, gs: &mut crate::Window::SystemWindow::GameState) {}
 // }
 // construction
 impl AssetLoader {
+    pub fn new() -> AssetLoader {
+        AssetLoader { asset_cache: HashMap::new() }
+    }
     // pub fn new<'a>(shader_cache: ShaderCache<'a>, device: &'a Device, queue: &'a wgpu::Queue) -> AssetLoader<'a> {
     //     AssetLoader {
     //         shader_cache: shader_cache,
@@ -58,10 +50,11 @@ impl AssetLoader {
 }
 
 const PATH_MESH: &str = "assets/mesh";
-
 // private
 impl AssetLoader {
-    pub fn clear_cache() {}
+    pub fn clear_cache(&mut self) {
+        self.asset_cache.clear();
+    }
     pub fn reduce_cache() {}
     pub fn load_png(path: String) -> Option<Texture_asset> {
         // unwrap into vec of bytes
@@ -124,7 +117,12 @@ impl AssetLoader {
         let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
         my_struct
     }
-    pub fn load_gltf<'a>(path: &str) -> Option<Model_asset> {
+    pub fn load_gltf<'a>(&mut self, path: &str) -> Option<Arc<Model_asset>> {
+        // return cached
+        if self.asset_cache.contains_key(path) {
+            return Some(self.asset_cache[path].clone());
+        }
+        // build new
         let sys = SYS_GPU.lock().unwrap();
         let Some(device) = &sys.device else { return None };
         let Some(queue) = &sys.queue else { return None };
@@ -279,9 +277,11 @@ impl AssetLoader {
                         all_mesh.push(Mesh::new(String::from(mesh_id), verticies, indices));
                     }
                 }
+                let asset = Arc::new(Model_asset::new(all_mesh, all_material));
 
-                // output asset
-                return Some(Model_asset::new(all_mesh, all_material));
+                self.asset_cache.insert(String::from(path), asset.clone());
+
+                return Some(asset);
             }
             Err(e) => {
                 println!("{}", e);

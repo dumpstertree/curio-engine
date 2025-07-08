@@ -1,118 +1,44 @@
-use cgmath::Quaternion;
+use crate::Collections::game_state::GameState;
 use hecs::World;
 
 use crate::{
-    game_state::GameState,
-    gameplay::game_events::GameEvents,
-    system::system_components::{
-        gameplay_components::gameplay_component_default::{ECSSystem, EngineCommands, EventQueue},
-        graphics_components::graphics_component_wgpu::DrawCallsState,
+    gameplay::ecs::component::{component_renderer::Renderer, component_transform::Transform},
+    system::{
+        system_components::gameplay_components::gameplay_component_default::ECSSystemEventless, system_game_states::state_draw::DrawCallsState,
     },
-    Collections::{matrix4x4::Matrix4x4, vector3::Vector3, DrawCall::DrawCall},
-    IO::{model_asset::Model_asset, AssetLoader::AssetLoader},
+    Collections::DrawCall::DrawCall,
 };
 
-pub struct TestECSSystem {
-    rotation: f32,
-    model_asset_0: Option<Model_asset>,
-    model_asset_1: Option<Model_asset>,
-    model_asset_2: Option<Model_asset>,
-}
+pub struct TestECSSystem {}
 impl TestECSSystem {
-    pub fn new() -> TestECSSystem {
-        TestECSSystem {
-            rotation: 0.0,
-            model_asset_0: None,
-            model_asset_1: None,
-            model_asset_2: None,
-        }
-    }
-    fn ToQuaternion(roll: f32, pitch: f32, yaw: f32) -> Quaternion<f32> {
-        // // Abbreviations for the various angular functions
-
-        let cr: f32 = f32::cos(roll * 0.5);
-        let sr: f32 = f32::sin(roll * 0.5);
-        let cp: f32 = f32::cos(pitch * 0.5);
-        let sp: f32 = f32::sin(pitch * 0.5);
-        let cy: f32 = f32::cos(yaw * 0.5);
-        let sy: f32 = f32::sin(yaw * 0.5);
-
-        Quaternion::<f32>::new(
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            cr * sp * cy + sr * cp * sy,
-            cr * cp * sy - sr * sp * cy,
-        )
-
-        // return q;
+    pub fn new() -> Box<TestECSSystem> {
+        Box::new(TestECSSystem {})
     }
 }
-impl ECSSystem<GameEvents> for TestECSSystem {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) -> bool {
+impl ECSSystemEventless for TestECSSystem {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
-        println!("enable render");
-    }
-    fn init(&mut self, game_state: &mut GameState, scene: &mut World, event_queue: &mut EventQueue<GameEvents>) {
-        // get assets again
-        self.model_asset_0 = AssetLoader::load_gltf("Cube3.glb");
-        self.model_asset_1 = AssetLoader::load_gltf("Cube4.glb");
-        self.model_asset_2 = AssetLoader::load_gltf("Cone.glb");
 
-        event_queue.enqueue_event(GameEvents::B(123));
-    }
-    fn tick(&mut self, game_state: &mut GameState, scene: &mut World, event_queue: &mut EventQueue<GameEvents>) {
-        self.rotation = self.rotation + 0.1;
+    fn did_tick(&mut self, game_state: &mut GameState, scene: &mut World) {
+        let mut dc = DrawCallsState::new();
 
-        //get draw call state
-        let mut x: Vec<DrawCall> = Vec::new();
+        for x in scene.query::<(&Renderer, &Transform)>().iter() {
+            let r: &Renderer = x.1 .0;
+            let t: &Transform = x.1 .1;
 
-        let a0 = self.model_asset_0.as_ref().unwrap();
-        let a1 = self.model_asset_1.as_ref().unwrap();
-        let a2 = self.model_asset_2.as_ref().unwrap();
-        x.push(DrawCall::draw_mesh_single(
-            a0.mesh[0].clone(),
-            a0.materials[0].clone(),
-            Matrix4x4::new(
-                Vector3::new(0.0, -1.0, -5.0),
-                TestECSSystem::ToQuaternion(0.0, self.rotation, 0.0),
-                Vector3::one(),
-            ),
-        ));
-        x.push(DrawCall::draw_mesh_single(
-            a1.mesh[0].clone(),
-            a1.materials[0].clone(),
-            Matrix4x4::new(
-                Vector3::new(-5.0, f32::sin(self.rotation), -5.0),
-                TestECSSystem::ToQuaternion(self.rotation / 2.0, self.rotation, 0.0),
-                Vector3::new(f32::sin(self.rotation), 1.0, 1.0),
-            ),
-        ));
-        x.push(DrawCall::draw_mesh_single(
-            a2.mesh[0].clone(),
-            a2.materials[0].clone(),
-            Matrix4x4::new(
-                Vector3::new(5.0, 1.0, -5.0),
-                TestECSSystem::ToQuaternion(0.0, self.rotation, 0.0),
-                Vector3::one(),
-            ),
-        ));
+            let Some(asset) = &r.asset else {
+                continue;
+            };
 
-        game_state.set_draw_calls(DrawCallsState::new2(x));
-    }
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>, event: &GameEvents) {
-        match event {
-            GameEvents::A(x) => {
-                println!("test {}", x);
-                event_queue.enqueue_command(EngineCommands::Exit);
-                event_queue.enqueue_command(EngineCommands::Resize);
-                event_queue.enqueue_command(EngineCommands::Exit);
-            }
-            GameEvents::B(x) => {
-                println!("test {}", x);
-                event_queue.enqueue_event(GameEvents::A(String::from("send a")));
-            }
+            // for m in &asset.mesh {
+            dc.draw_calls.push(DrawCall::draw_mesh_single(
+                asset.mesh[0].clone(),
+                asset.materials[0].clone(),
+                t.get_matrix(),
+            ));
+            // }
         }
+        game_state.set_value2::<DrawCallsState>(dc);
     }
 }

@@ -1,10 +1,11 @@
 use std::time::Instant;
 
-use crate::{
-    game_state::GameState,
-    system::{system_component::ISystemComponent, system_components::time_component::time_component},
-    Window::state::State,
+use crate::system::{
+    system_component::ISystemComponent,
+    system_components::{gameplay_components::gameplay_component_default::EngineCommands, time_component::time_component},
+    system_game_states::state_time::TimeState,
 };
+use crate::Collections::game_state::GameState;
 
 pub struct TimeComponent {
     instant: Instant,
@@ -20,9 +21,9 @@ impl ISystemComponent for TimeComponent {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, state: &mut crate::Window::state::State, gs: &mut crate::game_state::GameState) {}
-    fn render(&mut self, state: &mut State, game_state: &mut GameState) {
-        let mut t = game_state.get_time();
+    fn init(&mut self, gs: &mut GameState) {}
+    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+        let mut t = game_state.get_value2::<TimeState>();
         // get cur time
         let cur_time = self.instant.elapsed().as_secs_f64();
 
@@ -35,12 +36,11 @@ impl ISystemComponent for TimeComponent {
             // update
             t.next_update = t.next_update + (1.0 / t.target_frame_rate) as f64;
             t.frame_num = t.frame_num + 1;
-
-            game_state.set_time(t);
         } else {
             t.should_update = false;
-
-            game_state.set_time(t);
         }
+        game_state.set_value2::<TimeState>(t);
+
+        return &[];
     }
 }

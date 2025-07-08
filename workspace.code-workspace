@@ -3,5 +3,14 @@
 		{
 			"path": "."
 		}
-	]
+	],
+	"settings": {
+		"search.exclude": {
+			"**/target": true,
+		},
+		"files.exclude": {
+			"**/target": true,
+		},
+		"editor.formatOnSave": true, // not needed
+	}
 }

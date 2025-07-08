@@ -1,7 +1,12 @@
+use crate::Collections::game_state::GameState;
 use winit::keyboard::KeyCode;
 
 use crate::{
-    system::{system_component::ISystemComponent, system_components::input_component::input_component},
+    system::{
+        system_component::ISystemComponent,
+        system_components::input_component::input_component,
+        system_game_states::{state_input::InputState, state_time::TimeState},
+    },
     Collections::key_state::KeyState,
 };
 
@@ -17,15 +22,15 @@ impl ISystemComponent for InputComponentDefault {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, state: &mut crate::Window::state::State, gs: &mut crate::game_state::GameState) {
+    fn init(&mut self, gs: &mut GameState) {
         println!("init input");
     }
-    fn input_keyboard(&mut self, game_state: &mut crate::game_state::GameState, key: KeyCode, key_state: KeyState) {
-        let time = game_state.get_time();
+    fn input_keyboard(&mut self, game_state: &mut GameState, key: KeyCode, key_state: KeyState) {
+        let time = game_state.get_value2::<TimeState>();
         if !time.should_update {
             return;
         }
-        let mut input = game_state.get_input();
+        let mut input = game_state.get_value2::<InputState>();
         match key {
             KeyCode::KeyW => {
                 input.w.is_down = key_state == KeyState::Down;
@@ -39,8 +44,14 @@ impl ISystemComponent for InputComponentDefault {
             KeyCode::KeyD => {
                 input.d.is_down = key_state == KeyState::Down;
             }
+            KeyCode::Escape => {
+                input.esc.is_down = key_state == KeyState::Down;
+            }
+            KeyCode::Tab => {
+                input.tab.is_down = key_state == KeyState::Down;
+            }
             _ => {}
         }
-        game_state.set_input(input);
+        game_state.set_value2::<InputState>(input);
     }
 }

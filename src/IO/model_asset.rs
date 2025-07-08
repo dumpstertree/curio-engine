@@ -4,6 +4,7 @@ use super::Asset::Asset;
 
 //data
 
+#[derive(Clone)]
 pub struct Model_asset {
     pub mesh: Vec<Mesh>,
     pub materials: Vec<Material>,

@@ -1,6 +1,4 @@
-use cgmath::Quaternion;
-
-use crate::Collections::{matrix4x4, vector3::Vector3};
+use crate::Collections::{matrix4x4, quaternion::Quaternion, vector3::Vector3};
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -9,16 +7,16 @@ pub struct Matrix4x4 {
 }
 impl Matrix4x4 {
     pub fn zero() -> Matrix4x4 {
-        Matrix4x4::new(Vector3::zero(), Quaternion::<f32>::new(0.0, 0.0, 0.0, 0.0), Vector3::zero())
+        Matrix4x4::new(Vector3::zero(), Quaternion::zero(), Vector3::zero())
     }
     pub fn default() -> Matrix4x4 {
-        Matrix4x4::new(Vector3::zero(), Quaternion::<f32>::new(0.0, 0.0, 0.0, 0.0), Vector3::one())
+        Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::one())
     }
-    pub fn new(pos: Vector3, rot: Quaternion<f32>, scale: Vector3) -> Matrix4x4 {
+    pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
         Matrix4x4 {
             model: (cgmath::Matrix4::from_translation(pos.to_cg_math())
                 * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
-                * cgmath::Matrix4::from(rot))
+                * cgmath::Matrix4::from(rot.to_cg_math()))
             .into(),
         }
     }

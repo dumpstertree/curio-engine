@@ -1,12 +1,15 @@
+use crate::Collections::game_state::GameState;
 use hecs::World;
 
 use crate::{
-    game_state::GameState,
     gameplay::{
         ecs::component::{component_camera::Camera, component_transform::Transform},
         game_events::GameEvents,
     },
-    system::system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
+    system::{
+        system_components::gameplay_components::gameplay_component_default::{ECSSystem, ECSSystemEventless, EventQueue},
+        system_game_states::{state_input::InputState, state_time::TimeState},
+    },
     Collections::vector3::Vector3,
 };
 
@@ -16,19 +19,13 @@ impl FPSCameraECSSystem {
         FPSCameraECSSystem {}
     }
 }
-impl ECSSystem<GameEvents> for FPSCameraECSSystem {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) -> bool {
+impl ECSSystemEventless for FPSCameraECSSystem {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
-        println!("enable fps");
-    }
-    fn disable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
-        println!("disable fps");
-    }
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
         // get the input direction
-        let input = game_state.get_input();
+        let input = game_state.get_value2::<InputState>();
         let mut dir = Vector3::zero();
         if input.w.is_down {
             dir = dir + Vector3::forward();
@@ -43,7 +40,7 @@ impl ECSSystem<GameEvents> for FPSCameraECSSystem {
             dir = dir + Vector3::left();
         }
 
-        let t = game_state.get_time();
+        let t = game_state.get_value2::<TimeState>();
         // alter the speed
         let speed = 10.0;
         let offset = dir * speed * t.delta_time;

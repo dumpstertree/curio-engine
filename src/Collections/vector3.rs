@@ -1,6 +1,6 @@
 use core::fmt;
 use std::ops::{Add, Div, Mul, Sub};
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Vector3 {
     pub x: f32,
     pub y: f32,
@@ -34,6 +34,33 @@ impl Vector3 {
     pub fn down() -> Vector3 {
         Vector3::new(0.0, -1.0, 0.0)
     }
+    pub fn magnitude(self) -> f32 {
+        (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
+    }
+
+    // Normalize the vector
+    pub fn normalize(&mut self) {
+        let mag = self.magnitude();
+        if mag == 0.0 {
+            panic!("Cannot normalize a zero-length vector");
+        }
+
+        self.x = self.x / mag;
+        self.y = self.y / mag;
+        self.z = self.z / mag;
+    }
+    pub fn normalized(&self) -> Vector3 {
+        let mag = self.magnitude();
+        if mag == 0.0 {
+            panic!("Cannot normalize a zero-length vector");
+        }
+        Vector3 {
+            x: self.x / mag,
+            y: self.y / mag,
+            z: self.z / mag,
+        }
+    }
+
     pub fn to_cg_math(self) -> cgmath::Vector3<f32> {
         cgmath::Vector3 {
             x: self.x,

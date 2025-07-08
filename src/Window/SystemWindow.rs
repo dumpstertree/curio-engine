@@ -1,16 +1,14 @@
-use pollster::FutureExt;
-use winit::{application::ApplicationHandler, event::WindowEvent};
-
-use crate::game_state::GameState;
 use crate::system::system_component::ISystemComponent;
-use crate::system_adapters::adapter_system_gpu::SYS_GPU;
+use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
+use crate::system_adapters::adapter_system_gpu::{CustomEvents, SystemGPU};
+use crate::Collections::game_state::GameState;
 use crate::Collections::key_state::KeyState;
-use crate::Window::state::{self, State};
+use winit::event_loop::EventLoop;
+use winit::{application::ApplicationHandler, event::WindowEvent};
 
 pub struct SystemWindow {
     gamestate: GameState,
     components: Vec<Box<dyn ISystemComponent>>,
-    state: Option<State>,
 }
 impl SystemWindow {
     // constructor
@@ -18,33 +16,22 @@ impl SystemWindow {
         SystemWindow {
             gamestate: GameState::new(),
             components: components,
-            state: None,
         }
     }
 
-    pub fn run(&mut self) {
-        let mut guard_sys_gpu = SYS_GPU.lock().unwrap();
-        let event_loop = guard_sys_gpu.from_window().block_on();
-        drop(guard_sys_gpu);
-
-        // self.gamestate.add(KEY_DEVICE_STATE, state);
-        self.state = Some(state::State::new().block_on());
-        let Some(state) = self.state.as_mut() else {
-            return;
-        };
-
+    pub fn run(&mut self, event_loop: EventLoop<CustomEvents>) {
         self.components.sort_by(|a, b| a.order().cmp(&b.order()));
 
         // iterate over each in new order
         for c in self.components.iter_mut() {
-            c.init(state, &mut self.gamestate);
+            c.init(&mut self.gamestate);
         }
 
         // run
         let _ = event_loop.run_app(self);
     }
 }
-impl ApplicationHandler<State> for SystemWindow {
+impl ApplicationHandler<CustomEvents> for SystemWindow {
     fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {}
 
     fn window_event(
@@ -64,18 +51,20 @@ impl ApplicationHandler<State> for SystemWindow {
                 }
             }
             WindowEvent::Resized(size) => {
-                // let x = SYS_GPU.lock().unwrap()
                 for c in self.components.iter_mut() {
                     c.resize(size.width as f32, size.height as f32);
                 }
             }
             WindowEvent::RedrawRequested => {
                 for c in self.components.iter_mut() {
-                    match &mut self.state {
-                        Some(state) => {
-                            c.render(state, &mut self.gamestate);
+                    for event in c.render(&mut self.gamestate) {
+                        match event {
+                            EngineCommands::Resize(vector3) => SystemGPU::set_resolution(vector3.x as i32, vector3.y as i32),
+                            EngineCommands::Fullscreen(is_fullscreen) => SystemGPU::set_fullscreen(*is_fullscreen),
+                            EngineCommands::Resizable(resizable) => SystemGPU::set_resizable(*resizable),
+                            EngineCommands::Cursor(visible) => SystemGPU::set_cursor_visible(*visible),
+                            EngineCommands::Exit => event_loop.exit(),
                         }
-                        _ => {}
                     }
                 }
             }

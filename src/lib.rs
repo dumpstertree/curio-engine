@@ -1,6 +1,4 @@
 mod dumpster_engine;
-mod game_state;
-mod texture;
 mod IO {
     pub(crate) mod Asset;
     pub(crate) mod AssetLoader;
@@ -12,16 +10,19 @@ mod Collections {
     pub(crate) mod DrawCall;
     pub(crate) mod GraphicsBufferCache;
     pub(crate) mod Mesh;
+    pub(crate) mod camera_uniform;
+    pub(crate) mod game_state;
+    pub(crate) mod input_button;
     pub(crate) mod key_state;
     pub(crate) mod material;
     pub(crate) mod matrix4x4;
+    pub(crate) mod quaternion;
     pub(crate) mod vector3;
 }
 
 mod Window {
     pub(crate) mod CameraState;
     pub(crate) mod SystemWindow;
-    pub(crate) mod state;
 }
 mod gameplay {
     pub mod ecs {
@@ -39,6 +40,13 @@ mod gameplay {
     pub(crate) mod game_events;
 }
 mod system {
+    pub(crate) mod system_game_state;
+    pub mod system_game_states {
+        pub(crate) mod state_camera;
+        pub(crate) mod state_draw;
+        pub(crate) mod state_input;
+        pub(crate) mod state_time;
+    }
     pub(crate) mod system_component;
     pub mod system_components {
         pub(crate) mod gameplay_component;
@@ -66,21 +74,29 @@ mod system {
 mod system_adapters {
     pub(crate) mod adapter_system_gpu;
 }
+mod my_game {
+    pub mod ecs {
+        pub mod system {
+            pub(crate) mod system_engine_commands;
+            pub(crate) mod system_game_init;
+            pub(crate) mod system_spin;
+        }
+        pub mod component {
+            pub(crate) mod component_spin;
+        }
+    }
+}
 
-use crate::{
-    dumpster_engine::DumpsterEngine,
-    gameplay::ecs::system::{
-        system_camera_fps::FPSCameraECSSystem, system_camera_update_state::PostCameraECSSystem, system_renderer_update_state::TestECSSystem,
-    },
-};
-
-use crate::Window::state;
+use crate::dumpster_engine::DumpsterEngine;
+use crate::dumpster_engine::WindowLayout;
+use crate::my_game::ecs::system::system_engine_commands::SystemEngineCommands;
+use crate::my_game::ecs::system::system_game_init::SystemGameInit;
+use crate::my_game::ecs::system::system_spin::SystemSpin;
 
 pub fn run() {
     // run the engine
-    DumpsterEngine::run(vec![
-        Box::new(PostCameraECSSystem {}),
-        Box::new(FPSCameraECSSystem::new()),
-        Box::new(TestECSSystem::new()),
-    ]);
+    DumpsterEngine::run(
+        WindowLayout::windowed_1080(),
+        vec![SystemGameInit::new(), SystemSpin::new(), SystemEngineCommands::new()],
+    );
 }

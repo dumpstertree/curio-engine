@@ -1,60 +1,60 @@
-use crate::game_state::GameState;
 use crate::system::system_component::ISystemComponent;
+use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
 use crate::system::system_components::graphics_component::IGraphicsComponent;
-use crate::system_adapters::adapter_system_gpu::SYS_GPU;
-use crate::texture;
+use crate::system::system_game_states::state_camera::CameraState;
+use crate::system::system_game_states::state_draw::DrawCallsState;
+use crate::system_adapters::adapter_system_gpu::{SystemGPU, SYS_GPU};
+use crate::Collections::camera_uniform::CameraUniform;
+use crate::Collections::game_state::GameState;
 use crate::Collections::matrix4x4::Matrix4x4;
 use crate::Collections::GraphicsBufferCache::Graphics_buffer_cache;
-use crate::Window::CameraState;
-use crate::{
-    Collections::{DrawCall::DrawCall, Mesh::Vertex},
-    Window::state::State,
-    IO::AssetLoader::AssetLoader,
-};
-use cgmath::{Quaternion, Vector3};
-use serde::de;
+use crate::Collections::{DrawCall::DrawCall, Mesh::Vertex};
+use crate::IO::texture_asset::Texture_asset;
 use std::iter;
-use wgpu::wgc::device::queue;
 use wgpu::{
     util::DeviceExt, Buffer, CommandEncoder, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, ShaderModule,
     SurfaceTexture, TextureView,
 };
-use wgpu::{BindGroupLayout, Device, Surface};
+use wgpu::{BindGroup, BindGroupLayout, Device, Surface, SurfaceConfiguration};
 
 pub struct WGPUGraphicsComponent {
     buffer_cache: Graphics_buffer_cache,
-    count: i32,
+    camera_rendereing: CameraRenderingComponents,
 }
 
 impl ISystemComponent for WGPUGraphicsComponent {
     fn order(&self) -> i32 {
         9000
     }
-    fn init(&mut self, state: &mut State, gs: &mut GameState) {
-        println!("init graphics");
+    fn init(&mut self, gs: &mut GameState) {
+        self.camera_rendereing = CameraRenderingComponents::new();
     }
-    fn render(&mut self, state: &mut State, game_state: &mut GameState) {
+    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
         let sys = SYS_GPU.lock().unwrap();
+
+        let Some(window) = &sys.window else {
+            return &[];
+        };
         let Some(device) = &sys.device else {
-            return;
+            return &[];
         };
         let Some(queue) = &sys.queue else {
-            return;
+            return &[];
         };
-        let Some(window) = &sys.window else {
-            return;
-        };
+
         let Some(surface) = &sys.surface else {
-            panic!();
+            return &[];
         };
-        // We can't render unless the surface is configured
-        if !state.is_surface_configured {
-            return;
-        }
+        let Some(config) = &sys.config else {
+            return &[];
+        };
+        let Some(depth) = &sys.depth_texture else {
+            return &[];
+        };
 
         // get gamestate data
-        let state_camera = game_state.get_camera();
-        let state_draws = game_state.get_draw_calls();
+        let state_camera = game_state.get_value2::<CameraState>();
+        let state_draws = game_state.get_value2::<DrawCallsState>();
 
         // redraw on window
         window.request_redraw();
@@ -62,18 +62,29 @@ impl ISystemComponent for WGPUGraphicsComponent {
         let output = WGPUGraphicsComponent::get_output_texture(surface);
         let mut encoder = WGPUGraphicsComponent::get_encoder(device);
         {
-            let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let view = output
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[WGPUGraphicsComponent::get_color_atatchment(&view)],
-                depth_stencil_attachment: WGPUGraphicsComponent::get_depth_attatchment(state),
+                depth_stencil_attachment: WGPUGraphicsComponent::get_depth_attatchment(depth),
                 occlusion_query_set: None,
                 timestamp_writes: None,
             });
 
             // update camera
-            state.camera_uniform.update_view_proj(&state_camera);
-            queue.write_buffer(&state.camera_buffer, 0, bytemuck::cast_slice(&[state.camera_uniform]));
+            // camera.camera_uniform.update_view_proj(&state_camera);
+
+            self.camera_rendereing.update_view_matrix(state_camera);
+
+            // camera.update_view_matrix();
+            queue.write_buffer(
+                &self.camera_rendereing.camera_buffer,
+                0,
+                bytemuck::cast_slice(&[self.camera_rendereing.camera_uniform]),
+            );
+
             // get all draw calls from state
             let draw_calls = &state_draws.draw_calls;
             for draw_call in draw_calls {
@@ -86,7 +97,7 @@ impl ISystemComponent for WGPUGraphicsComponent {
                     // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
                     let diffuse_bind_group = material.get_binding_group(device);
                     // set render pipeline
-                    let rp = WGPUGraphicsComponent::get_render_pipeline(device, &state, material.shader.clone(), &diffuse_bind_group.1);
+                    let rp = WGPUGraphicsComponent::get_render_pipeline(config, device, material.shader.clone(), &diffuse_bind_group.1);
                     render_pass.set_pipeline(&rp);
 
                     // create the instance buffer
@@ -105,7 +116,7 @@ impl ISystemComponent for WGPUGraphicsComponent {
 
                     // set bind groups
                     render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
-                    render_pass.set_bind_group(1, &state.camera_bind_group, &[]);
+                    render_pass.set_bind_group(1, &self.camera_rendereing.camera_bind_group, &[]);
                     // draw
                     render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
                 }
@@ -115,48 +126,26 @@ impl ISystemComponent for WGPUGraphicsComponent {
         queue.submit(iter::once(encoder.finish()));
         // present the completed texture
         output.present();
-        self.count = self.count + 1;
+
+        return &[];
         // return a success
     }
 }
-
-impl WGPUGraphicsComponent {}
 impl IGraphicsComponent for WGPUGraphicsComponent {}
-
-pub const KEY_CAMERA_STATE: i32 = 0;
-pub const KEY_APPLICATION_STATE: i32 = 1;
-pub const KEY_DRAW_CALLS_STATE: i32 = 2;
-
 impl WGPUGraphicsComponent {
     pub fn new() -> WGPUGraphicsComponent {
         WGPUGraphicsComponent {
             buffer_cache: Graphics_buffer_cache::new(),
-            count: 0,
+            camera_rendereing: CameraRenderingComponents::new(),
         }
     }
 
-    fn get_render_pipeline(device: &Device, state: &State, shader: ShaderModule, texture_bind_group_layout: &BindGroupLayout) -> RenderPipeline {
-        // let texture_bind_group_layout = state.box_device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        //     entries: &[
-        //         wgpu::BindGroupLayoutEntry {
-        //             binding: 0,
-        //             visibility: wgpu::ShaderStages::FRAGMENT,
-        //             ty: wgpu::BindingType::Texture {
-        //                 multisampled: false,
-        //                 view_dimension: wgpu::TextureViewDimension::D2,
-        //                 sample_type: wgpu::TextureSampleType::Float { filterable: true },
-        //             },
-        //             count: None,
-        //         },
-        //         wgpu::BindGroupLayoutEntry {
-        //             binding: 1,
-        //             visibility: wgpu::ShaderStages::FRAGMENT,
-        //             ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-        //             count: None,
-        //         },
-        //     ],
-        //     label: Some("texture_bind_group_layout"),
-        // });
+    fn get_render_pipeline(
+        config: &SurfaceConfiguration,
+        device: &Device,
+        shader: ShaderModule,
+        texture_bind_group_layout: &BindGroupLayout,
+    ) -> RenderPipeline {
         let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
@@ -190,7 +179,7 @@ impl WGPUGraphicsComponent {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 targets: &[Some(wgpu::ColorTargetState {
-                    format: state.config.format,
+                    format: config.format,
                     blend: Some(wgpu::BlendState {
                         color: wgpu::BlendComponent::REPLACE,
                         alpha: wgpu::BlendComponent::REPLACE,
@@ -209,7 +198,7 @@ impl WGPUGraphicsComponent {
                 conservative: false,
             },
             depth_stencil: Some(wgpu::DepthStencilState {
-                format: texture::Texture::DEPTH_FORMAT,
+                format: Texture_asset::DEPTH_FORMAT,
                 depth_write_enabled: true,
                 depth_compare: wgpu::CompareFunction::Less, // 1.
                 stencil: wgpu::StencilState::default(),     // 2.
@@ -252,9 +241,9 @@ impl WGPUGraphicsComponent {
             },
         })
     }
-    fn get_depth_attatchment<'a>(state: &'a State) -> Option<RenderPassDepthStencilAttachment<'a>> {
+    fn get_depth_attatchment<'a>(depth: &'a Texture_asset) -> Option<RenderPassDepthStencilAttachment<'a>> {
         Some(wgpu::RenderPassDepthStencilAttachment {
-            view: &state.depth_texture.view,
+            view: &depth.view,
             depth_ops: Some(wgpu::Operations {
                 load: wgpu::LoadOp::Clear(1.0),
                 store: wgpu::StoreOp::Store,
@@ -264,15 +253,68 @@ impl WGPUGraphicsComponent {
     }
 }
 
-#[derive(Clone)]
-pub struct DrawCallsState {
-    pub draw_calls: Vec<DrawCall>,
+// #[derive(Clone)]
+// pub struct DrawCallsState {
+//     pub draw_calls: Vec<DrawCall>,
+// }
+// impl DrawCallsState {
+//     pub fn new<'a>() -> DrawCallsState {
+//         DrawCallsState { draw_calls: Vec::new() }
+//     }
+// }
+
+pub struct CameraRenderingComponents {
+    camera_bind_group: BindGroup,
+    camera_bind_group_layout: BindGroupLayout,
+    camera_uniform: CameraUniform,
+    camera_buffer: Buffer,
 }
-impl DrawCallsState {
-    pub fn new<'a>() -> DrawCallsState {
-        DrawCallsState { draw_calls: Vec::new() }
+impl CameraRenderingComponents {
+    pub fn update_view_matrix(&mut self, state_camera: CameraState) {
+        self.camera_uniform.update_view_proj(&state_camera)
     }
-    pub fn new2<'a>(drawcalls: Vec<DrawCall>) -> DrawCallsState {
-        DrawCallsState { draw_calls: drawcalls }
+
+    pub fn new() -> CameraRenderingComponents {
+        let sys = SYS_GPU.lock().unwrap();
+
+        let Some(device) = &sys.device else { panic!("Panic") };
+        let camera = CameraState::default();
+        let mut camera_uniform = CameraUniform::new();
+        camera_uniform.update_view_proj(&camera);
+
+        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Camera Buffer"),
+            contents: bytemuck::cast_slice(&[camera_uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+        let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+            label: Some("camera_bind_group_layout"),
+        });
+
+        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
+            label: Some("camera_bind_group"),
+        });
+
+        CameraRenderingComponents {
+            camera_bind_group,
+            camera_bind_group_layout,
+            camera_uniform,
+            camera_buffer,
+        }
     }
 }
