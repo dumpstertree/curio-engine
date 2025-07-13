@@ -1,4 +1,6 @@
-use crate::Collections::{matrix4x4, quaternion::Quaternion, vector3::Vector3};
+use cgmath::{Matrix4, SquareMatrix};
+
+use crate::Collections::{quaternion::Quaternion, vector3::Vector3};
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -14,14 +16,34 @@ impl Matrix4x4 {
     }
     pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
         Matrix4x4 {
-            model: (cgmath::Matrix4::from_translation(pos.to_cg_math())
-                * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
-                * cgmath::Matrix4::from(rot.to_cg_math()))
-            .into(),
+            model: (cgmath::Matrix4::from_translation(pos.to_cg_math()))
+                // * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
+                // * cgmath::Matrix4::from(rot.to_cg_math()))
+                .into(),
         }
     }
 }
 impl Matrix4x4 {
+    pub fn to_cg_math(&self) -> Matrix4<f32> {
+        Matrix4::new(
+            self.model[0][0],
+            self.model[0][1],
+            self.model[0][2],
+            self.model[0][3],
+            self.model[1][0],
+            self.model[1][1],
+            self.model[1][2],
+            self.model[1][3],
+            self.model[2][0],
+            self.model[2][1],
+            self.model[2][2],
+            self.model[2][3],
+            self.model[3][0],
+            self.model[3][1],
+            self.model[3][2],
+            self.model[3][3],
+        )
+    }
     pub fn desc() -> wgpu::VertexBufferLayout<'static> {
         use std::mem;
         wgpu::VertexBufferLayout {

@@ -13,4 +13,10 @@ impl InputButtonState {
             went_up: false,
         }
     }
+
+    pub fn update(&mut self, is_down: &bool) {
+        self.went_down = *is_down && !self.is_down;
+        self.went_up = !is_down && self.is_down;
+        self.is_down = *is_down;
+    }
 }

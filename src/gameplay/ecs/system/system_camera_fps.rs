@@ -13,10 +13,12 @@ use crate::{
     Collections::vector3::Vector3,
 };
 
-pub struct FPSCameraECSSystem {}
+pub struct FPSCameraECSSystem {
+    enabled: bool,
+}
 impl FPSCameraECSSystem {
     pub fn new() -> FPSCameraECSSystem {
-        FPSCameraECSSystem {}
+        FPSCameraECSSystem { enabled: false }
     }
 }
 impl ECSSystemEventless for FPSCameraECSSystem {
@@ -26,6 +28,19 @@ impl ECSSystemEventless for FPSCameraECSSystem {
     fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
         // get the input direction
         let input = game_state.get_value2::<InputState>();
+
+        // flip enabled
+        if input.debug.went_down {
+            println!("flip");
+            self.enabled = !self.enabled;
+            return;
+        }
+
+        if (!self.enabled) {
+            return;
+        }
+
+        //
         let mut dir = Vector3::zero();
         if input.w.is_down {
             dir = dir + Vector3::forward();

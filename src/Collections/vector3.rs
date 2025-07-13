@@ -1,5 +1,7 @@
 use core::fmt;
 use std::ops::{Add, Div, Mul, Sub};
+
+use cgmath::{point3, Point3};
 #[derive(Clone, Copy, PartialEq)]
 pub struct Vector3 {
     pub x: f32,
@@ -37,6 +39,24 @@ impl Vector3 {
     pub fn magnitude(self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
+    pub fn dot(lhs: Vector3, rhs: Vector3) -> f32 {
+        lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z
+    }
+    pub fn cross(lhs: Vector3, rhs: Vector3) -> Vector3 {
+        Vector3::new(
+            lhs.y * rhs.z - lhs.z * rhs.y,
+            lhs.z * rhs.x - lhs.x * rhs.z,
+            lhs.x * rhs.y - lhs.y * rhs.x,
+        )
+    }
+    pub fn reflect(direction: Vector3, normal: Vector3) -> Vector3 {
+        let factor = Vector3::dot(normal, direction) * -2.0;
+        Vector3::new(
+            factor * normal.x + direction.x,
+            factor * normal.y + direction.y,
+            factor * normal.z + direction.z,
+        )
+    }
 
     // Normalize the vector
     pub fn normalize(&mut self) {
@@ -60,9 +80,31 @@ impl Vector3 {
             z: self.z / mag,
         }
     }
+    pub fn clamp_x(&self, min: f32, max: f32) -> Vector3 {
+        Vector3::new(self.x.clamp(min, max), self.y, self.z)
+    }
+    pub fn clamped_x(&mut self, min: f32, max: f32) {
+        self.x = self.x.clamp(min, max);
+    }
+
+    pub fn clamp(&self, min: Vector3, max: Vector3) -> Vector3 {
+        Vector3::new(self.x.clamp(min.x, max.x), self.y.clamp(min.y, max.y), self.z.clamp(min.z, max.z))
+    }
+    pub fn clamped(&mut self, min: Vector3, max: Vector3) {
+        self.x = self.x.clamp(min.x, max.x);
+        self.y = self.y.clamp(min.y, max.y);
+        self.z = self.z.clamp(min.z, max.z);
+    }
 
     pub fn to_cg_math(self) -> cgmath::Vector3<f32> {
         cgmath::Vector3 {
+            x: self.x,
+            y: self.y,
+            z: self.z,
+        }
+    }
+    pub fn to_point3(self) -> Point3<f32> {
+        Point3 {
             x: self.x,
             y: self.y,
             z: self.z,

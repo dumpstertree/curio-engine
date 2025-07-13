@@ -8,6 +8,7 @@ pub struct InputState {
     pub d: InputButtonState,
     pub esc: InputButtonState,
     pub tab: InputButtonState,
+    pub debug: InputButtonState,
 }
 
 impl InputState {
@@ -19,6 +20,7 @@ impl InputState {
             d: InputButtonState::default(),
             esc: InputButtonState::default(),
             tab: InputButtonState::default(),
+            debug: InputButtonState::default(),
         }
     }
 }

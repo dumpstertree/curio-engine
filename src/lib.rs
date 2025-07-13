@@ -19,21 +19,27 @@ mod Collections {
     pub(crate) mod quaternion;
     pub(crate) mod vector3;
 }
-
+mod random;
 mod Window {
-    pub(crate) mod CameraState;
     pub(crate) mod SystemWindow;
 }
 mod gameplay {
     pub mod ecs {
         pub mod component {
             pub(crate) mod component_camera;
+            pub(crate) mod component_collider;
             pub(crate) mod component_renderer;
             pub(crate) mod component_transform;
+            pub mod component_colliders {
+                pub(crate) mod component_collider_box;
+                pub(crate) mod component_collider_sphere;
+            }
         }
         pub mod system {
             pub(crate) mod system_camera_fps;
             pub(crate) mod system_camera_update_state;
+            pub(crate) mod system_collider_box_update_state;
+            pub(crate) mod system_collider_sphere_update_state;
             pub(crate) mod system_renderer_update_state;
         }
     }
@@ -43,6 +49,7 @@ mod system {
     pub(crate) mod system_game_state;
     pub mod system_game_states {
         pub(crate) mod state_camera;
+        pub(crate) mod state_colliders;
         pub(crate) mod state_draw;
         pub(crate) mod state_input;
         pub(crate) mod state_time;
@@ -77,11 +84,16 @@ mod system_adapters {
 mod my_game {
     pub mod ecs {
         pub mod system {
+            pub(crate) mod system_ball_move;
             pub(crate) mod system_engine_commands;
             pub(crate) mod system_game_init;
+            pub(crate) mod system_paddle_move;
+            pub(crate) mod system_pong_init;
             pub(crate) mod system_spin;
         }
         pub mod component {
+            pub(crate) mod component_ball;
+            pub(crate) mod component_paddle;
             pub(crate) mod component_spin;
         }
     }
@@ -89,14 +101,15 @@ mod my_game {
 
 use crate::dumpster_engine::DumpsterEngine;
 use crate::dumpster_engine::WindowLayout;
-use crate::my_game::ecs::system::system_engine_commands::SystemEngineCommands;
-use crate::my_game::ecs::system::system_game_init::SystemGameInit;
-use crate::my_game::ecs::system::system_spin::SystemSpin;
+use crate::my_game::ecs::system::system_ball_move::SystemBallMove;
+use crate::my_game::ecs::system::system_paddle_move::SystemPaddleMove;
+use crate::my_game::ecs::system::system_pong_init::SystemPongInit;
 
 pub fn run() {
     // run the engine
     DumpsterEngine::run(
         WindowLayout::windowed_1080(),
-        vec![SystemGameInit::new(), SystemSpin::new(), SystemEngineCommands::new()],
+        // vec![SystemGameInit::new(), SystemSpin::new(), SystemEngineCommands::new()],
+        vec![SystemPongInit::new(), SystemPaddleMove::new(), SystemBallMove::new()],
     );
 }

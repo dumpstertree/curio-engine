@@ -24,6 +24,7 @@ hecs = "0.10.5"
 simple_event_bus = "0.0.5"
 egui = "0.31.1"
 eframe = "0.31.1"
+rand = "0.9.1"
 
 [build-dependencies]
 anyhow = "1.0"

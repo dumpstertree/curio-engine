@@ -1,7 +1,7 @@
 use crate::system::system_component::ISystemComponent;
 use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
 use crate::system::system_components::graphics_component::IGraphicsComponent;
-use crate::system::system_game_states::state_camera::CameraState;
+use crate::system::system_game_states::state_camera::{CameraState, Projection};
 use crate::system::system_game_states::state_draw::DrawCallsState;
 use crate::system_adapters::adapter_system_gpu::{SystemGPU, SYS_GPU};
 use crate::Collections::camera_uniform::CameraUniform;
@@ -10,6 +10,7 @@ use crate::Collections::matrix4x4::Matrix4x4;
 use crate::Collections::GraphicsBufferCache::Graphics_buffer_cache;
 use crate::Collections::{DrawCall::DrawCall, Mesh::Vertex};
 use crate::IO::texture_asset::Texture_asset;
+use cgmath::Rad;
 use std::iter;
 use wgpu::{
     util::DeviceExt, Buffer, CommandEncoder, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, ShaderModule,
@@ -20,6 +21,7 @@ use wgpu::{BindGroup, BindGroupLayout, Device, Surface, SurfaceConfiguration};
 pub struct WGPUGraphicsComponent {
     buffer_cache: Graphics_buffer_cache,
     camera_rendereing: CameraRenderingComponents,
+    projection: Projection,
 }
 
 impl ISystemComponent for WGPUGraphicsComponent {
@@ -27,7 +29,7 @@ impl ISystemComponent for WGPUGraphicsComponent {
         9000
     }
     fn init(&mut self, gs: &mut GameState) {
-        self.camera_rendereing = CameraRenderingComponents::new();
+        self.camera_rendereing = CameraRenderingComponents::new(&self.projection);
     }
     fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
         let sys = SYS_GPU.lock().unwrap();
@@ -41,7 +43,6 @@ impl ISystemComponent for WGPUGraphicsComponent {
         let Some(queue) = &sys.queue else {
             return &[];
         };
-
         let Some(surface) = &sys.surface else {
             return &[];
         };
@@ -76,7 +77,8 @@ impl ISystemComponent for WGPUGraphicsComponent {
             // update camera
             // camera.camera_uniform.update_view_proj(&state_camera);
 
-            self.camera_rendereing.update_view_matrix(state_camera);
+            self.camera_rendereing
+                .update_view_matrix(state_camera, &self.projection);
 
             // camera.update_view_matrix();
             queue.write_buffer(
@@ -97,7 +99,13 @@ impl ISystemComponent for WGPUGraphicsComponent {
                     // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
                     let diffuse_bind_group = material.get_binding_group(device);
                     // set render pipeline
-                    let rp = WGPUGraphicsComponent::get_render_pipeline(config, device, material.shader.clone(), &diffuse_bind_group.1);
+                    let rp = WGPUGraphicsComponent::get_render_pipeline(
+                        &self.camera_rendereing.camera_bind_group_layout,
+                        config,
+                        device,
+                        material.shader.clone(),
+                        &diffuse_bind_group.1,
+                    );
                     render_pass.set_pipeline(&rp);
 
                     // create the instance buffer
@@ -134,34 +142,24 @@ impl ISystemComponent for WGPUGraphicsComponent {
 impl IGraphicsComponent for WGPUGraphicsComponent {}
 impl WGPUGraphicsComponent {
     pub fn new() -> WGPUGraphicsComponent {
+        let p = Projection::new(1920, 1080, cgmath::Deg(45.0), 0.1, 100.0);
         WGPUGraphicsComponent {
             buffer_cache: Graphics_buffer_cache::new(),
-            camera_rendereing: CameraRenderingComponents::new(),
+            camera_rendereing: CameraRenderingComponents::new(&p),
+            projection: p,
         }
     }
 
     fn get_render_pipeline(
+        camera_bind: &BindGroupLayout,
         config: &SurfaceConfiguration,
         device: &Device,
         shader: ShaderModule,
         texture_bind_group_layout: &BindGroupLayout,
     ) -> RenderPipeline {
-        let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-            label: Some("camera_bind_group_layout"),
-        });
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&texture_bind_group_layout, &camera_bind_group_layout],
+            bind_group_layouts: &[&texture_bind_group_layout, &camera_bind],
             push_constant_ranges: &[],
         });
 
@@ -270,23 +268,25 @@ pub struct CameraRenderingComponents {
     camera_buffer: Buffer,
 }
 impl CameraRenderingComponents {
-    pub fn update_view_matrix(&mut self, state_camera: CameraState) {
-        self.camera_uniform.update_view_proj(&state_camera)
+    pub fn update_view_matrix(&mut self, state_camera: CameraState, projection: &Projection) {
+        self.camera_uniform
+            .update_view_proj(&state_camera, &projection)
     }
 
-    pub fn new() -> CameraRenderingComponents {
+    pub fn new(projection: &Projection) -> CameraRenderingComponents {
         let sys = SYS_GPU.lock().unwrap();
 
         let Some(device) = &sys.device else { panic!("Panic") };
         let camera = CameraState::default();
-        let mut camera_uniform = CameraUniform::new();
-        camera_uniform.update_view_proj(&camera);
+        let mut camera_uniform: CameraUniform = CameraUniform::new();
+        camera_uniform.update_view_proj(&camera, projection);
 
         let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Camera Buffer"),
             contents: bytemuck::cast_slice(&[camera_uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
+
         let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
