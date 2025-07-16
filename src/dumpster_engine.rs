@@ -2,7 +2,10 @@ use pollster::FutureExt;
 
 use crate::gameplay::ecs::system::system_camera_fps::FPSCameraECSSystem;
 use crate::gameplay::ecs::system::system_camera_update_state::PostCameraECSSystem;
+use crate::gameplay::ecs::system::system_collider_box_update_state::SystemColliderSphereUpdateState;
+use crate::gameplay::ecs::system::system_collider_sphere_update_state::SystemColliderBoxUpdateState;
 use crate::gameplay::ecs::system::system_renderer_update_state::TestECSSystem;
+use crate::system::system_components::collision_component_factory::SystemComponentCollisionFactory;
 use crate::system::system_components::gameplay_component_factory::SystemComponentGameplayFactory;
 use crate::system::system_components::gameplay_components::gameplay_component_default::{ECSSystem, ECSSystemEventless};
 use crate::system::system_components::graphics_component_factory::SystemComponentGraphicsFactory;
@@ -33,12 +36,15 @@ impl DumpsterEngine {
             Box::new(PostCameraECSSystem {}),
             Box::new(FPSCameraECSSystem::new()),
             TestECSSystem::new(),
+            SystemColliderBoxUpdateState::new(),
+            SystemColliderSphereUpdateState::new(),
         ];
         // create systems
         let mut system_window = SystemWindow::new(vec![
             SystemComponentTimeFactory::create(),
             SystemComponentInputFactory::create(),
             SystemComponentGraphicsFactory::create(),
+            SystemComponentCollisionFactory::create(),
             SystemComponentGameplayFactory::create(ecs_systems, ecs_system_built_in),
         ]);
 

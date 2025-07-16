@@ -1,8 +1,8 @@
-use crate::{gameplay::ecs::component::component_collider::ColliderState, system::system_game_state::IState};
+use crate::{gameplay::ecs::component::component_collider::ColliderSnapshot, system::system_game_state::IState};
 
 #[derive(Clone)]
 pub struct StateCollider {
-    pub colliders: Vec<ColliderState>,
+    pub colliders: Vec<ColliderSnapshot>,
 }
 impl StateCollider {
     fn new() -> StateCollider {

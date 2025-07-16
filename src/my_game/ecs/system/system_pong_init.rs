@@ -55,7 +55,7 @@ impl ECSSystem<GameEvents> for SystemPongInit {
 
         // ball
         scene.spawn((
-            ComponentColliderSphere::default().set_diameter(1.0),
+            ComponentColliderBox::default().set_size(Vector3::new(1.0, 1.0, 1.0)),
             Renderer::default().set_asset(asset_loader.load_gltf("Cone.glb")),
             Transform::default().set_position(Vector3::new(0.0, 0.0, 0.0)),
             ComponentBall::default()

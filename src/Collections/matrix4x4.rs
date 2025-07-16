@@ -11,9 +11,12 @@ impl Matrix4x4 {
     pub fn zero() -> Matrix4x4 {
         Matrix4x4::new(Vector3::zero(), Quaternion::zero(), Vector3::zero())
     }
-    pub fn default() -> Matrix4x4 {
-        Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::one())
+
+    pub const fn default() -> Matrix4x4 {
+        Matrix4x4 { model: [[0.0; 4]; 4] }
+        // Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::one())
     }
+
     pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
         Matrix4x4 {
             model: (cgmath::Matrix4::from_translation(pos.to_cg_math()))
@@ -22,6 +25,37 @@ impl Matrix4x4 {
                 .into(),
         }
     }
+    //     pub fn static Quaternion ExtractRotation(this Matrix4x4 matrix)
+    // {
+    //     Vector3 forward;
+    //     forward.x = matrix.m02;
+    //     forward.y = matrix.m12;
+    //     forward.z = matrix.m22;
+
+    //     Vector3 upwards;
+    //     upwards.x = matrix.m01;
+    //     upwards.y = matrix.m11;
+    //     upwards.z = matrix.m21;
+
+    //     return Quaternion.LookRotation(forward, upwards);
+    // }
+
+    pub fn extract_position(self) -> Vector3 {
+        let mut position = Vector3::zero();
+        position.x = self.model[3][0]; // 3
+        position.y = self.model[3][1]; // 12
+        position.z = self.model[3][2]; // 23
+        return position;
+    }
+
+    // public static Vector3 ExtractScale(this Matrix4x4 matrix)
+    // {
+    //     Vector3 scale;
+    //     scale.x = new Vector4(matrix.m00, matrix.m10, matrix.m20, matrix.m30).magnitude;
+    //     scale.y = new Vector4(matrix.m01, matrix.m11, matrix.m21, matrix.m31).magnitude;
+    //     scale.z = new Vector4(matrix.m02, matrix.m12, matrix.m22, matrix.m32).magnitude;
+    //     return scale;
+    // }
 }
 impl Matrix4x4 {
     pub fn to_cg_math(&self) -> Matrix4<f32> {

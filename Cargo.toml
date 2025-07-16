@@ -25,6 +25,7 @@ simple_event_bus = "0.0.5"
 egui = "0.31.1"
 eframe = "0.31.1"
 rand = "0.9.1"
+rapier3d = "0.25.1"
 
 [build-dependencies]
 anyhow = "1.0"

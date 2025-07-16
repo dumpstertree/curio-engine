@@ -50,6 +50,7 @@ mod system {
     pub mod system_game_states {
         pub(crate) mod state_camera;
         pub(crate) mod state_colliders;
+        pub(crate) mod state_collision;
         pub(crate) mod state_draw;
         pub(crate) mod state_input;
         pub(crate) mod state_time;
@@ -75,6 +76,11 @@ mod system {
         pub(crate) mod input_component_factory;
         pub mod input_components {
             pub(crate) mod input_component_default;
+        }
+        pub(crate) mod collision_component;
+        pub(crate) mod collision_component_factory;
+        pub mod collision_components {
+            pub(crate) mod collision_component_default;
         }
     }
 }

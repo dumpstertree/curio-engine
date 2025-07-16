@@ -1,0 +1,166 @@
+use std::{default, os::linux::raw::stat};
+
+use env_logger::fmt::Timestamp;
+use gltf::json::scene::UnitQuaternion;
+use rapier3d::{
+    na::{Isometry3, Quaternion, Vector2, Vector3},
+    parry::{
+        self, query,
+        shape::{Ball, Cuboid},
+    },
+};
+
+use crate::{
+    gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact},
+    system::{system_game_state::IState, system_game_states::state_time::TimeState},
+    Collections::matrix4x4::Matrix4x4,
+};
+use crate::{
+    gameplay::ecs::component::component_collider::{ColliderSnapshot, MeshColliderDef},
+    system::{
+        system_component::ISystemComponent,
+        system_components::{collision_component::ICollisionComponent, gameplay_components::gameplay_component_default::EngineCommands},
+        system_game_states::{state_colliders::StateCollider, state_collision::StateCollision},
+    },
+    Collections::game_state::GameState,
+};
+
+pub struct CollisionComponentDefault {
+    buffer_collider_box: [(Cuboid, ColliderSnapshot); 1024],
+    buffer_collider_box_cnt: usize,
+    buffer_collider_ball: [(Ball, Isometry3<f32>, i32); 1024],
+    buffer_collider_ball_cnt: usize,
+}
+
+const DEFAULT_CUBE: Cuboid = Cuboid {
+    half_extents: Vector3::new(0.0, 0.0, 0.0),
+};
+// const DEFAULT_ISO: Isometry3<f32> = Isometry3 {
+//     rotation: Quater { 0: [f32; 4] },
+//     translation: f32::consts::FRAC_PI_2,
+// };
+// const DEFAULT_SNAP: ColliderSnapshot = ColliderSnapshot {
+//     guid: 0,
+//     matrix: Matrix4x4{ model:  },
+//     shape: ColliderShape::Mesh(MeshColliderDef {}),
+// };
+impl CollisionComponentDefault {
+    pub fn new() -> CollisionComponentDefault {
+        let a = Cuboid::new(Vector3::new(0.0, 0.0, 0.0));
+        // let b = Isometry3::identity();
+        let c = ColliderSnapshot::default();
+        CollisionComponentDefault {
+            buffer_collider_box: [const { (DEFAULT_CUBE, ColliderSnapshot::default()) }; 1024],
+            buffer_collider_box_cnt: 0,
+            buffer_collider_ball: [(Ball::new(0.0), Isometry3::identity(), -1); 1024],
+            buffer_collider_ball_cnt: 0,
+        }
+    }
+}
+impl CollisionComponentDefault {}
+impl ICollisionComponent for CollisionComponentDefault {}
+impl ISystemComponent for CollisionComponentDefault {
+    fn order(&self) -> i32 {
+        2000
+    }
+    fn init(&mut self, gs: &mut GameState) {}
+
+    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+        let state_time = game_state.get_value2::<TimeState>();
+        if !state_time.should_update {
+            return &[];
+        }
+
+        // reset
+        self.buffer_collider_box_cnt = 0;
+
+        //
+        let mut state_collider = game_state.get_value2::<StateCollider>();
+        for collider in state_collider.colliders {
+            // let isometry = Isometry3::identity();
+            // let mut shape: &dyn Shape;
+            match &collider.shape {
+                ColliderShape::Box(def) => {
+                    let size = def.size / 2.0;
+                    // self.buffer_collider_box[self.buffer_collider_box_cnt] = Cuboid::new(Vector3::new(size.x, size.y, size.z));
+                    self.buffer_collider_box[self.buffer_collider_box_cnt] = (Cuboid::new(Vector3::new(size.x, size.y, size.z)), collider);
+                    self.buffer_collider_box_cnt = self.buffer_collider_box_cnt + 1;
+                }
+                ColliderShape::Sphere(def) => {
+                    // let size = def.diameter / 2.0;
+                    // self.buffer_collider_ball[self.buffer_collider_ball_cnt] = Ball::new(size);
+                    // self.buffer_collider_ball_cnt = self.buffer_collider_ball_cnt + 1;
+                }
+                ColliderShape::Mesh(def) => todo!(),
+            }
+        }
+
+        let mut s = game_state.get_value2::<StateCollision>();
+        s.collisions.clear();
+
+        for x in 0..self.buffer_collider_box_cnt {
+            let xx = &self.buffer_collider_box[x];
+            for y in 0..self.buffer_collider_box_cnt {
+                let yy = &self.buffer_collider_box[y];
+
+                if xx.1.guid == yy.1.guid {
+                    continue;
+                }
+
+                let p0 = xx.1.matrix.extract_position();
+                let p1 = yy.1.matrix.extract_position();
+
+                let a = Isometry3::translation(p0.x, p0.y, p0.z);
+                let b = &xx.0;
+                let c = Isometry3::translation(p1.x, p1.y, p1.z);
+                let d = &yy.0;
+
+                let intersects = query::intersection_test(&a, b, &c, d);
+
+                let Ok(intersects) = intersects else {
+                    continue;
+                };
+
+                if !intersects {
+                    continue;
+                }
+
+                let contact = query::contact(&a, b, &c, d, 1.0);
+                let Ok(concat) = contact else {
+                    continue;
+                };
+
+                let Some(contacta) = concat else {
+                    continue;
+                };
+
+                s.collisions.push(CollisionSnapshot {
+                    collider_a: xx.1.clone(),
+                    collider_b: yy.1.clone(),
+                    contact: Contact {
+                        point: crate::Collections::vector3::Vector3 {
+                            x: contacta.point1.x,
+                            y: contacta.point1.y,
+                            z: contacta.point1.z,
+                        },
+                        normal_a: crate::Collections::vector3::Vector3 {
+                            x: contacta.normal1.x,
+                            y: contacta.normal1.y,
+                            z: contacta.normal1.z,
+                        },
+                        normal_b: crate::Collections::vector3::Vector3 {
+                            x: contacta.normal2.x,
+                            y: contacta.normal2.y,
+                            z: contacta.normal2.z,
+                        },
+                    },
+                });
+            }
+        }
+
+        game_state.set_value2::<StateCollision>(s);
+        game_state.set_value2::<StateCollider>(StateCollider::default());
+
+        return &[];
+    }
+}

@@ -1,8 +1,10 @@
 use crate::{
     gameplay::ecs::component::{
-        component_collider::ColliderState, component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform,
+        component_collider::{ColliderSnapshot, CollisionSnapshot},
+        component_colliders::component_collider_box::ComponentColliderBox,
+        component_transform::Transform,
     },
-    system::system_game_states::state_colliders::StateCollider,
+    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision},
     Collections::game_state::GameState,
 };
 use hecs::World;
@@ -19,13 +21,27 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
     fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-
     fn will_tick(&mut self, game_state: &mut GameState, world: &mut World) {
+        let state = game_state.get_value2::<StateCollision>();
+        for (_, collider) in world.query::<&mut ComponentColliderBox>().iter() {
+            let mut collision = Vec::<CollisionSnapshot>::new();
+
+            for c in state.collisions.iter() {
+                let is_same = c.collider_a.guid == collider.guid;
+                if is_same {
+                    collision.push(c.clone());
+                }
+            }
+            collider.collisions = collision;
+        }
+    }
+    fn did_tick(&mut self, game_state: &mut GameState, world: &mut World) {
         let mut state = game_state.get_value2::<StateCollider>();
         for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
-            state.colliders.push(ColliderState::new_box(0));
+            state
+                .colliders
+                .push(ColliderSnapshot::new(collider.guid, transform.get_matrix(), collider.get_shape()));
         }
         game_state.set_value2::<StateCollider>(state);
     }
-    fn did_tick(&mut self, game_state: &mut GameState, scene: &mut World) {}
 }
