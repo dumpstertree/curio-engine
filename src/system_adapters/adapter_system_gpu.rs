@@ -5,7 +5,7 @@ use winit::event_loop::EventLoop;
 use winit::window::{Fullscreen, Window};
 
 use crate::IO::texture_asset::Texture_asset;
-pub static SYS_GPU: Mutex<SystemGPU> = Mutex::new(SystemGPU {
+pub static mut system_gpu_adapter_instance: SystemGPU = SystemGPU {
     device: None,
     queue: None,
     surface: None,
@@ -14,73 +14,99 @@ pub static SYS_GPU: Mutex<SystemGPU> = Mutex::new(SystemGPU {
     window: None,
     depth_texture: None,
     config: None,
-    arc_device: None,
-});
+};
+
 pub enum CustomEvents {}
 pub struct SystemGPU {
-    pub arc_device: Option<Arc<Device>>,
-    pub device: Option<Device>,
-    pub queue: Option<Queue>,
-    pub surface: Option<Surface<'static>>,
-    pub instance: Option<Instance>,
-    pub adapter: Option<Adapter>,
-    pub window: Option<Arc<Window>>,
-    pub depth_texture: Option<Texture_asset>,
-    pub config: Option<wgpu::SurfaceConfiguration>,
+    device: Option<Arc<Device>>,
+    queue: Option<Arc<Queue>>,
+    surface: Option<Arc<Surface<'static>>>,
+    instance: Option<Arc<Instance>>,
+    adapter: Option<Arc<Adapter>>,
+    window: Option<Arc<Window>>,
+    depth_texture: Option<Arc<Texture_asset>>,
+    config: Option<Arc<wgpu::SurfaceConfiguration>>,
 }
 impl SystemGPU {
-    pub fn get_window() -> Arc<Window> {
-        let s = SYS_GPU.lock().unwrap();
-        match s.window.clone() {
-            Some(x) => {
-                drop(s);
-                return x;
+    pub fn get_device() -> Arc<Device> {
+        unsafe {
+            match &system_gpu_adapter_instance.device {
+                Some(x) => return x.clone(),
+                None => panic!("NO DEVICE"),
             }
-            None => panic!("NOT SET"),
         }
     }
-    pub fn get_device() -> Arc<Device> {
-        let s = SYS_GPU.lock().unwrap();
-        match s.arc_device.clone() {
-            Some(x) => return x,
-            None => panic!("NOT SET"),
+    pub fn get_queue() -> Arc<Queue> {
+        unsafe {
+            match &system_gpu_adapter_instance.queue {
+                Some(x) => return x.clone(),
+                None => panic!("NO QUEUE"),
+            }
+        }
+    }
+    pub fn get_surface() -> Arc<Surface<'static>> {
+        unsafe {
+            match &system_gpu_adapter_instance.surface {
+                Some(x) => return x.clone(),
+                None => panic!("NO SURFACE"),
+            }
+        }
+    }
+    pub fn get_instance() -> Arc<Instance> {
+        unsafe {
+            match &system_gpu_adapter_instance.instance {
+                Some(x) => return x.clone(),
+                None => panic!("NO INSTANCE"),
+            }
+        }
+    }
+    pub fn get_adapter() -> Arc<Adapter> {
+        unsafe {
+            match &system_gpu_adapter_instance.adapter {
+                Some(x) => return x.clone(),
+                None => panic!("NO APADTER"),
+            }
+        }
+    }
+    pub fn get_window() -> Arc<Window> {
+        unsafe {
+            match &system_gpu_adapter_instance.window {
+                Some(x) => return x.clone(),
+                None => panic!("NO WINDOW"),
+            }
+        }
+    }
+    pub fn get_depth_texture() -> Arc<Texture_asset> {
+        unsafe {
+            match &system_gpu_adapter_instance.depth_texture {
+                Some(x) => return x.clone(),
+                None => panic!("NO DEVICE"),
+            }
+        }
+    }
+    pub fn get_config() -> Arc<wgpu::SurfaceConfiguration> {
+        unsafe {
+            match &system_gpu_adapter_instance.config {
+                Some(x) => return x.clone(),
+                None => panic!("NO DEVICE"),
+            }
         }
     }
     pub fn set_cursor_visible(visible: bool) {
-        let sys = SYS_GPU.lock().unwrap();
-
-        let Some(window) = &sys.window else {
-            return;
-        };
-
+        let window = SystemGPU::get_window();
         window.set_cursor_visible(visible);
     }
     pub fn set_resizable(resizable: bool) {
-        let sys = SYS_GPU.lock().unwrap();
-
-        let Some(window) = &sys.window else {
-            return;
-        };
+        let window = SystemGPU::get_window();
         window.set_resizable(resizable);
     }
     pub fn set_resolution(w: i32, h: i32) {
-        let mut sys = SYS_GPU.lock().unwrap();
+        let config = SystemGPU::get_config();
+        let surface = SystemGPU::get_surface();
+        let window = SystemGPU::get_window();
+        let device = SystemGPU::get_device();
 
-        let Some(device) = &sys.device else {
-            return;
-        };
-        let Some(surface) = &sys.surface else {
-            return;
-        };
-
-        let Some(config) = &sys.config else {
-            return;
-        };
-        let Some(window) = &sys.window else {
-            return;
-        };
-
-        let mut config = config.clone();
+        let mut config = (*config).clone();
         config.width = w as u32;
         config.height = h as u32;
 
@@ -94,17 +120,15 @@ impl SystemGPU {
         window.set_min_inner_size(Some(s));
         window.set_max_inner_size(Some(s));
 
-        surface.configure(device, &config);
+        surface.configure(&(*device), &config);
 
-        sys.depth_texture = Some(Texture_asset::create_depth_texture(&device, &config, "depth_texture"));
-        sys.config = Some(config);
+        unsafe {
+            system_gpu_adapter_instance.depth_texture = Some(Arc::new(Texture_asset::create_depth_texture("depth_texture")));
+            system_gpu_adapter_instance.config = Some(Arc::new(config));
+        }
     }
     pub fn set_fullscreen(fullscreeen: bool) {
-        let sys = SYS_GPU.lock().unwrap();
-
-        let Some(window) = &sys.window else {
-            return;
-        };
+        let window = SystemGPU::get_window();
 
         if fullscreeen {
             window.set_fullscreen(Some(Fullscreen::Borderless(window.primary_monitor())));
@@ -114,7 +138,7 @@ impl SystemGPU {
             window.set_blur(false);
         }
     }
-    pub async fn init(&mut self) -> EventLoop<CustomEvents> {
+    pub async fn init() -> EventLoop<CustomEvents> {
         let mut window_attributes = winit::window::Window::default_attributes();
         let event_loop: EventLoop<CustomEvents> = EventLoop::with_user_event().build().unwrap();
         let window: Arc<Window> = event_loop.create_window(window_attributes).unwrap().into();
@@ -144,7 +168,8 @@ impl SystemGPU {
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 label: None,
-                required_features: wgpu::Features::empty(),
+                required_features: wgpu::Features::POLYGON_MODE_LINE,
+                //  features: (optional_features & adapter_features) | required_features,
                 // WebGL doesn't support all of wgpu's features, so if
                 // we're building for the web we'll have to disable some.
                 required_limits: wgpu::Limits::default(),
@@ -172,16 +197,21 @@ impl SystemGPU {
             desired_maximum_frame_latency: 2,
         };
 
-        let d = Texture_asset::create_depth_texture(&device, &config, "depth_texture");
-        self.surface = Some(surface);
-        self.instance = Some(instance);
-        self.device = Some(device);
-        self.queue = Some(queue);
-        self.adapter = Some(adapter);
-        self.window = Some(window);
-        self.depth_texture = Some(d);
-        self.config = Some(config);
-        // self.arc_device =
+        unsafe {
+            system_gpu_adapter_instance = SystemGPU {
+                surface: Some(Arc::new(surface)),
+                instance: Some(Arc::new(instance)),
+                device: Some(Arc::new(device)),
+                queue: Some(Arc::new(queue)),
+                adapter: Some(Arc::new(adapter)),
+                window: Some(window),
+                depth_texture: None,
+                config: Some(Arc::new(config)),
+            };
+
+            system_gpu_adapter_instance.depth_texture = Some(Arc::new(Texture_asset::create_depth_texture("depth_texture")));
+            // let d = Texture_asset::create_depth_texture("depth_texture");
+        }
         event_loop
     }
 }

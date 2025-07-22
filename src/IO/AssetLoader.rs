@@ -5,7 +5,7 @@ use std::sync::Arc;
 use wgpu::Device;
 use wgpu::ShaderModule;
 
-use crate::system_adapters::adapter_system_gpu::SYS_GPU;
+use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::material::Material;
 use crate::Collections::material::ShaderDesc;
 use crate::Collections::Mesh::Mesh;
@@ -123,9 +123,11 @@ impl AssetLoader {
             return Some(self.asset_cache[path].clone());
         }
         // build new
-        let sys = SYS_GPU.lock().unwrap();
-        let Some(device) = &sys.device else { return None };
-        let Some(queue) = &sys.queue else { return None };
+
+        let device = SystemGPU::get_device();
+        let queue = SystemGPU::get_queue();
+        // let Some(device) = &sys.device else { return None };
+        // let Some(queue) = &sys.queue else { return None };
         // get the path using env path as base
         let full_path = std::path::Path::new(PATH_MESH).join(path);
         let z = gltf::import(&full_path);
@@ -144,7 +146,7 @@ impl AssetLoader {
                 let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
 
                 if gltf.materials().len() == 0 {
-                    all_material.push(Material::new(shader_desc.clone(), device));
+                    all_material.push(Material::new(shader_desc.clone()));
                 } else {
                     for material in gltf.materials() {
                         let pbr = material.pbr_metallic_roughness();
@@ -160,12 +162,12 @@ impl AssetLoader {
                                 }
                             }
 
-                            texture_asset = Texture_asset::new_from_buffer(None, device, queue, image2.width, image2.height, &p[..]);
+                            texture_asset = Texture_asset::new_from_buffer(None, image2.width, image2.height, &p[..]);
                         } else {
-                            texture_asset = Texture_asset::default(device, queue);
+                            texture_asset = Texture_asset::default();
                         }
 
-                        let mut m = Material::new(shader_desc.clone(), device);
+                        let mut m = Material::new(shader_desc.clone());
                         m.set_texture_with_label(Some(texture_asset), "diffuse");
                         all_material.push(m);
                     }

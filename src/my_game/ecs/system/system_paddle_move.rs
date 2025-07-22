@@ -7,7 +7,7 @@ use crate::{
         system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
         system_game_states::{state_input::InputState, state_time::TimeState},
     },
-    Collections::{game_state::GameState, vector3::Vector3},
+    Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
 };
 
 pub struct SystemPaddleMove {}
@@ -38,7 +38,9 @@ impl ECSSystem<GameEvents> for SystemPaddleMove {
             } else if state_input.d.is_down {
                 paddle.speed = paddle.speed - ACCELERATION * state_time.delta_time;
             } else {
-                if paddle.speed > 0.0 {
+                if f32::abs(paddle.speed) < 0.5 {
+                    paddle.speed = 0.0;
+                } else if paddle.speed > 0.0 {
                     paddle.speed = paddle.speed - DECELERATION * state_time.delta_time;
                 } else {
                     paddle.speed = paddle.speed + DECELERATION * state_time.delta_time;
@@ -47,6 +49,7 @@ impl ECSSystem<GameEvents> for SystemPaddleMove {
 
             paddle.speed = paddle.speed.clamp(-TERMINAL_VELOCITY, TERMINAL_VELOCITY);
 
+            transform.rotation = transform.rotation * Quaternion::from_angle_axis(Vector3::up(), 0.1);
             transform.position = (transform.position - paddle.axis * paddle.speed * state_time.delta_time).clamp_x(-10.0, 10.0);
         }
     }

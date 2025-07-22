@@ -1,5 +1,5 @@
 use core::fmt;
-use std::ops::Mul;
+use std::{f32::consts::PI, ops::Mul};
 
 use crate::Collections::vector3::Vector3;
 
@@ -12,6 +12,34 @@ pub struct Quaternion {
 }
 
 impl Quaternion {
+    pub fn look_rotation(forward: Vector3, up: Vector3) -> Quaternion {
+        let f = forward.normalized();
+        let u = up.normalized();
+        let r = Vector3::cross(u, f).normalized();
+        let u = Vector3::cross(f, r); // ensure orthogonal up
+
+        // Construct quaternion from basis vectors directly
+        // using direction vectors' rotation alignment method
+        let trace = r.x + u.y + f.z;
+
+        if trace > 0.0 {
+            let s = (trace + 1.0).sqrt() * 2.0;
+            let inv_s = 1.0 / s;
+            Quaternion::new((u.z - f.y) * inv_s, (f.x - r.z) * inv_s, (r.y - u.x) * inv_s, 0.25 * s)
+        } else if r.x > u.y && r.x > f.z {
+            let s = (1.0 + r.x - u.y - f.z).sqrt() * 2.0;
+            let inv_s = 1.0 / s;
+            Quaternion::new(0.25 * s, (r.y + u.x) * inv_s, (f.x + r.z) * inv_s, (u.z - f.y) * inv_s)
+        } else if u.y > f.z {
+            let s = (1.0 + u.y - r.x - f.z).sqrt() * 2.0;
+            let inv_s = 1.0 / s;
+            Quaternion::new((r.y + u.x) * inv_s, 0.25 * s, (u.z + f.y) * inv_s, (f.x - r.z) * inv_s)
+        } else {
+            let s = (1.0 + f.z - r.x - u.y).sqrt() * 2.0;
+            let inv_s = 1.0 / s;
+            Quaternion::new((f.x + r.z) * inv_s, (u.z + f.y) * inv_s, 0.25 * s, (r.y - u.x) * inv_s)
+        }
+    }
     pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quaternion {
         Quaternion { x: x, y: y, z: z, w: w }
     }
@@ -20,6 +48,25 @@ impl Quaternion {
     }
     pub fn zero() -> Quaternion {
         Quaternion::new(0.0, 0.0, 0.0, 10.0)
+    }
+    pub fn to_euler(&self) -> Vector3 {
+        let sinr_cosp = 2.0 * (self.w * self.x + self.y * self.z);
+        let cosr_cosp = 1.0 - 2.0 * (self.x * self.x + self.y * self.y);
+        let roll = sinr_cosp.atan2(cosr_cosp);
+
+        let sinp = 2.0 * (self.w * self.y - self.z * self.x);
+        let pitch = if sinp.abs() >= 1.0 {
+            // use 90 degrees if out of range
+            sinp.signum() * PI / 2.0
+        } else {
+            sinp.asin()
+        };
+
+        let siny_cosp = 2.0 * (self.w * self.z + self.x * self.y);
+        let cosy_cosp = 1.0 - 2.0 * (self.y * self.y + self.z * self.z);
+        let yaw = siny_cosp.atan2(cosy_cosp);
+
+        Vector3::new(pitch.to_degrees(), yaw.to_degrees(), roll.to_degrees())
     }
     pub fn from_euler(euler: Vector3) -> Quaternion {
         let cr: f32 = f32::cos(euler.x * 0.5);

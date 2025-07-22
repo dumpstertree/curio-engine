@@ -1,4 +1,7 @@
-use crate::Collections::game_state::GameState;
+use crate::{
+    system::system_game_states::state_time::TimeState,
+    Collections::{game_state::GameState, Mesh::Mesh},
+};
 use hecs::World;
 
 use crate::{
@@ -21,8 +24,8 @@ impl ECSSystemEventless for TestECSSystem {
     }
 
     fn did_tick(&mut self, game_state: &mut GameState, scene: &mut World) {
-        let mut dc = DrawCallsState::new();
-
+        let mut dc = game_state.get_value2::<DrawCallsState>();
+        let time = game_state.get_value2::<TimeState>();
         for x in scene.query::<(&Renderer, &Transform)>().iter() {
             let r: &Renderer = x.1 .0;
             let t: &Transform = x.1 .1;
@@ -31,13 +34,13 @@ impl ECSSystemEventless for TestECSSystem {
                 continue;
             };
 
-            // for m in &asset.mesh {
-            dc.draw_calls.push(DrawCall::draw_mesh_single(
-                asset.mesh[0].clone(),
-                asset.materials[0].clone(),
-                t.get_matrix(),
-            ));
-            // }
+            for m in &asset.mesh {
+                dc.draw_calls.push(DrawCall::draw_mesh_single(
+                    asset.mesh[0].clone(),
+                    asset.materials[0].clone(),
+                    t.get_matrix(),
+                ));
+            }
         }
         game_state.set_value2::<DrawCallsState>(dc);
     }

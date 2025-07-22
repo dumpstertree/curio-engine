@@ -11,7 +11,7 @@ use crate::system::system_components::gameplay_components::gameplay_component_de
 use crate::system::system_components::graphics_component_factory::SystemComponentGraphicsFactory;
 use crate::system::system_components::input_component_factory::SystemComponentInputFactory;
 use crate::system::system_components::time_component_factory::SystemComponentTimeFactory;
-use crate::system_adapters::adapter_system_gpu::{SystemGPU, SYS_GPU};
+use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Window::SystemWindow::SystemWindow;
 
 pub struct DumpsterEngine {}
@@ -21,9 +21,7 @@ impl DumpsterEngine {
         TGameEvents: 'static,
         TGameEvents: Clone,
     {
-        let mut guard_sys_gpu = SYS_GPU.lock().unwrap();
-        let event_loop = guard_sys_gpu.init().block_on();
-        drop(guard_sys_gpu);
+        let event_loop = SystemGPU::init().block_on();
 
         // set window layout values
         SystemGPU::set_resolution(window_layout.width, window_layout.height);

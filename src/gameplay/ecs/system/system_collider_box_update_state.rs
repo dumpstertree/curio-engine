@@ -4,8 +4,15 @@ use crate::{
         component_colliders::component_collider_box::ComponentColliderBox,
         component_transform::Transform,
     },
-    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision},
-    Collections::game_state::GameState,
+    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState, state_time::TimeState},
+    Collections::{
+        game_state::{self, GameState, GetError},
+        gizmo::Gizmo,
+        matrix4x4::Matrix4x4,
+        quaternion::Quaternion,
+        vector3::Vector3,
+        Color,
+    },
 };
 use hecs::World;
 
@@ -36,12 +43,21 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
         }
     }
     fn did_tick(&mut self, game_state: &mut GameState, world: &mut World) {
+        let mut gizmo = game_state.get_value2::<GizmosState>();
+
         let mut state = game_state.get_value2::<StateCollider>();
         for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
             state
                 .colliders
                 .push(ColliderSnapshot::new(collider.guid, transform.get_matrix(), collider.get_shape()));
+            gizmo
+                .draw_calls
+                .push(Gizmo::cube(transform.get_matrix(), Vector3::new(3.0, 1.0, 1.0), Color::Color::get_red()));
+            gizmo
+                .draw_calls
+                .push(Gizmo::sphere(transform.get_matrix(), 7.0, Color::Color::get_green()));
         }
         game_state.set_value2::<StateCollider>(state);
+        game_state.set_value2::<GizmosState>(gizmo);
     }
 }

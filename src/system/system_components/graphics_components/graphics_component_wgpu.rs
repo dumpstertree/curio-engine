@@ -3,20 +3,26 @@ use crate::system::system_components::gameplay_components::gameplay_component_de
 use crate::system::system_components::graphics_component::IGraphicsComponent;
 use crate::system::system_game_states::state_camera::{CameraState, Projection};
 use crate::system::system_game_states::state_draw::DrawCallsState;
-use crate::system_adapters::adapter_system_gpu::{SystemGPU, SYS_GPU};
+use crate::system::system_game_states::state_gizmos::GizmosState;
+use crate::system::system_game_states::state_time::TimeState;
+use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::camera_uniform::CameraUniform;
 use crate::Collections::game_state::GameState;
+use crate::Collections::gizmo::{self, Gizmo};
+use crate::Collections::material::Material;
 use crate::Collections::matrix4x4::Matrix4x4;
 use crate::Collections::GraphicsBufferCache::Graphics_buffer_cache;
+use crate::Collections::Mesh::Mesh;
 use crate::Collections::{DrawCall::DrawCall, Mesh::Vertex};
 use crate::IO::texture_asset::Texture_asset;
+use crate::IO::AssetLoader::AssetLoader;
 use cgmath::Rad;
 use std::iter;
 use wgpu::{
     util::DeviceExt, Buffer, CommandEncoder, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, ShaderModule,
     SurfaceTexture, TextureView,
 };
-use wgpu::{BindGroup, BindGroupLayout, Device, Surface, SurfaceConfiguration};
+use wgpu::{BindGroup, BindGroupLayout, Device, RenderPass, Surface, SurfaceConfiguration};
 
 pub struct WGPUGraphicsComponent {
     buffer_cache: Graphics_buffer_cache,
@@ -24,6 +30,112 @@ pub struct WGPUGraphicsComponent {
     projection: Projection,
 }
 
+impl WGPUGraphicsComponent {
+    fn draw_gizmos(
+        &mut self,
+        draw_call: &Gizmo,
+        config: &wgpu::wgt::SurfaceConfiguration<Vec<wgpu::TextureFormat>>,
+        device: &Device,
+        render_pass: &mut RenderPass,
+    ) {
+        // iterate over each mesh in the draw call
+        //
+        let mesh = &draw_call.mesh;
+        let mut material = Material::new(AssetLoader::load_shader_desc("assets/shader/gizmo.shader"));
+
+        material.set_color_with_label(draw_call.color.clone(), "color");
+        // create material bind group
+        // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
+        let diffuse_bind_group = material.get_texture_binding_group(device);
+        let color_bind_group = material.get_color_binding_group(device);
+        // set render pipeline
+        let rp = WGPUGraphicsComponent::get_render_pipeline(
+            &self.camera_rendereing.camera_bind_group_layout,
+            config,
+            device,
+            material.shader.clone(),
+            &diffuse_bind_group.1,
+            &color_bind_group.1,
+            true,
+        );
+        render_pass.set_pipeline(&rp);
+
+        // create the instance buffer
+        let n_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Instance Buffer"),
+            contents: bytemuck::cast_slice(&draw_call.matrix),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        // fetch the cached buffers for the mesh
+        // let buffers: (&Buffer, &Buffer) = self.buffer_cache.get_vertex_buffer(device, mesh);
+        let buffers = (mesh.get_vertex_buffer_for_device(device), mesh.get_index_buffer_for_device(device));
+
+        // set buffers
+        render_pass.set_vertex_buffer(0, buffers.0.slice(..));
+        render_pass.set_vertex_buffer(1, n_buffer.slice(..));
+        render_pass.set_index_buffer(buffers.1.slice(..), wgpu::IndexFormat::Uint32);
+
+        // set bind groups
+        render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
+        render_pass.set_bind_group(1, &self.camera_rendereing.camera_bind_group, &[]);
+        render_pass.set_bind_group(2, &color_bind_group.0, &[]);
+
+        // draw
+        render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
+    }
+    fn draw_draw_call(
+        &mut self,
+        draw_call: &DrawCall,
+        config: &wgpu::wgt::SurfaceConfiguration<Vec<wgpu::TextureFormat>>,
+        device: &Device,
+        render_pass: &mut RenderPass,
+    ) {
+        // iterate over each mesh in the draw call
+        for i in 0..draw_call.mesh.len() {
+            //
+            let mesh = &draw_call.mesh[i];
+            let mut material = &draw_call.materials[i];
+            // create material bind group
+            // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
+            let diffuse_bind_group = material.get_texture_binding_group(device);
+            let color_bind_group = material.get_color_binding_group(device);
+            // set render pipeline
+            let rp = WGPUGraphicsComponent::get_render_pipeline(
+                &self.camera_rendereing.camera_bind_group_layout,
+                config,
+                device,
+                material.shader.clone(),
+                &diffuse_bind_group.1,
+                &color_bind_group.1,
+                false,
+            );
+            render_pass.set_pipeline(&rp);
+
+            // create the instance buffer
+            let n_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(&draw_call.matrix),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            // fetch the cached buffers for the mesh
+            // let buffers: (&Buffer, &Buffer) = self.buffer_cache.get_vertex_buffer(device, mesh);
+            let buffers = (mesh.get_vertex_buffer_for_device(device), mesh.get_index_buffer_for_device(device));
+
+            // set buffers
+            render_pass.set_vertex_buffer(0, buffers.0.slice(..));
+            render_pass.set_vertex_buffer(1, n_buffer.slice(..));
+            render_pass.set_index_buffer(buffers.1.slice(..), wgpu::IndexFormat::Uint32);
+
+            // set bind groups
+            render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
+            render_pass.set_bind_group(1, &self.camera_rendereing.camera_bind_group, &[]);
+            render_pass.set_bind_group(2, &color_bind_group.0, &[]);
+
+            // draw
+            render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
+        }
+    }
+}
 impl ISystemComponent for WGPUGraphicsComponent {
     fn order(&self) -> i32 {
         9000
@@ -32,30 +144,17 @@ impl ISystemComponent for WGPUGraphicsComponent {
         self.camera_rendereing = CameraRenderingComponents::new(&self.projection);
     }
     fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
-        let sys = SYS_GPU.lock().unwrap();
-
-        let Some(window) = &sys.window else {
-            return &[];
-        };
-        let Some(device) = &sys.device else {
-            return &[];
-        };
-        let Some(queue) = &sys.queue else {
-            return &[];
-        };
-        let Some(surface) = &sys.surface else {
-            return &[];
-        };
-        let Some(config) = &sys.config else {
-            return &[];
-        };
-        let Some(depth) = &sys.depth_texture else {
-            return &[];
-        };
+        let surface = &SystemGPU::get_surface();
+        let device = &SystemGPU::get_device();
+        let depth = &SystemGPU::get_depth_texture();
+        let window = &SystemGPU::get_window();
+        let queue = &SystemGPU::get_queue();
+        let config = &&SystemGPU::get_config();
 
         // get gamestate data
         let state_camera = game_state.get_value2::<CameraState>();
         let state_draws = game_state.get_value2::<DrawCallsState>();
+        let state_gizmos = game_state.get_value2::<GizmosState>();
 
         // redraw on window
         window.request_redraw();
@@ -90,46 +189,18 @@ impl ISystemComponent for WGPUGraphicsComponent {
             // get all draw calls from state
             let draw_calls = &state_draws.draw_calls;
             for draw_call in draw_calls {
-                // iterate over each mesh in the draw call
-                for i in 0..draw_call.mesh.len() {
-                    //
-                    let mesh = &draw_call.mesh[i];
-                    let material = &draw_call.materials[i];
-                    // create material bind group
-                    // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
-                    let diffuse_bind_group = material.get_binding_group(device);
-                    // set render pipeline
-                    let rp = WGPUGraphicsComponent::get_render_pipeline(
-                        &self.camera_rendereing.camera_bind_group_layout,
-                        config,
-                        device,
-                        material.shader.clone(),
-                        &diffuse_bind_group.1,
-                    );
-                    render_pass.set_pipeline(&rp);
-
-                    // create the instance buffer
-                    let n_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some("Instance Buffer"),
-                        contents: bytemuck::cast_slice(&draw_call.matrix),
-                        usage: wgpu::BufferUsages::VERTEX,
-                    });
-                    // fetch the cached buffers for the mesh
-                    let buffers: (&Buffer, &Buffer) = self.buffer_cache.get_vertex_buffer(device, mesh);
-
-                    // set buffers
-                    render_pass.set_vertex_buffer(0, buffers.0.slice(..));
-                    render_pass.set_vertex_buffer(1, n_buffer.slice(..));
-                    render_pass.set_index_buffer(buffers.1.slice(..), wgpu::IndexFormat::Uint32);
-
-                    // set bind groups
-                    render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
-                    render_pass.set_bind_group(1, &self.camera_rendereing.camera_bind_group, &[]);
-                    // draw
-                    render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
-                }
+                self.draw_draw_call(draw_call, config, device, &mut render_pass);
             }
+
+            let gizmos_calls = &state_gizmos.draw_calls;
+            for gizmo in gizmos_calls {
+                self.draw_gizmos(gizmo, config, device, &mut render_pass);
+            }
+
+            game_state.set_value2::<GizmosState>(GizmosState::new());
+            game_state.set_value2::<DrawCallsState>(DrawCallsState::new());
         }
+
         // submit commands for execution
         queue.submit(iter::once(encoder.finish()));
         // present the completed texture
@@ -139,6 +210,7 @@ impl ISystemComponent for WGPUGraphicsComponent {
         // return a success
     }
 }
+
 impl IGraphicsComponent for WGPUGraphicsComponent {}
 impl WGPUGraphicsComponent {
     pub fn new() -> WGPUGraphicsComponent {
@@ -156,10 +228,12 @@ impl WGPUGraphicsComponent {
         device: &Device,
         shader: ShaderModule,
         texture_bind_group_layout: &BindGroupLayout,
+        color_bind_group_layout: &BindGroupLayout,
+        wireframe: bool,
     ) -> RenderPipeline {
         let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
-            bind_group_layouts: &[&texture_bind_group_layout, &camera_bind],
+            bind_group_layouts: &[&texture_bind_group_layout, &camera_bind, &color_bind_group_layout],
             push_constant_ranges: &[],
         });
 
@@ -191,15 +265,15 @@ impl WGPUGraphicsComponent {
                 strip_index_format: None,
                 front_face: wgpu::FrontFace::Ccw,
                 cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: wgpu::PolygonMode::Fill,
+                polygon_mode: if wireframe { wgpu::PolygonMode::Line } else { wgpu::PolygonMode::Fill },
                 unclipped_depth: false,
                 conservative: false,
             },
             depth_stencil: Some(wgpu::DepthStencilState {
                 format: Texture_asset::DEPTH_FORMAT,
                 depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less, // 1.
-                stencil: wgpu::StencilState::default(),     // 2.
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             }),
             // depth_stencil: None,
@@ -274,9 +348,7 @@ impl CameraRenderingComponents {
     }
 
     pub fn new(projection: &Projection) -> CameraRenderingComponents {
-        let sys = SYS_GPU.lock().unwrap();
-
-        let Some(device) = &sys.device else { panic!("Panic") };
+        let device = SystemGPU::get_device();
         let camera = CameraState::default();
         let mut camera_uniform: CameraUniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera, projection);

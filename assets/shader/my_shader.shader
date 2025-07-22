@@ -10,5 +10,7 @@
         {
             "label" : "specular"
         }
+    ],
+    "colors" : [
     ]
 } 

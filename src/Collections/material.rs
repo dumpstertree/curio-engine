@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
-use wgpu::{BindGroup, BindGroupLayout, Device, ShaderModule};
+use wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, ShaderModule};
 
-use crate::IO::{texture_asset::Texture_asset, AssetLoader::AssetLoader};
+use crate::{
+    system_adapters::adapter_system_gpu::SystemGPU,
+    Collections::Color::Color,
+    IO::{texture_asset::Texture_asset, AssetLoader::AssetLoader},
+};
 
 //data
 #[derive(Clone)]
@@ -9,7 +13,19 @@ pub struct Material {
     pub shader: ShaderModule,
     shader_desc: ShaderDesc,
     textures: Vec<Option<Texture_asset>>,
+    colors: Vec<Color>,
+    colors_uniform: Vec<Option<Buffer>>,
     none: Texture_asset,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub struct color_uniform {
+    color: [f32; 4],
+}
+impl color_uniform {
+    pub fn new(r: f32, g: f32, b: f32, a: f32) -> color_uniform {
+        color_uniform { color: [r, g, b, a] }
+    }
 }
 
 // construction
@@ -18,18 +34,46 @@ impl Material {
         for _ in &self.shader_desc.textures {
             self.textures.push(None);
         }
+        for _ in &self.shader_desc.colors {
+            self.colors.push(Color::get_black());
+            self.colors_uniform.push(None);
+        }
     }
-    pub fn new(shader_desc: ShaderDesc, device: &Device) -> Material {
+    pub fn new(shader_desc: ShaderDesc) -> Material {
+        let device = &SystemGPU::get_device();
         let shader = AssetLoader::load_shader_module(device, &shader_desc.shader_module_path);
 
         let mut m = Material {
             shader_desc: shader_desc,
             textures: Vec::new(),
-            none: Texture_asset::none(device),
+            colors: Vec::new(),
+            colors_uniform: Vec::new(),
+            none: Texture_asset::none(),
             shader: shader,
         };
         m.initialize_vec_lengths();
         m
+    }
+    pub fn set_color_with_index(&mut self, color: Color, index: usize) {
+        self.colors[index] = color;
+    }
+    pub fn set_color_with_label(&mut self, color: Color, label: &str) {
+        for i in 0..self.shader_desc.colors.len() {
+            let is_same = self.shader_desc.colors[i].label == label;
+            if !is_same {
+                continue;
+            };
+
+            let device = SystemGPU::get_device();
+            let color_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Color Buffer"),
+                contents: bytemuck::cast_slice(&[color_uniform::new(color.r, color.g, color.b, color.a)]),
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+            self.colors[i] = color;
+            self.colors_uniform[i] = Some(color_buffer);
+            return;
+        }
     }
     pub fn set_texture_with_index(&mut self, texture: Option<Texture_asset>, index: usize) {
         self.textures[index] = texture;
@@ -45,7 +89,54 @@ impl Material {
             return;
         }
     }
-    pub fn get_binding_group<'a>(&self, device: &Device) -> (BindGroup, BindGroupLayout) {
+
+    pub fn get_color_binding_group<'a>(&self, device: &Device) -> (BindGroup, BindGroupLayout) {
+        // create entries
+        let mut i = 0;
+        let mut entries: Vec<wgpu::BindGroupEntry> = Vec::new();
+
+        for t in &self.colors_uniform {
+            let Some(buffer) = t else {
+                continue;
+            };
+            entries.push(wgpu::BindGroupEntry {
+                binding: (i),
+                resource: buffer.as_entire_binding(),
+            });
+            i = i + 1;
+        }
+
+        // create layout
+        let mut i = 0;
+        let mut layouts: Vec<wgpu::BindGroupLayoutEntry> = Vec::new();
+        for t in &self.colors {
+            layouts.push(wgpu::BindGroupLayoutEntry {
+                binding: i,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            });
+            i = i + 1;
+        }
+
+        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &layouts[..],
+            label: None,
+        });
+
+        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &texture_bind_group_layout,
+            entries: &entries[..],
+            label: None,
+        });
+
+        (diffuse_bind_group, texture_bind_group_layout)
+    }
+    pub fn get_texture_binding_group<'a>(&self, device: &Device) -> (BindGroup, BindGroupLayout) {
         // create entries
         let mut i = 0;
         let mut entries: Vec<wgpu::BindGroupEntry> = Vec::new();
@@ -70,6 +161,7 @@ impl Material {
             });
             i = i + 1;
         }
+
         // create layout
         let mut i = 0;
         let mut layouts: Vec<wgpu::BindGroupLayoutEntry> = Vec::new();
@@ -93,7 +185,10 @@ impl Material {
             i = i + 1;
         }
 
-        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { entries: &layouts[..], label: None });
+        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &layouts[..],
+            label: None,
+        });
 
         let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &texture_bind_group_layout,
@@ -112,8 +207,9 @@ impl Material {}
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ShaderDesc {
-    textures: Vec<ShaderTextureDesc>,
     shader_module_path: String,
+    textures: Vec<ShaderTextureDesc>,
+    colors: Vec<ShaderColorDesc>,
 }
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ShaderTextureDesc {
@@ -123,7 +219,6 @@ pub struct ShaderTextureDesc {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ShaderColorDesc {
     label: String,
-    index: i32,
 }
 pub struct ShaderVec1Desc {}
 pub struct ShaderVec2Desc {}

@@ -3,7 +3,7 @@ use std::{default, os::linux::raw::stat};
 use env_logger::fmt::Timestamp;
 use gltf::json::scene::UnitQuaternion;
 use rapier3d::{
-    na::{Isometry3, Quaternion, Vector2, Vector3},
+    na::{Isometry3, Point3, Quaternion, Vector2, Vector3},
     parry::{
         self, query,
         shape::{Ball, Cuboid},
@@ -108,11 +108,16 @@ impl ISystemComponent for CollisionComponentDefault {
                 }
 
                 let p0 = xx.1.matrix.extract_position();
-                let p1 = yy.1.matrix.extract_position();
+                let r0 = xx.1.matrix.extract_rotation().to_euler();
 
-                let a = Isometry3::translation(p0.x, p0.y, p0.z);
+                let p1 = yy.1.matrix.extract_position();
+                let r1 = yy.1.matrix.extract_rotation().to_euler();
+
+                println!("big rot :{}", r0);
+
+                let a = Isometry3::new(Vector3::new(p0.x, p0.y, p0.z), Vector3::new(r0.x, r0.y, r0.z));
                 let b = &xx.0;
-                let c = Isometry3::translation(p1.x, p1.y, p1.z);
+                let c = Isometry3::new(Vector3::new(p1.x, p1.y, p1.z), Vector3::new(r1.x, r1.y, r1.z));
                 let d = &yy.0;
 
                 let intersects = query::intersection_test(&a, b, &c, d);

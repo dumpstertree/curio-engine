@@ -1,5 +1,7 @@
 use wgpu::TextureView;
 
+use crate::system_adapters::adapter_system_gpu::SystemGPU;
+
 use super::Asset::Asset;
 
 // data
@@ -16,7 +18,9 @@ pub struct Texture_asset {
 impl Texture_asset {
     pub const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float; // 1.
 
-    pub fn create_depth_texture(device: &wgpu::Device, config: &wgpu::SurfaceConfiguration, label: &str) -> Self {
+    pub fn create_depth_texture(label: &str) -> Self {
+        let device = SystemGPU::get_device();
+        let config = SystemGPU::get_config();
         let size = wgpu::Extent3d {
             // 2.
             width: config.width.max(1),
@@ -60,7 +64,9 @@ impl Texture_asset {
         }
     }
     // pub fn new_from_buffer(label: Option<&str>, device: &wgpu::Device, queue: &wgpu::Queue, width: u32, height: u32, buffer: ImageBuffer<Rgba<u8>, &[u8]>) -> Texture_asset {
-    pub fn none(device: &wgpu::Device) -> Texture_asset {
+    pub fn none() -> Texture_asset {
+        let device = SystemGPU::get_device();
+
         let size = wgpu::Extent3d {
             width: 1,
             height: 1,
@@ -96,14 +102,17 @@ impl Texture_asset {
             view: view,
         }
     }
-    pub fn default(device: &wgpu::Device, queue: &wgpu::Queue) -> Texture_asset {
+    pub fn default() -> Texture_asset {
         let bytes = include_bytes!("../../default_texture.jpg");
         let img = image::load_from_memory(bytes).unwrap();
         let rgba = img.to_rgba8();
 
-        Texture_asset::new_from_buffer(None, device, queue, 1024, 1024, &rgba.to_vec()[..])
+        Texture_asset::new_from_buffer(None, 1024, 1024, &rgba.to_vec()[..])
     }
-    pub fn new_from_buffer(label: Option<&str>, device: &wgpu::Device, queue: &wgpu::Queue, width: u32, height: u32, buffer: &[u8]) -> Texture_asset {
+    pub fn new_from_buffer(label: Option<&str>, width: u32, height: u32, buffer: &[u8]) -> Texture_asset {
+        let queue = SystemGPU::get_queue();
+        let device = SystemGPU::get_device();
+
         if width % 2 != 0 {
             panic!("texture width not power of 2")
         }

@@ -12,6 +12,7 @@ mod Collections {
     pub(crate) mod Mesh;
     pub(crate) mod camera_uniform;
     pub(crate) mod game_state;
+    pub(crate) mod gizmo;
     pub(crate) mod input_button;
     pub(crate) mod key_state;
     pub(crate) mod material;
@@ -52,6 +53,7 @@ mod system {
         pub(crate) mod state_colliders;
         pub(crate) mod state_collision;
         pub(crate) mod state_draw;
+        pub(crate) mod state_gizmos;
         pub(crate) mod state_input;
         pub(crate) mod state_time;
     }

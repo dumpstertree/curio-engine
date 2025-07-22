@@ -26,6 +26,7 @@ egui = "0.31.1"
 eframe = "0.31.1"
 rand = "0.9.1"
 rapier3d = "0.25.1"
+mesh-tools = "0.4.0"
 
 [build-dependencies]
 anyhow = "1.0"

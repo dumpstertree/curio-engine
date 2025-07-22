@@ -19,26 +19,26 @@ impl Matrix4x4 {
 
     pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
         Matrix4x4 {
-            model: (cgmath::Matrix4::from_translation(pos.to_cg_math()))
-                // * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
-                // * cgmath::Matrix4::from(rot.to_cg_math()))
-                .into(),
+            model: (cgmath::Matrix4::from_translation(pos.to_cg_math())
+                * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
+                * cgmath::Matrix4::from(rot.to_cg_math()))
+            .into(),
         }
     }
-    //     pub fn static Quaternion ExtractRotation(this Matrix4x4 matrix)
-    // {
-    //     Vector3 forward;
-    //     forward.x = matrix.m02;
-    //     forward.y = matrix.m12;
-    //     forward.z = matrix.m22;
+    pub fn extract_rotation(&self) -> Quaternion {
+        let forward = Vector3::new(
+            self.model[2][0], // matrix.m02,
+            self.model[2][1], // matrix.m12,
+            self.model[2][2], // matrix.m22,
+        );
+        let upward = Vector3::new(
+            self.model[1][0], // matrix.m01,
+            self.model[1][1], // matrix.m11,
+            self.model[1][2], // matrix.m21,
+        );
 
-    //     Vector3 upwards;
-    //     upwards.x = matrix.m01;
-    //     upwards.y = matrix.m11;
-    //     upwards.z = matrix.m21;
-
-    //     return Quaternion.LookRotation(forward, upwards);
-    // }
+        return Quaternion::look_rotation(forward, upward);
+    }
 
     pub fn extract_position(self) -> Vector3 {
         let mut position = Vector3::zero();
