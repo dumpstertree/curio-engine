@@ -1,4 +1,4 @@
-use tutorial3_pipeline::run;
+use dumpster_engine::run;
 
 fn main() {
     run();

@@ -1,6 +1,5 @@
 use std::{default, os::linux::raw::stat};
 
-use env_logger::fmt::Timestamp;
 use gltf::json::scene::UnitQuaternion;
 use rapier3d::{
     na::{Isometry3, Point3, Quaternion, Vector2, Vector3},
