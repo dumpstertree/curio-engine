@@ -2,7 +2,7 @@ use hecs::World;
 
 use crate::{
     gameplay::{ecs::component::component_transform::Transform, game_events::GameEvents},
-    my_game::ecs::component::component_paddle::ComponentPaddle,
+    my_game::{constants::Constants, ecs::component::component_paddle::ComponentPaddle},
     system::{
         system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
         system_game_states::{state_input::InputState, state_time::TimeState},
@@ -17,10 +17,6 @@ impl SystemPaddleMove {
     }
 }
 
-const ACCELERATION: f32 = 30.0;
-const DECELERATION: f32 = 20.0;
-const TERMINAL_VELOCITY: f32 = 15.0;
-
 impl ECSSystem<GameEvents> for SystemPaddleMove {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue<GameEvents>) -> bool {
         true
@@ -34,20 +30,22 @@ impl ECSSystem<GameEvents> for SystemPaddleMove {
             .iter()
         {
             if state_input.a.is_down {
-                paddle.speed = paddle.speed + ACCELERATION * state_time.delta_time;
+                paddle.speed = paddle.speed + Constants::paddle_speed_acceleration() * state_time.delta_time;
             } else if state_input.d.is_down {
-                paddle.speed = paddle.speed - ACCELERATION * state_time.delta_time;
+                paddle.speed = paddle.speed - Constants::paddle_speed_acceleration() * state_time.delta_time;
             } else {
                 if f32::abs(paddle.speed) < 0.5 {
                     paddle.speed = 0.0;
                 } else if paddle.speed > 0.0 {
-                    paddle.speed = paddle.speed - DECELERATION * state_time.delta_time;
+                    paddle.speed = paddle.speed - Constants::paddle_speed_decceleration() * state_time.delta_time;
                 } else {
-                    paddle.speed = paddle.speed + DECELERATION * state_time.delta_time;
+                    paddle.speed = paddle.speed + Constants::paddle_speed_decceleration() * state_time.delta_time;
                 }
             }
 
-            paddle.speed = paddle.speed.clamp(-TERMINAL_VELOCITY, TERMINAL_VELOCITY);
+            paddle.speed = paddle
+                .speed
+                .clamp(-Constants::paddle_speed_terminal(), Constants::paddle_speed_terminal());
 
             transform.rotation = transform.rotation * Quaternion::from_angle_axis(Vector3::up(), 0.1);
             transform.position = (transform.position - paddle.axis * paddle.speed * state_time.delta_time).clamp_x(-10.0, 10.0);

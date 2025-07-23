@@ -2,12 +2,9 @@ use crate::Collections::game_state::GameState;
 use hecs::World;
 
 use crate::{
-    gameplay::{
-        ecs::component::{component_camera::Camera, component_transform::Transform},
-        game_events::GameEvents,
-    },
+    gameplay::ecs::component::{component_camera::Camera, component_transform::Transform},
     system::{
-        system_components::gameplay_components::gameplay_component_default::{ECSSystem, ECSSystemEventless, EventQueue},
+        system_components::gameplay_components::gameplay_component_default::ECSSystemEventless,
         system_game_states::state_camera::CameraState,
     },
     IO::AssetLoader::AssetLoader,

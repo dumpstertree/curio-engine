@@ -1,7 +1,6 @@
-use std::result::Iter;
 
 use crate::{
-    gameplay::ecs::component::component_collider::{BoxColliderDef, ColliderShape, ColliderSnapshot, CollisionSnapshot},
+    gameplay::ecs::component::component_collider::{BoxColliderDef, ColliderShape, CollisionSnapshot},
     random::Random,
     Collections::vector3::Vector3,
 };

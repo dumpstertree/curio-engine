@@ -1,27 +1,23 @@
-use std::{default, os::linux::raw::stat};
-
-use gltf::json::scene::UnitQuaternion;
 use rapier3d::{
-    na::{Isometry3, Point3, Quaternion, Vector2, Vector3},
+    na::{Isometry3, Vector3},
     parry::{
-        self, query,
+        query,
         shape::{Ball, Cuboid},
     },
 };
 
 use crate::{
-    gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact},
-    system::{system_game_state::IState, system_game_states::state_time::TimeState},
-    Collections::matrix4x4::Matrix4x4,
-};
-use crate::{
-    gameplay::ecs::component::component_collider::{ColliderSnapshot, MeshColliderDef},
+    gameplay::ecs::component::component_collider::ColliderSnapshot,
     system::{
         system_component::ISystemComponent,
         system_components::{collision_component::ICollisionComponent, gameplay_components::gameplay_component_default::EngineCommands},
         system_game_states::{state_colliders::StateCollider, state_collision::StateCollision},
     },
     Collections::game_state::GameState,
+};
+use crate::{
+    gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact},
+    system::{system_game_state::IState, system_game_states::state_time::TimeState},
 };
 
 pub struct CollisionComponentDefault {
@@ -74,7 +70,7 @@ impl ISystemComponent for CollisionComponentDefault {
         self.buffer_collider_box_cnt = 0;
 
         //
-        let mut state_collider = game_state.get_value2::<StateCollider>();
+        let state_collider = game_state.get_value2::<StateCollider>();
         for collider in state_collider.colliders {
             // let isometry = Isometry3::identity();
             // let mut shape: &dyn Shape;
@@ -112,7 +108,7 @@ impl ISystemComponent for CollisionComponentDefault {
                 let p1 = yy.1.matrix.extract_position();
                 let r1 = yy.1.matrix.extract_rotation().to_euler();
 
-                println!("big rot :{}", r0);
+                // println!("big rot :{}", r0);
 
                 let a = Isometry3::new(Vector3::new(p0.x, p0.y, p0.z), Vector3::new(r0.x, r0.y, r0.z));
                 let b = &xx.0;

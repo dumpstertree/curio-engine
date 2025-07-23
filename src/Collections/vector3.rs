@@ -1,7 +1,7 @@
 use core::fmt;
 use std::ops::{Add, Div, Mul, Sub};
 
-use cgmath::{point3, Point3};
+use cgmath::Point3;
 #[derive(Clone, Copy, PartialEq)]
 pub struct Vector3 {
     pub x: f32,

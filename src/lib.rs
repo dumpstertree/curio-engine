@@ -90,6 +90,7 @@ mod system_adapters {
     pub(crate) mod adapter_system_gpu;
 }
 mod my_game {
+    pub(crate) mod constants;
     pub mod ecs {
         pub mod system {
             pub(crate) mod system_ball_move;

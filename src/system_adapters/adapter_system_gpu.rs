@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use wgpu::{Adapter, Device, Instance, Queue, Surface};
 use winit::event_loop::EventLoop;
@@ -139,7 +139,7 @@ impl SystemGPU {
         }
     }
     pub async fn init() -> EventLoop<CustomEvents> {
-        let mut window_attributes = winit::window::Window::default_attributes();
+        let window_attributes = winit::window::Window::default_attributes();
         let event_loop: EventLoop<CustomEvents> = EventLoop::with_user_event().build().unwrap();
         let window: Arc<Window> = event_loop.create_window(window_attributes).unwrap().into();
 

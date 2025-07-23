@@ -4,16 +4,16 @@ use crate::{
     gameplay::{
         ecs::component::{
             component_camera::Camera,
-            component_colliders::{component_collider_box::ComponentColliderBox, component_collider_sphere::ComponentColliderSphere},
+            component_colliders::component_collider_box::ComponentColliderBox,
             component_renderer::Renderer,
             component_transform::Transform,
         },
         game_events::GameEvents,
     },
-    my_game::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle, component_spin::Spin},
+    my_game::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle},
     random::Random,
     system::system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
-    Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
+    Collections::{game_state::GameState, vector3::Vector3},
     IO::AssetLoader::AssetLoader,
 };
 

@@ -1,6 +1,4 @@
-use mesh_tools::compat::{Point3, Vector2, Vector3};
 use mesh_tools::primitives::{generate_plane, generate_sphere};
-use mesh_tools::GltfBuilder;
 use wgpu::util::DeviceExt;
 use wgpu::Buffer;
 use wgpu::BufferAddress;
@@ -10,7 +8,6 @@ use wgpu::VertexBufferLayout;
 use crate::random::Random;
 use crate::Collections::matrix4x4::Matrix4x4;
 use crate::Collections::vector3;
-use crate::Collections::Color::Color;
 #[derive(Clone)]
 pub struct Mesh {
     pub name: String,

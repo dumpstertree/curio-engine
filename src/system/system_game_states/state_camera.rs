@@ -1,20 +1,15 @@
-use cgmath::{Matrix4, Rad, SquareMatrix, Transform};
+use cgmath::{Matrix4, Rad, SquareMatrix};
 
 use crate::{
     system::system_game_state::IState,
     Collections::{
-        matrix4x4::{self, Matrix4x4},
-        quaternion::{self, Quaternion},
+        quaternion::Quaternion,
         vector3::Vector3,
     },
 };
 
 use cgmath::*;
 use std::f32::consts::FRAC_PI_2;
-use std::time::Duration;
-use winit::dpi::PhysicalPosition;
-use winit::event::*;
-use winit::keyboard::KeyCode;
 
 #[rustfmt::skip]
 pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::from_cols(
@@ -148,4 +143,3 @@ impl Projection {
     }
 }
 
-use cgmath::*;

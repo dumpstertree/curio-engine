@@ -1,4 +1,4 @@
-use crate::Collections::{material::Material, matrix4x4::Matrix4x4, vector3::Vector3, Color::Color, Mesh::Mesh};
+use crate::Collections::{matrix4x4::Matrix4x4, vector3::Vector3, Color::Color, Mesh::Mesh};
 
 #[derive(Clone)]
 pub struct Gizmo {

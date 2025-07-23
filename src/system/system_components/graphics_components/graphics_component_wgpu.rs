@@ -4,19 +4,16 @@ use crate::system::system_components::graphics_component::IGraphicsComponent;
 use crate::system::system_game_states::state_camera::{CameraState, Projection};
 use crate::system::system_game_states::state_draw::DrawCallsState;
 use crate::system::system_game_states::state_gizmos::GizmosState;
-use crate::system::system_game_states::state_time::TimeState;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::camera_uniform::CameraUniform;
 use crate::Collections::game_state::GameState;
-use crate::Collections::gizmo::{self, Gizmo};
+use crate::Collections::gizmo::Gizmo;
 use crate::Collections::material::Material;
 use crate::Collections::matrix4x4::Matrix4x4;
 use crate::Collections::GraphicsBufferCache::Graphics_buffer_cache;
-use crate::Collections::Mesh::Mesh;
 use crate::Collections::{DrawCall::DrawCall, Mesh::Vertex};
 use crate::IO::texture_asset::Texture_asset;
 use crate::IO::AssetLoader::AssetLoader;
-use cgmath::Rad;
 use std::iter;
 use wgpu::{
     util::DeviceExt, Buffer, CommandEncoder, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, ShaderModule,
@@ -94,7 +91,7 @@ impl WGPUGraphicsComponent {
         for i in 0..draw_call.mesh.len() {
             //
             let mesh = &draw_call.mesh[i];
-            let mut material = &draw_call.materials[i];
+            let material = &draw_call.materials[i];
             // create material bind group
             // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
             let diffuse_bind_group = material.get_texture_binding_group(device);

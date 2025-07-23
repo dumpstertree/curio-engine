@@ -1,11 +1,11 @@
 use crate::{
     system::{
         system_component::ISystemComponent,
-        system_components::gameplay_component::{self, IGameplayComponent},
+        system_components::gameplay_component::IGameplayComponent,
         system_game_states::state_time::TimeState,
     },
     Collections::game_state::GameState,
-    Collections::vector3::{self, Vector3},
+    Collections::vector3::Vector3,
     IO::AssetLoader::AssetLoader,
 };
 
@@ -182,7 +182,7 @@ where
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>, event: &T) {}
 }
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 #[derive(Clone)]
 pub enum EngineCommands {
     Exit,

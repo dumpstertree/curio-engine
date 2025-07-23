@@ -1,4 +1,4 @@
-use cgmath::{Matrix4, SquareMatrix};
+use cgmath::Matrix4;
 
 use crate::Collections::{quaternion::Quaternion, vector3::Vector3};
 
