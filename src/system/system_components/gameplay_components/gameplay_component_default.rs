@@ -1,8 +1,6 @@
 use crate::{
     system::{
-        system_component::ISystemComponent,
-        system_components::gameplay_component::IGameplayComponent,
-        system_game_states::state_time::TimeState,
+        system_component::ISystemComponent, system_components::gameplay_component::IGameplayComponent, system_game_states::state_time::TimeState,
     },
     Collections::game_state::GameState,
     Collections::vector3::Vector3,
@@ -64,7 +62,21 @@ where
                 .init(gs, &mut self.scene, &mut self.event_queue, &mut self.asset_loader);
         }
     }
-    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn debug(&mut self, game_state: &mut GameState) {
+        for s in self.ecs_systems_eventless.iter_mut() {
+            if !s.1 {
+                continue;
+            }
+            s.0.as_mut().debug(game_state, &mut self.scene);
+        }
+        for s in self.ecs_systems.iter_mut() {
+            if !s.1 {
+                continue;
+            }
+            s.0.as_mut().debug(game_state, &mut self.scene);
+        }
+    }
+    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
         // get time state
         let t = game_state.get_value2::<TimeState>();
 
@@ -160,6 +172,7 @@ where
 }
 
 pub trait ECSSystemEventless {
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World) {}
     fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool;
     fn enable(&mut self, game_state: &mut GameState, world: &mut World) {}
     fn disable(&mut self, game_state: &mut GameState, world: &mut World) {}
@@ -172,6 +185,7 @@ pub trait ECSSystem<T>
 where
     T: Clone,
 {
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World) {}
     fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) -> bool;
     fn enable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
     fn disable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
@@ -185,11 +199,13 @@ where
 use std::collections::VecDeque;
 #[derive(Clone)]
 pub enum EngineCommands {
+    Tick,
     Exit,
     Resize(Vector3),
     Fullscreen(bool),
     Resizable(bool),
     Cursor(bool),
+    SetDebugMode(bool),
 }
 #[derive(Clone)]
 pub struct EventQueue<T>

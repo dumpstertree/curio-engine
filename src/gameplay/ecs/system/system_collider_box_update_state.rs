@@ -5,12 +5,7 @@ use crate::{
         component_transform::Transform,
     },
     system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
-    Collections::{
-        game_state::GameState,
-        gizmo::Gizmo,
-        vector3::Vector3,
-        Color,
-    },
+    Collections::{game_state::GameState, gizmo::Gizmo, vector3::Vector3, Color},
 };
 use hecs::World;
 
@@ -41,21 +36,19 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
         }
     }
     fn did_tick(&mut self, game_state: &mut GameState, world: &mut World) {
-        let mut gizmo = game_state.get_value2::<GizmosState>();
-
-        let mut state = game_state.get_value2::<StateCollider>();
-        for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
-            state
-                .colliders
-                .push(ColliderSnapshot::new(collider.guid, transform.get_matrix(), collider.get_shape()));
-            gizmo
-                .draw_calls
-                .push(Gizmo::cube(transform.get_matrix(), Vector3::new(3.0, 1.0, 1.0), Color::Color::get_red()));
-            gizmo
-                .draw_calls
-                .push(Gizmo::sphere(transform.get_matrix(), 7.0, Color::Color::get_green()));
-        }
-        game_state.set_value2::<StateCollider>(state);
-        game_state.set_value2::<GizmosState>(gizmo);
+        game_state.edit::<StateCollider>(|x| {
+            for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
+                x.colliders
+                    .push(ColliderSnapshot::new(collider.guid, transform.get_matrix(), collider.get_shape()));
+            }
+        });
+    }
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World) {
+        game_state.edit::<GizmosState>(|x| {
+            for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
+                x.draw_calls
+                    .push(Gizmo::cube(transform.get_matrix(), collider.size, Color::Color::get_green()));
+            }
+        });
     }
 }

@@ -11,6 +11,19 @@ impl std::fmt::Display for Color {
     }
 }
 impl Color {
+    pub fn r_0255(&self) -> u8 {
+        (self.r * 255.0).round() as u8
+    }
+    pub fn g_0255(&self) -> u8 {
+        (self.g * 255.0).round() as u8
+    }
+    pub fn b_0255(&self) -> u8 {
+        (self.b * 255.0).round() as u8
+    }
+    pub fn a_0255(&self) -> u8 {
+        (self.a * 255.0).round() as u8
+    }
+
     pub fn new(r: f32, g: f32, b: f32, a: f32) -> Color {
         Color { r: r, g: g, b: b, a: a }
     }

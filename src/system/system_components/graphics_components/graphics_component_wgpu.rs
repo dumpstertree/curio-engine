@@ -1,9 +1,13 @@
+use crate::egui_app_state::AppState;
+use crate::egui_tools::EguiRenderer;
+use crate::random::Random;
 use crate::system::system_component::ISystemComponent;
 use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
 use crate::system::system_components::graphics_component::IGraphicsComponent;
 use crate::system::system_game_states::state_camera::{CameraState, Projection};
 use crate::system::system_game_states::state_draw::DrawCallsState;
 use crate::system::system_game_states::state_gizmos::GizmosState;
+use crate::system::system_game_states::state_gui::GUIState;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::camera_uniform::CameraUniform;
 use crate::Collections::game_state::GameState;
@@ -14,27 +18,27 @@ use crate::Collections::GraphicsBufferCache::Graphics_buffer_cache;
 use crate::Collections::{DrawCall::DrawCall, Mesh::Vertex};
 use crate::IO::texture_asset::Texture_asset;
 use crate::IO::AssetLoader::AssetLoader;
-use std::iter;
-use wgpu::{
+
+use egui::{Button, Color32, FontDefinitions, FontId, Frame, Label, Pos2, Style, TextStyle, Ui, Vec2};
+use egui_wgpu::wgpu::{
+    self, BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, Surface, SurfaceConfiguration, TextureFormat,
+};
+use egui_wgpu::wgpu::{
     util::DeviceExt, Buffer, CommandEncoder, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, ShaderModule,
     SurfaceTexture, TextureView,
 };
-use wgpu::{BindGroup, BindGroupLayout, Device, RenderPass, Surface, SurfaceConfiguration};
+use egui_wgpu::ScreenDescriptor;
+use std::iter;
 
 pub struct WGPUGraphicsComponent {
     buffer_cache: Graphics_buffer_cache,
     camera_rendereing: CameraRenderingComponents,
     projection: Projection,
+    egui_renderer: EguiRenderer,
 }
 
 impl WGPUGraphicsComponent {
-    fn draw_gizmos(
-        &mut self,
-        draw_call: &Gizmo,
-        config: &wgpu::wgt::SurfaceConfiguration<Vec<wgpu::TextureFormat>>,
-        device: &Device,
-        render_pass: &mut RenderPass,
-    ) {
+    fn draw_gizmos(&mut self, draw_call: &Gizmo, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass) {
         // iterate over each mesh in the draw call
         //
         let mesh = &draw_call.mesh;
@@ -42,7 +46,7 @@ impl WGPUGraphicsComponent {
 
         material.set_color_with_label(draw_call.color.clone(), "color");
         // create material bind group
-        // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
+        // let diffuse_bind_group = egui_wgpu::wgpuGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
         let diffuse_bind_group = material.get_texture_binding_group(device);
         let color_bind_group = material.get_color_binding_group(device);
         // set render pipeline
@@ -58,10 +62,10 @@ impl WGPUGraphicsComponent {
         render_pass.set_pipeline(&rp);
 
         // create the instance buffer
-        let n_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let n_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Instance Buffer"),
             contents: bytemuck::cast_slice(&draw_call.matrix),
-            usage: wgpu::BufferUsages::VERTEX,
+            usage: egui_wgpu::wgpu::BufferUsages::VERTEX,
         });
         // fetch the cached buffers for the mesh
         // let buffers: (&Buffer, &Buffer) = self.buffer_cache.get_vertex_buffer(device, mesh);
@@ -70,7 +74,7 @@ impl WGPUGraphicsComponent {
         // set buffers
         render_pass.set_vertex_buffer(0, buffers.0.slice(..));
         render_pass.set_vertex_buffer(1, n_buffer.slice(..));
-        render_pass.set_index_buffer(buffers.1.slice(..), wgpu::IndexFormat::Uint32);
+        render_pass.set_index_buffer(buffers.1.slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
 
         // set bind groups
         render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
@@ -80,20 +84,14 @@ impl WGPUGraphicsComponent {
         // draw
         render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
     }
-    fn draw_draw_call(
-        &mut self,
-        draw_call: &DrawCall,
-        config: &wgpu::wgt::SurfaceConfiguration<Vec<wgpu::TextureFormat>>,
-        device: &Device,
-        render_pass: &mut RenderPass,
-    ) {
+    fn draw_draw_call(&mut self, draw_call: &DrawCall, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass) {
         // iterate over each mesh in the draw call
         for i in 0..draw_call.mesh.len() {
             //
             let mesh = &draw_call.mesh[i];
             let material = &draw_call.materials[i];
             // create material bind group
-            // let diffuse_bind_group = WGPUGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
+            // let diffuse_bind_group = egui_wgpu::wgpuGraphicsComponent::get_diffuse_binding(&state, &material.textures[..]);
             let diffuse_bind_group = material.get_texture_binding_group(device);
             let color_bind_group = material.get_color_binding_group(device);
             // set render pipeline
@@ -109,10 +107,10 @@ impl WGPUGraphicsComponent {
             render_pass.set_pipeline(&rp);
 
             // create the instance buffer
-            let n_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            let n_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
                 label: Some("Instance Buffer"),
                 contents: bytemuck::cast_slice(&draw_call.matrix),
-                usage: wgpu::BufferUsages::VERTEX,
+                usage: egui_wgpu::wgpu::BufferUsages::VERTEX,
             });
             // fetch the cached buffers for the mesh
             // let buffers: (&Buffer, &Buffer) = self.buffer_cache.get_vertex_buffer(device, mesh);
@@ -121,7 +119,7 @@ impl WGPUGraphicsComponent {
             // set buffers
             render_pass.set_vertex_buffer(0, buffers.0.slice(..));
             render_pass.set_vertex_buffer(1, n_buffer.slice(..));
-            render_pass.set_index_buffer(buffers.1.slice(..), wgpu::IndexFormat::Uint32);
+            render_pass.set_index_buffer(buffers.1.slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
 
             // set bind groups
             render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
@@ -139,8 +137,14 @@ impl ISystemComponent for WGPUGraphicsComponent {
     }
     fn init(&mut self, gs: &mut GameState) {
         self.camera_rendereing = CameraRenderingComponents::new(&self.projection);
+
+        let device = SystemGPU::get_device();
+        let window = &SystemGPU::get_window();
+        let size = window.inner_size();
+
+        // self.egui_renderpass = RenderPass::new(&device, surface_format, 1);
     }
-    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
         let surface = &SystemGPU::get_surface();
         let device = &SystemGPU::get_device();
         let depth = &SystemGPU::get_depth_texture();
@@ -148,21 +152,27 @@ impl ISystemComponent for WGPUGraphicsComponent {
         let queue = &SystemGPU::get_queue();
         let config = &&SystemGPU::get_config();
 
+        let mut scale_factor: f64 = 1.0;
+
+        self.egui_renderer.begin_frame(window);
         // get gamestate data
         let state_camera = game_state.get_value2::<CameraState>();
         let state_draws = game_state.get_value2::<DrawCallsState>();
         let state_gizmos = game_state.get_value2::<GizmosState>();
 
-        // redraw on window
-        window.request_redraw();
+        let state_gui = &game_state.get_value2::<GUIState>();
+
+        // // redraw on window
+        // window.request_redraw();
+
         //
         let output = WGPUGraphicsComponent::get_output_texture(surface);
         let mut encoder = WGPUGraphicsComponent::get_encoder(device);
         {
             let view = output
                 .texture
-                .create_view(&wgpu::TextureViewDescriptor::default());
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                .create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
+            let mut render_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[WGPUGraphicsComponent::get_color_atatchment(&view)],
                 depth_stencil_attachment: WGPUGraphicsComponent::get_depth_attatchment(depth),
@@ -193,18 +203,65 @@ impl ISystemComponent for WGPUGraphicsComponent {
             for gizmo in gizmos_calls {
                 self.draw_gizmos(gizmo, config, device, &mut render_pass);
             }
-
-            game_state.set_value2::<GizmosState>(GizmosState::new());
-            game_state.set_value2::<DrawCallsState>(DrawCallsState::new());
         }
+
+        for gui_window in &state_gui.guis {
+            let pos = gui_window.position;
+            let mut x = |ui: &mut Ui| {
+                for element in &gui_window.children {
+                    match element.gui_type() {
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Rectangle => todo!(),
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Ellipse => todo!(),
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Label(label_desc) => {
+                            for (_text_style, font_id) in ui.style_mut().text_styles.iter_mut() {
+                                font_id.size = label_desc.font_size // whatever size you want here
+                            }
+                            ui.colored_label(
+                                Color32::from_rgb(label_desc.color.r_0255(), label_desc.color.g_0255(), label_desc.color.b_0255()),
+                                label_desc.contents,
+                            );
+                        }
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Button => todo!(),
+                    };
+                }
+            };
+            egui::Window::new(gui_window.position.x.to_string())
+                .frame(Frame::new().fill(Color32::TRANSPARENT))
+                .title_bar(false)
+                .current_pos(Pos2::new(pos.x, pos.y))
+                .show(self.egui_renderer.context(), &mut x);
+        }
+
+        let surface_view = output
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let screen_descriptor = ScreenDescriptor {
+            size_in_pixels: [config.width, config.height],
+            pixels_per_point: window.as_ref().scale_factor() as f32 * scale_factor as f32,
+        };
+
+        self.egui_renderer
+            .end_frame_and_draw(device, queue, &mut encoder, window, &surface_view, screen_descriptor);
 
         // submit commands for execution
         queue.submit(iter::once(encoder.finish()));
         // present the completed texture
         output.present();
 
+        // clear state
+        game_state.edit::<GizmosState>(|x| {
+            x.draw_calls.clear();
+        });
+        game_state.edit::<DrawCallsState>(|x| {
+            x.draw_calls.clear();
+        });
+        game_state.edit::<GUIState>(|x| {
+            x.guis.clear();
+        });
+
+        // return no changes
         return &[];
-        // return a success
     }
 }
 
@@ -212,10 +269,14 @@ impl IGraphicsComponent for WGPUGraphicsComponent {}
 impl WGPUGraphicsComponent {
     pub fn new() -> WGPUGraphicsComponent {
         let p = Projection::new(1920, 1080, cgmath::Deg(45.0), 0.1, 100.0);
+        let c = SystemGPU::get_config();
+        let w = &(*SystemGPU::get_window());
+        let d = &(*SystemGPU::get_device());
         WGPUGraphicsComponent {
             buffer_cache: Graphics_buffer_cache::new(),
             camera_rendereing: CameraRenderingComponents::new(&p),
             projection: p,
+            egui_renderer: EguiRenderer::new(d, c.format, None, 1, w),
         }
     }
 
@@ -228,53 +289,57 @@ impl WGPUGraphicsComponent {
         color_bind_group_layout: &BindGroupLayout,
         wireframe: bool,
     ) -> RenderPipeline {
-        let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let render_pipeline_layout = device.create_pipeline_layout(&egui_wgpu::wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[&texture_bind_group_layout, &camera_bind, &color_bind_group_layout],
             push_constant_ranges: &[],
         });
 
-        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        device.create_render_pipeline(&egui_wgpu::wgpu::RenderPipelineDescriptor {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
-            vertex: wgpu::VertexState {
+            vertex: egui_wgpu::wgpu::VertexState {
                 module: &shader,
                 entry_point: Some("vs_main"),
                 // buffers: &[super::model::ModelVertex::desc(), InstanceRaw::desc()],
                 buffers: &[Vertex::desc(), Matrix4x4::desc()],
                 compilation_options: Default::default(),
             },
-            fragment: Some(wgpu::FragmentState {
+            fragment: Some(FragmentState {
                 module: &shader,
                 entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState {
+                targets: &[Some(ColorTargetState {
                     format: config.format,
-                    blend: Some(wgpu::BlendState {
-                        color: wgpu::BlendComponent::REPLACE,
-                        alpha: wgpu::BlendComponent::REPLACE,
+                    blend: Some(BlendState {
+                        color: egui_wgpu::wgpu::BlendComponent::REPLACE,
+                        alpha: egui_wgpu::wgpu::BlendComponent::REPLACE,
                     }),
-                    write_mask: wgpu::ColorWrites::ALL,
+                    write_mask: egui_wgpu::wgpu::ColorWrites::ALL,
                 })],
                 compilation_options: Default::default(),
             }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
+            primitive: egui_wgpu::wgpu::PrimitiveState {
+                topology: egui_wgpu::wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Back),
-                polygon_mode: if wireframe { wgpu::PolygonMode::Line } else { wgpu::PolygonMode::Fill },
+                front_face: egui_wgpu::wgpu::FrontFace::Ccw,
+                cull_mode: Some(egui_wgpu::wgpu::Face::Back),
+                polygon_mode: if wireframe {
+                    egui_wgpu::wgpu::PolygonMode::Line
+                } else {
+                    egui_wgpu::wgpu::PolygonMode::Fill
+                },
                 unclipped_depth: false,
                 conservative: false,
             },
-            depth_stencil: Some(wgpu::DepthStencilState {
+            depth_stencil: Some(egui_wgpu::wgpu::DepthStencilState {
                 format: Texture_asset::DEPTH_FORMAT,
                 depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::Less,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
+                depth_compare: egui_wgpu::wgpu::CompareFunction::Less,
+                stencil: egui_wgpu::wgpu::StencilState::default(),
+                bias: egui_wgpu::wgpu::DepthBiasState::default(),
             }),
             // depth_stencil: None,
-            multisample: wgpu::MultisampleState {
+            multisample: egui_wgpu::wgpu::MultisampleState {
                 count: 1,
                 mask: !0,
                 alpha_to_coverage_enabled: false,
@@ -291,31 +356,31 @@ impl WGPUGraphicsComponent {
         surface.get_current_texture().unwrap()
     }
     fn get_encoder(device: &Device) -> CommandEncoder {
-        device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor {
             label: Some("Render Encoder"),
         })
     }
     fn get_color_atatchment<'a>(view: &'a TextureView) -> Option<RenderPassColorAttachment<'a>> {
-        Some(wgpu::RenderPassColorAttachment {
+        Some(egui_wgpu::wgpu::RenderPassColorAttachment {
             view: view,
             resolve_target: None,
-            ops: wgpu::Operations {
-                load: wgpu::LoadOp::Clear(wgpu::Color {
+            ops: egui_wgpu::wgpu::Operations {
+                load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color {
                     r: 0.1,
                     g: 0.2,
                     b: 0.3,
                     a: 1.0,
                 }),
-                store: wgpu::StoreOp::Store,
+                store: egui_wgpu::wgpu::StoreOp::Store,
             },
         })
     }
     fn get_depth_attatchment<'a>(depth: &'a Texture_asset) -> Option<RenderPassDepthStencilAttachment<'a>> {
-        Some(wgpu::RenderPassDepthStencilAttachment {
+        Some(egui_wgpu::wgpu::RenderPassDepthStencilAttachment {
             view: &depth.view,
-            depth_ops: Some(wgpu::Operations {
-                load: wgpu::LoadOp::Clear(1.0),
-                store: wgpu::StoreOp::Store,
+            depth_ops: Some(egui_wgpu::wgpu::Operations {
+                load: egui_wgpu::wgpu::LoadOp::Clear(1.0),
+                store: egui_wgpu::wgpu::StoreOp::Store,
             }),
             stencil_ops: None,
         })
@@ -350,18 +415,18 @@ impl CameraRenderingComponents {
         let mut camera_uniform: CameraUniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera, projection);
 
-        let camera_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let camera_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Camera Buffer"),
             contents: bytemuck::cast_slice(&[camera_uniform]),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            usage: egui_wgpu::wgpu::BufferUsages::UNIFORM | egui_wgpu::wgpu::BufferUsages::COPY_DST,
         });
 
-        let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        let camera_bind_group_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
+                visibility: egui_wgpu::wgpu::ShaderStages::VERTEX,
+                ty: egui_wgpu::wgpu::BindingType::Buffer {
+                    ty: egui_wgpu::wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
                     min_binding_size: None,
                 },
@@ -370,7 +435,7 @@ impl CameraRenderingComponents {
             label: Some("camera_bind_group_layout"),
         });
 
-        let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let camera_bind_group = device.create_bind_group(&egui_wgpu::wgpu::BindGroupDescriptor {
             layout: &camera_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,

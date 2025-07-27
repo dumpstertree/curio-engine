@@ -26,12 +26,13 @@ opt-level = 0
 # window
 winit = { version = "0.30", features = ["android-native-activity"] }
 # rendering
-wgpu = "25.0"
+# egui_wgpu::wgpu = "25.0"
 # gameplay
 hecs = "0.10.5"
 # gui
 egui = "0.31.1"
-eframe = "0.31.1"
+egui-winit = "0.31.1"
+egui-wgpu = { version = "0.31.1", features = ["winit"] }
 # physics
 rapier3d = "0.25.1"
 # mesh

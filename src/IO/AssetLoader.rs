@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 
-use wgpu::Device;
-use wgpu::ShaderModule;
+use egui_wgpu::wgpu::Device;
+use egui_wgpu::wgpu::ShaderModule;
 
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::material::Material;
@@ -19,7 +19,7 @@ pub struct AssetLoader {
                                                     // path_texture: String,
                                                     // path_model: String,
                                                     // device: &'a Device,
-                                                    // queue: &'a wgpu::Queue,
+                                                    // queue: &'a egui_wgpu::wgpu::Queue,
                                                     // state: &'a State,
 }
 // impl ISystemComponent for AssetLoader {
@@ -30,7 +30,7 @@ impl AssetLoader {
     pub fn new() -> AssetLoader {
         AssetLoader { asset_cache: HashMap::new() }
     }
-    // pub fn new<'a>(shader_cache: ShaderCache<'a>, device: &'a Device, queue: &'a wgpu::Queue) -> AssetLoader<'a> {
+    // pub fn new<'a>(shader_cache: ShaderCache<'a>, device: &'a Device, queue: &'a egui_wgpu::wgpu::Queue) -> AssetLoader<'a> {
     //     AssetLoader {
     //         shader_cache: shader_cache,
     //         path_texture: String::from("Assets/Texture"),
@@ -106,9 +106,9 @@ impl AssetLoader {
 
     pub fn load_shader_module(device: &Device, path: &str) -> ShaderModule {
         let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-        device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
             label: Some(path),
-            source: wgpu::ShaderSource::Wgsl(contents.into()),
+            source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
         })
     }
     pub fn load_shader_desc(path: &str) -> ShaderDesc {
@@ -314,7 +314,7 @@ impl AssetLoader {
 //         // load shader using saved device
 //         let shader = self.device.box_device.create_shader_module(wgpu::ShaderModuleDescriptor {
 //             label: Some("Shader"),
-//             source: wgpu::ShaderSource::Wgsl(include_str!("../shader.wgsl").into()),
+//             source: egui_wgpu::wgpu::ShaderSource::Wgsl(include_str!("../shader.wgsl").into()),
 //         });
 
 //         shader

@@ -30,29 +30,28 @@ impl ISystemComponent for InputComponentDefault {
     fn init(&mut self, gs: &mut GameState) {
         println!("init input");
     }
-    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
         let time = game_state.get_value2::<TimeState>();
         if !time.should_update {
             return &[];
         }
 
-        let mut input = game_state.get_value2::<InputState>();
-        for i in self.input_state.iter() {
-            let key = i.0;
-            let key_state = i.1;
-            match key {
-                KeyCode::KeyW => input.w.update(key_state),
-                KeyCode::KeyA => input.a.update(key_state),
-                KeyCode::KeyS => input.s.update(key_state),
-                KeyCode::KeyD => input.d.update(key_state),
-                KeyCode::Tab => input.tab.update(key_state),
-                KeyCode::KeyP => input.debug.update(key_state),
-                KeyCode::Escape => input.esc.update(key_state),
-                _ => {}
+        game_state.edit::<InputState>(|x| {
+            for i in self.input_state.iter() {
+                let key = i.0;
+                let key_state = i.1;
+                match key {
+                    KeyCode::KeyW => x.w.update(key_state),
+                    KeyCode::KeyA => x.a.update(key_state),
+                    KeyCode::KeyS => x.s.update(key_state),
+                    KeyCode::KeyD => x.d.update(key_state),
+                    KeyCode::Tab => x.tab.update(key_state),
+                    KeyCode::KeyP => x.debug.update(key_state),
+                    KeyCode::Escape => x.esc.update(key_state),
+                    _ => {}
+                }
             }
-        }
-
-        game_state.set_value2::<InputState>(input);
+        });
 
         return &[];
     }

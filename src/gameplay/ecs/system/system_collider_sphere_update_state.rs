@@ -4,8 +4,8 @@ use crate::{
         component_colliders::component_collider_sphere::ComponentColliderSphere,
         component_transform::Transform,
     },
-    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision},
-    Collections::game_state::GameState,
+    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
+    Collections::{game_state::GameState, gizmo::Gizmo, Color::Color},
 };
 use hecs::World;
 
@@ -37,15 +37,25 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
         }
     }
     fn did_tick(&mut self, game_state: &mut GameState, world: &mut World) {
-        let mut state = game_state.get_value2::<StateCollider>();
-        for (_, (collider, transform)) in world
-            .query::<(&ComponentColliderSphere, &Transform)>()
-            .iter()
-        {
-            state
-                .colliders
-                .push(ColliderSnapshot::new(0, transform.get_matrix(), collider.get_shape()));
-        }
-        game_state.set_value2::<StateCollider>(state);
+        game_state.edit::<StateCollider>(|x| {
+            for (_, (collider, transform)) in world
+                .query::<(&ComponentColliderSphere, &Transform)>()
+                .iter()
+            {
+                x.colliders
+                    .push(ColliderSnapshot::new(0, transform.get_matrix(), collider.get_shape()));
+            }
+        });
+    }
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World) {
+        game_state.edit::<GizmosState>(|x| {
+            for (_, (collider, transform)) in world
+                .query::<(&ComponentColliderSphere, &Transform)>()
+                .iter()
+            {
+                x.draw_calls
+                    .push(Gizmo::sphere(transform.get_matrix(), collider.diameter, Color::get_green()));
+            }
+        });
     }
 }

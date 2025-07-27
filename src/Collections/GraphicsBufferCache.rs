@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use wgpu::{Buffer, Device};
+use egui_wgpu::wgpu::{Buffer, Device};
 
 use crate::Collections::Mesh::Mesh;
 

@@ -1,5 +1,5 @@
+use egui_wgpu::wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, ShaderModule};
 use serde::{Deserialize, Serialize};
-use wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, ShaderModule};
 
 use crate::{
     system_adapters::adapter_system_gpu::SystemGPU,
@@ -65,10 +65,10 @@ impl Material {
             };
 
             let device = SystemGPU::get_device();
-            let color_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            let color_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
                 label: Some("Color Buffer"),
                 contents: bytemuck::cast_slice(&[color_uniform::new(color.r, color.g, color.b, color.a)]),
-                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                usage: egui_wgpu::wgpu::BufferUsages::UNIFORM | egui_wgpu::wgpu::BufferUsages::COPY_DST,
             });
             self.colors[i] = color;
             self.colors_uniform[i] = Some(color_buffer);
@@ -93,13 +93,13 @@ impl Material {
     pub fn get_color_binding_group<'a>(&self, device: &Device) -> (BindGroup, BindGroupLayout) {
         // create entries
         let mut i = 0;
-        let mut entries: Vec<wgpu::BindGroupEntry> = Vec::new();
+        let mut entries: Vec<egui_wgpu::wgpu::BindGroupEntry> = Vec::new();
 
         for t in &self.colors_uniform {
             let Some(buffer) = t else {
                 continue;
             };
-            entries.push(wgpu::BindGroupEntry {
+            entries.push(egui_wgpu::wgpu::BindGroupEntry {
                 binding: (i),
                 resource: buffer.as_entire_binding(),
             });
@@ -108,13 +108,13 @@ impl Material {
 
         // create layout
         let mut i = 0;
-        let mut layouts: Vec<wgpu::BindGroupLayoutEntry> = Vec::new();
+        let mut layouts: Vec<egui_wgpu::wgpu::BindGroupLayoutEntry> = Vec::new();
         for t in &self.colors {
-            layouts.push(wgpu::BindGroupLayoutEntry {
+            layouts.push(egui_wgpu::wgpu::BindGroupLayoutEntry {
                 binding: i,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
+                visibility: egui_wgpu::wgpu::ShaderStages::FRAGMENT,
+                ty: egui_wgpu::wgpu::BindingType::Buffer {
+                    ty: egui_wgpu::wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,
                     min_binding_size: None,
                 },
@@ -123,12 +123,12 @@ impl Material {
             i = i + 1;
         }
 
-        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        let texture_bind_group_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor {
             entries: &layouts[..],
             label: None,
         });
 
-        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let diffuse_bind_group = device.create_bind_group(&egui_wgpu::wgpu::BindGroupDescriptor {
             layout: &texture_bind_group_layout,
             entries: &entries[..],
             label: None,
@@ -139,7 +139,7 @@ impl Material {
     pub fn get_texture_binding_group<'a>(&self, device: &Device) -> (BindGroup, BindGroupLayout) {
         // create entries
         let mut i = 0;
-        let mut entries: Vec<wgpu::BindGroupEntry> = Vec::new();
+        let mut entries: Vec<egui_wgpu::wgpu::BindGroupEntry> = Vec::new();
         for t in &self.textures {
             let texture: &Texture_asset;
             match t {
@@ -151,46 +151,46 @@ impl Material {
                 }
             }
 
-            entries.push(wgpu::BindGroupEntry {
+            entries.push(egui_wgpu::wgpu::BindGroupEntry {
                 binding: (i * 2),
-                resource: wgpu::BindingResource::TextureView(&texture.view),
+                resource: egui_wgpu::wgpu::BindingResource::TextureView(&texture.view),
             });
-            entries.push(wgpu::BindGroupEntry {
+            entries.push(egui_wgpu::wgpu::BindGroupEntry {
                 binding: (i * 2) + 1,
-                resource: wgpu::BindingResource::Sampler(&texture.sampler),
+                resource: egui_wgpu::wgpu::BindingResource::Sampler(&texture.sampler),
             });
             i = i + 1;
         }
 
         // create layout
         let mut i = 0;
-        let mut layouts: Vec<wgpu::BindGroupLayoutEntry> = Vec::new();
+        let mut layouts: Vec<egui_wgpu::wgpu::BindGroupLayoutEntry> = Vec::new();
         for t in &self.textures {
-            layouts.push(wgpu::BindGroupLayoutEntry {
+            layouts.push(egui_wgpu::wgpu::BindGroupLayoutEntry {
                 binding: (i * 2),
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Texture {
+                visibility: egui_wgpu::wgpu::ShaderStages::FRAGMENT,
+                ty: egui_wgpu::wgpu::BindingType::Texture {
                     multisampled: false,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: egui_wgpu::wgpu::TextureViewDimension::D2,
+                    sample_type: egui_wgpu::wgpu::TextureSampleType::Float { filterable: true },
                 },
                 count: None,
             });
-            layouts.push(wgpu::BindGroupLayoutEntry {
+            layouts.push(egui_wgpu::wgpu::BindGroupLayoutEntry {
                 binding: (i * 2) + 1,
-                visibility: wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                visibility: egui_wgpu::wgpu::ShaderStages::FRAGMENT,
+                ty: egui_wgpu::wgpu::BindingType::Sampler(egui_wgpu::wgpu::SamplerBindingType::Filtering),
                 count: None,
             });
             i = i + 1;
         }
 
-        let texture_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+        let texture_bind_group_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor {
             entries: &layouts[..],
             label: None,
         });
 
-        let diffuse_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let diffuse_bind_group = device.create_bind_group(&egui_wgpu::wgpu::BindGroupDescriptor {
             layout: &texture_bind_group_layout,
             entries: &entries[..],
             label: None,

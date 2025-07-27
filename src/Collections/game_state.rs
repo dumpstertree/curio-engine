@@ -1,4 +1,5 @@
 use std::hash::Hash;
+use std::sync::Arc;
 use std::{any::Any, borrow::Borrow, collections::HashMap};
 
 use crate::system::system_game_state::IState;
@@ -13,7 +14,23 @@ impl GameState {
         }
     }
 
-    pub fn set_value2<T: 'static>(&mut self, val: T)
+    pub fn edit<T: 'static>(&mut self, edit: impl Fn(&mut T))
+    where
+        T: IState<T>,
+        T: Clone,
+    {
+        let id = T::id();
+        let Some(mut val) = self.cache.get_mut::<T, i32>(&id) else {
+            let mut v = self.get_value2::<T>();
+            edit(&mut v);
+            self.set_value2::<T>(v);
+
+            return;
+        };
+
+        edit(&mut val);
+    }
+    fn set_value2<T: 'static>(&mut self, val: T)
     where
         T: IState<T>,
         T: Clone,
@@ -27,7 +44,9 @@ impl GameState {
         T: Clone,
     {
         let id = T::id();
-        let Some(val) = self.cache.get::<T, i32>(&id) else { return T::default() };
+        let Some(val) = self.cache.get::<T, i32>(&id) else {
+            return T::default();
+        };
 
         return val.clone();
     }
@@ -52,6 +71,12 @@ impl<K: Hash + Eq> AnyMap<K> {
         K: Borrow<Q>,
     {
         self.0.get(key)?.downcast_ref()
+    }
+    pub fn get_mut<T: Any, Q: ?Sized + Hash + Eq>(&mut self, key: &Q) -> Option<&mut T>
+    where
+        K: Borrow<Q>,
+    {
+        self.0.get_mut(key)?.downcast_mut()
     }
 
     pub fn get_result<T: Any, Q: ?Sized + Hash + Eq>(&self, key: &Q) -> Result<&T, GetError>

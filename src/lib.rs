@@ -54,6 +54,7 @@ mod system {
         pub(crate) mod state_collision;
         pub(crate) mod state_draw;
         pub(crate) mod state_gizmos;
+        pub(crate) mod state_gui;
         pub(crate) mod state_input;
         pub(crate) mod state_time;
     }
@@ -107,6 +108,8 @@ mod my_game {
         }
     }
 }
+pub(crate) mod egui_app_state;
+pub(crate) mod egui_tools;
 
 use crate::dumpster_engine::DumpsterEngine;
 use crate::dumpster_engine::WindowLayout;

@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
-use wgpu::{Adapter, Device, Instance, Queue, Surface};
+use egui_wgpu::wgpu::{Adapter, Device, Instance, Queue, Surface, SurfaceConfiguration};
 use winit::event_loop::EventLoop;
 use winit::window::{Fullscreen, Window};
 
+use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
 use crate::IO::texture_asset::Texture_asset;
 pub static mut system_gpu_adapter_instance: SystemGPU = SystemGPU {
     device: None,
@@ -16,7 +17,10 @@ pub static mut system_gpu_adapter_instance: SystemGPU = SystemGPU {
     config: None,
 };
 
-pub enum CustomEvents {}
+// #[derive(Clone)]
+// pub enum CustomEvents {
+//     Tick,
+// }
 pub struct SystemGPU {
     device: Option<Arc<Device>>,
     queue: Option<Arc<Queue>>,
@@ -25,7 +29,7 @@ pub struct SystemGPU {
     adapter: Option<Arc<Adapter>>,
     window: Option<Arc<Window>>,
     depth_texture: Option<Arc<Texture_asset>>,
-    config: Option<Arc<wgpu::SurfaceConfiguration>>,
+    config: Option<Arc<SurfaceConfiguration>>,
 }
 impl SystemGPU {
     pub fn get_device() -> Arc<Device> {
@@ -84,7 +88,7 @@ impl SystemGPU {
             }
         }
     }
-    pub fn get_config() -> Arc<wgpu::SurfaceConfiguration> {
+    pub fn get_config() -> Arc<SurfaceConfiguration> {
         unsafe {
             match &system_gpu_adapter_instance.config {
                 Some(x) => return x.clone(),
@@ -138,17 +142,17 @@ impl SystemGPU {
             window.set_blur(false);
         }
     }
-    pub async fn init() -> EventLoop<CustomEvents> {
+    pub async fn init() -> EventLoop<EngineCommands> {
         let window_attributes = winit::window::Window::default_attributes();
-        let event_loop: EventLoop<CustomEvents> = EventLoop::with_user_event().build().unwrap();
+        let event_loop: EventLoop<EngineCommands> = EventLoop::with_user_event().build().unwrap();
         let window: Arc<Window> = event_loop.create_window(window_attributes).unwrap().into();
 
         // let size = window.inner_size();
 
         // The instance is a handle to our GPU
         // BackendBit::PRIMARY => Vulkan + Metal + DX12 + Browser WebGPU
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::PRIMARY,
+        let instance = egui_wgpu::wgpu::Instance::new(&egui_wgpu::wgpu::InstanceDescriptor {
+            backends: egui_wgpu::wgpu::Backends::PRIMARY,
             ..Default::default()
         });
 
@@ -156,8 +160,8 @@ impl SystemGPU {
 
         //
         let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
+            .request_adapter(&egui_wgpu::wgpu::RequestAdapterOptions {
+                power_preference: egui_wgpu::wgpu::PowerPreference::default(),
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
             })
@@ -166,16 +170,19 @@ impl SystemGPU {
 
         // setup the device
         let (device, queue) = adapter
-            .request_device(&wgpu::DeviceDescriptor {
-                label: None,
-                required_features: wgpu::Features::POLYGON_MODE_LINE,
-                //  features: (optional_features & adapter_features) | required_features,
-                // WebGL doesn't support all of wgpu's features, so if
-                // we're building for the web we'll have to disable some.
-                required_limits: wgpu::Limits::default(),
-                memory_hints: Default::default(),
-                trace: wgpu::Trace::Off, // Trace path
-            })
+            .request_device(
+                &egui_wgpu::wgpu::DeviceDescriptor {
+                    label: None,
+                    required_features: egui_wgpu::wgpu::Features::POLYGON_MODE_LINE,
+                    //  features: (optional_features & adapter_features) | required_features,
+                    // WebGL doesn't support all of egui_wgpu::wgpu's features, so if
+                    // we're building for the web we'll have to disable some.
+                    required_limits: egui_wgpu::wgpu::Limits::default(),
+                    memory_hints: Default::default(),
+                    // trace: egui_wgpu::wgpu::Trace::Off, // Trace path
+                },
+                None,
+            )
             .await
             .unwrap();
         let surface_caps = surface.get_capabilities(&adapter);
@@ -186,8 +193,8 @@ impl SystemGPU {
             .copied()
             .find(|f| f.is_srgb())
             .unwrap_or(surface_caps.formats[0]);
-        let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        let config = egui_wgpu::wgpu::SurfaceConfiguration {
+            usage: egui_wgpu::wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
             width: 1920 as u32,
             height: 1080 as u32,
