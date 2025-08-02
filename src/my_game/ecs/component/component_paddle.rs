@@ -1,7 +1,10 @@
-use std::f32;
+use register_macro::RegisterComponent;
+use serde::Serialize;
 
 use crate::Collections::vector3::Vector3;
+use std::f32;
 
+#[derive(Debug, Clone, Serialize)]
 pub struct ComponentPaddle {
     pub speed: f32,
     pub axis: Vector3,

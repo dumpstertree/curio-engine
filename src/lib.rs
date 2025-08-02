@@ -14,11 +14,13 @@ mod Collections {
     pub(crate) mod game_state;
     pub(crate) mod gizmo;
     pub(crate) mod input_button;
+    pub(crate) mod input_cursor;
     pub(crate) mod key_state;
     pub(crate) mod material;
     pub(crate) mod matrix4x4;
     pub(crate) mod quaternion;
     pub(crate) mod vector3;
+    pub(crate) mod vector4;
 }
 mod random;
 mod Window {
@@ -37,10 +39,16 @@ mod gameplay {
             }
         }
         pub mod system {
+
             pub(crate) mod system_camera_fps;
             pub(crate) mod system_camera_update_state;
             pub(crate) mod system_collider_box_update_state;
             pub(crate) mod system_collider_sphere_update_state;
+            pub(crate) mod system_debug_gui_colliders;
+            pub(crate) mod system_debug_gui_collision;
+            pub(crate) mod system_debug_gui_entity;
+            pub(crate) mod system_debug_gui_screen;
+            pub(crate) mod system_debug_gui_time;
             pub(crate) mod system_renderer_update_state;
         }
     }
@@ -55,6 +63,7 @@ mod system {
         pub(crate) mod state_draw;
         pub(crate) mod state_gizmos;
         pub(crate) mod state_gui;
+        pub(crate) mod state_gui_debug;
         pub(crate) mod state_input;
         pub(crate) mod state_time;
     }
@@ -110,6 +119,10 @@ mod my_game {
 }
 pub(crate) mod egui_app_state;
 pub(crate) mod egui_tools;
+
+use std::any::TypeId;
+use std::collections::HashSet;
+use std::sync::Mutex;
 
 use crate::dumpster_engine::DumpsterEngine;
 use crate::dumpster_engine::WindowLayout;

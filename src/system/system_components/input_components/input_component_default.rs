@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::Collections::game_state::GameState;
+use crate::Collections::vector3::Vector3;
 use winit::keyboard::KeyCode;
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
@@ -14,12 +15,16 @@ use crate::{
 };
 
 pub struct InputComponentDefault {
+    cursor_pos: Vector3,
     input_state: HashMap<KeyCode, bool>,
 }
 
 impl InputComponentDefault {
     pub fn new() -> InputComponentDefault {
-        InputComponentDefault { input_state: HashMap::new() }
+        InputComponentDefault {
+            cursor_pos: Vector3::zero(),
+            input_state: HashMap::new(),
+        }
     }
 }
 impl input_component for InputComponentDefault {}
@@ -31,12 +36,11 @@ impl ISystemComponent for InputComponentDefault {
         println!("init input");
     }
     fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
-        let time = game_state.get_value2::<TimeState>();
-        if !time.should_update {
-            return &[];
-        }
-
         game_state.edit::<InputState>(|x| {
+            // update cursor
+            x.cursor.update(self.cursor_pos);
+
+            // update keys
             for i in self.input_state.iter() {
                 let key = i.0;
                 let key_state = i.1;
@@ -55,7 +59,11 @@ impl ISystemComponent for InputComponentDefault {
 
         return &[];
     }
+    fn input_mouse_position(&mut self, game_state: &mut GameState, position: crate::Collections::vector3::Vector3) {
+        self.cursor_pos = position;
+    }
     fn input_keyboard(&mut self, game_state: &mut GameState, key: KeyCode, key_state: KeyState) {
         self.input_state.insert(key, key_state == KeyState::Down);
     }
+    fn input_mouse(&mut self) {}
 }

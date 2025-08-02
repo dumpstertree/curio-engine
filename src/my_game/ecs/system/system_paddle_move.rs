@@ -30,6 +30,7 @@ impl ECSSystem<GameEvents> for SystemPaddleMove {
             .iter()
         {
             if state_input.a.is_down {
+                println!("a is down");
                 paddle.speed = paddle.speed + Constants::paddle_speed_acceleration() * state_time.delta_time;
             } else if state_input.d.is_down {
                 paddle.speed = paddle.speed - Constants::paddle_speed_acceleration() * state_time.delta_time;
@@ -47,7 +48,6 @@ impl ECSSystem<GameEvents> for SystemPaddleMove {
                 .speed
                 .clamp(-Constants::paddle_speed_terminal(), Constants::paddle_speed_terminal());
 
-            transform.rotation = transform.rotation * Quaternion::from_angle_axis(Vector3::up(), 0.1);
             transform.position = (transform.position - paddle.axis * paddle.speed * state_time.delta_time).clamp_x(-10.0, 10.0);
         }
     }

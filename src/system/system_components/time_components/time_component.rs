@@ -1,8 +1,12 @@
 use std::{alloc::System, sync::Arc, time::Instant};
 
+use winit::keyboard::KeyCode;
+
 use crate::system::system_game_states::state_gui::GuiWindow;
+use crate::system::system_game_states::state_gui_debug::GUIState_Debug;
 // use crate::system_adapters::adapter_system_gpu::CustomEvents;
 use crate::Collections::game_state::GameState;
+use crate::Collections::key_state::KeyState;
 use crate::Collections::vector3::Vector3;
 use crate::Collections::Color::Color;
 use crate::{
@@ -20,6 +24,8 @@ use crate::{
 pub struct TimeComponent {
     instant: Instant,
     fps_average: Vec<f64>,
+    timescale: f32,
+    pause: bool,
 }
 
 impl TimeComponent {
@@ -27,6 +33,8 @@ impl TimeComponent {
         TimeComponent {
             instant: Instant::now(),
             fps_average: Vec::new(),
+            timescale: 1.0,
+            pause: false,
         }
     }
 }
@@ -36,38 +44,11 @@ impl ISystemComponent for TimeComponent {
         1000
     }
     fn init(&mut self, gs: &mut GameState) {}
-    fn debug(&mut self, game_state: &mut GameState) {
-        let state_time = game_state.get_value2::<TimeState>();
 
-        game_state.edit::<GUIState>(|x| {
-            let mut total = 0.0;
-            for fps in &self.fps_average {
-                total = total + fps;
-            }
-            let average_fps = (total / (self.fps_average.len() as f64))
-                .round()
-                .to_string();
-
-            x.guis.push(
-                GuiWindow::new(Vector3::zero(), Vector3::zero())
-                    .add(GuiElement::new_label(
-                        format!("FPS: {} / Target FPS: {}", average_fps, state_time.target_frame_rate),
-                        18.0,
-                        Color::get_black(),
-                    ))
-                    .add(GuiElement::new_label(format!("Time: {}", state_time.time), 18.0, Color::get_black()))
-                    .to_owned(),
-            );
-        });
-    }
-    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
-        let window = SystemGPU::get_window();
-        window.request_redraw();
-
+    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+        println!("tick time staty");
         let cur_time = self.instant.elapsed().as_secs_f64();
-        let nxt_time = game_state.get_value2::<TimeState>().next_update;
 
-        let do_tick = cur_time >= nxt_time;
         let fps = 1.0 / (cur_time - game_state.get_value2::<TimeState>().time);
         self.fps_average.push(fps);
 
@@ -75,22 +56,46 @@ impl ISystemComponent for TimeComponent {
             self.fps_average.remove(0);
         }
 
-        if do_tick {
-            // edit the state
-            game_state.edit::<TimeState>(|x| {
-                x.delta_time = (cur_time - x.time) as f32;
-                x.time = cur_time;
-
-                // update
-                x.next_update = cur_time + (1.0 / x.target_frame_rate) as f64;
-                x.frame_num = x.frame_num + 1;
-
-                x.should_update = do_tick;
-            });
+        let mut total = 0.0;
+        for fps in &self.fps_average {
+            total = total + fps;
         }
+        let average_fps = (total / (self.fps_average.len() as f64)).round();
+
+        // is paused
+        let pause_timescale = if self.pause { 0.0 } else { 1.0 };
+
+        // edit the state
+        game_state.edit::<TimeState>(|x| {
+            x.average_fps = average_fps as i32;
+            x.delta_time = (cur_time - x.time) as f32 * pause_timescale;
+            x.time = cur_time;
+
+            // update
+            x.next_update = cur_time + (1.0 / x.target_frame_rate) as f64;
+            x.frame_num = x.frame_num + 1;
+        });
+
+        &[]
+    }
+    fn debug(&mut self, gs: &mut GameState) {}
+
+    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+        // calculate if we tick this frame
+        let cur_time = self.instant.elapsed().as_secs_f64();
+        let nxt_time = game_state.get_value2::<TimeState>().next_update;
+
+        // if do tick send event
+        let do_tick = cur_time >= nxt_time;
         if do_tick {
-            return &[EngineCommands::Tick];
+            return &[EngineCommands::Redraw, EngineCommands::Tick];
         }
-        return &[];
+        // defualt
+        return &[EngineCommands::Redraw];
+    }
+    fn input_keyboard(&mut self, gs: &mut GameState, key: winit::keyboard::KeyCode, key_state: crate::Collections::key_state::KeyState) {
+        if key == KeyCode::KeyP && key_state == KeyState::Down {
+            self.pause = !self.pause;
+        }
     }
 }

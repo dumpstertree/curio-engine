@@ -15,6 +15,7 @@ use crate::{
             state_colliders::StateCollider,
             state_collision::StateCollision,
             state_gui::{GUIState, GuiElement},
+            state_gui_debug::GUIState_Debug,
         },
     },
     Collections::game_state::GameState,
@@ -65,11 +66,6 @@ impl ISystemComponent for CollisionComponentDefault {
     fn init(&mut self, gs: &mut GameState) {}
 
     fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
-        let state_time = game_state.get_value2::<TimeState>();
-        if !state_time.should_update {
-            return &[];
-        }
-
         // reset
         self.buffer_collider_box_cnt = 0;
 
@@ -170,20 +166,5 @@ impl ISystemComponent for CollisionComponentDefault {
         });
 
         return &[];
-    }
-    fn debug(&mut self, game_state: &mut GameState) {
-        let state_collider = game_state.get_value2::<StateCollider>().colliders.len();
-        game_state.edit::<GUIState>(|x| {
-            x.guis[0].add(GuiElement::new_label(
-                format!("Colliders: {}", state_collider),
-                18.0,
-                crate::Collections::Color::Color::get_black(),
-            ));
-            x.guis[0].add(GuiElement::new_label(
-                format!("Colliders: {}", state_collider),
-                18.0,
-                crate::Collections::Color::Color::get_black(),
-            ));
-        });
     }
 }

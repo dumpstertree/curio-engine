@@ -6,6 +6,7 @@ use crate::{
         game_events::GameEvents,
     },
     my_game::ecs::component::component_ball::ComponentBall,
+    random::Random,
     system::{
         system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
         system_game_states::state_time::TimeState,
@@ -48,12 +49,14 @@ impl ECSSystem<GameEvents> for SystemBallMove {
 
             // front - back
             if transform.position.z < -10.0 {
+                ball.direction = (Random::vector3(true, false, true));
                 ball.speed = 5.0;
                 transform.position = Vector3::zero();
             }
             if transform.position.z > 10.0 {
                 ball.speed = 5.0;
                 transform.position = Vector3::zero();
+                ball.direction = (Random::vector3(true, false, true));
             }
 
             // move

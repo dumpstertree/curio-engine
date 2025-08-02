@@ -47,6 +47,8 @@ serde = { version = "1.0.104", features = ["derive"] }
 bytemuck = { version = "1.16", features = ["derive"] }
 # editor
 inline_tweak = "1.2.2"
+register_macro = { path = "./register_macro" }
+ctor = "0.2"
 
 [dependencies.image]
 version = "0.24"

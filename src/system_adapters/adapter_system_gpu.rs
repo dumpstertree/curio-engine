@@ -1,8 +1,9 @@
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::{Adapter, Device, Instance, Queue, Surface, SurfaceConfiguration};
-use winit::event_loop::EventLoop;
-use winit::window::{Fullscreen, Window};
+use winit::dpi::{LogicalSize, PhysicalSize};
+use winit::event_loop::{ActiveEventLoop, EventLoop};
+use winit::window::{Fullscreen, Window, WindowAttributes};
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
 use crate::IO::texture_asset::Texture_asset;
@@ -105,6 +106,7 @@ impl SystemGPU {
         window.set_resizable(resizable);
     }
     pub fn set_resolution(w: i32, h: i32) {
+        println!("set {}, {}", w, h);
         let config = SystemGPU::get_config();
         let surface = SystemGPU::get_surface();
         let window = SystemGPU::get_window();
@@ -114,15 +116,15 @@ impl SystemGPU {
         config.width = w as u32;
         config.height = h as u32;
 
-        let mut s = window.inner_size();
-        s.width = w as u32;
-        s.height = h as u32;
+        // let mut s = window.inner_size();
+        // s.width = w as u32;
+        // s.height = h as u32;
 
-        println!("size {}, {} ", s.width, s.height);
-
-        window.set_resizable(true);
-        window.set_min_inner_size(Some(s));
-        window.set_max_inner_size(Some(s));
+        // println!("size {}, {} ", s.width, s.height);
+        // window.set_resizable(true);
+        // window.set_min_inner_size(Some(LogicalSize::new(config.width, config.height)));
+        // window.set_max_inner_size(Some(LogicalSize::new(config.width, config.height)));
+        let _ = window.request_inner_size(PhysicalSize::new(config.width, config.height));
 
         surface.configure(&(*device), &config);
 
@@ -143,10 +145,11 @@ impl SystemGPU {
         }
     }
     pub async fn init() -> EventLoop<EngineCommands> {
-        let window_attributes = winit::window::Window::default_attributes();
+        let window_attributes = WindowAttributes::default()
+            .with_inner_size(winit::dpi::LogicalSize::new(1920.0, 1080.0))
+            .with_title("My Window");
         let event_loop: EventLoop<EngineCommands> = EventLoop::with_user_event().build().unwrap();
         let window: Arc<Window> = event_loop.create_window(window_attributes).unwrap().into();
-
         // let size = window.inner_size();
 
         // The instance is a handle to our GPU

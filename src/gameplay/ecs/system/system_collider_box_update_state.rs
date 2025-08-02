@@ -4,7 +4,10 @@ use crate::{
         component_colliders::component_collider_box::ComponentColliderBox,
         component_transform::Transform,
     },
-    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
+    system::{
+        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
+        system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
+    },
     Collections::{game_state::GameState, gizmo::Gizmo, vector3::Vector3, Color},
 };
 use hecs::World;
@@ -43,7 +46,7 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
             }
         });
     }
-    fn debug(&mut self, game_state: &mut GameState, world: &mut World) {
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World, system_event_queue: &mut EventQueue<EngineCommands>) {
         game_state.edit::<GizmosState>(|x| {
             for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
                 x.draw_calls

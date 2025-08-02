@@ -2,14 +2,15 @@ use core::fmt;
 use std::ops::{Add, Div, Mul, Sub};
 
 use cgmath::Point3;
-#[derive(Clone, Copy, PartialEq)]
+use serde::Serialize;
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
 pub struct Vector3 {
     pub x: f32,
     pub y: f32,
     pub z: f32,
 }
 impl Vector3 {
-    pub fn new(x: f32, y: f32, z: f32) -> Vector3 {
+    pub const fn new(x: f32, y: f32, z: f32) -> Vector3 {
         Vector3 { x, y, z }
     }
     pub fn zero() -> Vector3 {
@@ -39,6 +40,7 @@ impl Vector3 {
     pub fn magnitude(self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
+
     pub fn dot(lhs: Vector3, rhs: Vector3) -> f32 {
         lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z
     }

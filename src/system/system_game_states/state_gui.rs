@@ -1,6 +1,9 @@
+use std::{string, sync::Arc};
+
 use crate::{
+    random::Random,
     system::system_game_state::IState,
-    Collections::{vector3::Vector3, Color::Color},
+    Collections::{game_state::GameState, vector3::Vector3, Color::Color},
 };
 
 #[derive(Clone)]
@@ -28,20 +31,23 @@ pub struct LabelDesc {
     pub color: Color,
 }
 #[derive(Clone)]
+pub struct ButtonDesc {
+    pub contents: String,
+    pub on_click: Arc<dyn FnMut()>,
+}
+
+#[derive(Clone)]
 pub enum GuiElementTypes {
     Rectangle,
     Ellipse,
     Label(LabelDesc),
-    Button,
+    Button(ButtonDesc),
 }
 #[derive(Clone)]
 pub struct GuiElement {
-    gui_type: GuiElementTypes,
+    pub gui_type: GuiElementTypes,
 }
 impl GuiElement {
-    pub fn gui_type(&self) -> GuiElementTypes {
-        self.gui_type.clone()
-    }
     pub fn new_rectangle() -> GuiElement {
         GuiElement {
             gui_type: GuiElementTypes::Rectangle,
@@ -61,6 +67,14 @@ impl GuiElement {
             }),
         }
     }
+    pub fn new_button(on_click: Arc<dyn FnMut()>) -> GuiElement {
+        GuiElement {
+            gui_type: GuiElementTypes::Button(ButtonDesc {
+                contents: String::from("button"),
+                on_click: on_click,
+            }),
+        }
+    }
 
     pub fn size_mode_x(&self) {}
     pub fn size_mode_y(&self) {}
@@ -69,16 +83,18 @@ impl GuiElement {
 
 #[derive(Clone)]
 pub struct GuiWindow {
+    pub instance_id: String,
     pub position: Vector3,
     pub anchor: Vector3,
     pub children: Vec<GuiElement>,
 }
 impl GuiWindow {
-    pub fn new(position: Vector3, anchor: Vector3) -> GuiWindow {
+    pub fn new(id: String, position: Vector3, anchor: Vector3) -> GuiWindow {
         GuiWindow {
             position,
             anchor,
             children: Vec::new(),
+            instance_id: id,
         }
     }
     pub fn add(&mut self, element: GuiElement) -> &mut GuiWindow {

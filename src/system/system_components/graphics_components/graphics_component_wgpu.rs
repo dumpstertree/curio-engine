@@ -8,8 +8,9 @@ use crate::system::system_game_states::state_camera::{CameraState, Projection};
 use crate::system::system_game_states::state_draw::DrawCallsState;
 use crate::system::system_game_states::state_gizmos::GizmosState;
 use crate::system::system_game_states::state_gui::GUIState;
+use crate::system::system_game_states::state_gui_debug::GUIState_Debug;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::Collections::camera_uniform::CameraUniform;
+use crate::Collections::camera_uniform::{self, CameraUniform};
 use crate::Collections::game_state::GameState;
 use crate::Collections::gizmo::Gizmo;
 use crate::Collections::material::Material;
@@ -19,7 +20,7 @@ use crate::Collections::{DrawCall::DrawCall, Mesh::Vertex};
 use crate::IO::texture_asset::Texture_asset;
 use crate::IO::AssetLoader::AssetLoader;
 
-use egui::{Button, Color32, FontDefinitions, FontId, Frame, Label, Pos2, Style, TextStyle, Ui, Vec2};
+use egui::{Button, Color32, FontDefinitions, FontId, Frame, Label, Pos2, Sense, Style, TextStyle, Ui, Vec2};
 use egui_wgpu::wgpu::{
     self, BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, Surface, SurfaceConfiguration, TextureFormat,
 };
@@ -29,11 +30,12 @@ use egui_wgpu::wgpu::{
 };
 use egui_wgpu::ScreenDescriptor;
 use std::iter;
+use winit::event::{DeviceId, WindowEvent};
 
 pub struct WGPUGraphicsComponent {
     buffer_cache: Graphics_buffer_cache,
     camera_rendereing: CameraRenderingComponents,
-    projection: Projection,
+    // projection: Projection,
     egui_renderer: EguiRenderer,
 }
 
@@ -136,13 +138,8 @@ impl ISystemComponent for WGPUGraphicsComponent {
         9000
     }
     fn init(&mut self, gs: &mut GameState) {
-        self.camera_rendereing = CameraRenderingComponents::new(&self.projection);
-
-        let device = SystemGPU::get_device();
-        let window = &SystemGPU::get_window();
-        let size = window.inner_size();
-
-        // self.egui_renderpass = RenderPass::new(&device, surface_format, 1);
+        let cs = gs.get_value2::<CameraState>();
+        self.camera_rendereing = CameraRenderingComponents::new(cs.get_uniform());
     }
     fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
         let surface = &SystemGPU::get_surface();
@@ -152,18 +149,12 @@ impl ISystemComponent for WGPUGraphicsComponent {
         let queue = &SystemGPU::get_queue();
         let config = &&SystemGPU::get_config();
 
-        let mut scale_factor: f64 = 1.0;
-
-        self.egui_renderer.begin_frame(window);
         // get gamestate data
         let state_camera = game_state.get_value2::<CameraState>();
         let state_draws = game_state.get_value2::<DrawCallsState>();
         let state_gizmos = game_state.get_value2::<GizmosState>();
-
         let state_gui = &game_state.get_value2::<GUIState>();
-
-        // // redraw on window
-        // window.request_redraw();
+        let state_gui_debug = &game_state.get_value2::<GUIState_Debug>();
 
         //
         let output = WGPUGraphicsComponent::get_output_texture(surface);
@@ -180,17 +171,10 @@ impl ISystemComponent for WGPUGraphicsComponent {
                 timestamp_writes: None,
             });
 
-            // update camera
-            // camera.camera_uniform.update_view_proj(&state_camera);
-
-            self.camera_rendereing
-                .update_view_matrix(state_camera, &self.projection);
-
-            // camera.update_view_matrix();
             queue.write_buffer(
                 &self.camera_rendereing.camera_buffer,
                 0,
-                bytemuck::cast_slice(&[self.camera_rendereing.camera_uniform]),
+                bytemuck::cast_slice(&[state_camera.get_uniform()]),
             );
 
             // get all draw calls from state
@@ -205,11 +189,15 @@ impl ISystemComponent for WGPUGraphicsComponent {
             }
         }
 
+        // start gui
+        self.egui_renderer.begin_frame(window);
+
         for gui_window in &state_gui.guis {
             let pos = gui_window.position;
             let mut x = |ui: &mut Ui| {
+                // let response = ui.allocate_response(ui.available_size(), Sense::click());
                 for element in &gui_window.children {
-                    match element.gui_type() {
+                    match &element.gui_type {
                         crate::system::system_game_states::state_gui::GuiElementTypes::Rectangle => todo!(),
                         crate::system::system_game_states::state_gui::GuiElementTypes::Ellipse => todo!(),
                         crate::system::system_game_states::state_gui::GuiElementTypes::Label(label_desc) => {
@@ -218,17 +206,57 @@ impl ISystemComponent for WGPUGraphicsComponent {
                             }
                             ui.colored_label(
                                 Color32::from_rgb(label_desc.color.r_0255(), label_desc.color.g_0255(), label_desc.color.b_0255()),
-                                label_desc.contents,
+                                &label_desc.contents,
                             );
                         }
-                        crate::system::system_game_states::state_gui::GuiElementTypes::Button => todo!(),
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Button(button_desc) => {
+                            let b = ui.button("text");
+                            if b.clicked() {
+                                (button_desc.on_click)();
+                            }
+                            if b.hovered() {}
+                        }
                     };
                 }
             };
-            egui::Window::new(gui_window.position.x.to_string())
+            egui::Window::new(gui_window.instance_id.clone())
                 .frame(Frame::new().fill(Color32::TRANSPARENT))
                 .title_bar(false)
+                .resizable(false)
                 .current_pos(Pos2::new(pos.x, pos.y))
+                .show(self.egui_renderer.context(), &mut x);
+        }
+
+        {
+            let gui_window = &state_gui_debug.finalize();
+            let mut x = |ui: &mut Ui| {
+                for element in &gui_window.children {
+                    match &element.gui_type {
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Rectangle => todo!(),
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Ellipse => todo!(),
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Label(label_desc) => {
+                            for (_text_style, font_id) in ui.style_mut().text_styles.iter_mut() {
+                                font_id.size = label_desc.font_size // whatever size you want here
+                            }
+                            ui.colored_label(
+                                Color32::from_rgb(label_desc.color.r_0255(), label_desc.color.g_0255(), label_desc.color.b_0255()),
+                                &label_desc.contents,
+                            );
+                        }
+                        crate::system::system_game_states::state_gui::GuiElementTypes::Button(button_desc) => {
+                            let b = ui.button("text");
+                            if b.clicked() {
+                                (button_desc.on_click)();
+                            }
+                            if b.hovered() {}
+                        }
+                    };
+                }
+            };
+            egui::Window::new(gui_window.instance_id.clone())
+                .frame(Frame::new().fill(Color32::TRANSPARENT))
+                .title_bar(false)
+                .current_pos(Pos2::new(gui_window.position.x, gui_window.position.y))
                 .show(self.egui_renderer.context(), &mut x);
         }
 
@@ -238,7 +266,7 @@ impl ISystemComponent for WGPUGraphicsComponent {
 
         let screen_descriptor = ScreenDescriptor {
             size_in_pixels: [config.width, config.height],
-            pixels_per_point: window.as_ref().scale_factor() as f32 * scale_factor as f32,
+            pixels_per_point: 1.0, //window.as_ref().scale_factor() as f32 * scale_factor as f32,
         };
 
         self.egui_renderer
@@ -259,23 +287,30 @@ impl ISystemComponent for WGPUGraphicsComponent {
         game_state.edit::<GUIState>(|x| {
             x.guis.clear();
         });
+        game_state.edit::<GUIState_Debug>(|x| {
+            x.clear();
+        });
 
         // return no changes
         return &[];
+    }
+    fn raw_event(&mut self, event: WindowEvent) {
+        let window = SystemGPU::get_window();
+        self.egui_renderer.handle_input(&window, &event);
     }
 }
 
 impl IGraphicsComponent for WGPUGraphicsComponent {}
 impl WGPUGraphicsComponent {
     pub fn new() -> WGPUGraphicsComponent {
-        let p = Projection::new(1920, 1080, cgmath::Deg(45.0), 0.1, 100.0);
+        // let p = Projection::new(1920, 1080, cgmath::Deg(45.0), 0.1, 100.0);
         let c = SystemGPU::get_config();
         let w = &(*SystemGPU::get_window());
         let d = &(*SystemGPU::get_device());
         WGPUGraphicsComponent {
             buffer_cache: Graphics_buffer_cache::new(),
-            camera_rendereing: CameraRenderingComponents::new(&p),
-            projection: p,
+            camera_rendereing: CameraRenderingComponents::new(CameraUniform::new()),
+            // projection: p,
             egui_renderer: EguiRenderer::new(d, c.format, None, 1, w),
         }
     }
@@ -400,23 +435,24 @@ impl WGPUGraphicsComponent {
 pub struct CameraRenderingComponents {
     camera_bind_group: BindGroup,
     camera_bind_group_layout: BindGroupLayout,
-    camera_uniform: CameraUniform,
+    // camera_uniform: CameraUniform,
     camera_buffer: Buffer,
 }
 impl CameraRenderingComponents {
-    pub fn update_view_matrix(&mut self, state_camera: CameraState, projection: &Projection) {
-        self.camera_uniform
-            .update_view_proj(&state_camera, &projection)
-    }
+    // pub fn update_view_matrix(&mut self, state_camera: CameraState, projection: &Projection) {
+    //     self.camera_uniform
+    //         .update_view_proj(&state_camera, &projection)
+    // }
 
-    pub fn new(projection: &Projection) -> CameraRenderingComponents {
+    pub fn new(camera_uniform: CameraUniform) -> CameraRenderingComponents {
         let device = SystemGPU::get_device();
-        let camera = CameraState::default();
-        let mut camera_uniform: CameraUniform = CameraUniform::new();
-        camera_uniform.update_view_proj(&camera, projection);
+        // let camera = CameraState::default();
+        // let mut camera_uniform: CameraUniform = CameraUniform::new();
+        // camera_uniform.update_view_proj(&camera, projection);
 
         let camera_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Camera Buffer"),
+            // contents: bytemuck::cast_slice(&[camera_uniform]),
             contents: bytemuck::cast_slice(&[camera_uniform]),
             usage: egui_wgpu::wgpu::BufferUsages::UNIFORM | egui_wgpu::wgpu::BufferUsages::COPY_DST,
         });
@@ -447,7 +483,7 @@ impl CameraRenderingComponents {
         CameraRenderingComponents {
             camera_bind_group,
             camera_bind_group_layout,
-            camera_uniform,
+            // camera_uniform,
             camera_buffer,
         }
     }

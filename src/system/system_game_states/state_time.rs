@@ -7,7 +7,7 @@ pub struct TimeState {
     pub time: f64,
     pub frame_num: i64,
     pub delta_time: f32,
-    pub should_update: bool,
+    pub average_fps: i32,
 }
 impl TimeState {
     fn default() -> TimeState {
@@ -17,7 +17,7 @@ impl TimeState {
             time: 0.0,
             frame_num: 0,
             delta_time: 0.0,
-            should_update: false,
+            average_fps: 0,
         }
     }
 }
