@@ -10,10 +10,12 @@ use crate::{
     },
     Collections::{game_state::GameState, gizmo::Gizmo, vector3::Vector3, Color},
 };
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
 
+#[derive(ECSSystem)]
 pub struct SystemColliderSphereUpdateState {}
 impl SystemColliderSphereUpdateState {
     pub fn new() -> Box<SystemColliderSphereUpdateState> {
@@ -53,5 +55,10 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
                     .push(Gizmo::cube(transform.get_matrix(), collider.size, Color::Color::get_green()));
             }
         });
+    }
+}
+impl Default for SystemColliderSphereUpdateState {
+    fn default() -> Self {
+        Self {}
     }
 }

@@ -1,4 +1,4 @@
-use register_macro::RegisterComponent;
+// use register_macro::RegisterComponent;
 use serde::Serialize;
 
 use crate::Collections::vector3::Vector3;

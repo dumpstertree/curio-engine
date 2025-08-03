@@ -1,6 +1,7 @@
 use crate::{
     system::system_game_states::state_gui_debug::GUIState_Debug, system_adapters::adapter_system_gpu::SystemGPU, Collections::game_state::GameState,
 };
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
@@ -12,6 +13,7 @@ use crate::{
     },
 };
 
+#[derive(ECSSystem)]
 pub struct SystemDebugGuiScreen {}
 impl SystemDebugGuiScreen {}
 impl SystemDebugGuiScreen {
@@ -37,5 +39,10 @@ impl ECSSystemEventless for SystemDebugGuiScreen {
                 sys_window.inner_size().height
             ));
         });
+    }
+}
+impl Default for SystemDebugGuiScreen {
+    fn default() -> Self {
+        Self {}
     }
 }

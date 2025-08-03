@@ -1,4 +1,5 @@
 use crate::Collections::game_state::GameState;
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
@@ -8,7 +9,7 @@ use crate::{
     },
     Collections::DrawCall::DrawCall,
 };
-
+#[derive(ECSSystem)]
 pub struct TestECSSystem {}
 impl TestECSSystem {
     pub fn new() -> Box<TestECSSystem> {
@@ -40,5 +41,10 @@ impl ECSSystemEventless for TestECSSystem {
                 }
             }
         });
+    }
+}
+impl Default for TestECSSystem {
+    fn default() -> Self {
+        Self {}
     }
 }

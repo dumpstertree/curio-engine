@@ -3,10 +3,12 @@ use crate::{
     system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gui_debug::GUIState_Debug},
     Collections::game_state::GameState,
 };
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
 
+#[derive(ECSSystem)]
 pub struct SystemDebugGuiCollisions {}
 impl SystemDebugGuiCollisions {}
 impl SystemDebugGuiCollisions {
@@ -25,5 +27,10 @@ impl ECSSystemEventless for SystemDebugGuiCollisions {
         game_state.edit::<GUIState_Debug>(|x| {
             x.append(format!("Collision Count: {}", state_collision.collisions.len()));
         });
+    }
+}
+impl Default for SystemDebugGuiCollisions {
+    fn default() -> Self {
+        Self {}
     }
 }

@@ -43,7 +43,6 @@ mod gameplay {
         pub mod system {
             pub(crate) mod system_debug_camera;
 
-            pub(crate) mod system_camera_fps;
             pub(crate) mod system_camera_update_state;
             pub(crate) mod system_collider_box_update_state;
             pub(crate) mod system_collider_sphere_update_state;

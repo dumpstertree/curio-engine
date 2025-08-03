@@ -1,3 +1,5 @@
+use std::default;
+
 use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
 use crate::system::system_game_states::state_screeen::StateScreen;
 use crate::{
@@ -7,13 +9,16 @@ use crate::{
     },
     Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
 };
+use ecs_system::ECSSystem;
 use hecs::World;
 
+#[derive(ECSSystem)]
+
+// pub struct thing;
 pub struct SystemDebugCamera {
     x: f32,
     y: f32,
 }
-impl SystemDebugCamera {}
 impl SystemDebugCamera {
     pub fn new() -> Box<SystemDebugCamera> {
         Box::new(SystemDebugCamera { x: 0.0, y: 0.0 })
@@ -73,5 +78,13 @@ impl ECSSystemEventless for SystemDebugCamera {
             x.position = x.position + offset;
             x.rotation = rot;
         });
+    }
+}
+impl Default for SystemDebugCamera {
+    fn default() -> Self {
+        Self {
+            x: Default::default(),
+            y: Default::default(),
+        }
     }
 }

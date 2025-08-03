@@ -1,4 +1,5 @@
 use crate::{system::system_game_states::state_debug::StateDebug, Collections::game_state::GameState};
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
@@ -7,6 +8,7 @@ use crate::{
     IO::AssetLoader::AssetLoader,
 };
 
+#[derive(ECSSystem)]
 pub struct PostCameraECSSystem {}
 impl PostCameraECSSystem {}
 impl ECSSystemEventless for PostCameraECSSystem {
@@ -24,5 +26,10 @@ impl ECSSystemEventless for PostCameraECSSystem {
                 x.rotation = t.rotation;
             });
         }
+    }
+}
+impl Default for PostCameraECSSystem {
+    fn default() -> Self {
+        Self {}
     }
 }

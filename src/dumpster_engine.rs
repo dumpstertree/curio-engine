@@ -4,17 +4,6 @@ use hecs::{Entity, World};
 use pollster::FutureExt;
 use serde_json::Value;
 
-use crate::gameplay::ecs::system::system_camera_fps::FPSCameraECSSystem;
-use crate::gameplay::ecs::system::system_camera_update_state::PostCameraECSSystem;
-use crate::gameplay::ecs::system::system_collider_box_update_state::SystemColliderSphereUpdateState;
-use crate::gameplay::ecs::system::system_collider_sphere_update_state::SystemColliderBoxUpdateState;
-use crate::gameplay::ecs::system::system_debug_camera::SystemDebugCamera;
-use crate::gameplay::ecs::system::system_debug_gui_colliders::SystemDebugGuiColliders;
-use crate::gameplay::ecs::system::system_debug_gui_collision::SystemDebugGuiCollisions;
-use crate::gameplay::ecs::system::system_debug_gui_entity::SystemDebugGuiEntity;
-use crate::gameplay::ecs::system::system_debug_gui_screen::SystemDebugGuiScreen;
-use crate::gameplay::ecs::system::system_debug_gui_time::SystemDebugGuiTime;
-use crate::gameplay::ecs::system::system_renderer_update_state::TestECSSystem;
 use crate::system::system_components::collision_component_factory::SystemComponentCollisionFactory;
 use crate::system::system_components::gameplay_component_factory::SystemComponentGameplayFactory;
 use crate::system::system_components::gameplay_components::gameplay_component_default::{ECSSystem, ECSSystemEventless};
@@ -23,11 +12,6 @@ use crate::system::system_components::input_component_factory::SystemComponentIn
 use crate::system::system_components::time_component_factory::SystemComponentTimeFactory;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Window::SystemWindow::SystemWindow;
-
-use std::sync::Mutex;
-
-use serde::Serialize;
-use serde_json::Map;
 
 // static REGISTRY: Mutex<Vec<(TypeId, ComponentInfo)>> = Mutex::new(Vec::new());
 
@@ -78,8 +62,19 @@ where
 //     }
 // }
 
+static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Vec::new();
+
 pub struct DumpsterEngine {}
 impl DumpsterEngine {
+    pub fn register_ecs_system<T>()
+    where
+        T: 'static + ECSSystemEventless + Default,
+    {
+        unsafe {
+            let x: fn() -> Box<dyn ECSSystemEventless> = || return Box::new(T::default());
+            REGISTERED_ECS_SYSTEMS.push(x);
+        }
+    }
     pub fn run<TGameEvents>(window_layout: WindowLayout, ecs_systems: Vec<Box<dyn ECSSystem<TGameEvents>>>)
     where
         TGameEvents: 'static,
@@ -94,21 +89,13 @@ impl DumpsterEngine {
         SystemGPU::set_cursor_visible(window_layout.show_cursor);
 
         // create built in systems
-        let ecs_system_built_in: Vec<Box<dyn ECSSystemEventless>> = vec![
-            Box::new(PostCameraECSSystem {}),
-            Box::new(FPSCameraECSSystem::new()),
-            TestECSSystem::new(),
-            // collision
-            SystemColliderBoxUpdateState::new(),
-            SystemColliderSphereUpdateState::new(),
-            // debug
-            SystemDebugCamera::new(),
-            SystemDebugGuiTime::new(),
-            SystemDebugGuiScreen::new(),
-            SystemDebugGuiColliders::new(),
-            SystemDebugGuiCollisions::new(),
-            SystemDebugGuiEntity::new(),
-        ];
+        let mut ecs_system_built_in: Vec<Box<dyn ECSSystemEventless>> = vec![];
+
+        unsafe {
+            for x in REGISTERED_ECS_SYSTEMS.iter() {
+                ecs_system_built_in.push(x());
+            }
+        }
         // create systems
         let mut system_window = SystemWindow::new(vec![
             SystemComponentTimeFactory::create(),
