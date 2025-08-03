@@ -2,9 +2,10 @@ use crate::egui_app_state::AppState;
 use crate::egui_tools::EguiRenderer;
 use crate::random::Random;
 use crate::system::system_component::ISystemComponent;
-use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
+use crate::system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue};
 use crate::system::system_components::graphics_component::IGraphicsComponent;
 use crate::system::system_game_states::state_camera::{CameraState, Projection};
+use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_draw::DrawCallsState;
 use crate::system::system_game_states::state_gizmos::GizmosState;
 use crate::system::system_game_states::state_gui::GUIState;
@@ -141,7 +142,7 @@ impl ISystemComponent for WGPUGraphicsComponent {
         let cs = gs.get_value2::<CameraState>();
         self.camera_rendereing = CameraRenderingComponents::new(cs.get_uniform());
     }
-    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {
         let surface = &SystemGPU::get_surface();
         let device = &SystemGPU::get_device();
         let depth = &SystemGPU::get_depth_texture();
@@ -210,9 +211,9 @@ impl ISystemComponent for WGPUGraphicsComponent {
                             );
                         }
                         crate::system::system_game_states::state_gui::GuiElementTypes::Button(button_desc) => {
-                            let b = ui.button("text");
+                            let b = ui.button(&button_desc.contents);
                             if b.clicked() {
-                                (button_desc.on_click)();
+                                (button_desc.on_click)(game_state, system_event_queue);
                             }
                             if b.hovered() {}
                         }
@@ -227,8 +228,8 @@ impl ISystemComponent for WGPUGraphicsComponent {
                 .show(self.egui_renderer.context(), &mut x);
         }
 
-        {
-            let gui_window = &state_gui_debug.finalize();
+        if game_state.get_value2::<StateDebug>().is_inspecting {
+            let gui_window = &state_gui_debug.finalize(game_state);
             let mut x = |ui: &mut Ui| {
                 for element in &gui_window.children {
                     match &element.gui_type {
@@ -244,9 +245,9 @@ impl ISystemComponent for WGPUGraphicsComponent {
                             );
                         }
                         crate::system::system_game_states::state_gui::GuiElementTypes::Button(button_desc) => {
-                            let b = ui.button("text");
+                            let b = ui.button(&button_desc.contents);
                             if b.clicked() {
-                                (button_desc.on_click)();
+                                (button_desc.on_click)(game_state, system_event_queue);
                             }
                             if b.hovered() {}
                         }
@@ -292,7 +293,6 @@ impl ISystemComponent for WGPUGraphicsComponent {
         });
 
         // return no changes
-        return &[];
     }
     fn raw_event(&mut self, event: WindowEvent) {
         let window = SystemGPU::get_window();

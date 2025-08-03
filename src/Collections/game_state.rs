@@ -29,7 +29,7 @@ impl GameState {
 
         edit(&mut val);
     }
-    fn set_value2<T: 'static>(&mut self, val: T)
+    pub fn set_value2<T: 'static>(&mut self, val: T)
     where
         T: IState<T>,
         T: Clone,

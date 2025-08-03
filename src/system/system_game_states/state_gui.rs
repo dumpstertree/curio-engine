@@ -2,8 +2,15 @@ use std::{string, sync::Arc};
 
 use crate::{
     random::Random,
-    system::system_game_state::IState,
-    Collections::{game_state::GameState, vector3::Vector3, Color::Color},
+    system::{
+        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
+        system_game_state::IState,
+    },
+    Collections::{
+        game_state::{self, GameState},
+        vector3::Vector3,
+        Color::Color,
+    },
 };
 
 #[derive(Clone)]
@@ -33,7 +40,7 @@ pub struct LabelDesc {
 #[derive(Clone)]
 pub struct ButtonDesc {
     pub contents: String,
-    pub on_click: Arc<dyn FnMut()>,
+    pub on_click: fn(game_state: &mut GameState, &mut EventQueue<EngineCommands>),
 }
 
 #[derive(Clone)]
@@ -67,10 +74,10 @@ impl GuiElement {
             }),
         }
     }
-    pub fn new_button(on_click: Arc<dyn FnMut()>) -> GuiElement {
+    pub fn new_text_button(contents: &str, on_click: fn(&mut GameState, &mut EventQueue<EngineCommands>)) -> GuiElement {
         GuiElement {
             gui_type: GuiElementTypes::Button(ButtonDesc {
-                contents: String::from("button"),
+                contents: contents.to_string(),
                 on_click: on_click,
             }),
         }

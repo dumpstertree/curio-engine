@@ -1,4 +1,4 @@
-use crate::Collections::game_state::GameState;
+use crate::{system::system_game_states::state_debug::StateDebug, Collections::game_state::GameState};
 use hecs::World;
 
 use crate::{
@@ -15,6 +15,9 @@ impl ECSSystemEventless for PostCameraECSSystem {
     }
     fn init(&mut self, game_state: &mut GameState, scene: &mut World, asset_loader: &mut AssetLoader) {}
     fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
+        if game_state.get_value2::<StateDebug>().is_paused {
+            return;
+        }
         for (_, (t, _)) in world.query_mut::<(&mut Transform, &Camera)>() {
             game_state.edit::<CameraState>(|x| {
                 x.position = t.position;

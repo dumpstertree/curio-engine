@@ -17,7 +17,6 @@ where
     ecs_systems_eventless: Vec<(Box<dyn ECSSystemEventless>, bool)>,
     scene: World,
     gameplay_event_queue: EventQueue<T>,
-    system_event_queue: EventQueue<EngineCommands>,
     asset_loader: AssetLoader,
 }
 
@@ -40,7 +39,6 @@ where
             ecs_systems_eventless: systems_eventless_enabled,
             scene: World::new(),
             gameplay_event_queue: EventQueue::new(),
-            system_event_queue: EventQueue::new(),
             asset_loader: AssetLoader::new(),
         }
     }
@@ -64,13 +62,13 @@ where
                 .init(gs, &mut self.scene, &mut self.gameplay_event_queue, &mut self.asset_loader);
         }
     }
-    fn debug(&mut self, game_state: &mut GameState) {
+    fn debug(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue<EngineCommands>) {
         for s in self.ecs_systems_eventless.iter_mut() {
             if !s.1 {
                 continue;
             }
             s.0.as_mut()
-                .debug(game_state, &mut self.scene, &mut self.system_event_queue);
+                .debug(game_state, &mut self.scene, system_queue);
         }
         for s in self.ecs_systems.iter_mut() {
             if !s.1 {
@@ -79,14 +77,12 @@ where
             s.0.as_mut().debug(game_state, &mut self.scene);
         }
     }
-    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn tick(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue<EngineCommands>) {
         // clear old
         self.gameplay_event_queue.evnt_queue.clear();
-        self.system_event_queue.evnt_queue.clear();
 
         // this needs to be cloned to avoid sharing issues
         let mut gameplay_queue = self.gameplay_event_queue.clone();
-        let mut system_queue = self.system_event_queue.clone();
         let scene = &self.scene;
         // sort systems
         self.ecs_systems.sort_by(|a, b| {
@@ -175,10 +171,9 @@ where
 
         // save queue for next frame
         self.gameplay_event_queue = gameplay_queue;
-        self.system_event_queue = system_queue;
 
         // dequeue commands
-        return self.system_event_queue.evnt_queue.as_slices().0;
+        // return self.system_event_queue.evnt_queue.as_slices().0;
     }
 }
 
@@ -231,7 +226,7 @@ pub struct EventQueue<T>
 where
     T: Clone,
 {
-    evnt_queue: VecDeque<T>,
+    pub evnt_queue: VecDeque<T>,
 }
 impl<T> EventQueue<T>
 where

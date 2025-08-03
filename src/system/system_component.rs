@@ -1,7 +1,7 @@
-use winit::event::WindowEvent;
+use winit::event::{MouseButton, WindowEvent};
 use winit::keyboard::KeyCode;
 
-use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
+use crate::system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue};
 // use crate::system_adapters::adapter_system_gpu::CustomEvents;
 use crate::Collections::game_state::GameState;
 use crate::Collections::key_state::KeyState;
@@ -15,11 +15,9 @@ pub trait ISystemComponent {
     fn init(&mut self, gs: &mut GameState);
     fn quit(&mut self) {}
     fn resize(&mut self, width: f32, height: f32) {}
-    fn tick(&mut self, gs: &mut GameState) -> &[EngineCommands] {
-        return &[];
-    }
-    fn debug(&mut self, gs: &mut GameState) {}
-    fn input_mouse(&mut self) {}
+    fn tick(&mut self, gs: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {}
+    fn debug(&mut self, gs: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {}
+    fn input_mouse(&mut self, key: MouseButton, key_state: KeyState) {}
     fn input_mouse_position(&mut self, gs: &mut GameState, position: Vector3) {}
     fn input_keyboard(&mut self, gs: &mut GameState, key: KeyCode, key_state: KeyState) {}
     fn raw_event(&mut self, event: WindowEvent) {}

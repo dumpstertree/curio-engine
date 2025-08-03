@@ -1,11 +1,4 @@
-use std::{
-    any::{Any, TypeId},
-    iter::Map,
-    sync::Arc,
-};
-
 use crate::{
-    dumpster_engine,
     gameplay::ecs::component::component_transform::Transform,
     system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
     system::system_game_states::{
@@ -68,32 +61,11 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
             ));
 
             x.guis.push(w);
-
-            let mut w1 = GuiWindow::new(String::from("play_pause"), Vector3::new(1920.0 / 2.0, 1080.0 / 2.0, 0.0), Vector3::zero());
-
-            let z = || {
-                system_event_queue.enqueue_event(EngineCommands::SetPauseMode(true));
-            };
-            let asd = || {
-                system_event_queue.enqueue_event(EngineCommands::SetPauseMode(false));
-            };
-            w1.add(GuiElement::new_button(SystemDebugGuiEntity::clicked(system_event_queue)));
-            w1.add(GuiElement::new_button(Arc::new(asd)));
-            // w1.add(GuiElement::new_button(ed1));
-            x.guis.push(w1);
         });
 
         game_state.edit::<GizmosState>(|x| {
             x.draw_calls
                 .push(Gizmo::cube(matrix, Vector3::one() * 3.0, Color::get_blue()));
         });
-    }
-}
-impl SystemDebugGuiEntity {
-    pub fn clicked(evnt_queue: EventQueue<EngineCommands>) {
-        println!("click 0");
-    }
-    pub fn clicked1() {
-        println!("click 1");
     }
 }

@@ -1,14 +1,13 @@
 use crate::{
     system::system_game_state::IState,
-    Collections::{
-        input_button::InputButtonState,
-        input_cursor::{self, InputAxisState},
-    },
+    Collections::{input_button::InputButtonState, input_cursor::InputAxisState},
 };
 
 #[derive(Clone)]
 pub struct InputState {
     pub cursor: InputAxisState,
+    pub cursor_primary: InputButtonState,
+    pub cursor_secondary: InputButtonState,
     pub w: InputButtonState,
     pub a: InputButtonState,
     pub s: InputButtonState,
@@ -22,6 +21,8 @@ impl InputState {
     pub fn default() -> InputState {
         InputState {
             cursor: InputAxisState::default(),
+            cursor_primary: InputButtonState::default(),
+            cursor_secondary: InputButtonState::default(),
             w: InputButtonState::default(),
             a: InputButtonState::default(),
             s: InputButtonState::default(),

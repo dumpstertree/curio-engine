@@ -6,6 +6,8 @@ mod IO {
     pub(crate) mod texture_asset;
 }
 mod Collections {
+    pub(crate) mod f32;
+
     pub(crate) mod Color;
     pub(crate) mod DrawCall;
     pub(crate) mod GraphicsBufferCache;
@@ -39,6 +41,7 @@ mod gameplay {
             }
         }
         pub mod system {
+            pub(crate) mod system_debug_camera;
 
             pub(crate) mod system_camera_fps;
             pub(crate) mod system_camera_update_state;
@@ -60,11 +63,13 @@ mod system {
         pub(crate) mod state_camera;
         pub(crate) mod state_colliders;
         pub(crate) mod state_collision;
+        pub(crate) mod state_debug;
         pub(crate) mod state_draw;
         pub(crate) mod state_gizmos;
         pub(crate) mod state_gui;
         pub(crate) mod state_gui_debug;
         pub(crate) mod state_input;
+        pub(crate) mod state_screeen;
         pub(crate) mod state_time;
     }
     pub(crate) mod system_component;
@@ -119,10 +124,6 @@ mod my_game {
 }
 pub(crate) mod egui_app_state;
 pub(crate) mod egui_tools;
-
-use std::any::TypeId;
-use std::collections::HashSet;
-use std::sync::Mutex;
 
 use crate::dumpster_engine::DumpsterEngine;
 use crate::dumpster_engine::WindowLayout;

@@ -2,9 +2,10 @@ use std::collections::HashMap;
 
 use crate::Collections::game_state::GameState;
 use crate::Collections::vector3::Vector3;
+use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
+use crate::system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue};
 use crate::{
     system::{
         system_component::ISystemComponent,
@@ -16,14 +17,16 @@ use crate::{
 
 pub struct InputComponentDefault {
     cursor_pos: Vector3,
-    input_state: HashMap<KeyCode, bool>,
+    input_state_keyboard: HashMap<KeyCode, bool>,
+    input_state_cursor: HashMap<MouseButton, bool>,
 }
 
 impl InputComponentDefault {
     pub fn new() -> InputComponentDefault {
         InputComponentDefault {
             cursor_pos: Vector3::zero(),
-            input_state: HashMap::new(),
+            input_state_keyboard: HashMap::new(),
+            input_state_cursor: HashMap::new(),
         }
     }
 }
@@ -35,13 +38,22 @@ impl ISystemComponent for InputComponentDefault {
     fn init(&mut self, gs: &mut GameState) {
         println!("init input");
     }
-    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {
         game_state.edit::<InputState>(|x| {
             // update cursor
             x.cursor.update(self.cursor_pos);
 
             // update keys
-            for i in self.input_state.iter() {
+            for i in self.input_state_cursor.iter() {
+                let key = i.0;
+                let key_state = i.1;
+                match key {
+                    MouseButton::Left => x.cursor_primary.update(key_state),
+                    _ => {}
+                }
+            }
+            // update keys
+            for i in self.input_state_keyboard.iter() {
                 let key = i.0;
                 let key_state = i.1;
                 match key {
@@ -56,14 +68,16 @@ impl ISystemComponent for InputComponentDefault {
                 }
             }
         });
-
-        return &[];
     }
     fn input_mouse_position(&mut self, game_state: &mut GameState, position: crate::Collections::vector3::Vector3) {
         self.cursor_pos = position;
     }
     fn input_keyboard(&mut self, game_state: &mut GameState, key: KeyCode, key_state: KeyState) {
-        self.input_state.insert(key, key_state == KeyState::Down);
+        self.input_state_keyboard
+            .insert(key, key_state == KeyState::Down);
     }
-    fn input_mouse(&mut self) {}
+    fn input_mouse(&mut self, key: MouseButton, key_state: KeyState) {
+        self.input_state_cursor
+            .insert(key, key_state == KeyState::Down);
+    }
 }

@@ -2,6 +2,8 @@ use std::{alloc::System, sync::Arc, time::Instant};
 
 use winit::keyboard::KeyCode;
 
+use crate::system::system_components::gameplay_components::gameplay_component_default::EventQueue;
+use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_gui::GuiWindow;
 use crate::system::system_game_states::state_gui_debug::GUIState_Debug;
 // use crate::system_adapters::adapter_system_gpu::CustomEvents;
@@ -25,7 +27,7 @@ pub struct TimeComponent {
     instant: Instant,
     fps_average: Vec<f64>,
     timescale: f32,
-    pause: bool,
+    next_update: f64,
 }
 
 impl TimeComponent {
@@ -34,7 +36,7 @@ impl TimeComponent {
             instant: Instant::now(),
             fps_average: Vec::new(),
             timescale: 1.0,
-            pause: false,
+            next_update: 0.0,
         }
     }
 }
@@ -45,11 +47,12 @@ impl ISystemComponent for TimeComponent {
     }
     fn init(&mut self, gs: &mut GameState) {}
 
-    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
-        println!("tick time staty");
+    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {
+        let state_debug = game_state.get_value2::<StateDebug>();
+
         let cur_time = self.instant.elapsed().as_secs_f64();
 
-        let fps = 1.0 / (cur_time - game_state.get_value2::<TimeState>().time);
+        let fps = 1.0 / (cur_time - game_state.get_value2::<TimeState>().unscaled_time);
         self.fps_average.push(fps);
 
         while self.fps_average.len() > 5 {
@@ -63,39 +66,40 @@ impl ISystemComponent for TimeComponent {
         let average_fps = (total / (self.fps_average.len() as f64)).round();
 
         // is paused
-        let pause_timescale = if self.pause { 0.0 } else { 1.0 };
+        let pause_timescale = if state_debug.is_paused { 0.0 } else { 1.0 };
 
         // edit the state
         game_state.edit::<TimeState>(|x| {
-            x.average_fps = average_fps as i32;
-            x.delta_time = (cur_time - x.time) as f32 * pause_timescale;
-            x.time = cur_time;
-
-            // update
-            x.next_update = cur_time + (1.0 / x.target_frame_rate) as f64;
             x.frame_num = x.frame_num + 1;
-        });
+            x.average_fps = average_fps as i32;
+            // delta time
+            x.unscaled_delta_time = (cur_time - x.unscaled_time) as f32;
+            x.scaled_delta_time = x.unscaled_delta_time * pause_timescale;
 
-        &[]
+            // time
+            x.scaled_time = x.scaled_time + x.scaled_delta_time as f64;
+            x.unscaled_time = cur_time;
+        });
     }
-    fn debug(&mut self, gs: &mut GameState) {}
 
     fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+        // get state
+        let state_time = game_state.get_value2::<TimeState>();
+
         // calculate if we tick this frame
         let cur_time = self.instant.elapsed().as_secs_f64();
-        let nxt_time = game_state.get_value2::<TimeState>().next_update;
+        let nxt_time = self.next_update;
 
         // if do tick send event
         let do_tick = cur_time >= nxt_time;
         if do_tick {
+            // set next update
+            self.next_update = (1.0 / state_time.target_frame_rate) as f64;
+
+            // do tick
             return &[EngineCommands::Redraw, EngineCommands::Tick];
         }
         // defualt
         return &[EngineCommands::Redraw];
-    }
-    fn input_keyboard(&mut self, gs: &mut GameState, key: winit::keyboard::KeyCode, key_state: crate::Collections::key_state::KeyState) {
-        if key == KeyCode::KeyP && key_state == KeyState::Down {
-            self.pause = !self.pause;
-        }
     }
 }

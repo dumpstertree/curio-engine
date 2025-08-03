@@ -30,17 +30,16 @@ impl ECSSystem<GameEvents> for SystemPaddleMove {
             .iter()
         {
             if state_input.a.is_down {
-                println!("a is down");
-                paddle.speed = paddle.speed + Constants::paddle_speed_acceleration() * state_time.delta_time;
+                paddle.speed = paddle.speed + Constants::paddle_speed_acceleration() * state_time.scaled_delta_time;
             } else if state_input.d.is_down {
-                paddle.speed = paddle.speed - Constants::paddle_speed_acceleration() * state_time.delta_time;
+                paddle.speed = paddle.speed - Constants::paddle_speed_acceleration() * state_time.scaled_delta_time;
             } else {
                 if f32::abs(paddle.speed) < 0.5 {
                     paddle.speed = 0.0;
                 } else if paddle.speed > 0.0 {
-                    paddle.speed = paddle.speed - Constants::paddle_speed_decceleration() * state_time.delta_time;
+                    paddle.speed = paddle.speed - Constants::paddle_speed_decceleration() * state_time.scaled_delta_time;
                 } else {
-                    paddle.speed = paddle.speed + Constants::paddle_speed_decceleration() * state_time.delta_time;
+                    paddle.speed = paddle.speed + Constants::paddle_speed_decceleration() * state_time.scaled_delta_time;
                 }
             }
 
@@ -48,7 +47,7 @@ impl ECSSystem<GameEvents> for SystemPaddleMove {
                 .speed
                 .clamp(-Constants::paddle_speed_terminal(), Constants::paddle_speed_terminal());
 
-            transform.position = (transform.position - paddle.axis * paddle.speed * state_time.delta_time).clamp_x(-10.0, 10.0);
+            transform.position = (transform.position - paddle.axis * paddle.speed * state_time.scaled_delta_time).clamp_x(-10.0, 10.0);
         }
     }
 }

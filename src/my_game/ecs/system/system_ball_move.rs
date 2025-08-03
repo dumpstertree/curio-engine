@@ -60,7 +60,7 @@ impl ECSSystem<GameEvents> for SystemBallMove {
             }
 
             // move
-            transform.position = transform.position + ball.direction * ball.speed * state_time.delta_time;
+            transform.position = transform.position + ball.direction * ball.speed * state_time.scaled_delta_time;
         }
     }
 }

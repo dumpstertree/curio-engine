@@ -12,6 +12,19 @@ pub struct Quaternion {
 }
 
 impl Quaternion {
+    fn rotate_vector(&self, v: Vector3) -> Vector3 {
+        let q = *self;
+
+        // Quaternion multiplication: q * v * q_conjugate
+        let q_vec = Vector3 { x: q.x, y: q.y, z: q.z };
+        let uv = Vector3::cross(q_vec, v);
+        let uuv = Vector3::cross(q_vec, uv);
+
+        let uv = uv * 2.0 * q.w;
+        let uuv = uuv * 2.0;
+
+        v + uv + uuv
+    }
     pub fn look_rotation(forward: Vector3, up: Vector3) -> Quaternion {
         let f = forward.normalized();
         let u = up.normalized();
@@ -84,6 +97,9 @@ impl Quaternion {
         )
     }
     pub fn from_angle_axis(axis: Vector3, angle: f32) -> Quaternion {
+        if angle == 0.0 {
+            return Quaternion::identity();
+        }
         Quaternion {
             x: axis.x * f32::sin(angle / 2.0),
             y: axis.y * f32::sin(angle / 2.0),
@@ -106,6 +122,22 @@ impl Mul<Quaternion> for Quaternion {
             y: self.w * other.y - self.x * other.z + self.y * other.w + self.z * other.x,
             z: self.w * other.z + self.x * other.y - self.y * other.x + self.z * other.w,
         }
+    }
+}
+impl Mul<Vector3> for Quaternion {
+    type Output = Vector3;
+    fn mul(self, v: Vector3) -> Vector3 {
+        let q: Quaternion = self;
+
+        // Quaternion multiplication: q * v * q_conjugate
+        let q_vec = Vector3 { x: q.x, y: q.y, z: q.z };
+        let uv = Vector3::cross(q_vec, v);
+        let uuv = Vector3::cross(q_vec, uv);
+
+        let uv = uv * 2.0 * q.w;
+        let uuv = uuv * 2.0;
+
+        v + uv + uuv
     }
 }
 

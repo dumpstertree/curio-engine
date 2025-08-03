@@ -28,7 +28,8 @@ impl ECSSystemEventless for SystemDebugGuiTime {
 
         game_state.edit::<GUIState_Debug>(|x| {
             x.append(format!("FPS: {} / Target FPS: {}", state_time.average_fps, state_time.target_frame_rate));
-            x.append(format!("Time: {}", state_time.time));
+            x.append(format!("Scaled Time: {}", state_time.scaled_time));
+            x.append(format!("Unscaled Time: {}", state_time.unscaled_time));
             x.append(format!("Frame Num: {}", state_time.frame_num));
         });
     }

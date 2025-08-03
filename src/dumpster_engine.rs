@@ -8,6 +8,7 @@ use crate::gameplay::ecs::system::system_camera_fps::FPSCameraECSSystem;
 use crate::gameplay::ecs::system::system_camera_update_state::PostCameraECSSystem;
 use crate::gameplay::ecs::system::system_collider_box_update_state::SystemColliderSphereUpdateState;
 use crate::gameplay::ecs::system::system_collider_sphere_update_state::SystemColliderBoxUpdateState;
+use crate::gameplay::ecs::system::system_debug_camera::SystemDebugCamera;
 use crate::gameplay::ecs::system::system_debug_gui_colliders::SystemDebugGuiColliders;
 use crate::gameplay::ecs::system::system_debug_gui_collision::SystemDebugGuiCollisions;
 use crate::gameplay::ecs::system::system_debug_gui_entity::SystemDebugGuiEntity;
@@ -101,6 +102,7 @@ impl DumpsterEngine {
             SystemColliderBoxUpdateState::new(),
             SystemColliderSphereUpdateState::new(),
             // debug
+            SystemDebugCamera::new(),
             SystemDebugGuiTime::new(),
             SystemDebugGuiScreen::new(),
             SystemDebugGuiColliders::new(),

@@ -10,7 +10,10 @@ use crate::{
     gameplay::ecs::component::component_collider::ColliderSnapshot,
     system::{
         system_component::ISystemComponent,
-        system_components::{collision_component::ICollisionComponent, gameplay_components::gameplay_component_default::EngineCommands},
+        system_components::{
+            collision_component::ICollisionComponent,
+            gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
+        },
         system_game_states::{
             state_colliders::StateCollider,
             state_collision::StateCollision,
@@ -65,7 +68,7 @@ impl ISystemComponent for CollisionComponentDefault {
     }
     fn init(&mut self, gs: &mut GameState) {}
 
-    fn tick(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {
         // reset
         self.buffer_collider_box_cnt = 0;
 
@@ -164,7 +167,5 @@ impl ISystemComponent for CollisionComponentDefault {
         game_state.edit::<StateCollider>(|x| {
             x.colliders.clear();
         });
-
-        return &[];
     }
 }

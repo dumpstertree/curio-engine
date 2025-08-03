@@ -55,7 +55,7 @@ impl ECSSystemEventless for FPSCameraECSSystem {
         let t = game_state.get_value2::<TimeState>();
         // alter the speed
         let speed = 10.0;
-        let offset = dir * speed * t.delta_time;
+        let offset = dir * speed * t.scaled_delta_time;
 
         for (_, (t, _)) in world.query_mut::<(&mut Transform, &Camera)>() {
             t.position = t.position.clone() + offset.clone();

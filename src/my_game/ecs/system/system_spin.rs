@@ -24,7 +24,7 @@ impl ECSSystem<GameEvents> for SystemSpin {
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
         let t = game_state.get_value2::<TimeState>();
         for (_, (spin, transform)) in world.query::<(&Spin, &mut Transform)>().iter() {
-            transform.rotation = Quaternion::from_angle_axis(spin.axis, spin.speed * t.delta_time) * transform.rotation;
+            transform.rotation = Quaternion::from_angle_axis(spin.axis, spin.speed * t.scaled_delta_time) * transform.rotation;
         }
     }
 }
