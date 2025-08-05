@@ -8,7 +8,7 @@ use hecs::World;
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
 
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct SystemDebugGuiColliders {}
 impl SystemDebugGuiColliders {}
 impl SystemDebugGuiColliders {
@@ -27,10 +27,5 @@ impl ECSSystemEventless for SystemDebugGuiColliders {
         game_state.edit::<GUIState_Debug>(|x| {
             x.append(format!("Collider Count: {}", state_collider.colliders.len()));
         });
-    }
-}
-impl Default for SystemDebugGuiColliders {
-    fn default() -> Self {
-        Self {}
     }
 }

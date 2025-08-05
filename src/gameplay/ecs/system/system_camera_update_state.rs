@@ -1,4 +1,10 @@
-use crate::{system::system_game_states::state_debug::StateDebug, Collections::game_state::GameState};
+use crate::{
+    dumpster_engine::EventReciever,
+    gameplay::game_events::GameEvents,
+    system::{system_components::gameplay_components::gameplay_component_default::EngineCommands, system_game_states::state_debug::StateDebug},
+    Collections::game_state::GameState,
+};
+use ecs_event::ECSEvent;
 use ecs_system::ECSSystem;
 use hecs::World;
 
@@ -8,7 +14,7 @@ use crate::{
     IO::AssetLoader::AssetLoader,
 };
 
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct PostCameraECSSystem {}
 impl PostCameraECSSystem {}
 impl ECSSystemEventless for PostCameraECSSystem {
@@ -28,8 +34,17 @@ impl ECSSystemEventless for PostCameraECSSystem {
         }
     }
 }
-impl Default for PostCameraECSSystem {
-    fn default() -> Self {
-        Self {}
+#[ECSEvent(EngineCommands)]
+impl EventReciever<EngineCommands> for PostCameraECSSystem {
+    fn recieve(&self, event: EngineCommands) {
+        println!("found! camera2");
+    }
+}
+
+#[ECSSystem]
+pub struct thing {}
+impl ECSSystemEventless for thing {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
+        todo!()
     }
 }

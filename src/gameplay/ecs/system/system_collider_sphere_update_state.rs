@@ -14,7 +14,7 @@ use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct SystemColliderBoxUpdateState {}
 impl SystemColliderBoxUpdateState {
     pub fn new() -> Box<SystemColliderBoxUpdateState> {
@@ -61,10 +61,5 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
                     .push(Gizmo::sphere(transform.get_matrix(), collider.diameter, Color::get_green()));
             }
         });
-    }
-}
-impl Default for SystemColliderBoxUpdateState {
-    fn default() -> Self {
-        Self {}
     }
 }

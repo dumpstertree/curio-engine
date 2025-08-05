@@ -1,4 +1,5 @@
 use crate::{
+    dumpster_engine::EventReciever,
     gameplay::ecs::component::{
         component_collider::{ColliderSnapshot, CollisionSnapshot},
         component_colliders::component_collider_box::ComponentColliderBox,
@@ -10,12 +11,14 @@ use crate::{
     },
     Collections::{game_state::GameState, gizmo::Gizmo, vector3::Vector3, Color},
 };
+use ecs_event::ECSEvent;
 use ecs_system::ECSSystem;
 use hecs::World;
+use intertrait::cast_to;
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
 
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct SystemColliderSphereUpdateState {}
 impl SystemColliderSphereUpdateState {
     pub fn new() -> Box<SystemColliderSphereUpdateState> {
@@ -57,8 +60,9 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
         });
     }
 }
-impl Default for SystemColliderSphereUpdateState {
-    fn default() -> Self {
-        Self {}
+#[ECSEvent(EngineCommands)]
+impl EventReciever<EngineCommands> for SystemColliderSphereUpdateState {
+    fn recieve(&self, event: EngineCommands) {
+        println!("found! other");
     }
 }

@@ -1,13 +1,11 @@
 use crate::{
-    system::{
-        system_component::ISystemComponent, system_components::gameplay_component::IGameplayComponent, system_game_states::state_time::TimeState,
-    },
-    Collections::game_state::GameState,
-    Collections::vector3::Vector3,
+    system::{system_component::ISystemComponent, system_components::gameplay_component::IGameplayComponent},
+    Collections::{game_state::GameState, vector3::Vector3},
     IO::AssetLoader::AssetLoader,
 };
 
 use hecs::World;
+use intertrait::CastFrom;
 
 pub struct GameplayComponentDefault<T>
 where
@@ -177,7 +175,7 @@ where
     }
 }
 
-pub trait ECSSystemEventless {
+pub trait ECSSystemEventless: CastFrom {
     fn order(&self, game_state: &GameState, world: &World) -> i32 {
         0
     }
@@ -190,6 +188,7 @@ pub trait ECSSystemEventless {
     fn tick(&mut self, game_state: &mut GameState, world: &mut World) {}
     fn did_tick(&mut self, game_state: &mut GameState, world: &mut World) {}
 }
+
 pub trait ECSSystem<T>
 where
     T: Clone,
@@ -208,7 +207,7 @@ where
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>, event: &T) {}
 }
 
-use std::collections::VecDeque;
+use std::{any::Any, collections::VecDeque};
 #[derive(Clone)]
 pub enum EngineCommands {
     Redraw,
@@ -242,4 +241,9 @@ where
     pub fn new() -> EventQueue<T> {
         EventQueue { evnt_queue: VecDeque::new() }
     }
+}
+
+pub struct EventQueue2 {}
+impl EventQueue2 {
+    pub fn enqueue<T>() {}
 }

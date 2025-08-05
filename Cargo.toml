@@ -49,8 +49,10 @@ bytemuck = { version = "1.16", features = ["derive"] }
 inline_tweak = "1.2.2"
 # register_macro = { path = "./register_macro" }
 ecs_system = { path = "./macros/ecs_system" }
-
+ecs_event = { path = "./macros/ecs_event" }
 ctor = "0.2"
+linkme = "=0.2.10"                            # or whatever version you're targeting
+intertrait = "0.2.2"
 
 [dependencies.image]
 version = "0.24"

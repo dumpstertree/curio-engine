@@ -7,7 +7,7 @@ use crate::{
 use ecs_system::ECSSystem;
 use hecs::World;
 
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct SystemDebugGuiTime {}
 impl SystemDebugGuiTime {
     pub fn new() -> Box<SystemDebugGuiTime> {
@@ -29,10 +29,5 @@ impl ECSSystemEventless for SystemDebugGuiTime {
             x.append(format!("Unscaled Time: {}", state_time.unscaled_time));
             x.append(format!("Frame Num: {}", state_time.frame_num));
         });
-    }
-}
-impl Default for SystemDebugGuiTime {
-    fn default() -> Self {
-        Self {}
     }
 }

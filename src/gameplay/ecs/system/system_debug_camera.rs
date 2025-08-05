@@ -12,7 +12,7 @@ use crate::{
 use ecs_system::ECSSystem;
 use hecs::World;
 
-#[derive(ECSSystem)]
+#[ECSSystem]
 
 // pub struct thing;
 pub struct SystemDebugCamera {
@@ -78,13 +78,5 @@ impl ECSSystemEventless for SystemDebugCamera {
             x.position = x.position + offset;
             x.rotation = rot;
         });
-    }
-}
-impl Default for SystemDebugCamera {
-    fn default() -> Self {
-        Self {
-            x: Default::default(),
-            y: Default::default(),
-        }
     }
 }

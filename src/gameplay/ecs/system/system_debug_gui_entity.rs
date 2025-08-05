@@ -14,7 +14,7 @@ use hecs::{Entity, World};
 
 use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
 
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct SystemDebugGuiEntity {}
 impl SystemDebugGuiEntity {}
 impl SystemDebugGuiEntity {
@@ -69,10 +69,5 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
             x.draw_calls
                 .push(Gizmo::cube(matrix, Vector3::one() * 3.0, Color::get_blue()));
         });
-    }
-}
-impl Default for SystemDebugGuiEntity {
-    fn default() -> Self {
-        Self {}
     }
 }

@@ -9,7 +9,7 @@ use crate::{
     },
     Collections::DrawCall::DrawCall,
 };
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct TestECSSystem {}
 impl TestECSSystem {
     pub fn new() -> Box<TestECSSystem> {
@@ -41,10 +41,5 @@ impl ECSSystemEventless for TestECSSystem {
                 }
             }
         });
-    }
-}
-impl Default for TestECSSystem {
-    fn default() -> Self {
-        Self {}
     }
 }

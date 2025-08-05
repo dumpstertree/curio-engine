@@ -13,7 +13,7 @@ use crate::{
     },
 };
 
-#[derive(ECSSystem)]
+#[ECSSystem]
 pub struct SystemDebugGuiScreen {}
 impl SystemDebugGuiScreen {}
 impl SystemDebugGuiScreen {
@@ -39,10 +39,5 @@ impl ECSSystemEventless for SystemDebugGuiScreen {
                 sys_window.inner_size().height
             ));
         });
-    }
-}
-impl Default for SystemDebugGuiScreen {
-    fn default() -> Self {
-        Self {}
     }
 }

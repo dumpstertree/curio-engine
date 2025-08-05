@@ -1,66 +1,18 @@
-use std::any::TypeId;
-
-use hecs::{Entity, World};
+use intertrait::cast::CastRef;
 use pollster::FutureExt;
-use serde_json::Value;
 
 use crate::system::system_components::collision_component_factory::SystemComponentCollisionFactory;
 use crate::system::system_components::gameplay_component_factory::SystemComponentGameplayFactory;
-use crate::system::system_components::gameplay_components::gameplay_component_default::{ECSSystem, ECSSystemEventless};
+use crate::system::system_components::gameplay_components::gameplay_component_default::{ECSSystem, ECSSystemEventless, EngineCommands};
 use crate::system::system_components::graphics_component_factory::SystemComponentGraphicsFactory;
 use crate::system::system_components::input_component_factory::SystemComponentInputFactory;
 use crate::system::system_components::time_component_factory::SystemComponentTimeFactory;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Window::SystemWindow::SystemWindow;
 
-// static REGISTRY: Mutex<Vec<(TypeId, ComponentInfo)>> = Mutex::new(Vec::new());
-
-static mut REGISTRY: Vec<(TypeId, ComponentInfo)> = Vec::new();
-
-struct ComponentInfo<'a> {
-    name: &'static str,
-    serializer: fn(&'a World, Entity) -> Option<Value>,
+pub trait EventReciever<T> {
+    fn recieve(&self, event: T);
 }
-
-pub fn register_component<T>(name: &'static str)
-where
-    T: 'static + serde::Serialize + Clone + Send + Sync + hecs::Component,
-{
-    fn serialize<T>(world: &hecs::World, entity: hecs::Entity) -> Option<serde_json::Value>
-    where
-        T: 'static + serde::Serialize + Clone + Send + Sync + hecs::Component,
-    {
-        world
-            .get::<&T>(entity)
-            .ok()
-            .and_then(|comp| serde_json::to_value(&*comp).ok())
-    }
-
-    // unsafe {
-    //     REGISTRY.push((
-    //         TypeId::of::<T>(),
-    //         ComponentInfo {
-    //             name,
-    //             serializer: serialize::<T>,
-    //         },
-    //     ));
-    // }
-}
-
-// Serialize all attached components for a given entity
-// pub fn serialize_entity<'a>(world: &'a World, entity: Entity) -> Value {
-//     unsafe {
-//         let mut out = Map::new();
-//         // let reg = REGISTRY; //.lock().unwrap();
-//         // for info in reg.iter() {
-//         for info in REGISTRY {
-//             if let Some(val) = (info.1.serializer)(world, entity) {
-//                 out.insert(info.1.name.to_string(), val);
-//             }
-//         }
-//         Value::Object(out)
-//     }
-// }
 
 static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Vec::new();
 
@@ -95,6 +47,22 @@ impl DumpsterEngine {
             for x in REGISTERED_ECS_SYSTEMS.iter() {
                 ecs_system_built_in.push(x());
             }
+        }
+
+        for system in ecs_system_built_in.iter() {
+            let r = system.as_ref().cast::<dyn EventReciever<TGameEvents>>();
+
+            // let maybe_receiver = system.as_any().downcast_ref::<Box<dyn EventReciever>>();
+            if let Some(receiver) = r {
+                receiver.recieve(EngineCommands::Exit);
+            }
+
+            // if let Some(receiver) = system
+            //     .as_any()
+            //     .downcast_mut::<dyn EventReciever<TGameEvents>>()
+            // {
+            //     // receiver.handle_event(event);
+            // }
         }
         // create systems
         let mut system_window = SystemWindow::new(vec![
