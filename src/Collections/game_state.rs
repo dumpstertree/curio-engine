@@ -4,7 +4,7 @@ use std::{any::Any, borrow::Borrow, collections::HashMap};
 use crate::system::system_game_state::IState;
 
 pub struct GameState {
-    cache: AnyMap<i32>,
+    pub(crate) cache: AnyMap<i32>,
 }
 impl GameState {
     pub fn new() -> GameState {
@@ -61,7 +61,7 @@ pub enum GetError {
 }
 
 impl<K: Hash + Eq> AnyMap<K> {
-    fn insert<T: Any>(&mut self, key: K, value: T) {
+    pub fn insert<T: Any>(&mut self, key: K, value: T) {
         self.0.insert(key, Box::new(value));
     }
 

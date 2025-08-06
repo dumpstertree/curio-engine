@@ -1,6 +1,9 @@
+use ecs_event::ECSEvent;
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
+    dumpster_engine::EventReciever,
     gameplay::{
         ecs::component::{component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform},
         game_events::GameEvents,
@@ -8,23 +11,24 @@ use crate::{
     my_game::ecs::component::component_ball::ComponentBall,
     random::Random,
     system::{
-        system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
+        system_components::gameplay_components::gameplay_component_default::{ECSSystemEventless, EventQueue, EventQueue2},
         system_game_states::state_time::TimeState,
     },
     Collections::{game_state::GameState, vector3::Vector3},
 };
 
+#[ECSSystem]
 pub struct SystemBallMove {}
 impl SystemBallMove {
     pub fn new() -> Box<SystemBallMove> {
         Box::new(SystemBallMove {})
     }
 }
-impl ECSSystem<GameEvents> for SystemBallMove {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue<GameEvents>) -> bool {
+impl ECSSystemEventless for SystemBallMove {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue<GameEvents>) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
         let state_time = game_state.get_value2::<TimeState>();
 
         for (_, (ball, transform, collider)) in world
@@ -61,6 +65,17 @@ impl ECSSystem<GameEvents> for SystemBallMove {
 
             // move
             transform.position = transform.position + ball.direction * ball.speed * state_time.scaled_delta_time;
+        }
+    }
+}
+
+#[ECSEvent(GameEvents)]
+impl EventReciever<GameEvents> for SystemBallMove {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2, event: &GameEvents) {
+        println!("dequeue");
+        match event {
+            GameEvents::A(_) => println!("A"),
+            GameEvents::B(_) => println!("b"),
         }
     }
 }

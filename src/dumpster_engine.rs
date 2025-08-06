@@ -1,17 +1,24 @@
+use hecs::World;
 use intertrait::cast::CastRef;
 use pollster::FutureExt;
 
 use crate::system::system_components::collision_component_factory::SystemComponentCollisionFactory;
 use crate::system::system_components::gameplay_component_factory::SystemComponentGameplayFactory;
-use crate::system::system_components::gameplay_components::gameplay_component_default::{ECSSystem, ECSSystemEventless, EngineCommands};
+use crate::system::system_components::gameplay_components::gameplay_component_default::{
+    ECSSystemEventless, EngineCommands, EventQueue, EventQueue2,
+};
 use crate::system::system_components::graphics_component_factory::SystemComponentGraphicsFactory;
 use crate::system::system_components::input_component_factory::SystemComponentInputFactory;
 use crate::system::system_components::time_component_factory::SystemComponentTimeFactory;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
+use crate::Collections::game_state::GameState;
 use crate::Window::SystemWindow::SystemWindow;
 
-pub trait EventReciever<T> {
-    fn recieve(&self, event: T);
+pub trait EventReciever<T>
+where
+    T: Clone,
+{
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2, event: &T) {}
 }
 
 static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Vec::new();
@@ -20,17 +27,16 @@ pub struct DumpsterEngine {}
 impl DumpsterEngine {
     pub fn register_ecs_system<T>()
     where
-        T: 'static + ECSSystemEventless + Default,
+        T: 'static + ECSSystemEventless + Default + Clone,
     {
         unsafe {
             let x: fn() -> Box<dyn ECSSystemEventless> = || return Box::new(T::default());
             REGISTERED_ECS_SYSTEMS.push(x);
         }
     }
-    pub fn run<TGameEvents>(window_layout: WindowLayout, ecs_systems: Vec<Box<dyn ECSSystem<TGameEvents>>>)
+    pub fn run<TGameEvents>(window_layout: WindowLayout)
     where
-        TGameEvents: 'static,
-        TGameEvents: Clone,
+        TGameEvents: 'static + Clone,
     {
         let event_loop = SystemGPU::init().block_on();
 
@@ -48,29 +54,13 @@ impl DumpsterEngine {
                 ecs_system_built_in.push(x());
             }
         }
-
-        for system in ecs_system_built_in.iter() {
-            let r = system.as_ref().cast::<dyn EventReciever<TGameEvents>>();
-
-            // let maybe_receiver = system.as_any().downcast_ref::<Box<dyn EventReciever>>();
-            if let Some(receiver) = r {
-                receiver.recieve(EngineCommands::Exit);
-            }
-
-            // if let Some(receiver) = system
-            //     .as_any()
-            //     .downcast_mut::<dyn EventReciever<TGameEvents>>()
-            // {
-            //     // receiver.handle_event(event);
-            // }
-        }
         // create systems
         let mut system_window = SystemWindow::new(vec![
             SystemComponentTimeFactory::create(),
             SystemComponentInputFactory::create(),
             SystemComponentGraphicsFactory::create(),
             SystemComponentCollisionFactory::create(),
-            SystemComponentGameplayFactory::create(ecs_systems, ecs_system_built_in),
+            SystemComponentGameplayFactory::create::<TGameEvents>(ecs_system_built_in),
         ]);
 
         // run the window

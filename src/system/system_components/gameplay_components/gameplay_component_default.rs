@@ -1,50 +1,51 @@
 use crate::{
+    dumpster_engine::EventReciever,
     system::{system_component::ISystemComponent, system_components::gameplay_component::IGameplayComponent},
-    Collections::{game_state::GameState, vector3::Vector3},
+    Collections::{
+        game_state::{AnyMap, GameState},
+        vector3::Vector3,
+    },
     IO::AssetLoader::AssetLoader,
 };
 
+use egui::util::id_type_map::TypeId;
 use hecs::World;
-use intertrait::CastFrom;
+use intertrait::{cast::CastMut, CastFrom};
 
 pub struct GameplayComponentDefault<T>
 where
     T: Clone,
 {
-    ecs_systems: Vec<(Box<dyn ECSSystem<T>>, bool)>,
     ecs_systems_eventless: Vec<(Box<dyn ECSSystemEventless>, bool)>,
     scene: World,
     gameplay_event_queue: EventQueue<T>,
     asset_loader: AssetLoader,
+    event_queue: EventQueue2,
 }
 
 impl<T> GameplayComponentDefault<T>
 where
     T: Clone,
 {
-    pub fn new(ecs_systems: Vec<Box<dyn ECSSystem<T>>>, ecs_systems_eventless: Vec<Box<dyn ECSSystemEventless>>) -> GameplayComponentDefault<T> {
-        let mut systems_enabled: Vec<(Box<dyn ECSSystem<T>>, bool)> = Vec::new();
-        for x in ecs_systems {
-            systems_enabled.push((x, false));
-        }
+    pub fn new(ecs_systems_eventless: Vec<Box<dyn ECSSystemEventless>>) -> GameplayComponentDefault<T> {
         let mut systems_eventless_enabled: Vec<(Box<dyn ECSSystemEventless>, bool)> = Vec::new();
         for x in ecs_systems_eventless {
             systems_eventless_enabled.push((x, false));
         }
 
         GameplayComponentDefault {
-            ecs_systems: systems_enabled,
             ecs_systems_eventless: systems_eventless_enabled,
             scene: World::new(),
             gameplay_event_queue: EventQueue::new(),
             asset_loader: AssetLoader::new(),
+            event_queue: EventQueue2::new(),
         }
     }
 }
-impl<T> IGameplayComponent for GameplayComponentDefault<T> where T: Clone {}
+impl<T> IGameplayComponent for GameplayComponentDefault<T> where T: 'static + Clone {}
 impl<T> ISystemComponent for GameplayComponentDefault<T>
 where
-    T: Clone,
+    T: 'static + Clone,
 {
     fn order(&self) -> i32 {
         5000
@@ -55,10 +56,6 @@ where
             s.0.as_mut()
                 .init(gs, &mut self.scene, &mut self.asset_loader);
         }
-        for s in self.ecs_systems.iter_mut() {
-            s.0.as_mut()
-                .init(gs, &mut self.scene, &mut self.gameplay_event_queue, &mut self.asset_loader);
-        }
     }
     fn debug(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue<EngineCommands>) {
         for s in self.ecs_systems_eventless.iter_mut() {
@@ -67,12 +64,6 @@ where
             }
             s.0.as_mut()
                 .debug(game_state, &mut self.scene, system_queue);
-        }
-        for s in self.ecs_systems.iter_mut() {
-            if !s.1 {
-                continue;
-            }
-            s.0.as_mut().debug(game_state, &mut self.scene);
         }
     }
     fn tick(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue<EngineCommands>) {
@@ -83,25 +74,42 @@ where
         let mut gameplay_queue = self.gameplay_event_queue.clone();
         let scene = &self.scene;
         // sort systems
-        self.ecs_systems.sort_by(|a, b| {
-            a.0.order(&game_state, &scene)
-                .cmp(&b.0.order(&game_state, &scene))
-        });
+
         self.ecs_systems_eventless.sort_by(|a, b| {
             a.0.order(&game_state, &scene)
                 .cmp(&b.0.order(&game_state, &scene))
         });
 
-        // dequeue events from previous frame
-        while gameplay_queue.evnt_queue.len() > 0 {
-            let Some(event) = gameplay_queue.dequeue_events() else {
-                break;
-            };
-            for s in self.ecs_systems.iter_mut() {
-                s.0.as_mut()
-                    .dequeue_event(game_state, &mut self.scene, &mut gameplay_queue, &event);
+        // create a temp queue to pass in
+        let mut tmp_queue = EventQueue2::new();
+
+        // iterate over each event we queued last frame
+        let mut queued_events = self.event_queue.get_queued_events::<T>().to_vec();
+        while queued_events.len() > 0 {
+            // dequeue first
+            let event = &queued_events[0];
+
+            // iterate over each system
+            for boxed_system in self.ecs_systems_eventless.iter_mut() {
+                // guard - try cast the system to event reciever
+                let event_reciever = (*boxed_system.0).cast::<dyn EventReciever<T>>();
+                if let Some(event_reciever) = event_reciever {
+                    // post the event
+                    event_reciever.dequeue_event(game_state, &mut self.scene, &mut tmp_queue, event);
+                };
             }
+
+            // remove first
+            queued_events.remove(0);
+
+            // iterate over each new event in tmp queue
+            for response_event in tmp_queue.get_queued_events::<T>() {
+                queued_events.push(response_event.clone());
+            }
+            // clear old
+            tmp_queue.clear_queued_events::<T>();
         }
+        self.event_queue.clear_queued_events::<T>();
         for s in self.ecs_systems_eventless.iter_mut() {
             let was_enabled = s.1;
             let is_enabled = s.0.is_enabled(game_state, &mut self.scene);
@@ -113,58 +121,26 @@ where
             }
             s.1 = is_enabled;
         }
-        for s in self.ecs_systems.iter_mut() {
-            let was_enabled = s.1;
-            let is_enabled =
-                s.0.is_enabled(game_state, &mut self.scene, &mut gameplay_queue);
-            if was_enabled && !is_enabled {
-                s.0.disable(game_state, &mut self.scene, &mut gameplay_queue);
-            }
-            if !was_enabled && is_enabled {
-                s.0.enable(game_state, &mut self.scene, &mut gameplay_queue);
-            }
-            s.1 = is_enabled;
-        }
+
         // run loops
         for s in self.ecs_systems_eventless.iter_mut() {
             if !s.1 {
                 continue;
             }
-            s.0.as_mut().will_tick(game_state, &mut self.scene);
-        }
-        for s in self.ecs_systems.iter_mut() {
-            if !s.1 {
-                continue;
-            }
             s.0.as_mut()
-                .will_tick(game_state, &mut self.scene, &mut gameplay_queue);
+                .will_tick(game_state, &mut self.scene, &mut self.event_queue);
         }
-
         for s in self.ecs_systems_eventless.iter_mut() {
             if !s.1 {
                 continue;
             }
             s.0.as_mut().tick(game_state, &mut self.scene);
         }
-        for s in self.ecs_systems.iter_mut() {
-            if !s.1 {
-                continue;
-            }
-            s.0.as_mut()
-                .tick(game_state, &mut self.scene, &mut gameplay_queue);
-        }
         for s in self.ecs_systems_eventless.iter_mut() {
             if !s.1 {
                 continue;
             }
             s.0.as_mut().did_tick(game_state, &mut self.scene);
-        }
-        for s in self.ecs_systems.iter_mut() {
-            if !s.1 {
-                continue;
-            }
-            s.0.as_mut()
-                .did_tick(game_state, &mut self.scene, &mut gameplay_queue);
         }
 
         // save queue for next frame
@@ -184,30 +160,16 @@ pub trait ECSSystemEventless: CastFrom {
     fn enable(&mut self, game_state: &mut GameState, world: &mut World) {}
     fn disable(&mut self, game_state: &mut GameState, world: &mut World) {}
     fn init(&mut self, game_state: &mut GameState, world: &mut World, asset_loader: &mut AssetLoader) {}
-    fn will_tick(&mut self, game_state: &mut GameState, world: &mut World) {}
+    fn will_tick(&mut self, game_state: &mut GameState, world: &mut World, queue: &mut EventQueue2) {}
     fn tick(&mut self, game_state: &mut GameState, world: &mut World) {}
     fn did_tick(&mut self, game_state: &mut GameState, world: &mut World) {}
 }
 
-pub trait ECSSystem<T>
-where
-    T: Clone,
-{
-    fn order(&self, game_state: &GameState, world: &World) -> i32 {
-        0
-    }
-    fn debug(&mut self, game_state: &mut GameState, world: &mut World) {}
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) -> bool;
-    fn enable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
-    fn disable(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
-    fn init(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>, asset_loader: &mut AssetLoader) {}
-    fn will_tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
-    fn did_tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>) {}
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<T>, event: &T) {}
-}
-
-use std::{any::Any, collections::VecDeque};
+use std::{
+    any::{type_name, Any},
+    collections::VecDeque,
+    hash::{Hash, Hasher},
+};
 #[derive(Clone)]
 pub enum EngineCommands {
     Redraw,
@@ -243,7 +205,59 @@ where
     }
 }
 
-pub struct EventQueue2 {}
+// pub struct EventQueue2 {
+//     queue
+// }
+// impl EventQueue2 {
+
+//     pub fn enqueue<T>() {}
+// }
+use std::collections::hash_map::DefaultHasher;
+
+pub struct EventQueue2 {
+    cache: AnyMap<i32>,
+    hasher: DefaultHasher,
+}
 impl EventQueue2 {
-    pub fn enqueue<T>() {}
+    pub fn new() -> EventQueue2 {
+        EventQueue2 {
+            cache: AnyMap::<i32>::default(),
+            hasher: DefaultHasher::new(),
+        }
+    }
+
+    fn type_id_to_i32<T: 'static>() -> i32 {
+        let mut hasher = DefaultHasher::new();
+        TypeId::of::<T>().hash(&mut hasher);
+        (hasher.finish() & 0xFFFF_FFFF) as i32 // Safe truncation
+    }
+
+    pub fn enqueue_event<T: 'static>(&mut self, val: T)
+    where
+        T: Clone,
+    {
+        let id = EventQueue2::type_id_to_i32::<T>();
+        if let Some(vec) = self.cache.get_mut::<Vec<T>, i32>(&id) {
+            vec.push(val);
+        } else {
+            self.cache.insert::<Vec<T>>(id, vec![val]);
+        }
+    }
+    pub fn get_queued_events<T: 'static>(&self) -> &[T]
+    where
+        T: Clone,
+    {
+        let id = EventQueue2::type_id_to_i32::<T>();
+        if let Some(x) = self.cache.get::<Vec<T>, i32>(&id) {
+            x.as_slice()
+        } else {
+            &[]
+        }
+    }
+    pub fn clear_queued_events<T: 'static>(&mut self) {
+        let id = EventQueue2::type_id_to_i32::<T>();
+        if let Some(x) = self.cache.get_mut::<Vec<T>, i32>(&id) {
+            x.clear();
+        }
+    }
 }

@@ -126,15 +126,12 @@ pub(crate) mod egui_tools;
 
 use crate::dumpster_engine::DumpsterEngine;
 use crate::dumpster_engine::WindowLayout;
+use crate::gameplay::game_events::GameEvents;
 use crate::my_game::ecs::system::system_ball_move::SystemBallMove;
 use crate::my_game::ecs::system::system_paddle_move::SystemPaddleMove;
 use crate::my_game::ecs::system::system_pong_init::SystemPongInit;
 
 pub fn run() {
     // run the engine
-    DumpsterEngine::run(
-        WindowLayout::windowed_1080(),
-        // vec![SystemGameInit::new(), SystemSpin::new(), SystemEngineCommands::new()],
-        vec![SystemPongInit::new(), SystemPaddleMove::new(), SystemBallMove::new()],
-    );
+    DumpsterEngine::run::<GameEvents>(WindowLayout::windowed_1080());
 }

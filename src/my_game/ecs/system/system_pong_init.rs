@@ -1,3 +1,4 @@
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
@@ -11,24 +12,24 @@ use crate::{
     my_game::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle},
     random::Random,
     system::{
-        system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
+        system_components::gameplay_components::gameplay_component_default::{ECSSystemEventless, EventQueue},
         system_game_states::state_camera::CameraState,
     },
     Collections::{game_state::GameState, vector3::Vector3},
     IO::AssetLoader::AssetLoader,
 };
-
+#[ECSSystem]
 pub struct SystemPongInit {}
 impl SystemPongInit {
     pub fn new() -> Box<SystemPongInit> {
         Box::new(SystemPongInit {})
     }
 }
-impl ECSSystem<GameEvents> for SystemPongInit {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) -> bool {
+impl ECSSystemEventless for SystemPongInit {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-    fn init(&mut self, game_state: &mut GameState, scene: &mut World, event_queue: &mut EventQueue<GameEvents>, asset_loader: &mut AssetLoader) {
+    fn init(&mut self, game_state: &mut GameState, scene: &mut World, asset_loader: &mut AssetLoader) {
         game_state.edit::<CameraState>(|x| {
             x.width = 1920;
             x.height = 1080;

@@ -1,14 +1,16 @@
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
     gameplay::game_events::GameEvents,
     system::{
-        system_components::gameplay_components::gameplay_component_default::{ECSSystem, EngineCommands, EventQueue},
+        system_components::gameplay_components::gameplay_component_default::{ECSSystemEventless, EngineCommands, EventQueue},
         system_game_states::state_input::InputState,
     },
-    Collections::game_state::GameState,
-    Collections::vector3::Vector3,
+    Collections::{game_state::GameState, vector3::Vector3},
 };
+
+#[ECSSystem]
 
 pub struct SystemEngineCommands {
     fullscreen: bool,
@@ -22,11 +24,11 @@ impl SystemEngineCommands {
         })
     }
 }
-impl ECSSystem<GameEvents> for SystemEngineCommands {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) -> bool {
+impl ECSSystemEventless for SystemEngineCommands {
+    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue<GameEvents>) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
         // let input = game_state.get_value2::<InputState>();
         // if input.esc.is_down {
         //     event_queue.enqueue_command(EngineCommands::Exit);

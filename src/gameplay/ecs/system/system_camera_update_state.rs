@@ -1,7 +1,10 @@
 use crate::{
     dumpster_engine::EventReciever,
     gameplay::game_events::GameEvents,
-    system::{system_components::gameplay_components::gameplay_component_default::EngineCommands, system_game_states::state_debug::StateDebug},
+    system::{
+        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue, EventQueue2},
+        system_game_states::state_debug::StateDebug,
+    },
     Collections::game_state::GameState,
 };
 use ecs_event::ECSEvent;
@@ -34,17 +37,9 @@ impl ECSSystemEventless for PostCameraECSSystem {
         }
     }
 }
-#[ECSEvent(EngineCommands)]
-impl EventReciever<EngineCommands> for PostCameraECSSystem {
-    fn recieve(&self, event: EngineCommands) {
-        println!("found! camera2");
-    }
-}
-
-#[ECSSystem]
-pub struct thing {}
-impl ECSSystemEventless for thing {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
-        todo!()
+#[ECSEvent(GameEvents)]
+impl EventReciever<GameEvents> for PostCameraECSSystem {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2, event: &GameEvents) {
+        println!("found! other");
     }
 }

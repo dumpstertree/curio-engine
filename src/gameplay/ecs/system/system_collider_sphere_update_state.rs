@@ -1,11 +1,14 @@
 use crate::{
-    gameplay::ecs::component::{
-        component_collider::{ColliderSnapshot, CollisionSnapshot},
-        component_colliders::component_collider_sphere::ComponentColliderSphere,
-        component_transform::Transform,
+    gameplay::{
+        ecs::component::{
+            component_collider::{ColliderSnapshot, CollisionSnapshot},
+            component_colliders::component_collider_sphere::ComponentColliderSphere,
+            component_transform::Transform,
+        },
+        game_events::GameEvents,
     },
     system::{
-        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
+        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue, EventQueue2},
         system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
     },
     Collections::{game_state::GameState, gizmo::Gizmo, Color::Color},
@@ -26,7 +29,10 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
         true
     }
 
-    fn will_tick(&mut self, game_state: &mut GameState, world: &mut World) {
+    fn will_tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2) {
+        // test
+        event_queue.enqueue_event(GameEvents::A("AHHHH2".to_string()));
+        //
         let state = game_state.get_value2::<StateCollision>();
         for (_, collider) in world.query::<&mut ComponentColliderSphere>().iter() {
             let mut collision = Vec::<CollisionSnapshot>::new();

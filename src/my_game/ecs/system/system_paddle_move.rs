@@ -1,14 +1,16 @@
+use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
     gameplay::{ecs::component::component_transform::Transform, game_events::GameEvents},
     my_game::{constants::Constants, ecs::component::component_paddle::ComponentPaddle},
     system::{
-        system_components::gameplay_components::gameplay_component_default::{ECSSystem, EventQueue},
+        system_components::gameplay_components::gameplay_component_default::{ECSSystemEventless, EventQueue},
         system_game_states::{state_input::InputState, state_time::TimeState},
     },
     Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
 };
+#[ECSSystem]
 
 pub struct SystemPaddleMove {}
 impl SystemPaddleMove {
@@ -17,11 +19,11 @@ impl SystemPaddleMove {
     }
 }
 
-impl ECSSystem<GameEvents> for SystemPaddleMove {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue<GameEvents>) -> bool {
+impl ECSSystemEventless for SystemPaddleMove {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue<GameEvents>) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
         let state_input = game_state.get_value2::<InputState>();
         let state_time = game_state.get_value2::<TimeState>();
 

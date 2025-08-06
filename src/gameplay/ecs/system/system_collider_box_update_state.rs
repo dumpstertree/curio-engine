@@ -1,12 +1,15 @@
 use crate::{
     dumpster_engine::EventReciever,
-    gameplay::ecs::component::{
-        component_collider::{ColliderSnapshot, CollisionSnapshot},
-        component_colliders::component_collider_box::ComponentColliderBox,
-        component_transform::Transform,
+    gameplay::{
+        ecs::component::{
+            component_collider::{ColliderSnapshot, CollisionSnapshot},
+            component_colliders::component_collider_box::ComponentColliderBox,
+            component_transform::Transform,
+        },
+        game_events::GameEvents,
     },
     system::{
-        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
+        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue, EventQueue2},
         system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
     },
     Collections::{game_state::GameState, gizmo::Gizmo, vector3::Vector3, Color},
@@ -29,7 +32,10 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
     fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-    fn will_tick(&mut self, game_state: &mut GameState, world: &mut World) {
+    fn will_tick(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2) {
+        // test
+        event_queue.enqueue_event(GameEvents::A("AHHHH".to_string()));
+        //
         let state = game_state.get_value2::<StateCollision>();
         for (_, collider) in world.query::<&mut ComponentColliderBox>().iter() {
             let mut collision = Vec::<CollisionSnapshot>::new();
@@ -60,9 +66,9 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
         });
     }
 }
-#[ECSEvent(EngineCommands)]
-impl EventReciever<EngineCommands> for SystemColliderSphereUpdateState {
-    fn recieve(&self, event: EngineCommands) {
+#[ECSEvent(GameEvents)]
+impl EventReciever<GameEvents> for SystemColliderSphereUpdateState {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2, event: &GameEvents) {
         println!("found! other");
     }
 }
