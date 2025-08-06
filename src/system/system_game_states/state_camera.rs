@@ -1,5 +1,4 @@
 use cgmath::{Matrix4, Rad, SquareMatrix};
-use mesh_tools::compat::{vector2, vector3};
 
 use crate::{
     system::system_game_state::IState,
@@ -142,8 +141,8 @@ impl CameraState {
 
         // Convert to screen space
         // let ndc_x = ((clip_space.x + 1.0) * 0.5);
-        let ndc_x = ((clip_space.x + 10.0) / 20.0);
-        let ndc_y = ((clip_space.y + 10.0) / 20.0); // (1.0 - clip_space.y) * 0.5; // Y flipped for screen space
+        let ndc_x = (clip_space.x + 10.0) / 20.0;
+        let ndc_y = (clip_space.y + 10.0) / 20.0; // (1.0 - clip_space.y) * 0.5; // Y flipped for screen space
 
         let screen_x = ndc_x * self.width as f32;
         let screen_y = ndc_y * self.height as f32;

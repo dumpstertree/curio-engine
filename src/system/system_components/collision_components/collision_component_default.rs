@@ -14,15 +14,13 @@ use crate::{
         system_game_states::{
             state_colliders::StateCollider,
             state_collision::StateCollision,
-            state_gui::{GUIState, GuiElement},
-            state_gui_debug::GUIState_Debug,
         },
     },
     Collections::{event_queue::EventQueue2, game_state::GameState},
 };
 use crate::{
     gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact},
-    system::{system_game_state::IState, system_game_states::state_time::TimeState},
+    system::system_game_state::IState,
 };
 
 pub struct CollisionComponentDefault {

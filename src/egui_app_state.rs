@@ -1,12 +1,5 @@
 use crate::egui_tools::EguiRenderer;
-use egui_wgpu::wgpu::SurfaceError;
-use egui_wgpu::{wgpu, ScreenDescriptor};
-use std::sync::Arc;
-use winit::application::ApplicationHandler;
-use winit::dpi::PhysicalSize;
-use winit::event::WindowEvent;
-use winit::event_loop::ActiveEventLoop;
-use winit::window::{Window, WindowId};
+use winit::window::Window;
 
 pub struct AppState {
     pub device: egui_wgpu::wgpu::Device,

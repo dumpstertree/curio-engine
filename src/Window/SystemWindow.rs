@@ -1,20 +1,15 @@
-use std::any::Any;
 
 use crate::events::engine_commands::EngineCommands;
-use crate::gameplay::ecs::system;
 use crate::system::system_component::ISystemComponent;
 use crate::system::system_game_state::IState;
 use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_screeen::StateScreen;
-use crate::system_adapters;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::event_queue::EventQueue2;
 use crate::Collections::game_state::GameState;
 use crate::Collections::key_state::KeyState;
-use winit::event::{self, KeyEvent};
 use winit::event_loop::EventLoop;
 use winit::keyboard::KeyCode;
-use winit::window::CursorGrabMode;
 use winit::{application::ApplicationHandler, event::WindowEvent};
 
 pub struct SystemWindow {

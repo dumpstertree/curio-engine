@@ -1,28 +1,16 @@
-use std::{alloc::System, sync::Arc, time::Instant};
+use std::time::Instant;
 
-use winit::keyboard::KeyCode;
 
 use crate::events::engine_commands::EngineCommands;
 use crate::system::system_game_states::state_debug::StateDebug;
-use crate::system::system_game_states::state_gui::GuiWindow;
-use crate::system::system_game_states::state_gui_debug::GUIState_Debug;
 use crate::Collections::event_queue::EventQueue2;
 // use crate::system_adapters::adapter_system_gpu::CustomEvents;
 use crate::Collections::game_state::GameState;
-use crate::Collections::key_state::KeyState;
-use crate::Collections::vector3::Vector3;
-use crate::Collections::Color::Color;
-use crate::{
-    system::{
+use crate::system::{
         system_component::ISystemComponent,
         system_components::time_component::time_component,
-        system_game_states::{
-            state_gui::{GUIState, GuiElement},
-            state_time::TimeState,
-        },
-    },
-    system_adapters::adapter_system_gpu::SystemGPU,
-};
+        system_game_states::state_time::TimeState,
+    };
 
 pub struct TimeComponent {
     instant: Instant,

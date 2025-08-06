@@ -1,5 +1,3 @@
-use hecs::World;
-use intertrait::cast::CastRef;
 use pollster::FutureExt;
 
 use crate::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
@@ -9,8 +7,6 @@ use crate::system::system_components::graphics_component_factory::SystemComponen
 use crate::system::system_components::input_component_factory::SystemComponentInputFactory;
 use crate::system::system_components::time_component_factory::SystemComponentTimeFactory;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::Collections::event_queue::EventQueue2;
-use crate::Collections::game_state::GameState;
 use crate::Window::SystemWindow::SystemWindow;
 
 static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Vec::new();

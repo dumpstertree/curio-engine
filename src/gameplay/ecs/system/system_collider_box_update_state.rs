@@ -8,12 +8,10 @@ use crate::{
         traits::ecs_system::ECSSystemEventless,
     },
     system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
-    Collections::{event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo, vector3::Vector3, Color},
+    Collections::{event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo, Color},
 };
-use ecs_event::ECSEvent;
 use ecs_system::ECSSystem;
 use hecs::World;
-use intertrait::cast_to;
 
 #[ECSSystem]
 pub struct SystemColliderSphereUpdateState {}

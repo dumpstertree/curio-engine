@@ -7,10 +7,6 @@ use crate::{
 use ecs_system::ECSSystem;
 use hecs::World;
 
-use crate::{
-    gameplay::ecs::component::{component_camera::Camera, component_transform::Transform},
-    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
-};
 
 #[ECSSystem]
 pub struct SystemDebugGuiScreen {}

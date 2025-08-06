@@ -1,11 +1,11 @@
 use crate::{
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
     system::{system_component::ISystemComponent, system_components::gameplay_component::IGameplayComponent},
-    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
+    Collections::{event_queue::EventQueue2, game_state::GameState},
     IO::AssetLoader::AssetLoader,
 };
 use hecs::World;
-use intertrait::{cast::CastMut, CastFrom};
+use intertrait::cast::CastMut;
 
 pub struct GameplayComponentDefault<T>
 where
@@ -150,8 +150,4 @@ where
     }
 }
 
-use std::{
-    collections::VecDeque,
-    hash::{Hash, Hasher},
-    marker::PhantomData,
-};
+use std::marker::PhantomData;

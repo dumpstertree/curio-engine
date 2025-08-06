@@ -1,7 +1,6 @@
 use core::fmt;
 use std::ops::{Add, Div, Mul, Sub};
 
-use cgmath::Point3;
 
 use crate::Collections::vector3::Vector3;
 #[derive(Clone, Copy, PartialEq)]

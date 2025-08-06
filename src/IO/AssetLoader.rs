@@ -4,12 +4,10 @@ use std::sync::Arc;
 
 use egui_wgpu::wgpu::Device;
 use egui_wgpu::wgpu::ShaderModule;
-use rapier3d::math::Vector;
 
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::material::Material;
 use crate::Collections::material::ShaderDesc;
-use crate::Collections::vector3::Vector3;
 use crate::Collections::Mesh::Mesh;
 use crate::Collections::Mesh::Vertex;
 

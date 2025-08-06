@@ -3,14 +3,12 @@ use crate::{
     system::system_game_states::state_debug::StateDebug,
     Collections::{event_queue::EventQueue2, game_state::GameState},
 };
-use ecs_event::ECSEvent;
 use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
     gameplay::ecs::component::{component_camera::Camera, component_transform::Transform},
     system::system_game_states::state_camera::CameraState,
-    IO::AssetLoader::AssetLoader,
 };
 
 #[ECSSystem]

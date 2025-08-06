@@ -1,9 +1,6 @@
 use core::f32;
 
-use crate::system::{
-    system_component::ISystemComponent,
-    system_game_states::state_camera::{CameraState, Projection},
-};
+use crate::system::system_game_states::state_camera::{CameraState, Projection};
 use cgmath::prelude::*;
 
 #[repr(C)]

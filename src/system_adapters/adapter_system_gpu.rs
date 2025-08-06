@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::{Adapter, Device, Instance, Queue, Surface, SurfaceConfiguration};
-use winit::dpi::{LogicalSize, PhysicalSize};
-use winit::event_loop::{ActiveEventLoop, EventLoop};
+use winit::dpi::PhysicalSize;
+use winit::event_loop::EventLoop;
 use winit::window::{Fullscreen, Window, WindowAttributes};
 
 use crate::events::engine_commands::EngineCommands;

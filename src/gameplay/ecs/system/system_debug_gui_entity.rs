@@ -33,7 +33,7 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
         let mut distance = 99999999.0;
         let mut screen_pos = Vector3::zero();
         let mut matrix = Matrix4x4::default();
-        for (entity, (transform)) in world.query::<(&Transform)>().iter() {
+        for (entity, transform) in world.query::<&Transform>().iter() {
             let Some(p) = state_camera.world_to_screen(transform.position) else {
                 continue;
             };

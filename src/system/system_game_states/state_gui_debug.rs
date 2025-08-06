@@ -9,7 +9,7 @@ use crate::{
     },
     Collections::{
         event_queue::EventQueue2,
-        game_state::{self, GameState},
+        game_state::GameState,
         vector3::Vector3,
         Color::Color,
     },

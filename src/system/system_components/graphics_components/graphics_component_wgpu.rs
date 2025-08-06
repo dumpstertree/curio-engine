@@ -1,16 +1,14 @@
-use crate::egui_app_state::AppState;
 use crate::egui_tools::EguiRenderer;
-use crate::random::Random;
 use crate::system::system_component::ISystemComponent;
 use crate::system::system_components::graphics_component::IGraphicsComponent;
-use crate::system::system_game_states::state_camera::{CameraState, Projection};
+use crate::system::system_game_states::state_camera::CameraState;
 use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_draw::DrawCallsState;
 use crate::system::system_game_states::state_gizmos::GizmosState;
 use crate::system::system_game_states::state_gui::GUIState;
 use crate::system::system_game_states::state_gui_debug::GUIState_Debug;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::Collections::camera_uniform::{self, CameraUniform};
+use crate::Collections::camera_uniform::CameraUniform;
 use crate::Collections::event_queue::EventQueue2;
 use crate::Collections::game_state::GameState;
 use crate::Collections::gizmo::Gizmo;
@@ -21,9 +19,9 @@ use crate::Collections::{DrawCall::DrawCall, Mesh::Vertex};
 use crate::IO::texture_asset::Texture_asset;
 use crate::IO::AssetLoader::AssetLoader;
 
-use egui::{Button, Color32, FontDefinitions, FontId, Frame, Label, Pos2, Sense, Style, TextStyle, Ui, Vec2};
+use egui::{Color32, Frame, Pos2, Ui};
 use egui_wgpu::wgpu::{
-    self, BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, Surface, SurfaceConfiguration, TextureFormat,
+    self, BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, Surface, SurfaceConfiguration,
 };
 use egui_wgpu::wgpu::{
     util::DeviceExt, Buffer, CommandEncoder, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, ShaderModule,
@@ -31,7 +29,7 @@ use egui_wgpu::wgpu::{
 };
 use egui_wgpu::ScreenDescriptor;
 use std::iter;
-use winit::event::{DeviceId, WindowEvent};
+use winit::event::WindowEvent;
 
 pub struct WGPUGraphicsComponent {
     buffer_cache: Graphics_buffer_cache,
