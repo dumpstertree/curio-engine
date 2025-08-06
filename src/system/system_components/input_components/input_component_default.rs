@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
+use crate::Collections::event_queue::EventQueue2;
 use crate::Collections::game_state::GameState;
 use crate::Collections::vector3::Vector3;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
-use crate::system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue};
 use crate::{
     system::{
         system_component::ISystemComponent,
@@ -38,7 +38,7 @@ impl ISystemComponent for InputComponentDefault {
     fn init(&mut self, gs: &mut GameState) {
         println!("init input");
     }
-    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {
+    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue2) {
         game_state.edit::<InputState>(|x| {
             // update cursor
             x.cursor.update(self.cursor_pos);

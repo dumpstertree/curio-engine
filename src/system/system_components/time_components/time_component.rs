@@ -2,10 +2,11 @@ use std::{alloc::System, sync::Arc, time::Instant};
 
 use winit::keyboard::KeyCode;
 
-use crate::system::system_components::gameplay_components::gameplay_component_default::EventQueue;
+use crate::events::engine_commands::EngineCommands;
 use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_gui::GuiWindow;
 use crate::system::system_game_states::state_gui_debug::GUIState_Debug;
+use crate::Collections::event_queue::EventQueue2;
 // use crate::system_adapters::adapter_system_gpu::CustomEvents;
 use crate::Collections::game_state::GameState;
 use crate::Collections::key_state::KeyState;
@@ -14,7 +15,7 @@ use crate::Collections::Color::Color;
 use crate::{
     system::{
         system_component::ISystemComponent,
-        system_components::{gameplay_components::gameplay_component_default::EngineCommands, time_component::time_component},
+        system_components::time_component::time_component,
         system_game_states::{
             state_gui::{GUIState, GuiElement},
             state_time::TimeState,
@@ -47,7 +48,7 @@ impl ISystemComponent for TimeComponent {
     }
     fn init(&mut self, gs: &mut GameState) {}
 
-    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue<EngineCommands>) {
+    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue2) {
         let state_debug = game_state.get_value2::<StateDebug>();
 
         let cur_time = self.instant.elapsed().as_secs_f64();

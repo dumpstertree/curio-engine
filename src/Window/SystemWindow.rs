@@ -1,13 +1,14 @@
 use std::any::Any;
 
+use crate::events::engine_commands::EngineCommands;
 use crate::gameplay::ecs::system;
 use crate::system::system_component::ISystemComponent;
-use crate::system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue};
 use crate::system::system_game_state::IState;
 use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_screeen::StateScreen;
 use crate::system_adapters;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
+use crate::Collections::event_queue::EventQueue2;
 use crate::Collections::game_state::GameState;
 use crate::Collections::key_state::KeyState;
 use winit::event::{self, KeyEvent};
@@ -17,7 +18,7 @@ use winit::window::CursorGrabMode;
 use winit::{application::ApplicationHandler, event::WindowEvent};
 
 pub struct SystemWindow {
-    system_event_queue: EventQueue<EngineCommands>,
+    system_event_queue: EventQueue2,
     gamestate: GameState,
     components: Vec<Box<dyn ISystemComponent>>,
 }
@@ -25,7 +26,7 @@ impl SystemWindow {
     // constructor
     pub fn new(components: Vec<Box<dyn ISystemComponent>>) -> SystemWindow {
         SystemWindow {
-            system_event_queue: EventQueue::new(),
+            system_event_queue: EventQueue2::new(),
             gamestate: GameState::new(),
             components: components,
         }
@@ -65,7 +66,10 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                     }
 
                     // invoke all events
-                    for event in &self.system_event_queue.evnt_queue {
+                    let queue = self
+                        .system_event_queue
+                        .get_queued_events::<EngineCommands>();
+                    for event in queue {
                         match event {
                             EngineCommands::Redraw => {}
                             EngineCommands::Resize(vector3) => SystemGPU::set_resolution(vector3.x as i32, vector3.y as i32),
@@ -80,7 +84,9 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                             EngineCommands::Tick => println!("Cannot call tick from inside tick!"),
                         }
                     }
-                    let _ = &self.system_event_queue.evnt_queue.clear();
+                    let _ = &self
+                        .system_event_queue
+                        .clear_queued_events::<EngineCommands>();
                 }
             }
             EngineCommands::Redraw => {}

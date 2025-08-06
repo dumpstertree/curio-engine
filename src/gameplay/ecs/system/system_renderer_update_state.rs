@@ -1,12 +1,13 @@
-use crate::Collections::game_state::GameState;
+use crate::{
+    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    Collections::{event_queue::EventQueue2, game_state::GameState},
+};
 use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
     gameplay::ecs::component::{component_renderer::Renderer, component_transform::Transform},
-    system::{
-        system_components::gameplay_components::gameplay_component_default::ECSSystemEventless, system_game_states::state_draw::DrawCallsState,
-    },
+    system::system_game_states::state_draw::DrawCallsState,
     Collections::DrawCall::DrawCall,
 };
 #[ECSSystem]
@@ -21,11 +22,11 @@ impl ECSSystemEventless for TestECSSystem {
         true
     }
 
-    fn did_tick(&mut self, game_state: &mut GameState, scene: &mut World) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
         //edit draw call states
-        game_state.edit::<DrawCallsState>(|x| {
+        state.edit::<DrawCallsState>(|x| {
             // iterate over each renderer
-            for (_, (renderer, transform)) in scene.query::<(&Renderer, &Transform)>().iter() {
+            for (_, (renderer, transform)) in world.query::<(&Renderer, &Transform)>().iter() {
                 // guard - no mesh
                 let Some(asset) = &renderer.asset else {
                     continue;

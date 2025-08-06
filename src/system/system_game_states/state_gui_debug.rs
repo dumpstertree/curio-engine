@@ -1,6 +1,6 @@
 use crate::{
+    events::engine_commands::EngineCommands,
     system::{
-        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
         system_game_state::IState,
         system_game_states::{
             state_debug::StateDebug,
@@ -8,6 +8,7 @@ use crate::{
         },
     },
     Collections::{
+        event_queue::EventQueue2,
         game_state::{self, GameState},
         vector3::Vector3,
         Color::Color,
@@ -47,7 +48,7 @@ impl GUIState_Debug {
             size: 18.0,
         }
     }
-    fn pause_on_click(game_state: &mut GameState, event_queue: &mut EventQueue<EngineCommands>) {
+    fn pause_on_click(game_state: &mut GameState, event_queue: &mut EventQueue2) {
         event_queue.enqueue_event(EngineCommands::SetPauseMode(!game_state.get_value2::<StateDebug>().is_paused));
     }
 }

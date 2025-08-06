@@ -2,13 +2,10 @@ use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
-    gameplay::{ecs::component::component_transform::Transform, game_events::GameEvents},
+    gameplay::ecs::{component::component_transform::Transform, traits::ecs_system::ECSSystemEventless},
     my_game::{constants::Constants, ecs::component::component_paddle::ComponentPaddle},
-    system::{
-        system_components::gameplay_components::gameplay_component_default::{ECSSystemEventless, EventQueue},
-        system_game_states::{state_input::InputState, state_time::TimeState},
-    },
-    Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
+    system::system_game_states::{state_input::InputState, state_time::TimeState},
+    Collections::{event_queue::EventQueue2, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
 };
 #[ECSSystem]
 
@@ -23,9 +20,9 @@ impl ECSSystemEventless for SystemPaddleMove {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
-        let state_input = game_state.get_value2::<InputState>();
-        let state_time = game_state.get_value2::<TimeState>();
+    fn tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+        let state_input = state.get_value2::<InputState>();
+        let state_time = state.get_value2::<TimeState>();
 
         for (_, (paddle, transform)) in world
             .query::<(&mut ComponentPaddle, &mut Transform)>()

@@ -1,12 +1,10 @@
 use std::default;
 
-use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
+use crate::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
 use crate::system::system_game_states::state_screeen::StateScreen;
+use crate::Collections::event_queue::EventQueue2;
 use crate::{
-    system::{
-        system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
-        system_game_states::{state_camera::CameraState, state_debug::StateDebug, state_input::InputState, state_time::TimeState},
-    },
+    system::system_game_states::{state_camera::CameraState, state_debug::StateDebug, state_input::InputState, state_time::TimeState},
     Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
 };
 use ecs_system::ECSSystem;
@@ -28,19 +26,19 @@ impl ECSSystemEventless for SystemDebugCamera {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         game_state.get_value2::<StateDebug>().is_paused
     }
-    fn enable(&mut self, _: &mut GameState, _: &mut World) {
+    fn enable(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
         self.x = 0.0;
         self.y = 0.0;
     }
-    fn debug(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue<EngineCommands>) {
+    fn debug(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
         // constants
         const SPEED_ROT: f32 = 10.0;
         const SPEED_MOVE: f32 = 10.0;
 
         // get states
-        let state_time = game_state.get_value2::<TimeState>();
-        let state_input = game_state.get_value2::<InputState>();
-        let state_screen = game_state.get_value2::<StateScreen>();
+        let state_time = state.get_value2::<TimeState>();
+        let state_input = state.get_value2::<InputState>();
+        let state_screen = state.get_value2::<StateScreen>();
 
         // rotation
         if state_input.cursor_primary.is_down {
@@ -74,7 +72,7 @@ impl ECSSystemEventless for SystemDebugCamera {
         let offset = dir * SPEED_MOVE * state_time.unscaled_delta_time;
 
         // edit the state
-        game_state.edit::<CameraState>(|x| {
+        state.edit::<CameraState>(|x| {
             x.position = x.position + offset;
             x.rotation = rot;
         });

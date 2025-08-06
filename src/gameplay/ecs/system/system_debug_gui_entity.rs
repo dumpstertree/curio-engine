@@ -1,18 +1,15 @@
 use crate::{
-    gameplay::ecs::component::component_transform::Transform,
-    system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
+    gameplay::ecs::{component::component_transform::Transform, traits::ecs_system::ECSSystemEventless},
     system::system_game_states::{
         state_camera::CameraState,
         state_gizmos::GizmosState,
         state_gui::{GUIState, GuiElement, GuiWindow},
         state_input,
     },
-    Collections::{game_state::GameState, gizmo::Gizmo, matrix4x4::Matrix4x4, vector3::Vector3, Color::Color},
+    Collections::{event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo, matrix4x4::Matrix4x4, vector3::Vector3, Color::Color},
 };
 use ecs_system::ECSSystem;
 use hecs::{Entity, World};
-
-use crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless;
 
 #[ECSSystem]
 pub struct SystemDebugGuiEntity {}
@@ -27,7 +24,7 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
         true
     }
 
-    fn debug(&mut self, game_state: &mut GameState, world: &mut World, system_event_queue: &mut EventQueue<EngineCommands>) {
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World, system_event_queue: &mut EventQueue2) {
         let state_camera = game_state.get_value2::<CameraState>();
         let state_input = game_state.get_value2::<state_input::InputState>();
 

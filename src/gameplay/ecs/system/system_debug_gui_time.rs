@@ -1,8 +1,7 @@
 use crate::{
-    system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless,
-    system::system_components::gameplay_components::gameplay_component_default::{EngineCommands, EventQueue},
+    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     system::system_game_states::{state_gui_debug::GUIState_Debug, state_time::TimeState},
-    Collections::game_state::GameState,
+    Collections::{event_queue::EventQueue2, game_state::GameState},
 };
 use ecs_system::ECSSystem;
 use hecs::World;
@@ -19,7 +18,7 @@ impl ECSSystemEventless for SystemDebugGuiTime {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn debug(&mut self, game_state: &mut GameState, world: &mut World, system_event_queue: &mut EventQueue<EngineCommands>) {
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World, system_event_queue: &mut EventQueue2) {
         // get state
         let state_time = game_state.get_value2::<TimeState>();
 

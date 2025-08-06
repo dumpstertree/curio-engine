@@ -1,6 +1,6 @@
-use crate::system::system_components::{
-    gameplay_component::IGameplayComponent,
-    gameplay_components::gameplay_component_default::{ECSSystemEventless, GameplayComponentDefault},
+use crate::{
+    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    system::system_components::{gameplay_component::IGameplayComponent, gameplay_components::gameplay_component_default::GameplayComponentDefault},
 };
 
 pub struct SystemComponentGameplayFactory {}

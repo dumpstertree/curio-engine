@@ -5,7 +5,7 @@ use winit::dpi::{LogicalSize, PhysicalSize};
 use winit::event_loop::{ActiveEventLoop, EventLoop};
 use winit::window::{Fullscreen, Window, WindowAttributes};
 
-use crate::system::system_components::gameplay_components::gameplay_component_default::EngineCommands;
+use crate::events::engine_commands::EngineCommands;
 use crate::IO::texture_asset::Texture_asset;
 pub static mut system_gpu_adapter_instance: SystemGPU = SystemGPU {
     device: None,

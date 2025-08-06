@@ -3,18 +3,14 @@ use ecs_system::ECSSystem;
 use hecs::World;
 
 use crate::{
-    dumpster_engine::EventReciever,
-    gameplay::{
-        ecs::component::{component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform},
-        game_events::GameEvents,
+    gameplay::ecs::{
+        component::{component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform},
+        traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
     },
-    my_game::ecs::component::component_ball::ComponentBall,
+    my_game::{ecs::component::component_ball::ComponentBall, game_events::GameEvents},
     random::Random,
-    system::{
-        system_components::gameplay_components::gameplay_component_default::{ECSSystemEventless, EventQueue, EventQueue2},
-        system_game_states::state_time::TimeState,
-    },
-    Collections::{game_state::GameState, vector3::Vector3},
+    system::system_game_states::state_time::TimeState,
+    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
 };
 
 #[ECSSystem]
@@ -28,8 +24,8 @@ impl ECSSystemEventless for SystemBallMove {
     fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World) {
-        let state_time = game_state.get_value2::<TimeState>();
+    fn tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+        let state_time = state.get_value2::<TimeState>();
 
         for (_, (ball, transform, collider)) in world
             .query::<(&mut ComponentBall, &mut Transform, &ComponentColliderBox)>()

@@ -2,24 +2,16 @@ use hecs::World;
 use intertrait::cast::CastRef;
 use pollster::FutureExt;
 
+use crate::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
 use crate::system::system_components::collision_component_factory::SystemComponentCollisionFactory;
 use crate::system::system_components::gameplay_component_factory::SystemComponentGameplayFactory;
-use crate::system::system_components::gameplay_components::gameplay_component_default::{
-    ECSSystemEventless, EngineCommands, EventQueue, EventQueue2,
-};
 use crate::system::system_components::graphics_component_factory::SystemComponentGraphicsFactory;
 use crate::system::system_components::input_component_factory::SystemComponentInputFactory;
 use crate::system::system_components::time_component_factory::SystemComponentTimeFactory;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
+use crate::Collections::event_queue::EventQueue2;
 use crate::Collections::game_state::GameState;
 use crate::Window::SystemWindow::SystemWindow;
-
-pub trait EventReciever<T>
-where
-    T: Clone,
-{
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2, event: &T) {}
-}
 
 static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Vec::new();
 

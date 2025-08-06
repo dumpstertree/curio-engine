@@ -6,13 +6,13 @@ mod IO {
     pub(crate) mod texture_asset;
 }
 mod Collections {
-    pub(crate) mod f32;
-
     pub(crate) mod Color;
     pub(crate) mod DrawCall;
     pub(crate) mod GraphicsBufferCache;
     pub(crate) mod Mesh;
     pub(crate) mod camera_uniform;
+    pub(crate) mod event_queue;
+    pub(crate) mod f32;
     pub(crate) mod game_state;
     pub(crate) mod gizmo;
     pub(crate) mod input_button;
@@ -30,6 +30,10 @@ mod Window {
 }
 mod gameplay {
     pub mod ecs {
+        pub mod traits {
+            pub(crate) mod ecs_event_reciever;
+            pub(crate) mod ecs_system;
+        }
         pub mod component {
             pub(crate) mod component_camera;
             pub(crate) mod component_collider;
@@ -54,7 +58,9 @@ mod gameplay {
             pub(crate) mod system_renderer_update_state;
         }
     }
-    pub(crate) mod game_events;
+}
+mod events {
+    pub(crate) mod engine_commands;
 }
 mod system {
     pub(crate) mod system_game_state;
@@ -105,11 +111,10 @@ mod system_adapters {
 }
 mod my_game {
     pub(crate) mod constants;
+    pub(crate) mod game_events;
     pub mod ecs {
         pub mod system {
             pub(crate) mod system_ball_move;
-            pub(crate) mod system_engine_commands;
-            pub(crate) mod system_game_init;
             pub(crate) mod system_paddle_move;
             pub(crate) mod system_pong_init;
             pub(crate) mod system_spin;
@@ -126,10 +131,7 @@ pub(crate) mod egui_tools;
 
 use crate::dumpster_engine::DumpsterEngine;
 use crate::dumpster_engine::WindowLayout;
-use crate::gameplay::game_events::GameEvents;
-use crate::my_game::ecs::system::system_ball_move::SystemBallMove;
-use crate::my_game::ecs::system::system_paddle_move::SystemPaddleMove;
-use crate::my_game::ecs::system::system_pong_init::SystemPongInit;
+use crate::my_game::game_events::GameEvents;
 
 pub fn run() {
     // run the engine
