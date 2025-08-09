@@ -1,0 +1,9 @@
+[package]
+name = "system_component_default_physics"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+core = { path = "../core" }
+rapier3d = "0.25.1"

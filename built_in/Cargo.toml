@@ -1,0 +1,13 @@
+[package]
+name = "built_in"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+core = { path = "../core" }
+ecs_system = { path = "../ecs_system" }
+ecs_event = { path = "../ecs_event" }
+ctor = "0.2"
+intertrait = "0.2.2"
+linkme = "=0.2.10"
+hecs = "0.10.5"

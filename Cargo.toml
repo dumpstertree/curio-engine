@@ -1,60 +1,29 @@
-[package]
-name = "dumpster-engine"
+[workspace]
+members = [
+    "core",
+    "built_in",
+    "examples",
+    "ecs_event",
+    "ecs_system",
+    "system_component_default_time",
+    "system_component_default_input",
+    "system_component_default_gameplay",
+    "system_component_default_physics",
+    "system_component_default_rendering",
+]
+
+[workspace.dependencies]
+core = { path = "core" }
+built_in = { path = "built_in" }
+examples = { path = "examples" }
+ecs_event = { path = "macros/ecs_event" }
+ecs_system = { path = "macros/ecs_system" }
+system_component_default_time = { path = "system_component_default_time" }
+system_component_default_input = { path = "system_component_default_input" }
+system_component_default_gameplay = { path = "system_component_default_gameplay" }
+system_component_default_physics = { path = "system_component_default_physics" }
+system_component_default_rendering = { path = "system_component_default_rendering" }
+
+[workspace.package]
 version = "0.1.0"
-authors = ["dumpstertree@gmail.com"]
-edition = "2018"
-
-[[bin]]
-name = "dumpster-engine"
-path = "src/main.rs"
-
-[lib]
-crate-type = ["cdylib", "rlib"]
-
-[profile.release]
-strip = true
-lto = true
-opt-level = 3
-
-[profile.dev]
-strip = false
-lto = false
-opt-level = 0
-
-
-[dependencies]
-# window
-winit = { version = "0.30", features = ["android-native-activity"] }
-# rendering
-# egui_wgpu::wgpu = "25.0"
-# gameplay
-hecs = "0.10.5"
-# gui
-egui = "0.31.1"
-egui-winit = "0.31.1"
-egui-wgpu = { version = "0.31.1", features = ["winit"] }
-# physics
-rapier3d = "0.25.1"
-# mesh
-gltf = "1.4.1"
-mesh-tools = "0.4.0"
-# utility
-rand = "0.9.1"
-cgmath = "0.18"
-pollster = "0.3"
-serde_json = "1.0.48"
-serde = { version = "1.0.104", features = ["derive"] }
-bytemuck = { version = "1.16", features = ["derive"] }
-# editor
-inline_tweak = "1.2.2"
-# register_macro = { path = "./register_macro" }
-ecs_system = { path = "./macros/ecs_system" }
-ecs_event = { path = "./macros/ecs_event" }
-ctor = "0.2"
-linkme = "=0.2.10"                            # or whatever version you're targeting
-intertrait = "0.2.2"
-
-[dependencies.image]
-version = "0.24"
-default-features = false
-features = ["png", "jpeg"]
+edition = "2021"

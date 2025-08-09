@@ -1,0 +1,11 @@
+[package]
+name = "system_component_default_gameplay"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+core = { path = "../core" }
+hecs = "0.10.5"
+linkme = "=0.2.10"
+intertrait = "0.2.2"

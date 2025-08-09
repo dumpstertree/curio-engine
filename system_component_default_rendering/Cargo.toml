@@ -1,0 +1,13 @@
+[package]
+name = "system_component_default_rendering"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+core = { path = "../core" }
+egui = "0.31.1"
+egui-winit = "0.31.1"
+bytemuck = { version = "1.16", features = ["derive"] }
+egui-wgpu = { version = "0.31.1", features = ["winit"] }
+winit = { version = "0.30", features = ["android-native-activity"] }
