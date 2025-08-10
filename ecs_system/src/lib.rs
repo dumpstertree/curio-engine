@@ -22,7 +22,7 @@ pub fn global_ecs_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
             fn _check_system<T: core::gameplay::ecs::traits::ecs_system::ECSSystemEventless>() {}
             _check_system::<#name>();
 
-            core::dumpster_engine::DumpsterEngine::global_ecs_system::<#name>( );
+            core::dumpster_engine::DumpsterEngine::register_global_ecs_system::<#name>( );
         }
     };
 

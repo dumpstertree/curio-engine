@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use egui_wgpu::wgpu::{Adapter, Device, Instance, Queue, Surface, SurfaceConfiguration};
 use winit::dpi::PhysicalSize;
@@ -7,7 +7,7 @@ use winit::window::{Fullscreen, Window, WindowAttributes};
 
 use crate::events::engine_commands::EngineCommands;
 use crate::io::texture_asset::TextureAsset;
-pub static mut SYSTEM_GPU_ADAPTER_INSTANCE: SystemGPU = SystemGPU {
+pub static SYSTEM_GPU_ADAPTER_INSTANCE: Mutex<SystemGPU> = Mutex::new(SystemGPU {
     device: None,
     queue: None,
     surface: None,
@@ -16,7 +16,7 @@ pub static mut SYSTEM_GPU_ADAPTER_INSTANCE: SystemGPU = SystemGPU {
     window: None,
     depth_texture: None,
     config: None,
-};
+});
 
 // #[derive(Clone)]
 // pub enum CustomEvents {
@@ -34,67 +34,75 @@ pub struct SystemGPU {
 }
 impl SystemGPU {
     pub fn get_device() -> Arc<Device> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.device {
-                Some(x) => return x.clone(),
-                None => panic!("NO DEVICE"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.device {
+            Some(x) => return x.clone(),
+            None => panic!("NO DEVICE"),
         }
     }
     pub fn get_queue() -> Arc<Queue> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.queue {
-                Some(x) => return x.clone(),
-                None => panic!("NO QUEUE"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.queue {
+            Some(x) => return x.clone(),
+            None => panic!("NO QUEUE"),
         }
     }
     pub fn get_surface() -> Arc<Surface<'static>> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.surface {
-                Some(x) => return x.clone(),
-                None => panic!("NO SURFACE"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.surface {
+            Some(x) => return x.clone(),
+            None => panic!("NO SURFACE"),
         }
     }
     pub fn get_instance() -> Arc<Instance> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.instance {
-                Some(x) => return x.clone(),
-                None => panic!("NO INSTANCE"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.instance {
+            Some(x) => return x.clone(),
+            None => panic!("NO INSTANCE"),
         }
     }
     pub fn get_adapter() -> Arc<Adapter> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.adapter {
-                Some(x) => return x.clone(),
-                None => panic!("NO APADTER"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.adapter {
+            Some(x) => return x.clone(),
+            None => panic!("NO APADTER"),
         }
     }
     pub fn get_window() -> Arc<Window> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.window {
-                Some(x) => return x.clone(),
-                None => panic!("NO WINDOW"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.window {
+            Some(x) => return x.clone(),
+            None => panic!("NO WINDOW"),
         }
     }
     pub fn get_depth_texture() -> Arc<TextureAsset> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.depth_texture {
-                Some(x) => return x.clone(),
-                None => panic!("NO DEVICE"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.depth_texture {
+            Some(x) => return x.clone(),
+            None => panic!("NO DEVICE"),
         }
     }
     pub fn get_config() -> Arc<SurfaceConfiguration> {
-        unsafe {
-            match &SYSTEM_GPU_ADAPTER_INSTANCE.config {
-                Some(x) => return x.clone(),
-                None => panic!("NO DEVICE"),
-            }
+        let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            panic!("FAILED");
+        };
+        match &guard.config {
+            Some(x) => return x.clone(),
+            None => panic!("NO DEVICE"),
         }
     }
     pub fn set_cursor_visible(visible: bool) {
@@ -107,30 +115,37 @@ impl SystemGPU {
     }
     pub fn set_resolution(w: i32, h: i32) {
         println!("set {}, {}", w, h);
-        let config = SystemGPU::get_config();
-        let surface = SystemGPU::get_surface();
-        let window = SystemGPU::get_window();
-        let device = SystemGPU::get_device();
 
-        let mut config = (*config).clone();
-        config.width = w as u32;
-        config.height = h as u32;
+        let mut config: SurfaceConfiguration;
+        {
+            let c = SystemGPU::get_config();
+            let surface = SystemGPU::get_surface();
+            let window = SystemGPU::get_window();
+            let device = SystemGPU::get_device();
 
-        // let mut s = window.inner_size();
-        // s.width = w as u32;
-        // s.height = h as u32;
+            config = (*c).clone();
+            config.width = w as u32;
+            config.height = h as u32;
 
-        // println!("size {}, {} ", s.width, s.height);
-        // window.set_resizable(true);
-        // window.set_min_inner_size(Some(LogicalSize::new(config.width, config.height)));
-        // window.set_max_inner_size(Some(LogicalSize::new(config.width, config.height)));
-        let _ = window.request_inner_size(PhysicalSize::new(config.width, config.height));
+            // let mut s = window.inner_size();
+            // s.width = w as u32;
+            // s.height = h as u32;
 
-        surface.configure(&(*device), &config);
+            // println!("size {}, {} ", s.width, s.height);
+            // window.set_resizable(true);
+            // window.set_min_inner_size(Some(LogicalSize::new(config.width, config.height)));
+            // window.set_max_inner_size(Some(LogicalSize::new(config.width, config.height)));
+            let _ = window.request_inner_size(PhysicalSize::new(config.width, config.height));
 
-        unsafe {
-            SYSTEM_GPU_ADAPTER_INSTANCE.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
-            SYSTEM_GPU_ADAPTER_INSTANCE.config = Some(Arc::new(config));
+            surface.configure(&(*device), &config);
+        }
+        {
+            let dt = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
+            let Ok(mut guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+                panic!("FAILED");
+            };
+            guard.depth_texture = dt;
+            guard.config = Some(Arc::new(config));
         }
     }
     pub fn set_fullscreen(fullscreeen: bool) {
@@ -149,6 +164,8 @@ impl SystemGPU {
             .with_inner_size(winit::dpi::LogicalSize::new(1920.0, 1080.0))
             .with_title("My Window");
         let event_loop: EventLoop<EngineCommands> = EventLoop::with_user_event().build().unwrap();
+
+        #[allow(deprecated)]
         let window: Arc<Window> = event_loop.create_window(window_attributes).unwrap().into();
         // let size = window.inner_size();
 
@@ -207,19 +224,29 @@ impl SystemGPU {
             desired_maximum_frame_latency: 2,
         };
 
-        unsafe {
-            SYSTEM_GPU_ADAPTER_INSTANCE = SystemGPU {
-                surface: Some(Arc::new(surface)),
-                instance: Some(Arc::new(instance)),
-                device: Some(Arc::new(device)),
-                queue: Some(Arc::new(queue)),
-                adapter: Some(Arc::new(adapter)),
-                window: Some(window),
-                depth_texture: None,
-                config: Some(Arc::new(config)),
-            };
-
-            SYSTEM_GPU_ADAPTER_INSTANCE.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
+        {
+            {
+                let Ok(mut guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+                    panic!("FAILED");
+                };
+                // SYSTEM_GPU_ADAPTER_INSTANCE = Mutex::new(SystemGPU {
+                guard.surface = Some(Arc::new(surface));
+                guard.instance = Some(Arc::new(instance));
+                guard.device = Some(Arc::new(device));
+                guard.queue = Some(Arc::new(queue));
+                guard.adapter = Some(Arc::new(adapter));
+                guard.window = Some(window);
+                guard.depth_texture = None;
+                guard.config = Some(Arc::new(config));
+            }
+            // });
+            {
+                let dt = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
+                let Ok(mut guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+                    panic!("FAILED");
+                };
+                guard.depth_texture = dt;
+            }
             // let d = Texture_asset::create_depth_texture("depth_texture");
         }
         event_loop

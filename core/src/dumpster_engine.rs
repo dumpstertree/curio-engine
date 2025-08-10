@@ -1,4 +1,5 @@
 use std::any::type_name;
+use std::sync::Mutex;
 
 use winit::event_loop::EventLoop;
 
@@ -11,20 +12,24 @@ use crate::system::system_components::{system_component_graphics, system_compone
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::window::system_window::SystemWindow;
 
-static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Vec::new();
+static REGISTERED_GLOBAL_ECS_SYSTEMS: Mutex<Vec<fn() -> Box<dyn ECSSystemEventless>>> = Mutex::new(Vec::new());
 
 pub struct DumpsterEngine {}
 impl DumpsterEngine {
-    pub fn global_ecs_system<T>()
+    pub fn register_global_ecs_system<T>()
     where
         T: 'static + ECSSystemEventless + Default + Clone,
     {
         let type_id = type_name::<T>();
         println!("register {}", type_id);
-        unsafe {
-            let x: fn() -> Box<dyn ECSSystemEventless> = || return Box::new(T::default());
-            REGISTERED_ECS_SYSTEMS.push(x);
-        }
+
+        let Ok(mut guard) = REGISTERED_GLOBAL_ECS_SYSTEMS.lock() else {
+            println!("failed to lock REGISTERED_ECS_SYSTEMS");
+            return;
+        };
+
+        let callback: fn() -> Box<dyn ECSSystemEventless> = || return Box::new(T::default());
+        guard.push(callback);
     }
     pub fn run<TGameEvents>(
         event_loop: EventLoop<EngineCommands>,
@@ -46,10 +51,12 @@ impl DumpsterEngine {
         // create built in systems
         let mut ecs_system_built_in: Vec<Box<dyn ECSSystemEventless>> = vec![];
 
-        unsafe {
-            for x in REGISTERED_ECS_SYSTEMS.iter() {
-                ecs_system_built_in.push(x());
-            }
+        let Ok(guard) = REGISTERED_GLOBAL_ECS_SYSTEMS.lock() else {
+            println!("failed to lock REGISTERED_ECS_SYSTEMS");
+            return;
+        };
+        for x in guard.iter() {
+            ecs_system_built_in.push(x());
         }
 
         gameplay.set_systems(ecs_system_built_in);
