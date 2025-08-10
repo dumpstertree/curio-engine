@@ -53,14 +53,14 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
 
         game_state.edit::<GUIState>(|x| {
             let mut w = GuiWindow::new(String::from("cur"), screen_pos.clone(), Vector3::zero());
-            w.add(GuiElement::new_label(String::from("HERE"), 20.0, color::Color::get_red()));
+            w.add(GuiElement::new_label(String::from("HERE"), 20.0, color::Color::red()));
 
             x.guis.push(w);
         });
 
         game_state.edit::<GizmosState>(|x| {
             x.draw_calls
-                .push(Gizmo::cube(matrix, Vector3::one() * 3.0, color::Color::get_blue()));
+                .push(Gizmo::cube(matrix, Vector3::one() * 3.0, color::Color::blue()));
         });
     }
 }

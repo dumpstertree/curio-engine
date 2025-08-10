@@ -35,7 +35,7 @@ impl Material {
             self.textures.push(None);
         }
         for _ in &self.shader_desc.colors {
-            self.colors.push(Color::get_black());
+            self.colors.push(Color::black());
             self.colors_uniform.push(None);
         }
     }
@@ -67,7 +67,7 @@ impl Material {
             let device = SystemGPU::get_device();
             let color_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
                 label: Some("Color Buffer"),
-                contents: bytemuck::cast_slice(&[ColorUniform::new(color.r, color.g, color.b, color.a)]),
+                contents: bytemuck::cast_slice(&[ColorUniform::new(color.as_r_01(), color.as_g_01(), color.as_b_01(), color.as_a_01())]),
                 usage: egui_wgpu::wgpu::BufferUsages::UNIFORM | egui_wgpu::wgpu::BufferUsages::COPY_DST,
             });
             self.colors[i] = color;

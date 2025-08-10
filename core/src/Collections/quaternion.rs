@@ -1,27 +1,67 @@
-use core::fmt;
-use std::{f32::consts::PI, ops::Mul};
-
 use crate::collections::vector3::Vector3;
+use core::fmt;
+use fmt::Display;
+use serde::Serialize;
+use std::f32::consts::PI;
+use std::fmt::Formatter;
+use std::fmt::Result;
+use std::ops::Mul;
 
-#[derive(Clone, Copy)]
+/// A representation of 3D rotation
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Default)]
 pub struct Quaternion {
-    x: f32,
-    y: f32,
-    z: f32,
-    w: f32,
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub w: f32,
 }
 
 impl Quaternion {
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quaternion {
+    /// Returns a Quaternion with provided values
+    pub const fn new(x: f32, y: f32, z: f32, w: f32) -> Quaternion {
         Quaternion { x: x, y: y, z: z, w: w }
     }
-    pub fn identity() -> Quaternion {
+    /// Returns a Quaternion with default values of 0.0, 0.0, 0.0, 1.0
+    pub const fn identity() -> Quaternion {
         Quaternion::new(0.0, 0.0, 0.0, 1.0)
     }
-    pub fn zero() -> Quaternion {
+    /// Returns a Quaternion with default values of 0.0, 0.0, 0.0, 0.0
+    pub const fn zero() -> Quaternion {
         Quaternion::new(0.0, 0.0, 0.0, 10.0)
     }
-    pub fn look_rotation(forward: Vector3, up: Vector3) -> Quaternion {
+}
+// static
+impl Quaternion {
+    /// Returns an instance of a Quaternion representing the euler angles provided
+    pub fn from_euler(euler: Vector3) -> Quaternion {
+        let cr: f32 = f32::cos(euler.x * 0.5);
+        let sr: f32 = f32::sin(euler.x * 0.5);
+        let cp: f32 = f32::cos(euler.y * 0.5);
+        let sp: f32 = f32::sin(euler.y * 0.5);
+        let cy: f32 = f32::cos(euler.z * 0.5);
+        let sy: f32 = f32::sin(euler.z * 0.5);
+
+        Quaternion::new(
+            cr * cp * cy + sr * sp * sy,
+            sr * cp * cy - cr * sp * sy,
+            cr * sp * cy + sr * cp * sy,
+            cr * cp * sy - sr * sp * cy,
+        )
+    }
+    /// Returns an instance of a Quaternion representing the angle in degrees around provided axis
+    pub fn from_angle_axis(axis: Vector3, angle: f32) -> Quaternion {
+        if angle == 0.0 {
+            return Quaternion::identity();
+        }
+        Quaternion {
+            x: axis.x * f32::sin(angle / 2.0),
+            y: axis.y * f32::sin(angle / 2.0),
+            z: axis.z * f32::sin(angle / 2.0),
+            w: f32::cos(angle / 2.0),
+        }
+    }
+    /// Returns an instance of a Quaternion representing the orientation of forward, up and the cross product
+    pub fn from_look_rotation(forward: Vector3, up: Vector3) -> Quaternion {
         let f = forward.normalize_and_copy();
         let u = up.normalize_and_copy();
         let r = Vector3::cross(u, f).normalize_and_copy();
@@ -49,7 +89,11 @@ impl Quaternion {
             Quaternion::new((f.x + r.z) * inv_s, (u.z + f.y) * inv_s, 0.25 * s, (r.y - u.x) * inv_s)
         }
     }
+}
+// instance
 
+impl Quaternion {
+    /// Returns a new instance of Vector3 with the Quaternion converted to euler angles
     pub fn to_euler(&self) -> Vector3 {
         let sinr_cosp = 2.0 * (self.w * self.x + self.y * self.z);
         let cosr_cosp = 1.0 - 2.0 * (self.x * self.x + self.y * self.y);
@@ -69,37 +113,7 @@ impl Quaternion {
 
         Vector3::new(pitch.to_degrees(), yaw.to_degrees(), roll.to_degrees())
     }
-    pub fn from_euler(euler: Vector3) -> Quaternion {
-        let cr: f32 = f32::cos(euler.x * 0.5);
-        let sr: f32 = f32::sin(euler.x * 0.5);
-        let cp: f32 = f32::cos(euler.y * 0.5);
-        let sp: f32 = f32::sin(euler.y * 0.5);
-        let cy: f32 = f32::cos(euler.z * 0.5);
-        let sy: f32 = f32::sin(euler.z * 0.5);
-
-        Quaternion::new(
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            cr * sp * cy + sr * cp * sy,
-            cr * cp * sy - sr * sp * cy,
-        )
-    }
-    pub fn from_angle_axis(axis: Vector3, angle: f32) -> Quaternion {
-        if angle == 0.0 {
-            return Quaternion::identity();
-        }
-        Quaternion {
-            x: axis.x * f32::sin(angle / 2.0),
-            y: axis.y * f32::sin(angle / 2.0),
-            z: axis.z * f32::sin(angle / 2.0),
-            w: f32::cos(angle / 2.0),
-        }
-    }
-    pub fn to_cg_math(&self) -> cgmath::Quaternion<f32> {
-        cgmath::Quaternion::new(self.w, self.x, self.y, self.z)
-    }
 }
-
 // whole num mult
 impl Mul<Quaternion> for Quaternion {
     type Output = Quaternion;
@@ -112,6 +126,7 @@ impl Mul<Quaternion> for Quaternion {
         }
     }
 }
+// vector3 mult
 impl Mul<Vector3> for Quaternion {
     type Output = Vector3;
     fn mul(self, v: Vector3) -> Vector3 {
@@ -128,9 +143,9 @@ impl Mul<Vector3> for Quaternion {
         v + uv + uuv
     }
 }
-
-impl fmt::Display for Quaternion {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+// display
+impl Display for Quaternion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "Quaternion({}, {}, {}, {})", self.x, self.y, self.z, self.w)
     }
 }

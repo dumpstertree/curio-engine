@@ -1,4 +1,5 @@
 use crate::{
+    collections::{color::Color, event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
     events::engine_commands::EngineCommands,
     system::{
         system_game_state::IState,
@@ -7,7 +8,6 @@ use crate::{
             state_gui::{GuiElement, GuiWindow},
         },
     },
-    collections::{color::Color, event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
 };
 
 #[derive(Clone)]
@@ -39,7 +39,7 @@ impl GUIStateDebug {
     pub fn default() -> GUIStateDebug {
         GUIStateDebug {
             contents: Vec::new(),
-            color: Color::get_green(),
+            color: Color::new_hex("#f4ac62"),
             size: 18.0,
         }
     }

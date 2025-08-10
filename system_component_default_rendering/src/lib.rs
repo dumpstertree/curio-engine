@@ -204,7 +204,11 @@ impl SystemComponent for SystemComponentDefaultGraphics {
                                 font_id.size = label_desc.font_size // whatever size you want here
                             }
                             ui.colored_label(
-                                Color32::from_rgb(label_desc.color.r_0255(), label_desc.color.g_0255(), label_desc.color.b_0255()),
+                                Color32::from_rgb(
+                                    label_desc.color.as_r_0255() as u8,
+                                    label_desc.color.as_g_0255() as u8,
+                                    label_desc.color.as_b_0255() as u8,
+                                ),
                                 &label_desc.contents,
                             );
                         }
@@ -238,7 +242,11 @@ impl SystemComponent for SystemComponentDefaultGraphics {
                                 font_id.size = label_desc.font_size // whatever size you want here
                             }
                             ui.colored_label(
-                                Color32::from_rgb(label_desc.color.r_0255(), label_desc.color.g_0255(), label_desc.color.b_0255()),
+                                Color32::from_rgb(
+                                    label_desc.color.as_r_0255() as u8,
+                                    label_desc.color.as_g_0255() as u8,
+                                    label_desc.color.as_b_0255() as u8,
+                                ),
                                 &label_desc.contents,
                             );
                         }

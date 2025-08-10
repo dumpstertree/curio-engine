@@ -49,7 +49,7 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
         state.edit::<GizmosState>(|x| {
             for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
                 x.draw_calls
-                    .push(Gizmo::cube(transform.get_matrix(), collider.size, color::Color::get_green()));
+                    .push(Gizmo::cube(transform.get_matrix(), collider.size, color::Color::green()));
             }
         });
     }

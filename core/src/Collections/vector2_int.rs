@@ -38,7 +38,6 @@ impl Vector2Int {
     pub fn magnitude(self) -> f32 {
         ((self.x * self.x + self.y * self.y) as f32).sqrt()
     }
-
     /// Normalizes all the values from 0-1 of THIS instance
     pub fn normalize(&mut self) {
         let mag = self.magnitude();

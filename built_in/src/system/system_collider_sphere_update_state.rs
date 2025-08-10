@@ -56,7 +56,7 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
                 .iter()
             {
                 x.draw_calls
-                    .push(Gizmo::sphere(transform.get_matrix(), collider.diameter, Color::get_green()));
+                    .push(Gizmo::sphere(transform.get_matrix(), collider.diameter, Color::green()));
             }
         });
     }

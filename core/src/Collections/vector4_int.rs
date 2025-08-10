@@ -8,7 +8,7 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Result;
 use std::ops::{Add, Div, Mul, Sub};
-
+/// A 4D Vector backed by i32
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Default)]
 pub struct Vector4Int {
     pub x: i32,

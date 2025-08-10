@@ -71,10 +71,12 @@ impl Matrix4x4 {
     }
     pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
         let pos2 = cgmath::Vector3::new(pos.x, pos.y, pos.z);
+        let rot2 = cgmath::Quaternion::new(rot.w, rot.x, rot.y, rot.z);
+
         Matrix4x4 {
             model: (cgmath::Matrix4::from_translation(pos2)
                 * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
-                * cgmath::Matrix4::from(rot.to_cg_math()))
+                * cgmath::Matrix4::from(rot2))
             .into(),
         }
     }
@@ -113,7 +115,7 @@ impl Matrix4x4 {
             self.model[1][2], // matrix.m21,
         );
 
-        return Quaternion::look_rotation(forward, upward);
+        return Quaternion::from_look_rotation(forward, upward);
     }
 
     pub fn extract_position(self) -> Vector3 {
