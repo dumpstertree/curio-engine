@@ -1,6 +1,6 @@
 use crate::{
+    io::AssetLoader::AssetLoader,
     Collections::{event_queue::EventQueue2, game_state::GameState},
-    IO::AssetLoader::AssetLoader,
 };
 use hecs::World;
 use intertrait::CastFrom;

@@ -1,6 +1,6 @@
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 
-use super::Asset::Asset;
+use super::asset::Asset;
 
 // data
 #[derive(Clone)]

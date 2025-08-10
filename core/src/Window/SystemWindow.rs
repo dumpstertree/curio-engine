@@ -35,12 +35,12 @@ impl SystemWindow {
         }
 
         // run
-        event_loop.run_app(self);
+        let _ = event_loop.run_app(self);
     }
 }
 
 impl ApplicationHandler<EngineCommands> for SystemWindow {
-    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {}
+    fn resumed(&mut self, _: &winit::event_loop::ActiveEventLoop) {}
 
     fn user_event(&mut self, event_loop: &winit::event_loop::ActiveEventLoop, event: EngineCommands) {
         match event {
@@ -85,7 +85,7 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
             }
             EngineCommands::Redraw => {}
             EngineCommands::Exit => todo!(),
-            EngineCommands::Resize(vector3) => todo!(),
+            EngineCommands::Resize(_) => todo!(),
             EngineCommands::Fullscreen(_) => todo!(),
             EngineCommands::Resizable(_) => todo!(),
             EngineCommands::Cursor(_) => todo!(),
@@ -137,8 +137,8 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
             }
 
             WindowEvent::KeyboardInput {
-                device_id,
-                is_synthetic,
+                device_id: _,
+                is_synthetic: _,
                 event,
             } => {
                 if event.repeat {
@@ -172,7 +172,7 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                     );
                 }
             }
-            WindowEvent::CursorMoved { device_id, position } => {
+            WindowEvent::CursorMoved { device_id: _, position } => {
                 for c in self.components.iter_mut() {
                     c.input_mouse_position(
                         &mut self.gamestate,
@@ -180,7 +180,7 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                     );
                 }
             }
-            WindowEvent::MouseInput { device_id, state, button } => {
+            WindowEvent::MouseInput { device_id: _, state, button } => {
                 let state = if state.is_pressed() { KeyState::Down } else { KeyState::Up };
 
                 for c in self.components.iter_mut() {

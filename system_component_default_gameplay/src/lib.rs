@@ -1,7 +1,7 @@
 use core::{
     Collections::{event_queue::EventQueue2, game_state::GameState},
-    IO::AssetLoader::AssetLoader,
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
+    io::AssetLoader::AssetLoader,
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
 };
 use hecs::World;
@@ -68,7 +68,7 @@ where
                 .debug(game_state, &mut self.scene, system_queue);
         }
     }
-    fn tick(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
         // clear old
         // self.gameplay_event_queue.evnt_queue.clear();
 

@@ -10,21 +10,15 @@ pub struct CameraState {
     pub height: i32,
     pub position: Vector3,
     pub rotation: Quaternion,
-    // pub aspect: f32,
     pub fovy: f32,
     pub znear: f32,
     pub zfar: f32,
-    yaw: Rad<f32>,
-    pitch: Rad<f32>,
 }
 impl CameraState {
-    pub fn new(width: i32, height: i32, position: Vector3, yaw: Rad<f32>, pitch: Rad<f32>) -> CameraState {
+    pub fn new(width: i32, height: i32, position: Vector3, _: Rad<f32>, _: Rad<f32>) -> CameraState {
         CameraState {
             position: position.into(),
             rotation: Quaternion::identity(),
-            yaw: yaw,
-            pitch: pitch,
-            // aspect: 1.0,
             fovy: 60.0,
             znear: 0.1,
             zfar: 100.0,
@@ -54,8 +48,6 @@ impl IState<CameraState> for CameraState {
     fn default() -> CameraState {
         CameraState {
             // matrix: Matrix4x4::default(),
-            pitch: Rad::<f32> { 0: 0.0 },
-            yaw: Rad::<f32> { 0: 0.0 },
             position: Vector3::zero(),
             rotation: Quaternion::identity(),
             width: 128,
@@ -74,8 +66,6 @@ impl IState<CameraState> for CameraState {
 impl CameraState {
     pub fn default() -> CameraState {
         CameraState {
-            pitch: Rad::<f32> { 0: 0.0 },
-            yaw: Rad::<f32> { 0: 0.0 },
             // matrix: Matrix4x4::default(),
             position: Vector3::zero(),
             rotation: Quaternion::identity(),

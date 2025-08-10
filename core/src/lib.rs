@@ -1,8 +1,8 @@
 pub mod dumpster_engine;
 
-pub mod IO {
-    pub mod Asset;
+pub mod io {
     pub mod AssetLoader;
+    pub mod asset;
     pub mod model_asset;
     pub mod texture_asset;
 }

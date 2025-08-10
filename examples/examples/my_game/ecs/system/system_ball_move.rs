@@ -1,6 +1,7 @@
 use built_in::component::{component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform};
 use ecs_event::ECSEvent;
-use ecs_system::global_ecs_system;use hecs::World;
+use ecs_system::global_ecs_system;
+use hecs::World;
 
 use crate::{ecs::component::component_ball::ComponentBall, game_events::GameEvents};
 
@@ -13,19 +14,14 @@ use core::{
 
 #[global_ecs_system]
 pub struct SystemBallMove {}
-impl SystemBallMove {
-    pub fn new() -> Box<SystemBallMove> {
-        Box::new(SystemBallMove {})
-    }
-}
 impl ECSSystemEventless for SystemBallMove {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         let state_time = state.get_value2::<TimeState>();
 
-        for (_, (ball, transform, collider)) in world
+        for (_, (ball, _, collider)) in world
             .query::<(&mut ComponentBall, &mut Transform, &ComponentColliderBox)>()
             .iter()
         {
@@ -65,7 +61,7 @@ impl ECSSystemEventless for SystemBallMove {
 
 #[ECSEvent(GameEvents)]
 impl EventReciever<GameEvents> for SystemBallMove {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue2, event: &GameEvents) {
+    fn dequeue_event(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2, event: &GameEvents) {
         println!("dequeue");
         match event {
             GameEvents::A(_) => println!("A"),

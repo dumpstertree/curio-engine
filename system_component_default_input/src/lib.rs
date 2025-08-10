@@ -34,10 +34,10 @@ impl SystemComponent for SystemComponentDefaultInput {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, gs: &mut GameState) {
+    fn init(&mut self, _: &mut GameState) {
         println!("init input");
     }
-    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
         game_state.edit::<InputState>(|x| {
             // update cursor
             x.cursor.update(self.cursor_pos);
@@ -68,10 +68,10 @@ impl SystemComponent for SystemComponentDefaultInput {
             }
         });
     }
-    fn input_mouse_position(&mut self, game_state: &mut GameState, position: Vector3) {
+    fn input_mouse_position(&mut self, _: &mut GameState, position: Vector3) {
         self.cursor_pos = position;
     }
-    fn input_keyboard(&mut self, game_state: &mut GameState, key: KeyCode, key_state: KeyState) {
+    fn input_keyboard(&mut self, _: &mut GameState, key: KeyCode, key_state: KeyState) {
         self.input_state_keyboard
             .insert(key, key_state == KeyState::Down);
     }

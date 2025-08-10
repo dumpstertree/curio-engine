@@ -1,6 +1,6 @@
 use super::super::Collections::material::Material;
 use super::super::Collections::Mesh::Mesh;
-use super::Asset::Asset;
+use super::asset::Asset;
 
 //data
 

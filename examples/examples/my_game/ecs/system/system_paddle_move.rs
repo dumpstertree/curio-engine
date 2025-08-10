@@ -1,5 +1,6 @@
 use built_in::component::component_transform::Transform;
-use ecs_system::global_ecs_system;use hecs::World;
+use ecs_system::global_ecs_system;
+use hecs::World;
 
 use crate::{constants::Constants, ecs::component::component_paddle::ComponentPaddle};
 
@@ -12,21 +13,16 @@ use core::{
 // use dumpster_engine::
 #[global_ecs_system]
 pub struct SystemPaddleMove {}
-impl SystemPaddleMove {
-    pub fn new() -> Box<SystemPaddleMove> {
-        Box::new(SystemPaddleMove {})
-    }
-}
 
 impl ECSSystemEventless for SystemPaddleMove {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         let state_input = state.get_value2::<InputState>();
         let state_time = state.get_value2::<TimeState>();
 
-        for (_, (paddle, transform)) in world
+        for (_, (paddle, _)) in world
             .query::<(&mut ComponentPaddle, &mut Transform)>()
             .iter()
         {

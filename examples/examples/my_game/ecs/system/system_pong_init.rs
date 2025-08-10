@@ -2,13 +2,14 @@ use built_in::component::{
     component_camera::Camera, component_colliders::component_collider_box::ComponentColliderBox, component_renderer::Renderer,
     component_transform::Transform,
 };
-use ecs_system::global_ecs_system;use hecs::World;
+use ecs_system::global_ecs_system;
+use hecs::World;
 
 use crate::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle};
 use core::{
     Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
-    IO::AssetLoader::AssetLoader,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    io::AssetLoader::AssetLoader,
     random::Random,
     system::system_game_states::state_camera::CameraState,
 };
@@ -20,10 +21,10 @@ impl SystemPongInit {
     }
 }
 impl ECSSystemEventless for SystemPongInit {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn init(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2, asset_loader: &mut AssetLoader) {
+    fn init(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2, asset_loader: &mut AssetLoader) {
         state.edit::<CameraState>(|x| {
             x.width = 1920;
             x.height = 1080;

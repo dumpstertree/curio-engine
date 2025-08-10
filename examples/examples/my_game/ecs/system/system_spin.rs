@@ -1,5 +1,6 @@
 use built_in::component::component_transform::Transform;
-use ecs_system::global_ecs_system;use hecs::World;
+use ecs_system::global_ecs_system;
+use hecs::World;
 
 use core::{
     Collections::{event_queue::EventQueue2, game_state::GameState, quaternion::Quaternion},
@@ -17,10 +18,10 @@ impl SystemSpin {
     }
 }
 impl ECSSystemEventless for SystemSpin {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         let t = state.get_value2::<TimeState>();
         for (_, (spin, transform)) in world.query::<(&Spin, &mut Transform)>().iter() {
             transform.rotation = Quaternion::from_angle_axis(spin.axis, spin.speed * t.scaled_delta_time) * transform.rotation;

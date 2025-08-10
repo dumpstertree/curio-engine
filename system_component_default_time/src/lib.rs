@@ -31,9 +31,9 @@ impl SystemComponent for SystemComponentDefaultTime {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, gs: &mut GameState) {}
+    fn init(&mut self, _: &mut GameState) {}
 
-    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
         let state_debug = game_state.get_value2::<StateDebug>();
 
         let cur_time = self.instant.elapsed().as_secs_f64();
@@ -52,7 +52,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         let average_fps = (total / (self.fps_average.len() as f64)).round();
 
         // is paused
-        let pause_timescale = if state_debug.is_paused { 0.0 } else { 1.0 };
+        let pause_timescale = self.timescale * if state_debug.is_paused { 0.0 } else { 1.0 };
 
         // edit the state
         game_state.edit::<TimeState>(|x| {

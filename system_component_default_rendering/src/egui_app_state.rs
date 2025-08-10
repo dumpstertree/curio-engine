@@ -77,6 +77,7 @@ impl AppState {
         }
     }
 
+    #[allow(unused)]
     fn resize_surface(&mut self, width: u32, height: u32) {
         self.surface_config.width = width;
         self.surface_config.height = height;

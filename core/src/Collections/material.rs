@@ -2,9 +2,9 @@ use egui_wgpu::wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Devic
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    io::{texture_asset::TextureAsset, AssetLoader::AssetLoader},
     system_adapters::adapter_system_gpu::SystemGPU,
     Collections::Color::Color,
-    IO::{texture_asset::TextureAsset, AssetLoader::AssetLoader},
 };
 
 //data

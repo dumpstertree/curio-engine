@@ -6,8 +6,8 @@ use winit::event_loop::EventLoop;
 use winit::window::{Fullscreen, Window, WindowAttributes};
 
 use crate::events::engine_commands::EngineCommands;
-use crate::IO::texture_asset::TextureAsset;
-pub static mut system_gpu_adapter_instance: SystemGPU = SystemGPU {
+use crate::io::texture_asset::TextureAsset;
+pub static mut SYSTEM_GPU_ADAPTER_INSTANCE: SystemGPU = SystemGPU {
     device: None,
     queue: None,
     surface: None,
@@ -35,7 +35,7 @@ pub struct SystemGPU {
 impl SystemGPU {
     pub fn get_device() -> Arc<Device> {
         unsafe {
-            match &system_gpu_adapter_instance.device {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.device {
                 Some(x) => return x.clone(),
                 None => panic!("NO DEVICE"),
             }
@@ -43,7 +43,7 @@ impl SystemGPU {
     }
     pub fn get_queue() -> Arc<Queue> {
         unsafe {
-            match &system_gpu_adapter_instance.queue {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.queue {
                 Some(x) => return x.clone(),
                 None => panic!("NO QUEUE"),
             }
@@ -51,7 +51,7 @@ impl SystemGPU {
     }
     pub fn get_surface() -> Arc<Surface<'static>> {
         unsafe {
-            match &system_gpu_adapter_instance.surface {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.surface {
                 Some(x) => return x.clone(),
                 None => panic!("NO SURFACE"),
             }
@@ -59,7 +59,7 @@ impl SystemGPU {
     }
     pub fn get_instance() -> Arc<Instance> {
         unsafe {
-            match &system_gpu_adapter_instance.instance {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.instance {
                 Some(x) => return x.clone(),
                 None => panic!("NO INSTANCE"),
             }
@@ -67,7 +67,7 @@ impl SystemGPU {
     }
     pub fn get_adapter() -> Arc<Adapter> {
         unsafe {
-            match &system_gpu_adapter_instance.adapter {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.adapter {
                 Some(x) => return x.clone(),
                 None => panic!("NO APADTER"),
             }
@@ -75,7 +75,7 @@ impl SystemGPU {
     }
     pub fn get_window() -> Arc<Window> {
         unsafe {
-            match &system_gpu_adapter_instance.window {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.window {
                 Some(x) => return x.clone(),
                 None => panic!("NO WINDOW"),
             }
@@ -83,7 +83,7 @@ impl SystemGPU {
     }
     pub fn get_depth_texture() -> Arc<TextureAsset> {
         unsafe {
-            match &system_gpu_adapter_instance.depth_texture {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.depth_texture {
                 Some(x) => return x.clone(),
                 None => panic!("NO DEVICE"),
             }
@@ -91,7 +91,7 @@ impl SystemGPU {
     }
     pub fn get_config() -> Arc<SurfaceConfiguration> {
         unsafe {
-            match &system_gpu_adapter_instance.config {
+            match &SYSTEM_GPU_ADAPTER_INSTANCE.config {
                 Some(x) => return x.clone(),
                 None => panic!("NO DEVICE"),
             }
@@ -129,8 +129,8 @@ impl SystemGPU {
         surface.configure(&(*device), &config);
 
         unsafe {
-            system_gpu_adapter_instance.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
-            system_gpu_adapter_instance.config = Some(Arc::new(config));
+            SYSTEM_GPU_ADAPTER_INSTANCE.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
+            SYSTEM_GPU_ADAPTER_INSTANCE.config = Some(Arc::new(config));
         }
     }
     pub fn set_fullscreen(fullscreeen: bool) {
@@ -208,7 +208,7 @@ impl SystemGPU {
         };
 
         unsafe {
-            system_gpu_adapter_instance = SystemGPU {
+            SYSTEM_GPU_ADAPTER_INSTANCE = SystemGPU {
                 surface: Some(Arc::new(surface)),
                 instance: Some(Arc::new(instance)),
                 device: Some(Arc::new(device)),
@@ -219,7 +219,7 @@ impl SystemGPU {
                 config: Some(Arc::new(config)),
             };
 
-            system_gpu_adapter_instance.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
+            SYSTEM_GPU_ADAPTER_INSTANCE.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
             // let d = Texture_asset::create_depth_texture("depth_texture");
         }
         event_loop

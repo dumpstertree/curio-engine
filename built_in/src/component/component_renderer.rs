@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use core::IO::model_asset::ModelAsset;
+use core::io::model_asset::ModelAsset;
 
 #[derive(Clone)]
 pub struct Renderer {

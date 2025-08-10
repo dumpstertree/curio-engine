@@ -1,11 +1,9 @@
 use rapier3d::{
     na::Isometry3,
-    parry::{
-        query,
-        shape::{Ball, Cuboid},
-    },
+    parry::{query, shape::Cuboid},
 };
 
+use core::gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact};
 use core::{
     Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
     gameplay::ecs::component::component_collider::ColliderSnapshot,
@@ -15,16 +13,12 @@ use core::{
         system_game_states::{state_colliders::StateCollider, state_collision::StateCollision},
     },
 };
-use core::{
-    gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact},
-    system::system_game_state::IState,
-};
 
 pub struct SystemComponentDefaultPhysics {
     buffer_collider_box: [(Cuboid, ColliderSnapshot); 1024],
     buffer_collider_box_cnt: usize,
-    buffer_collider_ball: [(Ball, Isometry3<f32>, i32); 1024],
-    buffer_collider_ball_cnt: usize,
+    // buffer_collider_ball: [(Ball, Isometry3<f32>, i32); 1024],
+    // buffer_collider_ball_cnt: usize,
 }
 
 const DEFAULT_CUBE: Cuboid = Cuboid {
@@ -44,8 +38,8 @@ impl SystemComponentDefaultPhysics {
         Box::new(SystemComponentDefaultPhysics {
             buffer_collider_box: [const { (DEFAULT_CUBE, ColliderSnapshot::default()) }; 1024],
             buffer_collider_box_cnt: 0,
-            buffer_collider_ball: [(Ball::new(0.0), Isometry3::identity(), -1); 1024],
-            buffer_collider_ball_cnt: 0,
+            // buffer_collider_ball: [(Ball::new(0.0), Isometry3::identity(), -1); 1024],
+            // buffer_collider_ball_cnt: 0,
         })
     }
 }
@@ -55,9 +49,9 @@ impl SystemComponent for SystemComponentDefaultPhysics {
     fn order(&self) -> i32 {
         2000
     }
-    fn init(&mut self, gs: &mut GameState) {}
+    fn init(&mut self, _: &mut GameState) {}
 
-    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
         // reset
         self.buffer_collider_box_cnt = 0;
 
@@ -74,12 +68,12 @@ impl SystemComponent for SystemComponentDefaultPhysics {
                         (Cuboid::new(rapier3d::na::Vector3::new(size.x, size.y, size.z)), collider);
                     self.buffer_collider_box_cnt = self.buffer_collider_box_cnt + 1;
                 }
-                ColliderShape::Sphere(def) => {
+                ColliderShape::Sphere(_) => {
                     // let size = def.diameter / 2.0;
                     // self.buffer_collider_ball[self.buffer_collider_ball_cnt] = Ball::new(size);
                     // self.buffer_collider_ball_cnt = self.buffer_collider_ball_cnt + 1;
                 }
-                ColliderShape::Mesh(def) => todo!(),
+                ColliderShape::Mesh(_check_system) => todo!(),
             }
         }
 
