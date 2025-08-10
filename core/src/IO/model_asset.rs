@@ -5,21 +5,21 @@ use super::Asset::Asset;
 //data
 
 #[derive(Clone)]
-pub struct Model_asset {
+pub struct ModelAsset {
     pub mesh: Vec<Mesh>,
     pub materials: Vec<Material>,
 }
 
 // construction
-impl Model_asset {
-    pub fn new(mesh: Vec<Mesh>, materials: Vec<Material>) -> Model_asset {
-        Model_asset { mesh, materials }
+impl ModelAsset {
+    pub fn new(mesh: Vec<Mesh>, materials: Vec<Material>) -> ModelAsset {
+        ModelAsset { mesh, materials }
     }
 }
 // public
-impl Model_asset {}
+impl ModelAsset {}
 // private
-impl Model_asset {}
+impl ModelAsset {}
 // asset
 
-impl Asset for Model_asset {}
+impl Asset for ModelAsset {}

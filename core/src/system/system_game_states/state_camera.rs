@@ -2,7 +2,6 @@ use crate::{
     system::system_game_state::IState,
     Collections::{camera_uniform::CameraUniform, matrix4x4::Matrix4x4, projection::Projection, quaternion::Quaternion, vector3::Vector3},
 };
-use cgmath::*;
 use cgmath::{Matrix4, Rad};
 
 #[derive(Clone)]

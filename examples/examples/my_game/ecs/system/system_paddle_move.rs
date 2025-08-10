@@ -1,6 +1,5 @@
 use built_in::component::component_transform::Transform;
-use ecs_system::ECSSystem;
-use hecs::World;
+use ecs_system::global_ecs_system;use hecs::World;
 
 use crate::{constants::Constants, ecs::component::component_paddle::ComponentPaddle};
 
@@ -11,7 +10,7 @@ use core::{
 };
 
 // use dumpster_engine::
-#[ECSSystem]
+#[global_ecs_system]
 pub struct SystemPaddleMove {}
 impl SystemPaddleMove {
     pub fn new() -> Box<SystemPaddleMove> {

@@ -5,22 +5,22 @@ use std::sync::Arc;
 use egui_wgpu::wgpu::Device;
 use egui_wgpu::wgpu::ShaderModule;
 
-use crate::system_adapters::adapter_system_gpu::SystemGPU;
+// use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Collections::material::Material;
 use crate::Collections::material::ShaderDesc;
 use crate::Collections::Mesh::Mesh;
 use crate::Collections::Mesh::Vertex;
 
-use super::model_asset::Model_asset;
-use super::texture_asset::Texture_asset;
+use super::model_asset::ModelAsset;
+use super::texture_asset::TextureAsset;
 
 pub struct AssetLoader {
-    asset_cache: HashMap<String, Arc<Model_asset>>, // shader_cache: ShaderCache<'a>,
-                                                    // path_texture: String,
-                                                    // path_model: String,
-                                                    // device: &'a Device,
-                                                    // queue: &'a egui_wgpu::wgpu::Queue,
-                                                    // state: &'a State,
+    asset_cache: HashMap<String, Arc<ModelAsset>>, // shader_cache: ShaderCache<'a>,
+                                                   // path_texture: String,
+                                                   // path_model: String,
+                                                   // device: &'a Device,
+                                                   // queue: &'a egui_wgpu::wgpu::Queue,
+                                                   // state: &'a State,
 }
 // impl ISystemComponent for AssetLoader {
 //     fn init(&mut self, asset_loader: &mut AssetLoader, gs: &mut crate::Window::SystemWindow::GameState) {}
@@ -56,7 +56,7 @@ impl AssetLoader {
         self.asset_cache.clear();
     }
     pub fn reduce_cache() {}
-    pub fn load_png(path: String) -> Option<Texture_asset> {
+    pub fn load_png(path: String) -> Option<TextureAsset> {
         // unwrap into vec of bytes
         let bytes = std::fs::read(path);
 
@@ -79,18 +79,18 @@ impl AssetLoader {
     // const PATH_TEXTURE: &str = "Assets/Texture";
     // const PATH_MESH: &str = "assets";
 
-    pub fn load_jpg(path: &str) -> Option<Texture_asset> {
-        // get the path using env path as base
-        let full_path = std::path::Path::new(PATH_MESH).join(path);
+    pub fn load_jpg(_: &str) -> Option<TextureAsset> {
+        // // get the path using env path as base
+        // let full_path = std::path::Path::new(PATH_MESH).join(path);
 
-        // unwrap into vec of bytes
-        let bytes = std::fs::read(full_path);
+        // // unwrap into vec of bytes
+        // let bytes = std::fs::read(full_path);
 
-        // unwrap value
-        let bytes = bytes.unwrap();
+        // // unwrap value
+        // let bytes = bytes.unwrap();
 
-        // convert bytes to jpg
-        let image: Result<image::DynamicImage, image::ImageError> = image::load_from_memory_with_format(&bytes, image::ImageFormat::Jpeg);
+        // // convert bytes to jpg
+        // let image: Result<image::DynamicImage, image::ImageError> = image::load_from_memory_with_format(&bytes, image::ImageFormat::Jpeg);
 
         // unwrap or return null
         // match image {
@@ -117,15 +117,15 @@ impl AssetLoader {
         let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
         my_struct
     }
-    pub fn load_gltf<'a>(&mut self, path: &str) -> Option<Arc<Model_asset>> {
+    pub fn load_gltf<'a>(&mut self, path: &str) -> Option<Arc<ModelAsset>> {
         // return cached
         if self.asset_cache.contains_key(path) {
             return Some(self.asset_cache[path].clone());
         }
         // build new
 
-        let device = SystemGPU::get_device();
-        let queue = SystemGPU::get_queue();
+        // let device = SystemGPU::get_device();
+        // let queue = SystemGPU::get_queue();
         // let Some(device) = &sys.device else { return None };
         // let Some(queue) = &sys.queue else { return None };
         // get the path using env path as base
@@ -151,7 +151,7 @@ impl AssetLoader {
                     for material in gltf.materials() {
                         let pbr = material.pbr_metallic_roughness();
 
-                        let texture_asset: Texture_asset; //= //Texture_asset::new(material.name(), device, queue, width as i32, height as i32, bytes);
+                        let texture_asset: TextureAsset; //= //Texture_asset::new(material.name(), device, queue, width as i32, height as i32, bytes);
                         if let Some(t) = pbr.base_color_texture() {
                             let image2 = &images[t.texture().index()];
                             let mut p = image2.pixels.clone();
@@ -162,9 +162,9 @@ impl AssetLoader {
                                 }
                             }
 
-                            texture_asset = Texture_asset::new_from_buffer(None, image2.width, image2.height, &p[..]);
+                            texture_asset = TextureAsset::new_from_buffer(None, image2.width, image2.height, &p[..]);
                         } else {
-                            texture_asset = Texture_asset::default();
+                            texture_asset = TextureAsset::default();
                         }
 
                         let mut m = Material::new(shader_desc.clone());
@@ -187,7 +187,7 @@ impl AssetLoader {
                         // assume the positions are the count of verticies
                         match reader.read_positions() {
                             Some(positions) => {
-                                for i in 0..positions.len() {
+                                for _ in 0..positions.len() {
                                     verticies.push(Vertex::default());
                                 }
                             }
@@ -279,7 +279,7 @@ impl AssetLoader {
                         all_mesh.push(Mesh::new(String::from(mesh_id), verticies, indices));
                     }
                 }
-                let asset = Arc::new(Model_asset::new(all_mesh, all_material));
+                let asset = Arc::new(ModelAsset::new(all_mesh, all_material));
 
                 self.asset_cache.insert(String::from(path), asset.clone());
 

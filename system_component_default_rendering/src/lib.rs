@@ -1,7 +1,6 @@
 mod egui_app_state;
 mod egui_tools;
 use crate::egui_tools::EguiRenderer;
-use core::Collections::GraphicsBufferCache::Graphics_buffer_cache;
 use core::Collections::camera_uniform::CameraUniform;
 use core::Collections::event_queue::EventQueue2;
 use core::Collections::game_state::GameState;
@@ -10,7 +9,7 @@ use core::Collections::material::Material;
 use core::Collections::matrix4x4::Matrix4x4;
 use core::Collections::{DrawCall::DrawCall, Mesh::Vertex};
 use core::IO::AssetLoader::AssetLoader;
-use core::IO::texture_asset::Texture_asset;
+use core::IO::texture_asset::TextureAsset;
 use core::system::system_component::SystemComponent;
 use core::system::system_components::system_component_graphics::SystemComponentGraphics;
 use core::system::system_game_states::state_camera::CameraState;
@@ -18,7 +17,7 @@ use core::system::system_game_states::state_debug::StateDebug;
 use core::system::system_game_states::state_draw::DrawCallsState;
 use core::system::system_game_states::state_gizmos::GizmosState;
 use core::system::system_game_states::state_gui::GUIState;
-use core::system::system_game_states::state_gui_debug::GUIState_Debug;
+use core::system::system_game_states::state_gui_debug::GUIStateDebug;
 use core::system_adapters::adapter_system_gpu::SystemGPU;
 
 use egui::{Color32, Frame, Pos2, Ui};
@@ -34,7 +33,6 @@ use std::iter;
 use winit::event::WindowEvent;
 
 pub struct SystemComponentDefaultGraphics {
-    buffer_cache: Graphics_buffer_cache,
     camera_rendereing: CameraRenderingComponents,
     // projection: Projection,
     egui_renderer: EguiRenderer,
@@ -155,7 +153,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         let state_draws = game_state.get_value2::<DrawCallsState>();
         let state_gizmos = game_state.get_value2::<GizmosState>();
         let state_gui = &game_state.get_value2::<GUIState>();
-        let state_gui_debug = &game_state.get_value2::<GUIState_Debug>();
+        let state_gui_debug = &game_state.get_value2::<GUIStateDebug>();
 
         //
         let output = SystemComponentDefaultGraphics::get_output_texture(surface);
@@ -288,7 +286,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         game_state.edit::<GUIState>(|x| {
             x.guis.clear();
         });
-        game_state.edit::<GUIState_Debug>(|x| {
+        game_state.edit::<GUIStateDebug>(|x| {
             x.clear();
         });
 
@@ -309,7 +307,6 @@ impl SystemComponentDefaultGraphics {
         let d = &(*SystemGPU::get_device());
 
         Box::new(SystemComponentDefaultGraphics {
-            buffer_cache: Graphics_buffer_cache::new(),
             camera_rendereing: CameraRenderingComponents::new(CameraUniform::new()),
             // projection: p,
             egui_renderer: EguiRenderer::new(d, c.format, None, 1, w),
@@ -368,7 +365,7 @@ impl SystemComponentDefaultGraphics {
                 conservative: false,
             },
             depth_stencil: Some(egui_wgpu::wgpu::DepthStencilState {
-                format: Texture_asset::DEPTH_FORMAT,
+                format: TextureAsset::DEPTH_FORMAT,
                 depth_write_enabled: true,
                 depth_compare: egui_wgpu::wgpu::CompareFunction::Less,
                 stencil: egui_wgpu::wgpu::StencilState::default(),
@@ -411,7 +408,7 @@ impl SystemComponentDefaultGraphics {
             },
         })
     }
-    fn get_depth_attatchment<'a>(depth: &'a Texture_asset) -> Option<RenderPassDepthStencilAttachment<'a>> {
+    fn get_depth_attatchment<'a>(depth: &'a TextureAsset) -> Option<RenderPassDepthStencilAttachment<'a>> {
         Some(egui_wgpu::wgpu::RenderPassDepthStencilAttachment {
             view: &depth.view,
             depth_ops: Some(egui_wgpu::wgpu::Operations {

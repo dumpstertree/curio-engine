@@ -146,63 +146,63 @@ impl Mesh {
         Mesh::new(String::from("Plane"), v, i)
     }
     pub fn primitive_cube(size: crate::Collections::vector3::Vector3) -> Mesh {
-        let cubeLength = size.z;
-        let cubeHeight = size.y;
-        let cubeWidth = size.x;
+        let cube_length = size.z;
+        let cube_height = size.y;
+        let cube_width = size.x;
         let mut v: Vec<Vertex> = Vec::new();
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [-cubeLength * 0.5, -cubeWidth * 0.5, cubeHeight * 0.5],
+            position: [-cube_length * 0.5, -cube_width * 0.5, cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [cubeLength * 0.5, -cubeWidth * 0.5, cubeHeight * 0.5],
+            position: [cube_length * 0.5, -cube_width * 0.5, cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [cubeLength * 0.5, -cubeWidth * 0.5, -cubeHeight * 0.5],
+            position: [cube_length * 0.5, -cube_width * 0.5, -cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [-cubeLength * 0.5, -cubeWidth * 0.5, -cubeHeight * 0.5],
+            position: [-cube_length * 0.5, -cube_width * 0.5, -cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [-cubeLength * 0.5, cubeWidth * 0.5, cubeHeight * 0.5],
+            position: [-cube_length * 0.5, cube_width * 0.5, cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [cubeLength * 0.5, cubeWidth * 0.5, cubeHeight * 0.5],
+            position: [cube_length * 0.5, cube_width * 0.5, cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [cubeLength * 0.5, cubeWidth * 0.5, -cubeHeight * 0.5],
+            position: [cube_length * 0.5, cube_width * 0.5, -cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });
         v.push(Vertex {
             uv0: [0.0, 1.0],
             uv1: [0.0, 0.0],
-            position: [-cubeLength * 0.5, cubeWidth * 0.5, -cubeHeight * 0.5],
+            position: [-cube_length * 0.5, cube_width * 0.5, -cube_height * 0.5],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 1.0],
         });

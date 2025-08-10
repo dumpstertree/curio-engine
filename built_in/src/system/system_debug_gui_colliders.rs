@@ -1,12 +1,12 @@
 use core::{
     Collections::{event_queue::EventQueue2, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-    system::system_game_states::{state_colliders::StateCollider, state_gui_debug::GUIState_Debug},
+    system::system_game_states::{state_colliders::StateCollider, state_gui_debug::GUIStateDebug},
 };
-use ecs_system::ECSSystem;
+use ecs_system::global_ecs_system;
 use hecs::World;
 
-#[ECSSystem]
+#[global_ecs_system]
 pub struct SystemDebugGuiColliders {}
 impl SystemDebugGuiColliders {}
 impl SystemDebugGuiColliders {
@@ -18,11 +18,11 @@ impl ECSSystemEventless for SystemDebugGuiColliders {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn debug(&mut self, game_state: &mut GameState, world: &mut World, system_event_queue: &mut EventQueue2) {
+    fn debug(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue2) {
         // get state
         let state_collider = game_state.get_value2::<StateCollider>();
         // edit state
-        game_state.edit::<GUIState_Debug>(|x| {
+        game_state.edit::<GUIStateDebug>(|x| {
             x.append(format!("Collider Count: {}", state_collider.colliders.len()));
         });
     }

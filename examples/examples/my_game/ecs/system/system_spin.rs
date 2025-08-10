@@ -1,6 +1,5 @@
 use built_in::component::component_transform::Transform;
-use ecs_system::ECSSystem;
-use hecs::World;
+use ecs_system::global_ecs_system;use hecs::World;
 
 use core::{
     Collections::{event_queue::EventQueue2, game_state::GameState, quaternion::Quaternion},
@@ -10,7 +9,7 @@ use core::{
 
 use crate::ecs::component::component_spin::Spin;
 
-#[ECSSystem]
+#[global_ecs_system]
 pub struct SystemSpin {}
 impl SystemSpin {
     pub fn new() -> Box<SystemSpin> {

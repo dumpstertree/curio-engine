@@ -1,17 +1,17 @@
 use std::sync::Arc;
 
-use core::IO::model_asset::Model_asset;
+use core::IO::model_asset::ModelAsset;
 
 #[derive(Clone)]
 pub struct Renderer {
-    pub asset: Option<Arc<Model_asset>>,
+    pub asset: Option<Arc<ModelAsset>>,
 }
 
 impl Renderer {
     pub fn default() -> Renderer {
         Renderer { asset: None }
     }
-    pub fn set_asset(mut self, asset: Option<Arc<Model_asset>>) -> Renderer {
+    pub fn set_asset(mut self, asset: Option<Arc<ModelAsset>>) -> Renderer {
         self.asset = asset;
         self
     }

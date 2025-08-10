@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     system_adapters::adapter_system_gpu::SystemGPU,
     Collections::Color::Color,
-    IO::{texture_asset::Texture_asset, AssetLoader::AssetLoader},
+    IO::{texture_asset::TextureAsset, AssetLoader::AssetLoader},
 };
 
 //data
@@ -12,19 +12,19 @@ use crate::{
 pub struct Material {
     pub shader: ShaderModule,
     shader_desc: ShaderDesc,
-    textures: Vec<Option<Texture_asset>>,
+    textures: Vec<Option<TextureAsset>>,
     colors: Vec<Color>,
     colors_uniform: Vec<Option<Buffer>>,
-    none: Texture_asset,
+    none: TextureAsset,
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct color_uniform {
+pub struct ColorUniform {
     color: [f32; 4],
 }
-impl color_uniform {
-    pub fn new(r: f32, g: f32, b: f32, a: f32) -> color_uniform {
-        color_uniform { color: [r, g, b, a] }
+impl ColorUniform {
+    pub fn new(r: f32, g: f32, b: f32, a: f32) -> ColorUniform {
+        ColorUniform { color: [r, g, b, a] }
     }
 }
 
@@ -48,7 +48,7 @@ impl Material {
             textures: Vec::new(),
             colors: Vec::new(),
             colors_uniform: Vec::new(),
-            none: Texture_asset::none(),
+            none: TextureAsset::none(),
             shader: shader,
         };
         m.initialize_vec_lengths();
@@ -67,7 +67,7 @@ impl Material {
             let device = SystemGPU::get_device();
             let color_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
                 label: Some("Color Buffer"),
-                contents: bytemuck::cast_slice(&[color_uniform::new(color.r, color.g, color.b, color.a)]),
+                contents: bytemuck::cast_slice(&[ColorUniform::new(color.r, color.g, color.b, color.a)]),
                 usage: egui_wgpu::wgpu::BufferUsages::UNIFORM | egui_wgpu::wgpu::BufferUsages::COPY_DST,
             });
             self.colors[i] = color;
@@ -75,10 +75,10 @@ impl Material {
             return;
         }
     }
-    pub fn set_texture_with_index(&mut self, texture: Option<Texture_asset>, index: usize) {
+    pub fn set_texture_with_index(&mut self, texture: Option<TextureAsset>, index: usize) {
         self.textures[index] = texture;
     }
-    pub fn set_texture_with_label(&mut self, texture: Option<Texture_asset>, label: &str) {
+    pub fn set_texture_with_label(&mut self, texture: Option<TextureAsset>, label: &str) {
         for i in 0..self.shader_desc.textures.len() {
             let is_same = self.shader_desc.textures[i].label == label;
             if !is_same {
@@ -109,7 +109,7 @@ impl Material {
         // create layout
         let mut i = 0;
         let mut layouts: Vec<egui_wgpu::wgpu::BindGroupLayoutEntry> = Vec::new();
-        for t in &self.colors {
+        for _ in &self.colors {
             layouts.push(egui_wgpu::wgpu::BindGroupLayoutEntry {
                 binding: i,
                 visibility: egui_wgpu::wgpu::ShaderStages::FRAGMENT,
@@ -141,7 +141,7 @@ impl Material {
         let mut i = 0;
         let mut entries: Vec<egui_wgpu::wgpu::BindGroupEntry> = Vec::new();
         for t in &self.textures {
-            let texture: &Texture_asset;
+            let texture: &TextureAsset;
             match t {
                 Some(x) => {
                     texture = x;
@@ -165,7 +165,7 @@ impl Material {
         // create layout
         let mut i = 0;
         let mut layouts: Vec<egui_wgpu::wgpu::BindGroupLayoutEntry> = Vec::new();
-        for t in &self.textures {
+        for _ in &self.textures {
             layouts.push(egui_wgpu::wgpu::BindGroupLayoutEntry {
                 binding: (i * 2),
                 visibility: egui_wgpu::wgpu::ShaderStages::FRAGMENT,

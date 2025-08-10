@@ -2,8 +2,7 @@ use built_in::component::{
     component_camera::Camera, component_colliders::component_collider_box::ComponentColliderBox, component_renderer::Renderer,
     component_transform::Transform,
 };
-use ecs_system::ECSSystem;
-use hecs::World;
+use ecs_system::global_ecs_system;use hecs::World;
 
 use crate::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle};
 use core::{
@@ -13,7 +12,7 @@ use core::{
     random::Random,
     system::system_game_states::state_camera::CameraState,
 };
-#[ECSSystem]
+#[global_ecs_system]
 pub struct SystemPongInit {}
 impl SystemPongInit {
     pub fn new() -> Box<SystemPongInit> {

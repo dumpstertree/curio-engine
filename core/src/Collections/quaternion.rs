@@ -12,18 +12,14 @@ pub struct Quaternion {
 }
 
 impl Quaternion {
-    fn rotate_vector(&self, v: Vector3) -> Vector3 {
-        let q = *self;
-
-        // Quaternion multiplication: q * v * q_conjugate
-        let q_vec = Vector3 { x: q.x, y: q.y, z: q.z };
-        let uv = Vector3::cross(q_vec, v);
-        let uuv = Vector3::cross(q_vec, uv);
-
-        let uv = uv * 2.0 * q.w;
-        let uuv = uuv * 2.0;
-
-        v + uv + uuv
+    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quaternion {
+        Quaternion { x: x, y: y, z: z, w: w }
+    }
+    pub fn identity() -> Quaternion {
+        Quaternion::new(0.0, 0.0, 0.0, 1.0)
+    }
+    pub fn zero() -> Quaternion {
+        Quaternion::new(0.0, 0.0, 0.0, 10.0)
     }
     pub fn look_rotation(forward: Vector3, up: Vector3) -> Quaternion {
         let f = forward.normalized();
@@ -53,15 +49,7 @@ impl Quaternion {
             Quaternion::new((f.x + r.z) * inv_s, (u.z + f.y) * inv_s, 0.25 * s, (r.y - u.x) * inv_s)
         }
     }
-    pub fn new(x: f32, y: f32, z: f32, w: f32) -> Quaternion {
-        Quaternion { x: x, y: y, z: z, w: w }
-    }
-    pub fn identity() -> Quaternion {
-        Quaternion::new(0.0, 0.0, 0.0, 1.0)
-    }
-    pub fn zero() -> Quaternion {
-        Quaternion::new(0.0, 0.0, 0.0, 10.0)
-    }
+
     pub fn to_euler(&self) -> Vector3 {
         let sinr_cosp = 2.0 * (self.w * self.x + self.y * self.z);
         let cosr_cosp = 1.0 - 2.0 * (self.x * self.x + self.y * self.y);

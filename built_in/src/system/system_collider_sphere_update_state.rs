@@ -6,12 +6,12 @@ use core::{
     },
     system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
 };
-use ecs_system::ECSSystem;
+use ecs_system::global_ecs_system;
 use hecs::World;
 
 use crate::component::{component_colliders::component_collider_sphere::ComponentColliderSphere, component_transform::Transform};
 
-#[ECSSystem]
+#[global_ecs_system]
 pub struct SystemColliderBoxUpdateState {}
 impl SystemColliderBoxUpdateState {
     pub fn new() -> Box<SystemColliderBoxUpdateState> {
@@ -19,11 +19,11 @@ impl SystemColliderBoxUpdateState {
     }
 }
 impl ECSSystemEventless for SystemColliderBoxUpdateState {
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
 
-    fn will_tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn will_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         //
         let state_collision = state.get_value2::<StateCollision>();
         for (_, collider) in world.query::<&mut ComponentColliderSphere>().iter() {
@@ -38,7 +38,7 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
             collider.collisions = collision;
         }
     }
-    fn did_tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         state.edit::<StateCollider>(|x| {
             for (_, (collider, transform)) in world
                 .query::<(&ComponentColliderSphere, &Transform)>()
@@ -49,7 +49,7 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
             }
         });
     }
-    fn debug(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn debug(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         state.edit::<GizmosState>(|x| {
             for (_, (collider, transform)) in world
                 .query::<(&ComponentColliderSphere, &Transform)>()

@@ -1,7 +1,6 @@
 use built_in::component::{component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform};
 use ecs_event::ECSEvent;
-use ecs_system::ECSSystem;
-use hecs::World;
+use ecs_system::global_ecs_system;use hecs::World;
 
 use crate::{ecs::component::component_ball::ComponentBall, game_events::GameEvents};
 
@@ -12,7 +11,7 @@ use core::{
     system::system_game_states::state_time::TimeState,
 };
 
-#[ECSSystem]
+#[global_ecs_system]
 pub struct SystemBallMove {}
 impl SystemBallMove {
     pub fn new() -> Box<SystemBallMove> {

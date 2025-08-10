@@ -6,7 +6,7 @@ use winit::event_loop::EventLoop;
 use winit::window::{Fullscreen, Window, WindowAttributes};
 
 use crate::events::engine_commands::EngineCommands;
-use crate::IO::texture_asset::Texture_asset;
+use crate::IO::texture_asset::TextureAsset;
 pub static mut system_gpu_adapter_instance: SystemGPU = SystemGPU {
     device: None,
     queue: None,
@@ -29,7 +29,7 @@ pub struct SystemGPU {
     instance: Option<Arc<Instance>>,
     adapter: Option<Arc<Adapter>>,
     window: Option<Arc<Window>>,
-    depth_texture: Option<Arc<Texture_asset>>,
+    depth_texture: Option<Arc<TextureAsset>>,
     config: Option<Arc<SurfaceConfiguration>>,
 }
 impl SystemGPU {
@@ -81,7 +81,7 @@ impl SystemGPU {
             }
         }
     }
-    pub fn get_depth_texture() -> Arc<Texture_asset> {
+    pub fn get_depth_texture() -> Arc<TextureAsset> {
         unsafe {
             match &system_gpu_adapter_instance.depth_texture {
                 Some(x) => return x.clone(),
@@ -129,7 +129,7 @@ impl SystemGPU {
         surface.configure(&(*device), &config);
 
         unsafe {
-            system_gpu_adapter_instance.depth_texture = Some(Arc::new(Texture_asset::create_depth_texture("depth_texture")));
+            system_gpu_adapter_instance.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
             system_gpu_adapter_instance.config = Some(Arc::new(config));
         }
     }
@@ -219,7 +219,7 @@ impl SystemGPU {
                 config: Some(Arc::new(config)),
             };
 
-            system_gpu_adapter_instance.depth_texture = Some(Arc::new(Texture_asset::create_depth_texture("depth_texture")));
+            system_gpu_adapter_instance.depth_texture = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
             // let d = Texture_asset::create_depth_texture("depth_texture");
         }
         event_loop

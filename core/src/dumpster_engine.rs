@@ -15,7 +15,7 @@ static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Ve
 
 pub struct DumpsterEngine {}
 impl DumpsterEngine {
-    pub fn register_ecs_system<T>()
+    pub fn global_ecs_system<T>()
     where
         T: 'static + ECSSystemEventless + Default + Clone,
     {

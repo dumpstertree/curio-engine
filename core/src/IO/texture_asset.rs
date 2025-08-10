@@ -4,16 +4,16 @@ use super::Asset::Asset;
 
 // data
 #[derive(Clone)]
-pub struct Texture_asset {
-    width: i32,
-    height: i32,
+pub struct TextureAsset {
+    // width: i32,
+    // height: i32,
     // bytes: Vec<u8>,
     pub texture: egui_wgpu::wgpu::Texture,
     pub view: egui_wgpu::wgpu::TextureView,
     pub sampler: egui_wgpu::wgpu::Sampler,
 }
 // construction
-impl Texture_asset {
+impl TextureAsset {
     pub const DEPTH_FORMAT: egui_wgpu::wgpu::TextureFormat = egui_wgpu::wgpu::TextureFormat::Depth32Float; // 1.
 
     pub fn create_depth_texture(label: &str) -> Self {
@@ -53,16 +53,16 @@ impl Texture_asset {
             ..Default::default()
         });
 
-        Texture_asset {
-            width: size.width as i32,
-            height: size.height as i32,
+        TextureAsset {
+            // width: size.width as i32,
+            // height: size.height as i32,
             sampler: sampler,
             texture: texture,
             view: view,
         }
     }
     // pub fn new_from_buffer(label: Option<&str>, device: &egui_wgpu::wgpu::Device, queue: &egui_wgpu::wgpu::Queue, width: u32, height: u32, buffer: ImageBuffer<Rgba<u8>, &[u8]>) -> Texture_asset {
-    pub fn none() -> Texture_asset {
+    pub fn none() -> TextureAsset {
         let device = SystemGPU::get_device();
 
         let size = egui_wgpu::wgpu::Extent3d {
@@ -92,22 +92,20 @@ impl Texture_asset {
         });
 
         // return
-        Texture_asset {
-            width: 0,
-            height: 0,
+        TextureAsset {
             sampler: sampler,
             texture: texture,
             view: view,
         }
     }
-    pub fn default() -> Texture_asset {
+    pub fn default() -> TextureAsset {
         let bytes = include_bytes!("../../../assets/default_texture.jpg");
         let img = image::load_from_memory(bytes).unwrap();
         let rgba = img.to_rgba8();
 
-        Texture_asset::new_from_buffer(None, 1024, 1024, &rgba.to_vec()[..])
+        TextureAsset::new_from_buffer(None, 1024, 1024, &rgba.to_vec()[..])
     }
-    pub fn new_from_buffer(label: Option<&str>, width: u32, height: u32, buffer: &[u8]) -> Texture_asset {
+    pub fn new_from_buffer(label: Option<&str>, width: u32, height: u32, buffer: &[u8]) -> TextureAsset {
         let queue = SystemGPU::get_queue();
         let device = SystemGPU::get_device();
 
@@ -161,9 +159,9 @@ impl Texture_asset {
         });
 
         // return
-        Texture_asset {
-            width: size.width as i32,
-            height: size.height as i32,
+        TextureAsset {
+            // width: size.width as i32,
+            // height: size.height as i32,
             sampler: sampler,
             texture: texture,
             view: view,
@@ -171,6 +169,6 @@ impl Texture_asset {
     }
 }
 // public
-impl Texture_asset {}
+impl TextureAsset {}
 // asset
-impl Asset for Texture_asset {}
+impl Asset for TextureAsset {}

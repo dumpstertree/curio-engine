@@ -8,12 +8,12 @@ use core::{
         state_input,
     },
 };
-use ecs_system::ECSSystem;
-use hecs::{Entity, World};
+use ecs_system::global_ecs_system;
+use hecs::World;
 
 use crate::component::component_transform::Transform;
 
-#[ECSSystem]
+#[global_ecs_system]
 pub struct SystemDebugGuiEntity {}
 impl SystemDebugGuiEntity {}
 impl SystemDebugGuiEntity {
@@ -26,16 +26,15 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
         true
     }
 
-    fn debug(&mut self, game_state: &mut GameState, world: &mut World, system_event_queue: &mut EventQueue2) {
+    fn debug(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         let state_camera = game_state.get_value2::<CameraState>();
         let state_input = game_state.get_value2::<state_input::InputState>();
 
         // let mut closest: Option<Entity> = None;
-        let mut entityy: Option<Entity> = None;
         let mut distance = 99999999.0;
         let mut screen_pos = Vector3::zero();
         let mut matrix = Matrix4x4::default();
-        for (entity, transform) in world.query::<&Transform>().iter() {
+        for (_, transform) in world.query::<&Transform>().iter() {
             let Some(p) = state_camera.world_to_screen(transform.position) else {
                 continue;
             };
@@ -50,7 +49,6 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
             distance = d;
             screen_pos = Vector3::new(p.0, p.1, 0.0);
             matrix = transform.get_matrix();
-            entityy = Some(entity);
         }
 
         game_state.edit::<GUIState>(|x| {

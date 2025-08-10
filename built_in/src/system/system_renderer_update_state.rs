@@ -1,26 +1,25 @@
+use crate::component::{component_renderer::Renderer, component_transform::Transform};
+use core::{Collections::DrawCall::DrawCall, system::system_game_states::state_draw::DrawCallsState};
 use core::{
     Collections::{event_queue::EventQueue2, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
-use ecs_system::ECSSystem;
+use ecs_system::global_ecs_system;
 use hecs::World;
 
-use core::{Collections::DrawCall::DrawCall, system::system_game_states::state_draw::DrawCallsState};
-
-use crate::component::{component_renderer::Renderer, component_transform::Transform};
-#[ECSSystem]
-pub struct TestECSSystem {}
-impl TestECSSystem {
-    pub fn new() -> Box<TestECSSystem> {
-        Box::new(TestECSSystem {})
+#[global_ecs_system]
+pub struct SystemRendererUpdateState {}
+impl SystemRendererUpdateState {
+    pub fn new() -> Box<SystemRendererUpdateState> {
+        Box::new(SystemRendererUpdateState {})
     }
 }
-impl ECSSystemEventless for TestECSSystem {
+impl ECSSystemEventless for SystemRendererUpdateState {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
 
-    fn did_tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
         //edit draw call states
         state.edit::<DrawCallsState>(|x| {
             // iterate over each renderer
@@ -31,7 +30,7 @@ impl ECSSystemEventless for TestECSSystem {
                 };
 
                 // add draw call
-                for m in &asset.mesh {
+                for _ in &asset.mesh {
                     x.draw_calls.push(DrawCall::draw_mesh_single(
                         asset.mesh[0].clone(),
                         asset.materials[0].clone(),

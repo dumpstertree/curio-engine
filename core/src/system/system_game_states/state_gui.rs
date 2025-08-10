@@ -1,12 +1,6 @@
-
 use crate::{
     system::system_game_state::IState,
-    Collections::{
-        event_queue::EventQueue2,
-        game_state::GameState,
-        vector3::Vector3,
-        Color::Color,
-    },
+    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3, Color::Color},
 };
 
 #[derive(Clone)]
@@ -81,7 +75,7 @@ impl GuiElement {
 
     pub fn size_mode_x(&self) {}
     pub fn size_mode_y(&self) {}
-    pub fn children(&self, children: Vec<GuiElement>) {}
+    pub fn children(&self, _: Vec<GuiElement>) {}
 }
 
 #[derive(Clone)]

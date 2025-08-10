@@ -7,13 +7,11 @@ use std::{
 
 pub struct EventQueue2 {
     cache: AnyMap<i32>,
-    hasher: DefaultHasher,
 }
 impl EventQueue2 {
     pub fn new() -> EventQueue2 {
         EventQueue2 {
             cache: AnyMap::<i32>::default(),
-            hasher: DefaultHasher::new(),
         }
     }
 

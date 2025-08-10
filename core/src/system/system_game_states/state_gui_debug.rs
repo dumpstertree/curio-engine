@@ -7,21 +7,16 @@ use crate::{
             state_gui::{GuiElement, GuiWindow},
         },
     },
-    Collections::{
-        event_queue::EventQueue2,
-        game_state::GameState,
-        vector3::Vector3,
-        Color::Color,
-    },
+    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3, Color::Color},
 };
 
 #[derive(Clone)]
-pub struct GUIState_Debug {
+pub struct GUIStateDebug {
     pub color: Color,
     pub size: f32,
     contents: Vec<String>,
 }
-impl GUIState_Debug {
+impl GUIStateDebug {
     pub fn append(&mut self, content: String) {
         self.contents.push(content);
     }
@@ -30,7 +25,7 @@ impl GUIState_Debug {
         let mut window = GuiWindow::new("debug".to_string(), Vector3::new(10.0, 10.0, 0.0), Vector3::zero());
         window.add(GuiElement::new_text_button(
             if is_paused { "Play" } else { "Pause" },
-            GUIState_Debug::pause_on_click,
+            GUIStateDebug::pause_on_click,
         ));
         for x in &self.contents {
             window.add(GuiElement::new_label(x.clone(), self.size, self.color.clone()));
@@ -41,8 +36,8 @@ impl GUIState_Debug {
         self.contents.clear();
     }
 
-    pub fn default() -> GUIState_Debug {
-        GUIState_Debug {
+    pub fn default() -> GUIStateDebug {
+        GUIStateDebug {
             contents: Vec::new(),
             color: Color::get_green(),
             size: 18.0,
@@ -52,9 +47,9 @@ impl GUIState_Debug {
         event_queue.enqueue_event(EngineCommands::SetPauseMode(!game_state.get_value2::<StateDebug>().is_paused));
     }
 }
-impl IState<GUIState_Debug> for GUIState_Debug {
-    fn default() -> GUIState_Debug {
-        GUIState_Debug::default()
+impl IState<GUIStateDebug> for GUIStateDebug {
+    fn default() -> GUIStateDebug {
+        GUIStateDebug::default()
     }
 
     fn id() -> i32 {

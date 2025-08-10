@@ -5,12 +5,10 @@ use core::{
     Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     system::system_game_states::{state_camera::CameraState, state_debug::StateDebug, state_input::InputState, state_time::TimeState},
 };
-use ecs_system::ECSSystem;
+use ecs_system::global_ecs_system;
 use hecs::World;
 
-#[ECSSystem]
-
-// pub struct thing;
+#[global_ecs_system]
 pub struct SystemDebugCamera {
     x: f32,
     y: f32,
@@ -24,11 +22,11 @@ impl ECSSystemEventless for SystemDebugCamera {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         game_state.get_value2::<StateDebug>().is_paused
     }
-    fn enable(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {
         self.x = 0.0;
         self.y = 0.0;
     }
-    fn debug(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {
+    fn debug(&mut self, state: &mut GameState, _: &mut World, _: &mut EventQueue2) {
         // constants
         const SPEED_ROT: f32 = 10.0;
         const SPEED_MOVE: f32 = 10.0;

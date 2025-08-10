@@ -7,19 +7,23 @@ use intertrait::CastFrom;
 
 pub trait ECSSystemEventless: CastFrom {
     // data
-    fn order(&self, game_state: &GameState, world: &World) -> i32 {
+    fn order(&self, _: &GameState, _: &World) -> i32 {
         0
     }
     fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool;
 
     // init
-    fn init(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2, asset_loader: &mut AssetLoader) {}
+    fn init(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2, _: &mut AssetLoader) {}
 
     // events
-    fn debug(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {}
-    fn enable(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {}
-    fn disable(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {}
-    fn will_tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {}
-    fn tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {}
-    fn did_tick(&mut self, state: &mut GameState, world: &mut World, events: &mut EventQueue2) {}
+    fn debug(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {}
+
+    // life
+    fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {}
+    fn disable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {}
+
+    // tick
+    fn will_tick(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {}
+    fn tick(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {}
+    fn did_tick(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {}
 }
