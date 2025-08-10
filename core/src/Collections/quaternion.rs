@@ -1,7 +1,7 @@
 use core::fmt;
 use std::{f32::consts::PI, ops::Mul};
 
-use crate::Collections::vector3::Vector3;
+use crate::collections::vector3::Vector3;
 
 #[derive(Clone, Copy)]
 pub struct Quaternion {

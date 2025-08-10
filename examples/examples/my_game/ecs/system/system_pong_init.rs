@@ -7,19 +7,14 @@ use hecs::World;
 
 use crate::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle};
 use core::{
-    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-    io::AssetLoader::AssetLoader,
+    io::asset_loader::AssetLoader,
     random::Random,
     system::system_game_states::state_camera::CameraState,
 };
 #[global_ecs_system]
 pub struct SystemPongInit {}
-impl SystemPongInit {
-    pub fn new() -> Box<SystemPongInit> {
-        Box::new(SystemPongInit {})
-    }
-}
 impl ECSSystemEventless for SystemPongInit {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true

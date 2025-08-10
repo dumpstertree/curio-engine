@@ -1,5 +1,5 @@
 use core::{
-    Collections::{event_queue::EventQueue2, game_state::GameState},
+    collections::{event_queue::EventQueue2, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     system::system_game_states::{state_collision::StateCollision, state_gui_debug::GUIStateDebug},
 };

@@ -1,4 +1,4 @@
-use crate::Collections::game_state::AnyMap;
+use crate::collections::game_state::AnyMap;
 use egui::util::id_type_map::TypeId;
 use std::{
     collections::hash_map::DefaultHasher,

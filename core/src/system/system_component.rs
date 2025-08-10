@@ -1,8 +1,8 @@
 use crate::events::engine_commands::EngineCommands;
-use crate::Collections::event_queue::EventQueue2;
-use crate::Collections::game_state::GameState;
-use crate::Collections::key_state::KeyState;
-use crate::Collections::vector3::Vector3;
+use crate::collections::event_queue::EventQueue2;
+use crate::collections::game_state::GameState;
+use crate::collections::key_state::KeyState;
+use crate::collections::vector3::Vector3;
 use winit::event::{MouseButton, WindowEvent};
 use winit::keyboard::KeyCode;
 

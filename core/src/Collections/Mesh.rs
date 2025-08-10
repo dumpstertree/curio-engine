@@ -6,8 +6,8 @@ use egui_wgpu::wgpu::VertexBufferLayout;
 use mesh_tools::primitives::{generate_plane, generate_sphere};
 
 use crate::random::Random;
-use crate::Collections::matrix4x4::Matrix4x4;
-use crate::Collections::vector3;
+use crate::collections::matrix4x4::Matrix4x4;
+use crate::collections::vector3;
 #[derive(Clone)]
 pub struct Mesh {
     pub name: String,
@@ -17,7 +17,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn size(&self) -> crate::Collections::vector3::Vector3 {
+    pub fn size(&self) -> crate::collections::vector3::Vector3 {
         let mut x_min: f32 = 0.0;
         let mut x_max: f32 = 0.0;
         let mut y_min: f32 = 0.0;
@@ -46,7 +46,7 @@ impl Mesh {
             }
         }
 
-        crate::Collections::vector3::Vector3::new(x_max - x_min, y_max - y_min, z_max - z_min)
+        crate::collections::vector3::Vector3::new(x_max - x_min, y_max - y_min, z_max - z_min)
     }
     pub fn primitive_cube2(size: vector3::Vector3) -> Mesh {
         let (positions, indices, uvs, normals) = Mesh::create_cube(size);
@@ -145,7 +145,7 @@ impl Mesh {
         }
         Mesh::new(String::from("Plane"), v, i)
     }
-    pub fn primitive_cube(size: crate::Collections::vector3::Vector3) -> Mesh {
+    pub fn primitive_cube(size: crate::collections::vector3::Vector3) -> Mesh {
         let cube_length = size.z;
         let cube_height = size.y;
         let cube_width = size.x;

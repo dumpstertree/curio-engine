@@ -6,10 +6,10 @@ use egui_wgpu::wgpu::Device;
 use egui_wgpu::wgpu::ShaderModule;
 
 // use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::Collections::material::Material;
-use crate::Collections::material::ShaderDesc;
-use crate::Collections::Mesh::Mesh;
-use crate::Collections::Mesh::Vertex;
+use crate::collections::material::Material;
+use crate::collections::material::ShaderDesc;
+use crate::collections::mesh::Mesh;
+use crate::collections::mesh::Vertex;
 
 use super::model_asset::ModelAsset;
 use super::texture_asset::TextureAsset;

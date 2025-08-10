@@ -5,7 +5,7 @@ use hecs::World;
 use crate::{constants::Constants, ecs::component::component_paddle::ComponentPaddle};
 
 use core::{
-    Collections::{event_queue::EventQueue2, game_state::GameState},
+    collections::{event_queue::EventQueue2, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     system::system_game_states::{state_input::InputState, state_time::TimeState},
 };

@@ -1,8 +1,7 @@
 use core::fmt;
 use std::ops::{Add, Div, Mul, Sub};
 
-
-use crate::Collections::vector3::Vector3;
+use crate::collections::vector3::Vector3;
 #[derive(Clone, Copy, PartialEq)]
 pub struct Vector4 {
     pub x: f32,

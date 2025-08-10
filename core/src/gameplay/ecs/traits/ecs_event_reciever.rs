@@ -1,6 +1,6 @@
 use hecs::World;
 
-use crate::Collections::{event_queue::EventQueue2, game_state::GameState};
+use crate::collections::{event_queue::EventQueue2, game_state::GameState};
 
 pub trait EventReciever<T>
 where

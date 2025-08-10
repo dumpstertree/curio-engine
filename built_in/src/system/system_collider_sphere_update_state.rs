@@ -1,5 +1,5 @@
 use core::{
-    Collections::{Color::Color, event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo},
+    collections::{color::Color, event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo},
     gameplay::ecs::{
         component::component_collider::{ColliderSnapshot, CollisionSnapshot},
         traits::ecs_system::ECSSystemEventless,

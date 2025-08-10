@@ -1,8 +1,8 @@
-use core::Collections::event_queue::EventQueue2;
+use core::collections::event_queue::EventQueue2;
 use core::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
 use core::system::system_game_states::state_screeen::StateScreen;
 use core::{
-    Collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
+    collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     system::system_game_states::{state_camera::CameraState, state_debug::StateDebug, state_input::InputState, state_time::TimeState},
 };
 use ecs_system::global_ecs_system;

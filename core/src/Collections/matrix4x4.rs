@@ -1,6 +1,6 @@
 use cgmath::Matrix4;
 
-use crate::Collections::{quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
+use crate::collections::{quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]

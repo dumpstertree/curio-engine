@@ -1,5 +1,5 @@
 use core::{
-    Collections::{Color, event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo, matrix4x4::Matrix4x4, vector3::Vector3},
+    collections::{color, event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo, matrix4x4::Matrix4x4, vector3::Vector3},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     system::system_game_states::{
         state_camera::CameraState,
@@ -53,14 +53,14 @@ impl ECSSystemEventless for SystemDebugGuiEntity {
 
         game_state.edit::<GUIState>(|x| {
             let mut w = GuiWindow::new(String::from("cur"), screen_pos.clone(), Vector3::zero());
-            w.add(GuiElement::new_label(String::from("HERE"), 20.0, Color::Color::get_red()));
+            w.add(GuiElement::new_label(String::from("HERE"), 20.0, color::Color::get_red()));
 
             x.guis.push(w);
         });
 
         game_state.edit::<GizmosState>(|x| {
             x.draw_calls
-                .push(Gizmo::cube(matrix, Vector3::one() * 3.0, Color::Color::get_blue()));
+                .push(Gizmo::cube(matrix, Vector3::one() * 3.0, color::Color::get_blue()));
         });
     }
 }

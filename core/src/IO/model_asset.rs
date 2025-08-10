@@ -1,5 +1,5 @@
-use super::super::Collections::material::Material;
-use super::super::Collections::Mesh::Mesh;
+use super::super::collections::material::Material;
+use super::super::collections::mesh::Mesh;
 use super::asset::Asset;
 
 //data

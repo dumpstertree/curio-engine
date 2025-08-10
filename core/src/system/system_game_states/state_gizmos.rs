@@ -1,4 +1,4 @@
-use crate::{system::system_game_state::IState, Collections::gizmo::Gizmo};
+use crate::{system::system_game_state::IState, collections::gizmo::Gizmo};
 
 #[derive(Clone)]
 pub struct GizmosState {

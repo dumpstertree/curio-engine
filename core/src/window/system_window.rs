@@ -1,12 +1,12 @@
+use crate::collections::event_queue::EventQueue2;
+use crate::collections::game_state::GameState;
+use crate::collections::key_state::KeyState;
 use crate::events::engine_commands::EngineCommands;
 use crate::system::system_component::SystemComponent;
 use crate::system::system_game_state::IState;
 use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_screeen::StateScreen;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::Collections::event_queue::EventQueue2;
-use crate::Collections::game_state::GameState;
-use crate::Collections::key_state::KeyState;
 use winit::event_loop::EventLoop;
 use winit::keyboard::KeyCode;
 use winit::{application::ApplicationHandler, event::WindowEvent};
@@ -95,12 +95,7 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
             EngineCommands::SetPauseMode(active) => self.gamestate.edit::<StateDebug>(|x| x.is_paused = active),
         }
     }
-    fn window_event(
-        &mut self,
-        event_loop: &winit::event_loop::ActiveEventLoop,
-        window_id: winit::window::WindowId,
-        event: winit::event::WindowEvent,
-    ) {
+    fn window_event(&mut self, event_loop: &winit::event_loop::ActiveEventLoop, _: winit::window::WindowId, event: winit::event::WindowEvent) {
         // reorder the compnents incase something changed
         self.components.sort_by(|a, b| a.order().cmp(&b.order()));
 
@@ -176,7 +171,7 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                 for c in self.components.iter_mut() {
                     c.input_mouse_position(
                         &mut self.gamestate,
-                        crate::Collections::vector3::Vector3::new(position.x as f32, position.y as f32, 0.0),
+                        crate::collections::vector3::Vector3::new(position.x as f32, position.y as f32, 0.0),
                     );
                 }
             }

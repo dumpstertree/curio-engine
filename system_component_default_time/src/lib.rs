@@ -1,10 +1,10 @@
 use std::time::Instant;
 
-use core::Collections::event_queue::EventQueue2;
+use core::collections::event_queue::EventQueue2;
 use core::events::engine_commands::EngineCommands;
 use core::system::system_game_states::state_debug::StateDebug;
 // ucoreate::system_adapters::adapter_system_gpu::CustomEvents;
-use core::Collections::game_state::GameState;
+use core::collections::game_state::GameState;
 use core::system::{
     system_component::SystemComponent, system_components::system_component_time::SystemComponentTime, system_game_states::state_time::TimeState,
 };

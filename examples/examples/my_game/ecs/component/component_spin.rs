@@ -1,4 +1,4 @@
-use core::Collections::vector3::Vector3;
+use core::collections::vector3::Vector3;
 
 pub struct Spin {
     pub speed: f32,

@@ -3,7 +3,7 @@ use quote::quote;
 use syn::{parse_macro_input, parse_quote, ItemImpl, Type};
 
 #[proc_macro_attribute]
-pub fn ECSEvent(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn global_ecs_system_event_reciever(attr: TokenStream, item: TokenStream) -> TokenStream {
     let event_type = parse_macro_input!(attr as Type);
     let mut input = parse_macro_input!(item as ItemImpl);
 

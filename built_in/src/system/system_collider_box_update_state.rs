@@ -1,5 +1,5 @@
 use core::{
-    Collections::{Color, event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo},
+    collections::{color, event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo},
     gameplay::ecs::{
         component::component_collider::{ColliderSnapshot, CollisionSnapshot},
         traits::ecs_system::ECSSystemEventless,
@@ -49,7 +49,7 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
         state.edit::<GizmosState>(|x| {
             for (_, (collider, transform)) in world.query::<(&ComponentColliderBox, &Transform)>().iter() {
                 x.draw_calls
-                    .push(Gizmo::cube(transform.get_matrix(), collider.size, Color::Color::get_green()));
+                    .push(Gizmo::cube(transform.get_matrix(), collider.size, color::Color::get_green()));
             }
         });
     }

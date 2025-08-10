@@ -1,4 +1,4 @@
-use crate::Collections::{matrix4x4::Matrix4x4, vector3::Vector3};
+use crate::collections::{matrix4x4::Matrix4x4, vector3::Vector3};
 
 #[derive(Clone)]
 pub struct CollisionSnapshot {

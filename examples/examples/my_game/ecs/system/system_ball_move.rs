@@ -1,12 +1,12 @@
 use built_in::component::{component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform};
-use ecs_event::ECSEvent;
+use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 use crate::{ecs::component::component_ball::ComponentBall, game_events::GameEvents};
 
 use core::{
-    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
     random::Random,
     system::system_game_states::state_time::TimeState,
@@ -59,7 +59,7 @@ impl ECSSystemEventless for SystemBallMove {
     }
 }
 
-#[ECSEvent(GameEvents)]
+#[global_ecs_system_event_reciever(GameEvents)]
 impl EventReciever<GameEvents> for SystemBallMove {
     fn dequeue_event(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2, event: &GameEvents) {
         println!("dequeue");

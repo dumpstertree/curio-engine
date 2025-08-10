@@ -9,7 +9,7 @@ use crate::system::system_components::system_component_physics::SystemComponentP
 use crate::system::system_components::system_component_time::SystemComponentTime;
 use crate::system::system_components::{system_component_graphics, system_component_input};
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::Window::SystemWindow::SystemWindow;
+use crate::window::system_window::SystemWindow;
 
 static mut REGISTERED_ECS_SYSTEMS: Vec<fn() -> Box<dyn ECSSystemEventless>> = Vec::new();
 

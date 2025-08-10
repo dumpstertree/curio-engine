@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use core::Collections::event_queue::EventQueue2;
-use core::Collections::game_state::GameState;
-use core::Collections::vector3::Vector3;
+use core::collections::event_queue::EventQueue2;
+use core::collections::game_state::GameState;
+use core::collections::vector3::Vector3;
 use winit::event::MouseButton;
 use winit::keyboard::KeyCode;
 
 use core::{
-    Collections::key_state::KeyState,
+    collections::key_state::KeyState,
     system::{
         system_component::SystemComponent, system_components::system_component_input::SystemComponentInput,
         system_game_states::state_input::InputState,

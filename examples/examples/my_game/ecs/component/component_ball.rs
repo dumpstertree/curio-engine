@@ -5,7 +5,7 @@
 // #[derive(Debug, Clone, Serialize, RegisterComponent)]
 // struct Position(f32, f32);
 
-use core::Collections::vector3::Vector3;
+use core::collections::vector3::Vector3;
 
 // #[derive(Debug, Clone, Serialize, RegisterComponent)]
 pub struct ComponentBall {

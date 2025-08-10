@@ -1,4 +1,4 @@
-use crate::Collections::{material::Material, matrix4x4::Matrix4x4, Mesh::Mesh};
+use crate::collections::{material::Material, matrix4x4::Matrix4x4, mesh::Mesh};
 
 #[derive(Clone)]
 pub struct DrawCall {

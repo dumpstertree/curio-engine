@@ -1,6 +1,6 @@
 use crate::{
     system::system_game_state::IState,
-    Collections::{input_button::InputButtonState, input_cursor::InputAxisState},
+    collections::{input_button::InputButtonState, input_cursor::InputAxisState},
 };
 
 #[derive(Clone)]

@@ -1,6 +1,6 @@
 use crate::{
+    collections::{camera_uniform::CameraUniform, matrix4x4::Matrix4x4, projection::Projection, quaternion::Quaternion, vector3::Vector3},
     system::system_game_state::IState,
-    Collections::{camera_uniform::CameraUniform, matrix4x4::Matrix4x4, projection::Projection, quaternion::Quaternion, vector3::Vector3},
 };
 use cgmath::{Matrix4, Rad};
 
@@ -87,7 +87,7 @@ impl CameraState {
         let view_matrix = Matrix4x4::look_at(self.position, self.position + Vector3::forward(), Vector3::up());
         // Convert position to homogeneous coordinates
         let mut clip_space =
-            proj_matrix.multiply_vec4(view_matrix.multiply_vec4(crate::Collections::vector4::Vector4::new_from_vec3(world_pos, 1.0)));
+            proj_matrix.multiply_vec4(view_matrix.multiply_vec4(crate::collections::vector4::Vector4::new_from_vec3(world_pos, 1.0)));
 
         // Avoid division by zero
         if clip_space.w.abs() < 1e-5 {

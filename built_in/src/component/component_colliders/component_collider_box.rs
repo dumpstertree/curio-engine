@@ -1,5 +1,5 @@
 use core::{
-    Collections::vector3::Vector3,
+    collections::vector3::Vector3,
     gameplay::ecs::component::component_collider::{BoxColliderDef, ColliderShape, CollisionSnapshot},
     random::Random,
 };

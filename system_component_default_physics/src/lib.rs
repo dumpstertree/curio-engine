@@ -5,7 +5,7 @@ use rapier3d::{
 
 use core::gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact};
 use core::{
-    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
     gameplay::ecs::component::component_collider::ColliderSnapshot,
     system::{
         system_component::SystemComponent,

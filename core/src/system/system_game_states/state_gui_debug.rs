@@ -7,7 +7,7 @@ use crate::{
             state_gui::{GuiElement, GuiWindow},
         },
     },
-    Collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3, Color::Color},
+    collections::{color::Color, event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
 };
 
 #[derive(Clone)]

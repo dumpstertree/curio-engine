@@ -1,16 +1,15 @@
 pub mod dumpster_engine;
 
 pub mod io {
-    pub mod AssetLoader;
     pub mod asset;
+    pub mod asset_loader;
     pub mod model_asset;
     pub mod texture_asset;
 }
-pub mod Collections {
-    pub mod Color;
-    pub mod DrawCall;
-    pub mod Mesh;
+pub mod collections {
     pub mod camera_uniform;
+    pub mod color;
+    pub mod draw_call;
     pub mod event_queue;
     pub mod f32;
     pub mod game_state;
@@ -20,6 +19,7 @@ pub mod Collections {
     pub mod key_state;
     pub mod material;
     pub mod matrix4x4;
+    pub mod mesh;
     pub mod projection;
     pub mod quaternion;
     pub mod vector3;
@@ -27,8 +27,8 @@ pub mod Collections {
 }
 pub mod random;
 
-mod Window {
-    pub(crate) mod SystemWindow;
+mod window {
+    pub(crate) mod system_window;
 }
 pub mod gameplay {
     pub mod ecs {

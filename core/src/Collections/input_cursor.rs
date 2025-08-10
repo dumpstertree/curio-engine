@@ -1,4 +1,4 @@
-use crate::Collections::vector3::Vector3;
+use crate::collections::vector3::Vector3;
 
 #[derive(Clone)]
 pub struct InputAxisState {
