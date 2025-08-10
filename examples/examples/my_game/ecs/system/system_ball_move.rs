@@ -43,14 +43,14 @@ impl ECSSystemEventless for SystemBallMove {
 
             // front - back
             if transform.position.z < -10.0 {
-                ball.direction = Random::vector3(true, false, true);
+                ball.direction = Random::direction(true, false, true);
                 ball.speed = 5.0;
                 transform.position = Vector3::zero();
             }
             if transform.position.z > 10.0 {
                 ball.speed = 5.0;
                 transform.position = Vector3::zero();
-                ball.direction = Random::vector3(true, false, true);
+                ball.direction = Random::direction(true, false, true);
             }
 
             // move

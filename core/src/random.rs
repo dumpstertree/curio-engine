@@ -16,7 +16,7 @@ impl Random {
         let mut rng = rand::rng();
         rng.random_bool(0.5);
     }
-    pub fn vector3(use_x: bool, use_y: bool, use_z: bool) -> Vector3 {
+    pub fn direction(use_x: bool, use_y: bool, use_z: bool) -> Vector3 {
         let mut v = Vector3::new(0.0, 0.0, 0.0);
         if use_x {
             v.x = Random::range_float(-1.0, 1.0);
@@ -28,6 +28,7 @@ impl Random {
             v.z = Random::range_float(-1.0, 1.0);
         }
 
-        v.normalized()
+        v.normalize();
+        v
     }
 }

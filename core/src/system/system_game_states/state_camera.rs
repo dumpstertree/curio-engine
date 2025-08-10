@@ -2,7 +2,7 @@ use crate::{
     collections::{camera_uniform::CameraUniform, matrix4x4::Matrix4x4, projection::Projection, quaternion::Quaternion, vector3::Vector3},
     system::system_game_state::IState,
 };
-use cgmath::{Matrix4, Rad};
+use cgmath::{Matrix4, Point3, Rad};
 
 #[derive(Clone)]
 pub struct CameraState {
@@ -28,11 +28,13 @@ impl CameraState {
     }
 
     pub fn calc_matrix(&self) -> Matrix4<f32> {
-        Matrix4::look_to_rh(
-            self.position.to_point3(),
-            (self.rotation * Vector3::forward()).to_cg_math(),
-            (self.rotation * Vector3::up()).to_cg_math(),
-        )
+        let p3 = Point3::new(self.position.x, self.position.y, self.position.z);
+        let f0 = self.rotation * Vector3::forward();
+        let f = cgmath::Vector3::new(f0.x, f0.y, f0.z);
+        let u0 = self.rotation * Vector3::up();
+        let u = cgmath::Vector3::new(u0.x, u0.y, u0.z);
+
+        Matrix4::look_to_rh(p3, f, u)
     }
     pub fn get_projection(&self) -> Projection {
         Projection::new(self.width as u32, self.height as u32, cgmath::Deg(self.fovy), self.znear, self.zfar)
@@ -86,8 +88,7 @@ impl CameraState {
 
         let view_matrix = Matrix4x4::look_at(self.position, self.position + Vector3::forward(), Vector3::up());
         // Convert position to homogeneous coordinates
-        let mut clip_space =
-            proj_matrix.multiply_vec4(view_matrix.multiply_vec4(crate::collections::vector4::Vector4::new_from_vec3(world_pos, 1.0)));
+        let mut clip_space = proj_matrix.multiply_vec4(view_matrix.multiply_vec4(world_pos.to_vector4(1.0)));
 
         // Avoid division by zero
         if clip_space.w.abs() < 1e-5 {

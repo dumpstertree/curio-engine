@@ -56,7 +56,7 @@ impl ECSSystemEventless for SystemPongInit {
             Renderer::default().set_asset(asset_loader.load_gltf("Cone.glb")),
             Transform::default().set_position(Vector3::new(0.0, 0.0, 0.0)),
             ComponentBall::default()
-                .set_axis(Random::vector3(true, false, true))
+                .set_axis(Random::direction(true, false, true))
                 .set_speed(5.0),
         ));
     }

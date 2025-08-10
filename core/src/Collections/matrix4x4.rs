@@ -51,8 +51,8 @@ impl Matrix4x4 {
     }
 
     pub fn look_at(eye: Vector3, target: Vector3, up: Vector3) -> Matrix4x4 {
-        let forward = (target - eye).normalized(); // camera's -Z
-        let right = Vector3::cross(up, forward).normalized(); // camera's +X
+        let forward = (target - eye).normalize_and_copy(); // camera's -Z
+        let right = Vector3::cross(up, forward).normalize_and_copy(); // camera's +X
         let up_corrected = Vector3::cross(forward, right); // camera's +Y
 
         Matrix4x4::transpose(&Matrix4x4 {
@@ -70,8 +70,9 @@ impl Matrix4x4 {
         })
     }
     pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
+        let pos2 = cgmath::Vector3::new(pos.x, pos.y, pos.z);
         Matrix4x4 {
-            model: (cgmath::Matrix4::from_translation(pos.to_cg_math())
+            model: (cgmath::Matrix4::from_translation(pos2)
                 * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
                 * cgmath::Matrix4::from(rot.to_cg_math()))
             .into(),

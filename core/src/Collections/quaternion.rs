@@ -22,9 +22,9 @@ impl Quaternion {
         Quaternion::new(0.0, 0.0, 0.0, 10.0)
     }
     pub fn look_rotation(forward: Vector3, up: Vector3) -> Quaternion {
-        let f = forward.normalized();
-        let u = up.normalized();
-        let r = Vector3::cross(u, f).normalized();
+        let f = forward.normalize_and_copy();
+        let u = up.normalize_and_copy();
+        let r = Vector3::cross(u, f).normalize_and_copy();
         let u = Vector3::cross(f, r); // ensure orthogonal up
 
         // Construct quaternion from basis vectors directly

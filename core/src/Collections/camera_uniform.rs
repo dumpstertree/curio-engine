@@ -1,7 +1,7 @@
 use core::f32;
 
-use crate::{system::system_game_states::state_camera::CameraState, collections::projection::Projection};
-use cgmath::prelude::*;
+use crate::{collections::projection::Projection, system::system_game_states::state_camera::CameraState};
+use cgmath::{prelude::*, Point3};
 
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -19,7 +19,8 @@ impl CameraUniform {
 
     // UPDATED!
     pub fn update_view_proj(&mut self, camera: &CameraState, projection: &Projection) {
-        self.view_position = camera.position.to_point3().to_homogeneous().into();
+        let p = Point3::new(camera.position.x, camera.position.y, camera.position.z);
+        self.view_position = p.to_homogeneous().into();
         self.view_proj = (projection.calc_matrix() * camera.calc_matrix()).into()
     }
 }

@@ -22,8 +22,12 @@ pub mod collections {
     pub mod mesh;
     pub mod projection;
     pub mod quaternion;
+    pub mod vector2;
+    pub mod vector2_int;
     pub mod vector3;
+    pub mod vector3_int;
     pub mod vector4;
+    pub mod vector4_int;
 }
 pub mod random;
 
