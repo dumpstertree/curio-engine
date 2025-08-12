@@ -1,28 +1,31 @@
-use crate::collections::event_queue::EventQueue2;
+use crate::collections::event_queue::EventQueue;
 use crate::collections::game_state::GameState;
 use crate::collections::key_state::KeyState;
+use crate::dumpster_engine::GameMode;
 use crate::events::engine_commands::EngineCommands;
+use crate::input::key_code::KeyCode;
 use crate::system::system_component::SystemComponent;
 use crate::system::system_game_state::IState;
 use crate::system::system_game_states::state_debug::StateDebug;
 use crate::system::system_game_states::state_screeen::StateScreen;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use winit::event_loop::EventLoop;
-use winit::keyboard::KeyCode;
 use winit::{application::ApplicationHandler, event::WindowEvent};
 
 pub struct SystemWindow {
-    system_event_queue: EventQueue2,
+    system_event_queue: EventQueue,
     gamestate: GameState,
     components: Vec<Box<dyn SystemComponent>>,
+    game_mode: GameMode,
 }
 impl SystemWindow {
     // constructor
-    pub fn new(components: Vec<Box<dyn SystemComponent>>) -> SystemWindow {
+    pub fn new(components: Vec<Box<dyn SystemComponent>>, game_mode: GameMode) -> SystemWindow {
         SystemWindow {
-            system_event_queue: EventQueue2::new(),
+            system_event_queue: EventQueue::new(),
             gamestate: GameState::new(),
             components: components,
+            game_mode: game_mode,
         }
     }
 
@@ -34,8 +37,33 @@ impl SystemWindow {
             c.init(&mut self.gamestate);
         }
 
+        for c in self.components.iter_mut() {
+            c.set_game_mode(&self.game_mode);
+        }
+
         // run
         let _ = event_loop.run_app(self);
+    }
+    fn convert_winit_keycode(winit_key: winit::keyboard::KeyCode) -> Option<KeyCode> {
+        match winit_key {
+            winit::keyboard::KeyCode::Backquote => return Some(KeyCode::Backquote),
+            winit::keyboard::KeyCode::KeyW => return Some(KeyCode::KeyW),
+            winit::keyboard::KeyCode::KeyA => return Some(KeyCode::KeyA),
+            winit::keyboard::KeyCode::KeyS => return Some(KeyCode::KeyS),
+            winit::keyboard::KeyCode::KeyD => return Some(KeyCode::KeyD),
+            winit::keyboard::KeyCode::KeyI => return Some(KeyCode::KeyI),
+            winit::keyboard::KeyCode::KeyJ => return Some(KeyCode::KeyJ),
+            winit::keyboard::KeyCode::KeyK => return Some(KeyCode::KeyK),
+            winit::keyboard::KeyCode::KeyL => return Some(KeyCode::KeyL),
+            _ => return None,
+        }
+    }
+    fn convert_winit_mousecode(winit_key: winit::event::MouseButton) -> Option<KeyCode> {
+        match winit_key {
+            winit::event::MouseButton::Left => return Some(KeyCode::MousePrimary),
+            winit::event::MouseButton::Right => return Some(KeyCode::MouseSecondary),
+            _ => return None,
+        }
     }
 }
 
@@ -76,6 +104,10 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                                 .edit::<StateDebug>(|x| x.is_inspecting = *active),
                             EngineCommands::SetPauseMode(active) => self.gamestate.edit::<StateDebug>(|x| x.is_paused = *active),
                             EngineCommands::Tick => println!("Cannot call tick from inside tick!"),
+                            EngineCommands::SetNumInputs(_) => todo!(),
+                            EngineCommands::SetNumScreens(_) => todo!(),
+                            EngineCommands::SetHost() => todo!(),
+                            EngineCommands::SetPeer() => todo!(),
                         }
                     }
                     let _ = &self
@@ -93,6 +125,10 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                 .gamestate
                 .edit::<StateDebug>(|x| x.is_inspecting = active),
             EngineCommands::SetPauseMode(active) => self.gamestate.edit::<StateDebug>(|x| x.is_paused = active),
+            EngineCommands::SetNumInputs(_num) => todo!(),
+            EngineCommands::SetNumScreens(_num) => todo!(),
+            EngineCommands::SetHost() => todo!(),
+            EngineCommands::SetPeer() => todo!(),
         }
     }
     fn window_event(&mut self, event_loop: &winit::event_loop::ActiveEventLoop, _: winit::window::WindowId, event: winit::event::WindowEvent) {
@@ -107,18 +143,18 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
         match event {
             WindowEvent::CloseRequested => {
                 for c in self.components.iter_mut() {
-                    c.quit();
+                    c.application_quit();
                 }
             }
             WindowEvent::Resized(size) => {
                 for c in self.components.iter_mut() {
-                    c.resize(size.width as f32, size.height as f32);
+                    c.application_resize(size.width as f32, size.height as f32);
                 }
             }
             WindowEvent::RedrawRequested => {
                 let mut events: Vec<EngineCommands> = Vec::new();
                 for c in self.components.iter_mut() {
-                    let s = c.render(&mut self.gamestate);
+                    let s = c.refresh(&mut self.gamestate);
                     for x in s {
                         events.push(x.clone());
                     }
@@ -154,11 +190,15 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                     // next
                     let state = if event.state.is_pressed() { KeyState::Down } else { KeyState::Up };
 
-                    if code == KeyCode::Backquote && state == KeyState::Down {
+                    if code == winit::keyboard::KeyCode::Backquote && state == KeyState::Down {
                         toggle_debug = true;
                     }
 
-                    c.input_keyboard(&mut self.gamestate, code, state);
+                    let Some(code) = SystemWindow::convert_winit_keycode(code) else {
+                        return;
+                    };
+
+                    c.input_button(&mut self.gamestate, code, state);
                 }
                 if toggle_debug {
                     self.user_event(
@@ -169,8 +209,9 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
             }
             WindowEvent::CursorMoved { device_id: _, position } => {
                 for c in self.components.iter_mut() {
-                    c.input_mouse_position(
+                    c.input_axis(
                         &mut self.gamestate,
+                        crate::input::axis_code::AxisCode::Cursor,
                         crate::collections::vector3::Vector3::new(position.x as f32, position.y as f32, 0.0),
                     );
                 }
@@ -178,8 +219,12 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
             WindowEvent::MouseInput { device_id: _, state, button } => {
                 let state = if state.is_pressed() { KeyState::Down } else { KeyState::Up };
 
+                let Some(code) = SystemWindow::convert_winit_mousecode(button) else {
+                    return;
+                };
+
                 for c in self.components.iter_mut() {
-                    c.input_mouse(button, state);
+                    c.input_button(&mut self.gamestate, code, state);
                 }
             }
             _ => {}

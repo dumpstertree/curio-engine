@@ -17,7 +17,8 @@ pub mod ecs {
 }
 
 use core::{
-    dumpster_engine::{DumpsterEngine, WindowLayout},
+    dumpster_engine::{DumpsterEngine, GameMode, WindowLayout},
+    input::{input_mapping::InputMapping, key_code::KeyCode},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use pollster::FutureExt;
@@ -26,18 +27,42 @@ use system_component_default_input::SystemComponentDefaultInput;
 use system_component_default_physics::SystemComponentDefaultPhysics;
 use system_component_default_rendering::SystemComponentDefaultGraphics;
 use system_component_default_time::SystemComponentDefaultTime;
-
 fn main() {
+    let mapping_0 = InputMapping::new(
+        vec![
+            (String::from("move_forward"), KeyCode::KeyW),
+            (String::from("move_back"), KeyCode::KeyS),
+            (String::from("move_left"), KeyCode::KeyA),
+            (String::from("move_right"), KeyCode::KeyD),
+        ],
+        vec![],
+    );
+    let mapping_1 = InputMapping::new(
+        vec![
+            (String::from("move_forward"), KeyCode::KeyI),
+            (String::from("move_back"), KeyCode::KeyK),
+            (String::from("move_left"), KeyCode::KeyJ),
+            (String::from("move_right"), KeyCode::KeyL),
+        ],
+        vec![],
+    );
     DumpsterEngine::run::<GameEvents>(
+        //
         // loop for engine
         SystemGPU::init().block_on(),
+        //
         // components
         SystemComponentDefaultTime::new(),
         SystemComponentDefaultInput::new(),
         SystemComponentDefaultGameplay::<GameEvents>::new(),
         SystemComponentDefaultPhysics::new(),
         SystemComponentDefaultGraphics::new(),
+        //
         // window settings
         WindowLayout::windowed_1080(),
+        //
+
+        // create game states
+        GameMode::new(vec![mapping_0, mapping_1]),
     );
 }

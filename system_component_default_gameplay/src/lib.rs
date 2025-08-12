@@ -1,5 +1,5 @@
 use core::{
-    collections::{event_queue::EventQueue2, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
     io::asset_loader::AssetLoader,
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
@@ -14,7 +14,7 @@ where
     ecs_systems_eventless: Vec<(Box<dyn ECSSystemEventless>, bool)>,
     scene: World,
     asset_loader: AssetLoader,
-    event_queue: EventQueue2,
+    event_queue: EventQueue,
     phantom_data: PhantomData<T>,
 }
 
@@ -27,7 +27,7 @@ where
             ecs_systems_eventless: vec![],
             scene: World::new(),
             asset_loader: AssetLoader::new(),
-            event_queue: EventQueue2::new(),
+            event_queue: EventQueue::new(),
             phantom_data: PhantomData,
         })
     }
@@ -59,7 +59,7 @@ where
                 .init(gs, &mut self.scene, &mut self.event_queue, &mut self.asset_loader);
         }
     }
-    fn debug(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue2) {
+    fn debug(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue) {
         for s in self.ecs_systems_eventless.iter_mut() {
             if !s.1 {
                 continue;
@@ -68,7 +68,7 @@ where
                 .debug(game_state, &mut self.scene, system_queue);
         }
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
         // clear old
         // self.gameplay_event_queue.evnt_queue.clear();
 
@@ -83,7 +83,7 @@ where
         });
 
         // create a temp queue to pass in
-        let mut tmp_queue = EventQueue2::new();
+        let mut tmp_queue = EventQueue::new();
 
         // iterate over each event we queued last frame
         let mut queued_events = self.event_queue.get_queued_events::<T>().to_vec();

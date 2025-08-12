@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-
-use core::collections::event_queue::EventQueue2;
 use core::collections::game_state::GameState;
+use core::collections::vector2::Vector2;
 use core::collections::vector3::Vector3;
-use winit::event::MouseButton;
-use winit::keyboard::KeyCode;
+use core::input::axis_code::AxisCode;
+use core::input::input_snapshot_mapped::PlayerInputSnapshot;
+use core::input::key_code::KeyCode;
+use core::{collections::event_queue::EventQueue, input::input_mapping::InputMapping};
+use std::collections::HashMap;
 
 use core::{
     collections::key_state::KeyState,
@@ -15,17 +16,19 @@ use core::{
 };
 
 pub struct SystemComponentDefaultInput {
-    cursor_pos: Vector3,
-    input_state_keyboard: HashMap<KeyCode, bool>,
-    input_state_cursor: HashMap<MouseButton, bool>,
+    mappings_is_dirty: bool,
+    state_axis: HashMap<AxisCode, Vector2>,
+    state_button: HashMap<KeyCode, bool>,
+    active_mappings: Vec<InputMapping>,
 }
 
 impl SystemComponentDefaultInput {
     pub fn new() -> Box<SystemComponentDefaultInput> {
         Box::new(SystemComponentDefaultInput {
-            cursor_pos: Vector3::zero(),
-            input_state_keyboard: HashMap::new(),
-            input_state_cursor: HashMap::new(),
+            mappings_is_dirty: false,
+            state_axis: HashMap::new(),
+            state_button: HashMap::new(),
+            active_mappings: Vec::new(),
         })
     }
 }
@@ -34,49 +37,43 @@ impl SystemComponent for SystemComponentDefaultInput {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, _: &mut GameState) {
-        println!("init input");
-    }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
-        game_state.edit::<InputState>(|x| {
-            // update cursor
-            x.cursor.update(self.cursor_pos);
 
-            // update keys
-            for i in self.input_state_cursor.iter() {
-                let key = i.0;
-                let key_state = i.1;
-                match key {
-                    MouseButton::Left => x.cursor_primary.update(key_state),
-                    _ => {}
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
+        game_state.edit::<InputState>(|x| {
+            // if mismatched map length we need to rebuild - this is actually an issue because what if same amount
+            if self.mappings_is_dirty {
+                // clear old
+                x.mapped.clear();
+
+                // create new
+                for mapping in &self.active_mappings {
+                    x.mapped.push(PlayerInputSnapshot::new(mapping.clone()));
                 }
             }
-            // update keys
-            for i in self.input_state_keyboard.iter() {
-                let key = i.0;
-                let key_state = i.1;
-                match key {
-                    KeyCode::KeyW => x.w.update(key_state),
-                    KeyCode::KeyA => x.a.update(key_state),
-                    KeyCode::KeyS => x.s.update(key_state),
-                    KeyCode::KeyD => x.d.update(key_state),
-                    KeyCode::Tab => x.tab.update(key_state),
-                    KeyCode::KeyP => x.debug.update(key_state),
-                    KeyCode::Escape => x.esc.update(key_state),
-                    _ => {}
-                }
+
+            // update raw input to include changes
+            x.raw.update(&self.state_button, &self.state_axis);
+
+            // iterate over each mapped
+            for i in 0..x.mapped.len() {
+                // update mapped input to include changees
+                x.mapped
+                    .get_mut(i)
+                    .unwrap()
+                    .update(&self.state_button, &self.state_axis);
             }
         });
+        // turn off flag
+        self.mappings_is_dirty = false;
     }
-    fn input_mouse_position(&mut self, _: &mut GameState, position: Vector3) {
-        self.cursor_pos = position;
+    fn input_axis(&mut self, _: &mut GameState, code: AxisCode, val: Vector3) {
+        self.state_axis.insert(code, val.to_vector2());
     }
-    fn input_keyboard(&mut self, _: &mut GameState, key: KeyCode, key_state: KeyState) {
-        self.input_state_keyboard
-            .insert(key, key_state == KeyState::Down);
+    fn input_button(&mut self, _: &mut GameState, code: KeyCode, val: KeyState) {
+        self.state_button.insert(code, val == KeyState::Down);
     }
-    fn input_mouse(&mut self, key: MouseButton, key_state: KeyState) {
-        self.input_state_cursor
-            .insert(key, key_state == KeyState::Down);
+    fn set_game_mode(&mut self, game_mode: &core::dumpster_engine::GameMode) {
+        self.active_mappings = game_mode.input_player_mappings.clone();
+        self.mappings_is_dirty = true;
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
+    collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     system::system_game_state::IState,
-    collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3, color::Color},
 };
 
 #[derive(Clone)]
@@ -30,7 +30,7 @@ pub struct LabelDesc {
 #[derive(Clone)]
 pub struct ButtonDesc {
     pub contents: String,
-    pub on_click: fn(game_state: &mut GameState, &mut EventQueue2),
+    pub on_click: fn(game_state: &mut GameState, &mut EventQueue),
 }
 
 #[derive(Clone)]
@@ -64,7 +64,7 @@ impl GuiElement {
             }),
         }
     }
-    pub fn new_text_button(contents: &str, on_click: fn(&mut GameState, &mut EventQueue2)) -> GuiElement {
+    pub fn new_text_button(contents: &str, on_click: fn(&mut GameState, &mut EventQueue)) -> GuiElement {
         GuiElement {
             gui_type: GuiElementTypes::Button(ButtonDesc {
                 contents: contents.to_string(),

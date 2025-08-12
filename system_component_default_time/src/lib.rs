@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use core::collections::event_queue::EventQueue2;
+use core::collections::event_queue::EventQueue;
 use core::events::engine_commands::EngineCommands;
 use core::system::system_game_states::state_debug::StateDebug;
 // ucoreate::system_adapters::adapter_system_gpu::CustomEvents;
@@ -33,7 +33,7 @@ impl SystemComponent for SystemComponentDefaultTime {
     }
     fn init(&mut self, _: &mut GameState) {}
 
-    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
         let state_debug = game_state.get_value2::<StateDebug>();
 
         let cur_time = self.instant.elapsed().as_secs_f64();
@@ -68,7 +68,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         });
     }
 
-    fn render(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
+    fn refresh(&mut self, game_state: &mut GameState) -> &[EngineCommands] {
         // get state
         let state_time = game_state.get_value2::<TimeState>();
 

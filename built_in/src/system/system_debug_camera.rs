@@ -1,5 +1,7 @@
-use core::collections::event_queue::EventQueue2;
+use core::collections::event_queue::EventQueue;
 use core::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
+use core::input::axis_code::AxisCode;
+use core::input::key_code::KeyCode;
 use core::system::system_game_states::state_screeen::StateScreen;
 use core::{
     collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
@@ -22,11 +24,11 @@ impl ECSSystemEventless for SystemDebugCamera {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         game_state.get_value2::<StateDebug>().is_paused
     }
-    fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2) {
+    fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {
         self.x = 0.0;
         self.y = 0.0;
     }
-    fn debug(&mut self, state: &mut GameState, _: &mut World, _: &mut EventQueue2) {
+    fn debug(&mut self, state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // constants
         const SPEED_ROT: f32 = 10.0;
         const SPEED_MOVE: f32 = 10.0;
@@ -37,10 +39,12 @@ impl ECSSystemEventless for SystemDebugCamera {
         let state_screen = state.get_value2::<StateScreen>();
 
         // rotation
-        if state_input.cursor_primary.is_down {
+        if state_input.raw.get_button(&KeyCode::MousePrimary).is_down {
             //  calculate the new angles
-            let x_angle = (-state_input.cursor.delta.x / state_screen.width() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
-            let y_angle = (-state_input.cursor.delta.y / state_screen.height() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
+            let x_angle =
+                (-state_input.raw.get_axis(&AxisCode::Cursor).delta.x / state_screen.width() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
+            let y_angle =
+                (-state_input.raw.get_axis(&AxisCode::Cursor).delta.y / state_screen.height() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
 
             // update the saved values
             self.x = self.x + x_angle;
@@ -51,16 +55,16 @@ impl ECSSystemEventless for SystemDebugCamera {
 
         // position
         let mut dir = Vector3::zero();
-        if state_input.w.is_down {
+        if state_input.raw.get_button(&KeyCode::KeyW).is_down {
             dir = dir + rot * Vector3::forward();
         }
-        if state_input.s.is_down {
+        if state_input.raw.get_button(&KeyCode::KeyS).is_down {
             dir = dir + rot * Vector3::back();
         }
-        if state_input.d.is_down {
+        if state_input.raw.get_button(&KeyCode::KeyD).is_down {
             dir = dir + rot * Vector3::right();
         }
-        if state_input.a.is_down {
+        if state_input.raw.get_button(&KeyCode::KeyA).is_down {
             dir = dir + rot * Vector3::left();
         }
 

@@ -1,35 +1,19 @@
 use crate::{
+    input::{input_snapshot_mapped::PlayerInputSnapshot, input_snapshot_raw::RawInputSnapshot},
     system::system_game_state::IState,
-    collections::{input_button::InputButtonState, input_cursor::InputAxisState},
 };
 
 #[derive(Clone)]
 pub struct InputState {
-    pub cursor: InputAxisState,
-    pub cursor_primary: InputButtonState,
-    pub cursor_secondary: InputButtonState,
-    pub w: InputButtonState,
-    pub a: InputButtonState,
-    pub s: InputButtonState,
-    pub d: InputButtonState,
-    pub esc: InputButtonState,
-    pub tab: InputButtonState,
-    pub debug: InputButtonState,
+    pub mapped: Vec<PlayerInputSnapshot>,
+    pub raw: RawInputSnapshot,
 }
 
 impl InputState {
     pub fn default() -> InputState {
         InputState {
-            cursor: InputAxisState::default(),
-            cursor_primary: InputButtonState::default(),
-            cursor_secondary: InputButtonState::default(),
-            w: InputButtonState::default(),
-            a: InputButtonState::default(),
-            s: InputButtonState::default(),
-            d: InputButtonState::default(),
-            esc: InputButtonState::default(),
-            tab: InputButtonState::default(),
-            debug: InputButtonState::default(),
+            mapped: Vec::new(),
+            raw: RawInputSnapshot::new(),
         }
     }
 }

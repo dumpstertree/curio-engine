@@ -1,5 +1,5 @@
 use core::{
-    collections::{event_queue::EventQueue2, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     system::system_game_states::state_debug::StateDebug,
 };
@@ -17,7 +17,7 @@ impl ECSSystemEventless for PostCameraECSSystem {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
+    fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         if state.get_value2::<StateDebug>().is_paused {
             return;
         }

@@ -6,7 +6,7 @@ use hecs::World;
 use crate::{ecs::component::component_ball::ComponentBall, game_events::GameEvents};
 
 use core::{
-    collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
     random::Random,
     system::system_game_states::state_time::TimeState,
@@ -18,7 +18,7 @@ impl ECSSystemEventless for SystemBallMove {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
+    fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let state_time = state.get_value2::<TimeState>();
 
         for (_, (ball, _, collider)) in world
@@ -61,7 +61,7 @@ impl ECSSystemEventless for SystemBallMove {
 
 #[global_ecs_system_event_reciever(GameEvents)]
 impl EventReciever<GameEvents> for SystemBallMove {
-    fn dequeue_event(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue2, event: &GameEvents) {
+    fn dequeue_event(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
         println!("dequeue");
         match event {
             GameEvents::A(_) => println!("A"),

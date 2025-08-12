@@ -1,5 +1,5 @@
 use core::{
-    collections::{event_queue::EventQueue2, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     system::system_game_states::{state_gui_debug::GUIStateDebug, state_time::TimeState},
 };
@@ -18,7 +18,7 @@ impl ECSSystemEventless for SystemDebugGuiTime {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn debug(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue2) {
+    fn debug(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // get state
         let state_time = game_state.get_value2::<TimeState>();
 

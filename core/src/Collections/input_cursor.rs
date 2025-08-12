@@ -1,20 +1,20 @@
-use crate::collections::vector3::Vector3;
+use crate::collections::vector2::Vector2;
 
 #[derive(Clone)]
 pub struct InputAxisState {
-    pub position: Vector3,
-    pub delta: Vector3,
+    pub position: Vector2,
+    pub delta: Vector2,
 }
 
 impl InputAxisState {
     pub fn default() -> InputAxisState {
         InputAxisState {
-            position: Vector3::zero(),
-            delta: Vector3::zero(),
+            position: Vector2::zero(),
+            delta: Vector2::zero(),
         }
     }
 
-    pub fn update(&mut self, axis: Vector3) {
+    pub fn update(&mut self, axis: Vector2) {
         self.delta = axis - self.position;
         self.position = axis;
     }

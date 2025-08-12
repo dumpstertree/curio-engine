@@ -5,7 +5,7 @@ use rapier3d::{
 
 use core::gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact};
 use core::{
-    collections::{event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     gameplay::ecs::component::component_collider::ColliderSnapshot,
     system::{
         system_component::SystemComponent,
@@ -51,7 +51,7 @@ impl SystemComponent for SystemComponentDefaultPhysics {
     }
     fn init(&mut self, _: &mut GameState) {}
 
-    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
         // reset
         self.buffer_collider_box_cnt = 0;
 

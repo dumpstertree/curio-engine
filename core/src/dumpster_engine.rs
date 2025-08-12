@@ -5,6 +5,7 @@ use winit::event_loop::EventLoop;
 
 use crate::events::engine_commands::EngineCommands;
 use crate::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
+use crate::input::input_mapping::InputMapping;
 use crate::system::system_components::system_component_gameplay::SystemComponentGameplay;
 use crate::system::system_components::system_component_physics::SystemComponentPhysics;
 use crate::system::system_components::system_component_time::SystemComponentTime;
@@ -14,6 +15,14 @@ use crate::window::system_window::SystemWindow;
 
 static REGISTERED_GLOBAL_ECS_SYSTEMS: Mutex<Vec<fn() -> Box<dyn ECSSystemEventless>>> = Mutex::new(Vec::new());
 
+pub struct GameMode {
+    pub input_player_mappings: Vec<InputMapping>,
+}
+impl GameMode {
+    pub fn new(input_player_mappings: Vec<InputMapping>) -> GameMode {
+        GameMode { input_player_mappings }
+    }
+}
 pub struct DumpsterEngine {}
 impl DumpsterEngine {
     pub fn register_global_ecs_system<T>()
@@ -39,6 +48,7 @@ impl DumpsterEngine {
         physics: Box<dyn SystemComponentPhysics>,
         graphics: Box<dyn system_component_graphics::SystemComponentGraphics>,
         window_layout: WindowLayout,
+        game_modes: GameMode,
     ) where
         TGameEvents: 'static + Clone,
     {
@@ -62,7 +72,7 @@ impl DumpsterEngine {
         gameplay.set_systems(ecs_system_built_in);
 
         // create systems
-        let mut system_window = SystemWindow::new(vec![time, input, gameplay, physics, graphics]);
+        let mut system_window = SystemWindow::new(vec![time, input, gameplay, physics, graphics], game_modes);
 
         // run the window
         system_window.run(event_loop);

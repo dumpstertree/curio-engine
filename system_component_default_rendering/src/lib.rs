@@ -2,7 +2,7 @@ mod egui_app_state;
 mod egui_tools;
 use crate::egui_tools::EguiRenderer;
 use core::collections::camera_uniform::CameraUniform;
-use core::collections::event_queue::EventQueue2;
+use core::collections::event_queue::EventQueue;
 use core::collections::game_state::GameState;
 use core::collections::gizmo::Gizmo;
 use core::collections::material::Material;
@@ -140,7 +140,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         let cs = gs.get_value2::<CameraState>();
         self.camera_rendereing = CameraRenderingComponents::new(cs.get_uniform());
     }
-    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue2) {
+    fn tick(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue) {
         let surface = &SystemGPU::get_surface();
         let device = &SystemGPU::get_device();
         let depth = &SystemGPU::get_depth_texture();

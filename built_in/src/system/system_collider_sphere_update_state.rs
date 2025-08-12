@@ -1,5 +1,5 @@
 use core::{
-    collections::{color::Color, event_queue::EventQueue2, game_state::GameState, gizmo::Gizmo},
+    collections::{color::Color, event_queue::EventQueue, game_state::GameState, gizmo::Gizmo},
     gameplay::ecs::{
         component::component_collider::{ColliderSnapshot, CollisionSnapshot},
         traits::ecs_system::ECSSystemEventless,
@@ -23,7 +23,7 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
         true
     }
 
-    fn will_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
+    fn will_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         //
         let state_collision = state.get_value2::<StateCollision>();
         for (_, collider) in world.query::<&mut ComponentColliderSphere>().iter() {
@@ -38,7 +38,7 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
             collider.collisions = collision;
         }
     }
-    fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         state.edit::<StateCollider>(|x| {
             for (_, (collider, transform)) in world
                 .query::<(&ComponentColliderSphere, &Transform)>()
@@ -49,7 +49,7 @@ impl ECSSystemEventless for SystemColliderBoxUpdateState {
             }
         });
     }
-    fn debug(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
+    fn debug(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         state.edit::<GizmosState>(|x| {
             for (_, (collider, transform)) in world
                 .query::<(&ComponentColliderSphere, &Transform)>()

@@ -1,5 +1,12 @@
 pub mod dumpster_engine;
 
+pub mod input {
+    pub mod axis_code;
+    pub mod input_mapping;
+    pub mod input_snapshot_mapped;
+    pub mod input_snapshot_raw;
+    pub mod key_code;
+}
 pub mod io {
     pub mod asset;
     pub mod asset_loader;

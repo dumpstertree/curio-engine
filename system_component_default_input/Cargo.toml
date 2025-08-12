@@ -6,4 +6,3 @@ edition = "2024"
 
 [dependencies]
 core = { path = "../core" }
-winit = { version = "0.30", features = ["android-native-activity"] }

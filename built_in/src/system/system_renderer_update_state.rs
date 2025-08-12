@@ -1,7 +1,7 @@
 use crate::component::{component_renderer::Renderer, component_transform::Transform};
 use core::{collections::draw_call::DrawCall, system::system_game_states::state_draw::DrawCallsState};
 use core::{
-    collections::{event_queue::EventQueue2, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
@@ -19,7 +19,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
         true
     }
 
-    fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue2) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         //edit draw call states
         state.edit::<DrawCallsState>(|x| {
             // iterate over each renderer

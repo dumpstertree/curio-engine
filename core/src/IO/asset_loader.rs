@@ -1,3 +1,4 @@
+use core::panic;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
@@ -14,6 +15,10 @@ use crate::collections::mesh::Vertex;
 use super::model_asset::ModelAsset;
 use super::texture_asset::TextureAsset;
 
+// static mut CUBE: Mutex<Option<Arc<Mesh>>> = None;
+// static mut SPHERE: Mutex<Option<Arc<Mesh>>> = None;
+// static mut PLANE: Mutex<Option<Arc<Mesh>>> = None;
+
 pub struct AssetLoader {
     asset_cache: HashMap<String, Arc<ModelAsset>>, // shader_cache: ShaderCache<'a>,
                                                    // path_texture: String,
@@ -27,6 +32,47 @@ pub struct AssetLoader {
 // }
 // construction
 impl AssetLoader {
+    // pub fn get_cube() -> Arc<Mesh> {
+    //     unsafe {
+    //         let guard = CUBE.lock();
+    //         let Ok(guard) = guard else {
+    //             panic!();
+    //         };
+
+    //         let Some(cube) = guard else {
+    //             CUBE = Some(Arc::new(Mesh::primitive_cube(crate::collections::vector3::Vector3::one())));
+    //             if let Some(cube) = &CUBE {
+    //                 return cube.clone();
+    //             };
+    //             panic!();
+    //         };
+    //         cube.clone()
+    //     }
+    // }
+    // pub fn generate_sphere() -> Arc<Mesh> {
+    //     unsafe {
+    //         let Some(sphere) = &SPHERE else {
+    //             SPHERE = Some(Arc::new(Mesh::primitive_sphere(1.0, 10, 10)));
+    //             if let Some(sphere) = &SPHERE {
+    //                 return sphere.clone();
+    //             };
+    //             panic!();
+    //         };
+    //         sphere.clone()
+    //     }
+    // }
+    // pub fn generate_plane() -> Arc<Mesh> {
+    //     unsafe {
+    //         let Some(plane) = &PLANE else {
+    //             PLANE = Some(Arc::new(Mesh::primitive_plane(1.0, 1.0, 1, 1)));
+    //             if let Some(plane) = &PLANE {
+    //                 return plane.clone();
+    //             };
+    //             panic!();
+    //         };
+    //         plane.clone()
+    //     }
+    // }
     pub fn new() -> AssetLoader {
         AssetLoader { asset_cache: HashMap::new() }
     }

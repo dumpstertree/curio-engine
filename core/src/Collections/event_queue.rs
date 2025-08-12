@@ -5,12 +5,12 @@ use std::{
     hash::{Hash, Hasher},
 };
 
-pub struct EventQueue2 {
+pub struct EventQueue {
     cache: AnyMap<i32>,
 }
-impl EventQueue2 {
-    pub fn new() -> EventQueue2 {
-        EventQueue2 {
+impl EventQueue {
+    pub fn new() -> EventQueue {
+        EventQueue {
             cache: AnyMap::<i32>::default(),
         }
     }
@@ -25,7 +25,7 @@ impl EventQueue2 {
     where
         T: Clone,
     {
-        let id = EventQueue2::type_id_to_i32::<T>();
+        let id = EventQueue::type_id_to_i32::<T>();
         if let Some(vec) = self.cache.get_mut::<Vec<T>, i32>(&id) {
             vec.push(val);
         } else {
@@ -36,7 +36,7 @@ impl EventQueue2 {
     where
         T: Clone,
     {
-        let id = EventQueue2::type_id_to_i32::<T>();
+        let id = EventQueue::type_id_to_i32::<T>();
         if let Some(x) = self.cache.get::<Vec<T>, i32>(&id) {
             x.as_slice()
         } else {
@@ -44,7 +44,7 @@ impl EventQueue2 {
         }
     }
     pub fn clear_queued_events<T: 'static>(&mut self) {
-        let id = EventQueue2::type_id_to_i32::<T>();
+        let id = EventQueue::type_id_to_i32::<T>();
         if let Some(x) = self.cache.get_mut::<Vec<T>, i32>(&id) {
             x.clear();
         }

@@ -778,6 +778,7 @@ dependencies = [
  "system_component_default_physics",
  "system_component_default_rendering",
  "system_component_default_time",
+ "winit",
 ]
 
 [[package]]
@@ -2698,7 +2699,6 @@ name = "system_component_default_input"
 version = "0.1.0"
 dependencies = [
  "core",
- "winit",
 ]
 
 [[package]]

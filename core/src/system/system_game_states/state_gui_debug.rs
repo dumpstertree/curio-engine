@@ -1,5 +1,5 @@
 use crate::{
-    collections::{color::Color, event_queue::EventQueue2, game_state::GameState, vector3::Vector3},
+    collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     events::engine_commands::EngineCommands,
     system::{
         system_game_state::IState,
@@ -43,7 +43,7 @@ impl GUIStateDebug {
             size: 18.0,
         }
     }
-    fn pause_on_click(game_state: &mut GameState, event_queue: &mut EventQueue2) {
+    fn pause_on_click(game_state: &mut GameState, event_queue: &mut EventQueue) {
         event_queue.enqueue_event(EngineCommands::SetPauseMode(!game_state.get_value2::<StateDebug>().is_paused));
     }
 }
