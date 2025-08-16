@@ -29,6 +29,7 @@ impl SystemWindow {
         }
     }
 
+    // run
     pub fn run(&mut self, event_loop: EventLoop<EngineCommands>) {
         self.components.sort_by(|a, b| a.order().cmp(&b.order()));
 
@@ -44,6 +45,8 @@ impl SystemWindow {
         // run
         let _ = event_loop.run_app(self);
     }
+
+    // convert input events
     fn convert_winit_keycode(winit_key: winit::keyboard::KeyCode) -> Option<KeyCode> {
         match winit_key {
             winit::keyboard::KeyCode::Backquote => return Some(KeyCode::Backquote),

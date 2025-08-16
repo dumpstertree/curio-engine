@@ -5,6 +5,7 @@ use winit::event_loop::EventLoop;
 
 use crate::events::engine_commands::EngineCommands;
 use crate::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
+use crate::graphics::graphics_mapping::GraphicsMapping;
 use crate::input::input_mapping::InputMapping;
 use crate::system::system_components::system_component_gameplay::SystemComponentGameplay;
 use crate::system::system_components::system_component_physics::SystemComponentPhysics;
@@ -16,11 +17,15 @@ use crate::window::system_window::SystemWindow;
 static REGISTERED_GLOBAL_ECS_SYSTEMS: Mutex<Vec<fn() -> Box<dyn ECSSystemEventless>>> = Mutex::new(Vec::new());
 
 pub struct GameMode {
-    pub input_player_mappings: Vec<InputMapping>,
+    pub input_mappings: Vec<InputMapping>,
+    pub graphics_mappings: Vec<GraphicsMapping>,
 }
 impl GameMode {
-    pub fn new(input_player_mappings: Vec<InputMapping>) -> GameMode {
-        GameMode { input_player_mappings }
+    pub fn new(input_mappings: Vec<InputMapping>, graphics_mappings: Vec<GraphicsMapping>) -> GameMode {
+        GameMode {
+            input_mappings,
+            graphics_mappings,
+        }
     }
 }
 pub struct DumpsterEngine {}

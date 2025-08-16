@@ -73,8 +73,8 @@ impl ECSSystemEventless for SystemDebugCamera {
 
         // edit the state
         state.edit::<CameraState>(|x| {
-            x.position = x.position + offset;
-            x.rotation = rot;
+            x.cameras[0].position = x.cameras[0].position + offset;
+            x.cameras[0].rotation = rot;
         });
     }
 }

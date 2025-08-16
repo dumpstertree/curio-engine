@@ -34,19 +34,24 @@ impl Quaternion {
 impl Quaternion {
     /// Returns an instance of a Quaternion representing the euler angles provided
     pub fn from_euler(euler: Vector3) -> Quaternion {
-        let cr: f32 = f32::cos(euler.x * 0.5);
-        let sr: f32 = f32::sin(euler.x * 0.5);
-        let cp: f32 = f32::cos(euler.y * 0.5);
-        let sp: f32 = f32::sin(euler.y * 0.5);
-        let cy: f32 = f32::cos(euler.z * 0.5);
-        let sy: f32 = f32::sin(euler.z * 0.5);
+        // Convert degrees to radians
+        let (roll, pitch, yaw) = (euler.x.to_radians(), euler.y.to_radians(), euler.z.to_radians());
 
-        Quaternion::new(
-            cr * cp * cy + sr * sp * sy,
-            sr * cp * cy - cr * sp * sy,
-            cr * sp * cy + sr * cp * sy,
-            cr * cp * sy - sr * sp * cy,
-        )
+        // Half angles
+        let (hr, hp, hy) = (roll * 0.5, pitch * 0.5, yaw * 0.5);
+
+        // Calculate sin and cos for each half angle
+        let (sr, cr) = (hr.sin(), hr.cos());
+        let (sp, cp) = (hp.sin(), hp.cos());
+        let (sy, cy) = (hy.sin(), hy.cos());
+
+        // Apply quaternion formula (XYZ order → roll, pitch, yaw)
+        Quaternion {
+            w: cr * cp * cy + sr * sp * sy,
+            x: sr * cp * cy - cr * sp * sy,
+            y: cr * sp * cy + sr * cp * sy,
+            z: cr * cp * sy - sr * sp * cy,
+        }
     }
     /// Returns an instance of a Quaternion representing the angle in degrees around provided axis
     pub fn from_angle_axis(axis: Vector3, angle: f32) -> Quaternion {

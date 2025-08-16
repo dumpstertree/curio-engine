@@ -17,7 +17,9 @@ pub mod ecs {
 }
 
 use core::{
+    collections::vector2::Vector2,
     dumpster_engine::{DumpsterEngine, GameMode, WindowLayout},
+    graphics::graphics_mapping::GraphicsMapping,
     input::{input_mapping::InputMapping, key_code::KeyCode},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
@@ -28,7 +30,7 @@ use system_component_default_physics::SystemComponentDefaultPhysics;
 use system_component_default_rendering::SystemComponentDefaultGraphics;
 use system_component_default_time::SystemComponentDefaultTime;
 fn main() {
-    let mapping_0 = InputMapping::new(
+    let input_mapping_0 = InputMapping::new(
         vec![
             (String::from("move_forward"), KeyCode::KeyW),
             (String::from("move_back"), KeyCode::KeyS),
@@ -37,7 +39,7 @@ fn main() {
         ],
         vec![],
     );
-    let mapping_1 = InputMapping::new(
+    let input_mapping_1 = InputMapping::new(
         vec![
             (String::from("move_forward"), KeyCode::KeyI),
             (String::from("move_back"), KeyCode::KeyK),
@@ -46,6 +48,8 @@ fn main() {
         ],
         vec![],
     );
+    let graphics_mapping_0 = GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(0.5, 1.0));
+    let graphics_mapping_1 = GraphicsMapping::new(Vector2::new(0.5, 0.0), Vector2::new(1.0, 1.0));
     DumpsterEngine::run::<GameEvents>(
         //
         // loop for engine
@@ -63,6 +67,6 @@ fn main() {
         //
 
         // create game states
-        GameMode::new(vec![mapping_0, mapping_1]),
+        GameMode::new(vec![input_mapping_0, input_mapping_1], vec![graphics_mapping_0, graphics_mapping_1]),
     );
 }

@@ -1,5 +1,8 @@
 pub mod dumpster_engine;
 
+pub mod graphics {
+    pub mod graphics_mapping;
+}
 pub mod input {
     pub mod axis_code;
     pub mod input_mapping;

@@ -73,7 +73,7 @@ impl SystemComponent for SystemComponentDefaultInput {
         self.state_button.insert(code, val == KeyState::Down);
     }
     fn set_game_mode(&mut self, game_mode: &core::dumpster_engine::GameMode) {
-        self.active_mappings = game_mode.input_player_mappings.clone();
+        self.active_mappings = game_mode.input_mappings.clone();
         self.mappings_is_dirty = true;
     }
 }

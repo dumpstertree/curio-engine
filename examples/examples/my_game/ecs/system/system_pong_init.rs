@@ -1,13 +1,13 @@
 use built_in::component::{
-    component_camera::Camera, component_colliders::component_collider_box::ComponentColliderBox, component_input_index::InputIndex,
-    component_renderer::Renderer, component_transform::Transform,
+    component_camera::Camera, component_camera_index::CameraIndex, component_colliders::component_collider_box::ComponentColliderBox,
+    component_input_index::InputIndex, component_renderer::Renderer, component_transform::Transform,
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 use crate::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle};
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     io::asset_loader::AssetLoader,
     random::Random,
@@ -21,15 +21,24 @@ impl ECSSystemEventless for SystemPongInit {
     }
     fn init(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue, asset_loader: &mut AssetLoader) {
         state.edit::<CameraState>(|x| {
-            x.width = 1920;
-            x.height = 1080;
+            x.resolution_width = 1920 / 1;
+            x.resolution_height = 1080 / 1;
         });
 
         // camera
         world.spawn((
-            Transform::default().set_position(Vector3::new(0.0, 5.0, -20.0)),
-            // .set_rotation(Quaternion::from_angle_axis(Vector3::new(0.0, 1.0, 0.0), 180.0)),
+            Transform::default()
+                .set_position(Vector3::new(0.0, 5.0, -20.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
+            CameraIndex::default().set_index(0),
             Camera::default(),
+        ));
+        world.spawn((
+            Transform::default()
+                .set_position(Vector3::new(0.0, 5.0, 20.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0))),
+            Camera::default(),
+            CameraIndex::default().set_index(1),
         ));
 
         // paddle
