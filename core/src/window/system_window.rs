@@ -6,8 +6,8 @@ use crate::events::engine_commands::EngineCommands;
 use crate::input::key_code::KeyCode;
 use crate::system::system_component::SystemComponent;
 use crate::system::system_game_state::IState;
-use crate::system::system_game_states::state_debug::StateDebug;
-use crate::system::system_game_states::state_screeen::StateScreen;
+// use crate::system::system_game_states::state_debug::StateDebug;
+// use crate::system::system_game_states::state_screeen::StateScreen;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use winit::event_loop::EventLoop;
 use winit::{application::ApplicationHandler, event::WindowEvent};
@@ -23,7 +23,7 @@ impl SystemWindow {
     pub fn new(components: Vec<Box<dyn SystemComponent>>, game_mode: GameMode) -> SystemWindow {
         SystemWindow {
             system_event_queue: EventQueue::new(),
-            gamestate: GameState::new(),
+            gamestate: GameState::new(game_mode.network_mode.clone()),
             components: components,
             game_mode: game_mode,
         }
@@ -77,8 +77,8 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
         match event {
             EngineCommands::Tick => {
                 // update forced packets
-                self.gamestate
-                    .set_value2::<StateScreen>(StateScreen::default());
+                // self.gamestate
+                //     .set_value2::<StateScreen>(StateScreen::default());
 
                 //
                 for c in self.components.iter_mut() {
@@ -86,9 +86,9 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                     c.tick(&mut self.gamestate, &mut self.system_event_queue);
 
                     // if debuging run debug
-                    if self.gamestate.get_value2::<StateDebug>().is_inspecting {
-                        c.debug(&mut self.gamestate, &mut self.system_event_queue);
-                    }
+                    // if self.gamestate.get_value2::<StateDebug>().is_inspecting {
+                    //     c.debug(&mut self.gamestate, &mut self.system_event_queue);
+                    // }
 
                     // invoke all events
                     let queue = self
@@ -102,10 +102,10 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                             EngineCommands::Resizable(resizable) => SystemGPU::set_resizable(*resizable),
                             EngineCommands::Cursor(visible) => SystemGPU::set_cursor_visible(*visible),
                             EngineCommands::Exit => event_loop.exit(),
-                            EngineCommands::SetDebugMode(active) => self
-                                .gamestate
-                                .edit::<StateDebug>(|x| x.is_inspecting = *active),
-                            EngineCommands::SetPauseMode(active) => self.gamestate.edit::<StateDebug>(|x| x.is_paused = *active),
+                            EngineCommands::SetDebugMode(active) => (), //self
+                            // .gamestate
+                            // .edit::<StateDebug>(|x| x.is_inspecting = *active),
+                            EngineCommands::SetPauseMode(active) => (), //self.gamestate.edit::<StateDebug>(|x| x.is_paused = *active),
                             EngineCommands::Tick => println!("Cannot call tick from inside tick!"),
                             EngineCommands::SetNumInputs(_) => todo!(),
                             EngineCommands::SetNumScreens(_) => todo!(),
@@ -124,14 +124,15 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
             EngineCommands::Fullscreen(_) => todo!(),
             EngineCommands::Resizable(_) => todo!(),
             EngineCommands::Cursor(_) => todo!(),
-            EngineCommands::SetDebugMode(active) => self
-                .gamestate
-                .edit::<StateDebug>(|x| x.is_inspecting = active),
-            EngineCommands::SetPauseMode(active) => self.gamestate.edit::<StateDebug>(|x| x.is_paused = active),
+            // EngineCommands::SetDebugMode(active) => self
+            //     .gamestate
+            //     .edit::<StateDebug>(|x| x.is_inspecting = active),
+            // EngineCommands::SetPauseMode(active) => self.gamestate.edit::<StateDebug>(|x| x.is_paused = active),
             EngineCommands::SetNumInputs(_num) => todo!(),
             EngineCommands::SetNumScreens(_num) => todo!(),
             EngineCommands::SetHost() => todo!(),
             EngineCommands::SetPeer() => todo!(),
+            _ => (),
         }
     }
     fn window_event(&mut self, event_loop: &winit::event_loop::ActiveEventLoop, _: winit::window::WindowId, event: winit::event::WindowEvent) {
@@ -203,12 +204,12 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
 
                     c.input_button(&mut self.gamestate, code, state);
                 }
-                if toggle_debug {
-                    self.user_event(
-                        event_loop,
-                        EngineCommands::SetDebugMode(!self.gamestate.get_value2::<StateDebug>().is_inspecting),
-                    );
-                }
+                // if toggle_debug {
+                //     self.user_event(
+                //         event_loop,
+                //         EngineCommands::SetDebugMode(!self.gamestate.get_value2::<StateDebug>().is_inspecting),
+                //     );
+                // }
             }
             WindowEvent::CursorMoved { device_id: _, position } => {
                 for c in self.components.iter_mut() {

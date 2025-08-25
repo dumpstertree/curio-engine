@@ -8,6 +8,7 @@ hecs = "0.10.5"
 inline_tweak = "1.2.2"
 core = { path = "../core" }
 built_in = { path = "../built_in" }
+built_in_state = { path = "../built_in_state" }
 ecs_system = { path = "../ecs_system" }
 ecs_event = { path = "../ecs_event" }
 system_component_default_time = { path = "../system_component_default_time" }
@@ -15,8 +16,13 @@ system_component_default_input = { path = "../system_component_default_input" }
 system_component_default_gameplay = { path = "../system_component_default_gameplay" }
 system_component_default_physics = { path = "../system_component_default_physics" }
 system_component_default_rendering = { path = "../system_component_default_rendering" }
+system_component_default_networking = { path = "../system_component_default_networking" }
 ctor = "0.2"
 intertrait = "0.2.2"
 linkme = "=0.2.10"
 pollster = "0.3"
 winit = { version = "0.30", features = ["android-native-activity"] }
+message-io = "0.19.0"
+macro_state = { path = "../macro_state" }
+macro_state_serialize = { path = "../macro_state_serialize" }
+serde = { version = "1.0.104", features = ["derive"] }

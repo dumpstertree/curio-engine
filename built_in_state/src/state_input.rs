@@ -1,9 +1,11 @@
-use crate::{
+use core::{
     input::{input_snapshot_mapped::PlayerInputSnapshot, input_snapshot_raw::RawInputSnapshot},
     system::system_game_state::IState,
 };
 
-#[derive(Clone)]
+use macro_state::global_state;
+
+#[global_state]
 pub struct InputState {
     pub mapped: Vec<PlayerInputSnapshot>,
     pub raw: RawInputSnapshot,
@@ -17,11 +19,7 @@ impl InputState {
         }
     }
 }
-impl IState<InputState> for InputState {
-    fn default() -> InputState {
-        InputState::default()
-    }
-
+impl IState for InputState {
     fn id() -> i32 {
         290873492
     }

@@ -1,8 +1,8 @@
 use crate::egui_tools::EguiRenderer;
 use crate::render_feature_2d::RenderFeature2D;
+use built_in_state::{state_debug::StateDebug, state_gui::GUIState, state_gui_debug::GUIStateDebug};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    system::system_game_states::{state_debug::StateDebug, state_gui::GUIState, state_gui_debug::GUIStateDebug},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::{Color32, Frame, Pos2, Ui};
@@ -41,9 +41,9 @@ impl RenderFeatureDrawUI {
             let mut x = |ui: &mut Ui| {
                 for element in &gui_window.children {
                     match &element.gui_type {
-                        core::system::system_game_states::state_gui::GuiElementTypes::Rectangle => todo!(),
-                        core::system::system_game_states::state_gui::GuiElementTypes::Ellipse => todo!(),
-                        core::system::system_game_states::state_gui::GuiElementTypes::Label(label_desc) => {
+                        built_in_state::state_gui::GuiElementTypes::Rectangle => todo!(),
+                        built_in_state::state_gui::GuiElementTypes::Ellipse => todo!(),
+                        built_in_state::state_gui::GuiElementTypes::Label(label_desc) => {
                             for (_text_style, font_id) in ui.style_mut().text_styles.iter_mut() {
                                 font_id.size = label_desc.font_size // whatever size you want here
                             }
@@ -56,7 +56,7 @@ impl RenderFeatureDrawUI {
                                 &label_desc.contents,
                             );
                         }
-                        core::system::system_game_states::state_gui::GuiElementTypes::Button(button_desc) => {
+                        built_in_state::state_gui::GuiElementTypes::Button(button_desc) => {
                             let b = ui.button(&button_desc.contents);
                             if b.clicked() {
                                 (button_desc.on_click)(game_state, system_event_queue);

@@ -6,7 +6,7 @@ use crate::{
 };
 
 // A snapshot of the current state of the input regardless of mappings
-#[derive(Clone)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct RawInputSnapshot {
     button_default: InputButtonState,
     axis_default: InputAxisState,

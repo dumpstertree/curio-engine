@@ -9,11 +9,10 @@ use std::collections::HashMap;
 
 use core::{
     collections::key_state::KeyState,
-    system::{
-        system_component::SystemComponent, system_components::system_component_input::SystemComponentInput,
-        system_game_states::state_input::InputState,
-    },
+    system::{system_component::SystemComponent, system_components::system_component_input::SystemComponentInput},
 };
+
+use built_in_state::state_input::InputState;
 
 pub struct SystemComponentDefaultInput {
     mappings_is_dirty: bool,

@@ -1,9 +1,11 @@
 use cgmath::Matrix4;
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::collections::{quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
 
 #[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Serialize, Deserialize, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Matrix4x4 {
     model: [[f32; 4]; 4],
 }

@@ -1,3 +1,4 @@
+use built_in_state::{state_colliders::StateCollider, state_collision::StateCollision};
 use rapier3d::{
     na::Isometry3,
     parry::{query, shape::Cuboid},
@@ -7,11 +8,7 @@ use core::gameplay::ecs::component::component_collider::{ColliderShape, Collisio
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     gameplay::ecs::component::component_collider::ColliderSnapshot,
-    system::{
-        system_component::SystemComponent,
-        system_components::system_component_physics::SystemComponentPhysics,
-        system_game_states::{state_colliders::StateCollider, state_collision::StateCollision},
-    },
+    system::{system_component::SystemComponent, system_components::system_component_physics::SystemComponentPhysics},
 };
 
 pub struct SystemComponentDefaultPhysics {

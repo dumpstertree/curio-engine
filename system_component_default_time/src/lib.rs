@@ -2,12 +2,12 @@ use std::time::Instant;
 
 use core::collections::event_queue::EventQueue;
 use core::events::engine_commands::EngineCommands;
-use core::system::system_game_states::state_debug::StateDebug;
 // ucoreate::system_adapters::adapter_system_gpu::CustomEvents;
 use core::collections::game_state::GameState;
-use core::system::{
-    system_component::SystemComponent, system_components::system_component_time::SystemComponentTime, system_game_states::state_time::TimeState,
-};
+use core::system::{system_component::SystemComponent, system_components::system_component_time::SystemComponentTime};
+
+use built_in_state::state_debug::StateDebug;
+use built_in_state::state_time::TimeState;
 
 pub struct SystemComponentDefaultTime {
     instant: Instant,
@@ -31,7 +31,11 @@ impl SystemComponent for SystemComponentDefaultTime {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, _: &mut GameState) {}
+    fn init(&mut self, game_state: &mut GameState) {
+        game_state.edit::<TimeState>(|x| {
+            x.target_frame_rate = 60.0;
+        });
+    }
 
     fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
         let state_debug = game_state.get_value2::<StateDebug>();

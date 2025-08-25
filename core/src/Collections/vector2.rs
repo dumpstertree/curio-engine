@@ -6,13 +6,14 @@ use crate::collections::vector4::Vector4;
 use crate::collections::vector4_int::Vector4Int;
 use core::fmt;
 use fmt::Display;
+use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Formatter;
 use std::fmt::Result;
 use std::ops::{Add, Div, Mul, Sub};
 
 /// A 2D Vector backed by f32
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub struct Vector2 {
     pub x: f32,
     pub y: f32,

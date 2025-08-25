@@ -1,6 +1,5 @@
 use crate::collections::vector2::Vector2;
-
-#[derive(Clone)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct InputAxisState {
     pub position: Vector2,
     pub delta: Vector2,

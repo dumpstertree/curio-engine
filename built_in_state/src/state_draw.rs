@@ -1,6 +1,8 @@
-use crate::{system::system_game_state::IState, collections::draw_call::DrawCall};
+use core::{collections::draw_call::DrawCall, system::system_game_state::IState};
 
-#[derive(Clone)]
+use macro_state::global_state;
+
+#[global_state]
 pub struct DrawCallsState {
     pub draw_calls: Vec<DrawCall>,
 }
@@ -9,11 +11,8 @@ impl DrawCallsState {
         DrawCallsState { draw_calls: Vec::new() }
     }
 }
-impl IState<DrawCallsState> for DrawCallsState {
+impl IState for DrawCallsState {
     fn id() -> i32 {
         12345
-    }
-    fn default() -> DrawCallsState {
-        DrawCallsState::new()
     }
 }

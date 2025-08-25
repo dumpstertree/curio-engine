@@ -1,12 +1,10 @@
+use built_in_state::{state_camera::CameraState, state_debug::StateDebug};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-    system::system_game_states::state_debug::StateDebug,
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
-
-use core::system::system_game_states::state_camera::CameraState;
 
 use crate::component::{component_camera::Camera, component_camera_index::CameraIndex, component_transform::Transform};
 

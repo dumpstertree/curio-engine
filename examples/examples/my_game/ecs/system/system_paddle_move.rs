@@ -1,4 +1,5 @@
 use built_in::component::{component_input_index::InputIndex, component_transform::Transform};
+use built_in_state::{state_input::InputState, state_time::TimeState};
 use ecs_system::global_ecs_system;
 use hecs::World;
 
@@ -7,7 +8,6 @@ use crate::{constants::Constants, ecs::component::component_paddle::ComponentPad
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-    system::system_game_states::{state_input::InputState, state_time::TimeState},
 };
 
 // use dumpster_engine::

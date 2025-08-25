@@ -1,16 +1,17 @@
-use crate::{
+use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     events::engine_commands::EngineCommands,
-    system::{
-        system_game_state::IState,
-        system_game_states::{
-            state_debug::StateDebug,
-            state_gui::{GuiElement, GuiWindow},
-        },
-    },
+    system::system_game_state::IState,
 };
 
-#[derive(Clone)]
+use macro_state::global_state;
+
+use crate::{
+    state_debug::StateDebug,
+    state_gui::{GuiElement, GuiWindow},
+};
+
+#[global_state]
 pub struct GUIStateDebug {
     pub color: Color,
     pub size: f32,
@@ -47,11 +48,7 @@ impl GUIStateDebug {
         event_queue.enqueue_event(EngineCommands::SetPauseMode(!game_state.get_value2::<StateDebug>().is_paused));
     }
 }
-impl IState<GUIStateDebug> for GUIStateDebug {
-    fn default() -> GUIStateDebug {
-        GUIStateDebug::default()
-    }
-
+impl IState for GUIStateDebug {
     fn id() -> i32 {
         902945
     }

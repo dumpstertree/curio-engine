@@ -2,16 +2,19 @@ use built_in::component::{
     component_camera::Camera, component_camera_index::CameraIndex, component_colliders::component_collider_box::ComponentColliderBox,
     component_input_index::InputIndex, component_renderer::Renderer, component_transform::Transform,
 };
+use built_in_state::state_camera::CameraState;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
-use crate::ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle};
+use crate::{
+    ecs::component::{component_ball::ComponentBall, component_paddle::ComponentPaddle},
+    state::state_score::StateScore,
+};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     io::asset_loader::AssetLoader,
     random::Random,
-    system::system_game_states::state_camera::CameraState,
 };
 #[global_ecs_system]
 pub struct SystemPongInit {}
@@ -23,6 +26,9 @@ impl ECSSystemEventless for SystemPongInit {
         state.edit::<CameraState>(|x| {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
+        });
+        state.edit::<StateScore>(|x| {
+            x.score = 0;
         });
 
         // camera

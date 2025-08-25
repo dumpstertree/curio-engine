@@ -1,11 +1,11 @@
 use built_in::component::component_transform::Transform;
+use built_in_state::state_time::TimeState;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-    system::system_game_states::state_time::TimeState,
 };
 
 use crate::ecs::component::component_spin::Spin;

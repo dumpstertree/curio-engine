@@ -1,6 +1,7 @@
 use crate::collections::vector3::Vector3;
 use core::fmt;
 use fmt::Display;
+use serde::Deserialize;
 use serde::Serialize;
 use std::f32::consts::PI;
 use std::fmt::Formatter;
@@ -8,7 +9,7 @@ use std::fmt::Result;
 use std::ops::Mul;
 
 /// A representation of 3D rotation
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub struct Quaternion {
     pub x: f32,
     pub y: f32,

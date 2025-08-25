@@ -1,7 +1,7 @@
 use crate::input::{axis_code::AxisCode, key_code::KeyCode};
 
 /// A mapping of inputs for one player
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct InputMapping {
     pub mapping_button: Vec<(String, KeyCode)>,
     pub mapping_axis: Vec<(String, AxisCode)>,

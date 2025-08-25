@@ -1,6 +1,8 @@
-use crate::{system::system_game_state::IState, system_adapters::adapter_system_gpu::SystemGPU};
+use core::system::system_game_state::IState;
 
-#[derive(Clone)]
+use macro_state::global_state;
+
+#[global_state]
 pub struct StateScreen {
     width: i32,
     height: i32,
@@ -16,12 +18,8 @@ impl StateScreen {
         StateScreen { width, height }
     }
 }
-impl IState<StateScreen> for StateScreen {
+impl IState for StateScreen {
     fn id() -> i32 {
         464
-    }
-    fn default() -> StateScreen {
-        let window = SystemGPU::get_window();
-        StateScreen::new(window.inner_size().width as i32, window.inner_size().height as i32)
     }
 }

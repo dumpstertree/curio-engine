@@ -6,3 +6,4 @@ edition = "2024"
 
 [dependencies]
 core = { path = "../core" }
+built_in_state = { path = "../built_in_state" }

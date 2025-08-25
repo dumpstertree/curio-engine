@@ -1,7 +1,7 @@
 use crate::component::{component_renderer::Renderer, component_transform::Transform};
-use core::{collections::draw_call::DrawCall, system::system_game_states::state_draw::DrawCallsState};
+use built_in_state::state_draw::DrawCallsState;
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;

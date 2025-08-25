@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
 use crate::collections::{color::Color, matrix4x4::Matrix4x4, mesh::Mesh, vector3::Vector3};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Gizmo {
     pub matrix: Vec<Matrix4x4>,
-    pub mesh: Arc<Mesh>,
+    pub mesh: Mesh,
     pub color: Color,
 }
 
@@ -16,7 +14,7 @@ impl Gizmo {
         Gizmo {
             color: color,
             matrix: vec![matrix],
-            mesh: Arc::new(Mesh::primitive_plane(width, height, 1, 1)),
+            mesh: Mesh::primitive_plane(width, height, 1, 1),
         }
     }
     pub fn cube(matrix: Matrix4x4, size: Vector3, color: Color) -> Gizmo {
@@ -24,7 +22,7 @@ impl Gizmo {
         Gizmo {
             color: color,
             matrix: vec![matrix],
-            mesh: Arc::new(Mesh::primitive_cube2(size)),
+            mesh: Mesh::primitive_cube2(size),
         }
     }
     pub fn sphere(matrix: Matrix4x4, diameter: f32, color: Color) -> Gizmo {
@@ -33,7 +31,7 @@ impl Gizmo {
         Gizmo {
             color: color,
             matrix: vec![matrix],
-            mesh: Arc::new(Mesh::primitive_sphere(diameter, 10, 10)),
+            mesh: Mesh::primitive_sphere(diameter, 10, 10),
         }
     }
 }

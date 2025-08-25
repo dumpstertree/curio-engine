@@ -1,12 +1,13 @@
+use built_in_state::state_camera::CameraState;
+use built_in_state::state_debug::StateDebug;
+use built_in_state::state_input::InputState;
+use built_in_state::state_screeen::StateScreen;
+use built_in_state::state_time::TimeState;
 use core::collections::event_queue::EventQueue;
+use core::collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3};
 use core::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
 use core::input::axis_code::AxisCode;
 use core::input::key_code::KeyCode;
-use core::system::system_game_states::state_screeen::StateScreen;
-use core::{
-    collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3},
-    system::system_game_states::{state_camera::CameraState, state_debug::StateDebug, state_input::InputState, state_time::TimeState},
-};
 use ecs_system::global_ecs_system;
 use hecs::World;
 

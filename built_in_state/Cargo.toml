@@ -1,0 +1,15 @@
+[package]
+name = "built_in_state"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+core = { path = "../core" }
+macro_state = { path = "../macro_state" }
+macro_state_serialize = { path = "../macro_state_serialize" }
+ctor = "0.2"
+intertrait = "0.2.2"
+linkme = "=0.2.10"
+hecs = "0.10.5"
+serde = { version = "1.0.104", features = ["derive"] }
+cgmath = "0.18.0"

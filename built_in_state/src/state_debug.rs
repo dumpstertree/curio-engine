@@ -1,6 +1,8 @@
-use crate::system::system_game_state::IState;
+use core::system::system_game_state::IState;
 
-#[derive(Clone)]
+use macro_state::global_state;
+
+#[global_state]
 pub struct StateDebug {
     pub is_inspecting: bool,
     pub is_paused: bool,
@@ -13,11 +15,8 @@ impl StateDebug {
         }
     }
 }
-impl IState<StateDebug> for StateDebug {
+impl IState for StateDebug {
     fn id() -> i32 {
         908234
-    }
-    fn default() -> StateDebug {
-        StateDebug::new()
     }
 }

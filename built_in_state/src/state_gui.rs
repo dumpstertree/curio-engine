@@ -1,9 +1,11 @@
-use crate::{
+use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     system::system_game_state::IState,
 };
 
-#[derive(Clone)]
+use macro_state::global_state;
+
+#[global_state]
 pub struct GUIState {
     pub guis: Vec<GuiWindow>,
 }
@@ -12,11 +14,7 @@ impl GUIState {
         GUIState { guis: Vec::new() }
     }
 }
-impl IState<GUIState> for GUIState {
-    fn default() -> GUIState {
-        GUIState::default()
-    }
-
+impl IState for GUIState {
     fn id() -> i32 {
         690345
     }

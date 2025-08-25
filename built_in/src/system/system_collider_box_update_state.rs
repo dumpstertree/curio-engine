@@ -1,10 +1,10 @@
+use built_in_state::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState};
 use core::{
     collections::{color, event_queue::EventQueue, game_state::GameState, gizmo::Gizmo},
     gameplay::ecs::{
         component::component_collider::{ColliderSnapshot, CollisionSnapshot},
         traits::ecs_system::ECSSystemEventless,
     },
-    system::system_game_states::{state_colliders::StateCollider, state_collision::StateCollision, state_gizmos::GizmosState},
 };
 use ecs_system::global_ecs_system;
 use hecs::World;

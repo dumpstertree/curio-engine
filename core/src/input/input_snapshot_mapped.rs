@@ -6,7 +6,7 @@ use crate::{
 };
 
 // Result of testing raw input to mapped input
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct PlayerInputSnapshot {
     default_button: InputButtonState,
     defualt_axis: InputAxisState,

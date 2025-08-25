@@ -1,11 +1,12 @@
 use core::fmt;
 use fmt::Display;
+use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Formatter;
 use std::fmt::Result;
 
 /// Represents an r,g,b,a color
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub struct Color {
     r: f32,
     g: f32,

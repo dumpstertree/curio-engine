@@ -15,14 +15,14 @@ use crate::render_feature_2d::RenderFeature2D;
 use crate::render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI;
 use crate::render_feature_3d::RenderFeature3D;
 use crate::render_feature_3ds::render_feature_draw_gizmos::RenderFeatureDrawGizmo;
-use core::collections::event_queue::EventQueue;
+use built_in_state::state_camera::CameraState;
 use core::collections::game_state::GameState;
 use core::collections::vector3::Vector3;
+use core::collections::{camera_uniform::CameraSnapshot, event_queue::EventQueue};
 use core::graphics::graphics_mapping::GraphicsMapping;
 use core::io::texture_asset::TextureAsset;
 use core::system::system_component::SystemComponent;
 use core::system::system_components::system_component_graphics::SystemComponentGraphics;
-use core::system::system_game_states::state_camera::{CameraSnapshot, CameraState};
 use core::system_adapters::adapter_system_gpu::SystemGPU;
 use egui_wgpu::wgpu::{
     CommandEncoder, Device, RenderPass, RenderPassColorAttachment, RenderPassDepthStencilAttachment, Surface, SurfaceTexture, TextureView,

@@ -10,6 +10,10 @@ members = [
     "system_component_default_gameplay",
     "system_component_default_physics",
     "system_component_default_rendering",
+    "system_component_default_networking",
+    "macro_state",
+    "built_in_state",
+    "macro_state_serialize",
 ]
 
 [workspace.dependencies]
@@ -18,11 +22,16 @@ built_in = { path = "built_in" }
 examples = { path = "examples" }
 ecs_event = { path = "macros/ecs_event" }
 ecs_system = { path = "macros/ecs_system" }
+macro_state = { path = "macro_state" }
+built_in_state = { path = "built_in_state" }
+macro_state_serialize = { path = "macro_state_serialize" }
 system_component_default_time = { path = "system_component_default_time" }
 system_component_default_input = { path = "system_component_default_input" }
 system_component_default_gameplay = { path = "system_component_default_gameplay" }
 system_component_default_physics = { path = "system_component_default_physics" }
 system_component_default_rendering = { path = "system_component_default_rendering" }
+
+system_component_default_networking = { path = "system_component_default_networking" }
 
 [workspace.package]
 version = "0.1.0"

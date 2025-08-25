@@ -1,7 +1,7 @@
+use built_in_state::{state_colliders::StateCollider, state_gui_debug::GUIStateDebug};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-    system::system_game_states::{state_colliders::StateCollider, state_gui_debug::GUIStateDebug},
 };
 use ecs_system::global_ecs_system;
 use hecs::World;

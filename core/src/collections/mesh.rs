@@ -5,10 +5,10 @@ use egui_wgpu::wgpu::VertexAttribute;
 use egui_wgpu::wgpu::VertexBufferLayout;
 use mesh_tools::primitives::{generate_plane, generate_sphere};
 
-use crate::random::Random;
 use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::vector3;
-#[derive(Clone)]
+use crate::random::Random;
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Mesh {
     pub name: String,
     pub verticies: Vec<Vertex>,
@@ -312,7 +312,8 @@ impl Mesh {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, serde::Serialize, serde::Deserialize)]
+
 pub struct Vertex {
     pub uv0: [f32; 2],
     pub uv1: [f32; 2],

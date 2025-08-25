@@ -7,7 +7,7 @@ use core::collections::mesh::Vertex;
 use core::io::asset_loader::AssetLoader;
 use core::io::texture_asset::TextureAsset;
 
-use core::system::system_game_states::state_gizmos::GizmosState;
+use built_in_state::state_gizmos::GizmosState;
 use core::system_adapters::adapter_system_gpu::SystemGPU;
 use egui_wgpu::wgpu::{
     BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration,

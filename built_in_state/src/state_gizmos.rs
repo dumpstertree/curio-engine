@@ -1,6 +1,8 @@
-use crate::{system::system_game_state::IState, collections::gizmo::Gizmo};
+use core::{collections::gizmo::Gizmo, system::system_game_state::IState};
 
-#[derive(Clone)]
+use macro_state::global_state;
+
+#[global_state]
 pub struct GizmosState {
     pub draw_calls: Vec<Gizmo>,
 }
@@ -9,11 +11,8 @@ impl GizmosState {
         GizmosState { draw_calls: Vec::new() }
     }
 }
-impl IState<GizmosState> for GizmosState {
+impl IState for GizmosState {
     fn id() -> i32 {
         9827234
-    }
-    fn default() -> GizmosState {
-        GizmosState::new()
     }
 }

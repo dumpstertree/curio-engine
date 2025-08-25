@@ -1,20 +1,20 @@
 use crate::collections::{matrix4x4::Matrix4x4, vector3::Vector3};
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct CollisionSnapshot {
     pub collider_a: ColliderSnapshot,
     pub collider_b: ColliderSnapshot,
     pub contact: Contact,
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct Contact {
     pub point: Vector3,
     pub normal_a: Vector3,
     pub normal_b: Vector3,
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct ColliderSnapshot {
     pub guid: i32,
     pub matrix: Matrix4x4,
@@ -36,21 +36,21 @@ impl ColliderSnapshot {
         }
     }
 }
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub enum ColliderShape {
     Box(BoxColliderDef),
     Sphere(SphereColliderDef),
     Mesh(MeshColliderDef),
 }
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct BoxColliderDef {
     pub size: Vector3,
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct SphereColliderDef {
     pub diameter: f32,
 }
 
-#[derive(Clone)]
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 pub struct MeshColliderDef {}
