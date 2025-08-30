@@ -1,24 +1,24 @@
-use crate::game_events::GameEvents;
-
-pub(crate) mod constants;
-pub(crate) mod game_events;
+pub mod game_events;
+pub mod state {
+    pub mod state_ball_mode;
+    pub mod state_deck;
+    pub mod state_energy;
+    pub mod state_position_ball;
+    pub mod state_position_player;
+    pub mod state_score;
+    pub mod state_turn;
+}
 pub mod ecs {
     pub mod system {
-        pub(crate) mod system_ball_move;
-        pub(crate) mod system_paddle_move;
-        pub(crate) mod system_pong_init;
-        pub(crate) mod system_spin;
-    }
-    pub mod component {
-        pub(crate) mod component_ball;
-        pub(crate) mod component_paddle;
-        pub(crate) mod component_spin;
+        mod ecs_system_game_start;
+        mod ecs_system_game_turn_begin;
+        mod ecs_system_game_turn_end;
+        mod ecs_system_turn_end;
+        mod ecs_system_turn_manuever;
+        mod ecs_system_turn_move;
     }
 }
-pub mod state {
-    pub mod state_score;
-}
-
+use crate::game_events::GameEvents;
 use core::{
     collections::vector2::Vector2,
     dumpster_engine::{DumpsterEngine, GameMode, NetworkModes, WindowLayout},
@@ -51,11 +51,30 @@ fn main() {
     }
 
     let input_mapping_0 = InputMapping::new(
-        vec![(String::from("move_forward"), KeyCode::KeyW), (String::from("move_back"), KeyCode::KeyS), (String::from("move_left"), KeyCode::KeyA), (String::from("move_right"), KeyCode::KeyD)],
+        vec![
+            (String::from("move_forward"), KeyCode::KeyW),
+            (String::from("move_back"), KeyCode::KeyS),
+            (String::from("move_left"), KeyCode::KeyA),
+            (String::from("move_right"), KeyCode::KeyD),
+            (String::from("turn_end"), KeyCode::KeyP),
+            (String::from("card_left"), KeyCode::ArrowLeft),
+            (String::from("card_right"), KeyCode::ArrowRight),
+            (String::from("card_submit"), KeyCode::ArrowUp),
+        ],
         vec![],
     );
     let input_mapping_1 = InputMapping::new(
-        vec![(String::from("move_forward"), KeyCode::KeyI), (String::from("move_back"), KeyCode::KeyK), (String::from("move_left"), KeyCode::KeyJ), (String::from("move_right"), KeyCode::KeyL)],
+        vec![
+            (String::from("move_forward"), KeyCode::KeyI),
+            (String::from("move_back"), KeyCode::KeyK),
+            (String::from("move_left"), KeyCode::KeyJ),
+            (String::from("move_right"), KeyCode::KeyL),
+            (String::from("turn_end"), KeyCode::KeyP),
+            (String::from("card_left"), KeyCode::ArrowLeft),
+            (String::from("card_right"), KeyCode::ArrowRight),
+            (String::from("card_submit"), KeyCode::ArrowRight),
+            (String::from("card_submit"), KeyCode::ArrowUp),
+        ],
         vec![],
     );
     let graphics_mapping_0 = GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(0.5, 1.0));

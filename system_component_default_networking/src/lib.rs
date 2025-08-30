@@ -146,7 +146,7 @@ impl SystemComponentDefaultNetworking {
 
         let endpoints = guard.as_slice();
         let events = game_state.get_network_sync_events();
-        println!("sending {} messages to {} peers", events.len(), endpoints.len());
+        // println!("sending {} messages to {} peers", events.len(), endpoints.len());
 
         for event in &events {
             for endpoint in endpoints {
@@ -201,12 +201,12 @@ impl SystemComponent for SystemComponentDefaultNetworking {
 enum Signal {}
 use std::thread;
 
-#[derive(Clone, Serializable)]
-pub struct Payload {
-    pub payload: PayloadTypes,
-}
-pub enum PayloadTypes {
-    Message(String),
-    GameState(Event),
-    GameEvent,
-}
+// #[derive(Clone, seri)]
+// pub struct Payload {
+//     pub payload: PayloadTypes,
+// }
+// pub enum PayloadTypes {
+//     Message(String),
+//     GameState(Event),
+//     GameEvent,
+// }

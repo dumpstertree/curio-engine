@@ -848,6 +848,7 @@ dependencies = [
  "macro_state_serialize",
  "message-io",
  "pollster",
+ "rand",
  "serde",
  "system_component_default_gameplay",
  "system_component_default_input",

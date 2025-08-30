@@ -8,11 +8,7 @@ pub struct InputButtonState {
 
 impl InputButtonState {
     pub fn default() -> InputButtonState {
-        InputButtonState {
-            went_down: false,
-            is_down: false,
-            went_up: false,
-        }
+        InputButtonState { went_down: false, is_down: false, went_up: false }
     }
 
     pub fn update(&mut self, is_down: &bool) {

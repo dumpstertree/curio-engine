@@ -21,3 +21,16 @@ impl F32Extensions {
         return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
     }
 }
+
+pub trait FloatExtras {
+    fn repeat(&self, modulus: f32) -> f32;
+}
+
+impl FloatExtras for f32 {
+    fn repeat(&self, modulus: f32) -> f32 {
+        if modulus == 0.0 {
+            return *self; // avoid division by zero
+        }
+        self - (*self / modulus).floor() * modulus
+    }
+}

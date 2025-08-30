@@ -55,6 +55,7 @@ type SerializerFn = fn(&dyn Any) -> Vec<u8>;
 type DeserializerFn = fn(&[u8]) -> Box<dyn Any>;
 
 pub struct GameState {
+    pub instance_id: i32,
     edited_state: Vec<Event>,
     fn_deserialize: HashMap<i32, DeserializerFn>,
     fn_serialize: HashMap<i32, SerializerFn>,
@@ -189,6 +190,7 @@ impl GameState {
             }
         }
         GameState {
+            instance_id: 0,
             edited_state: Vec::new(),
             cache: cache,
             network_mode: network_mode,
@@ -243,11 +245,9 @@ impl GameState {
         if GameState::has_push_permision(&self.network_mode, &T::ownership()) {
             let id2 = T::id();
             let data = self.fn_serialize[&id2](&self.get_value2::<T>());
-            self.edited_state.push(Event {
-                id: id2.clone(),
-                payload: data,
-            });
-            println!("push type: {}", type_name::<T>());
+            self.edited_state
+                .push(Event { id: id2.clone(), payload: data });
+            // println!("push type: {}", type_name::<T>());
         }
     }
     fn set_value2<T: 'static>(&mut self, val: T)

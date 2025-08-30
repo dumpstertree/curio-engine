@@ -16,6 +16,7 @@ where
     asset_loader: AssetLoader,
     event_queue: EventQueue,
     phantom_data: PhantomData<T>,
+    child_init: bool,
 }
 
 impl<T> SystemComponentDefaultGameplay<T>
@@ -29,6 +30,7 @@ where
             asset_loader: AssetLoader::new(),
             event_queue: EventQueue::new(),
             phantom_data: PhantomData,
+            child_init: false,
         })
     }
 }
@@ -54,10 +56,6 @@ where
     }
     fn init(&mut self, gs: &mut GameState) {
         println!("init gameplay");
-        for s in self.ecs_systems_eventless.iter_mut() {
-            s.0.as_mut()
-                .init(gs, &mut self.scene, &mut self.event_queue, &mut self.asset_loader);
-        }
     }
     fn debug(&mut self, game_state: &mut GameState, system_queue: &mut EventQueue) {
         for s in self.ecs_systems_eventless.iter_mut() {
@@ -69,6 +67,13 @@ where
         }
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
+        if !self.child_init {
+            self.child_init = true;
+            for s in self.ecs_systems_eventless.iter_mut() {
+                s.0.as_mut()
+                    .init(game_state, &mut self.scene, &mut self.event_queue, &mut self.asset_loader);
+            }
+        }
         // clear old
         // self.gameplay_event_queue.evnt_queue.clear();
 

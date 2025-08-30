@@ -38,17 +38,20 @@ impl PlayerInputSnapshot {
         for mapping in &self.mapping.mapping_button {
             let result = raw_buttons.get(&mapping.1);
             if let Some(result) = result {
-                self.map_button.get_mut(&mapping.0).unwrap().is_down = *result;
+                self.map_button.get_mut(&mapping.0).unwrap().update(result);
             } else {
-                self.map_button.get_mut(&mapping.0).unwrap().is_down = false;
+                self.map_button.get_mut(&mapping.0).unwrap().update(&false);
             }
         }
         for mapping in &self.mapping.mapping_axis {
             let result = raw_axis.get(&mapping.1);
             if let Some(result) = result {
-                self.map_axis.get_mut(&mapping.0).unwrap().position = *result;
+                self.map_axis.get_mut(&mapping.0).unwrap().update(*result);
             } else {
-                self.map_axis.get_mut(&mapping.0).unwrap().position = Vector2::zero();
+                self.map_axis
+                    .get_mut(&mapping.0)
+                    .unwrap()
+                    .update(Vector2::zero());
             }
         }
     }
