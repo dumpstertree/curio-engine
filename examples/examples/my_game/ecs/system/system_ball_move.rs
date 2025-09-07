@@ -76,13 +76,13 @@ impl ECSSystemEventless for SystemBallMove {
     }
 }
 
-#[global_ecs_system_event_reciever(GameEvents)]
-impl EventReciever<GameEvents> for SystemBallMove {
-    fn dequeue_event(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
-        println!("dequeue");
-        match event {
-            GameEvents::A(_) => println!("A"),
-            GameEvents::B(_) => println!("b"),
-        }
-    }
-}
+// #[global_ecs_system_event_reciever(GameEvents)]
+// impl EventReciever<GameEvents> for SystemBallMove {
+//     fn dequeue_event(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
+//         println!("dequeue");
+//         match event {
+//             GameEvents::A(_) => println!("A"),
+//             GameEvents::B(_) => println!("b"),
+//         }
+//     }
+// }

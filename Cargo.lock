@@ -844,6 +844,7 @@ dependencies = [
  "inline_tweak",
  "intertrait",
  "linkme",
+ "macro_events",
  "macro_state",
  "macro_state_serialize",
  "message-io",
@@ -1573,6 +1574,17 @@ name = "log"
 version = "0.4.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13dc2df351e3202783a1fe0d44375f7295ffb4049267b0f3018346dc122a1d94"
+
+[[package]]
+name = "macro_events"
+version = "0.1.0"
+dependencies = [
+ "core",
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn 2.0.104",
+]
 
 [[package]]
 name = "macro_state"
@@ -2948,6 +2960,7 @@ dependencies = [
 name = "system_component_default_networking"
 version = "0.1.0"
 dependencies = [
+ "built_in_state",
  "core",
  "message-io",
  "serde",

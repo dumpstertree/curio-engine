@@ -17,12 +17,12 @@ use serde::{Deserialize, Serialize};
 
 // The "erased" event you actually store in Vec
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Event {
+pub struct StateSyncEvent {
     pub id: i32,
     pub payload: Vec<u8>, // serialized data
 }
 
-impl Event {
+impl StateSyncEvent {
     // fn new<T: Serialize + 'static>(value: &T) -> Self {
     //     let payload = bincode::serialize(value).unwrap();
     //     Self {
@@ -56,7 +56,8 @@ type DeserializerFn = fn(&[u8]) -> Box<dyn Any>;
 
 pub struct GameState {
     pub instance_id: i32,
-    edited_state: Vec<Event>,
+    pub all_instance_id: Vec<i32>,
+    edited_state: Vec<StateSyncEvent>,
     fn_deserialize: HashMap<i32, DeserializerFn>,
     fn_serialize: HashMap<i32, SerializerFn>,
     pub(crate) cache: AnyMap<i32>,
@@ -134,7 +135,8 @@ impl GameState {
         println!("register STATE_SERIALIZED {}", type_name::<T>());
     }
 
-    pub fn apply_network_sync_events(&mut self, sync: Vec<Event>) {
+    pub fn apply_network_sync_events(&mut self, sync: Vec<StateSyncEvent>) {
+        // println!("apply state sync ");
         for evnt in sync {
             if !self.fn_deserialize.contains_key(&evnt.id) {
                 println!("Unknown id");
@@ -145,7 +147,7 @@ impl GameState {
             self.cache.insert_any(evnt.id, result);
         }
     }
-    pub fn get_network_sync_events(&mut self) -> Vec<Event> {
+    pub fn drain_network_sync_events(&mut self) -> Vec<StateSyncEvent> {
         let x = self.edited_state.clone();
         self.edited_state.clear();
         return x;
@@ -153,7 +155,7 @@ impl GameState {
     pub fn change_network_mode(&mut self, mode: NetworkModes) {
         self.network_mode = mode;
     }
-    pub fn new(network_mode: NetworkModes) -> GameState {
+    pub fn new(network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> GameState {
         let mut cache = AnyMap::<i32>::default();
         let mut fn_serialize = HashMap::<i32, SerializerFn>::default();
         let mut fn_deserialize = HashMap::<i32, DeserializerFn>::default();
@@ -190,7 +192,8 @@ impl GameState {
             }
         }
         GameState {
-            instance_id: 0,
+            instance_id: instance_id,
+            all_instance_id: all_instance_id,
             edited_state: Vec::new(),
             cache: cache,
             network_mode: network_mode,
@@ -201,7 +204,11 @@ impl GameState {
 
     fn has_write_permision(mode: &NetworkModes, ownership: &StateOwnerships) -> bool {
         match mode {
-            NetworkModes::Offline => true,
+            NetworkModes::LocalHost => true,
+            NetworkModes::LocalPeer => match ownership {
+                StateOwnerships::Instance => true,
+                StateOwnerships::Host => false,
+            },
             NetworkModes::OnlineHost => true,
             NetworkModes::OnlinePeer => match ownership {
                 StateOwnerships::Instance => true,
@@ -213,7 +220,8 @@ impl GameState {
         match ownership {
             StateOwnerships::Instance => false,
             StateOwnerships::Host => match mode {
-                NetworkModes::Offline => false,
+                NetworkModes::LocalHost => true,
+                NetworkModes::LocalPeer => false,
                 NetworkModes::OnlineHost => true,
                 NetworkModes::OnlinePeer => false,
             },
@@ -246,7 +254,7 @@ impl GameState {
             let id2 = T::id();
             let data = self.fn_serialize[&id2](&self.get_value2::<T>());
             self.edited_state
-                .push(Event { id: id2.clone(), payload: data });
+                .push(StateSyncEvent { id: id2.clone(), payload: data });
             // println!("push type: {}", type_name::<T>());
         }
     }

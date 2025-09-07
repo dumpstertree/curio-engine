@@ -19,6 +19,7 @@ pub mod system {
     pub mod system_debug_gui_entity;
     pub mod system_debug_gui_screen;
     pub mod system_debug_gui_time;
+    pub mod system_debug_toggle;
     pub mod system_renderer_update_state;
 }
 

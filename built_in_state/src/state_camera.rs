@@ -11,14 +11,14 @@ use macro_state::global_state;
 pub struct CameraState {
     pub resolution_width: i32,
     pub resolution_height: i32,
-    pub cameras: Vec<CameraSnapshot>,
+    pub cameras: CameraSnapshot,
 }
 impl CameraState {
     pub fn new() -> CameraState {
         CameraState {
             resolution_height: 0,
             resolution_width: 0,
-            cameras: Vec::new(),
+            cameras: CameraSnapshot::new(Vector3::zero()),
         }
     }
 }

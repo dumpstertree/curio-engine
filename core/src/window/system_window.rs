@@ -4,6 +4,7 @@ use crate::collections::key_state::KeyState;
 use crate::dumpster_engine::GameMode;
 use crate::events::engine_commands::EngineCommands;
 use crate::input::key_code::KeyCode;
+use crate::random::Random;
 use crate::system::system_component::SystemComponent;
 use crate::system::system_game_state::IState;
 // use crate::system::system_game_states::state_debug::StateDebug;
@@ -13,17 +14,32 @@ use winit::event_loop::EventLoop;
 use winit::{application::ApplicationHandler, event::WindowEvent};
 
 pub struct SystemWindow {
-    system_event_queue: EventQueue,
-    gamestate: GameState,
+    system_event_queue: Vec<EventQueue>,
+    gamestate: Vec<GameState>,
     components: Vec<Box<dyn SystemComponent>>,
     game_mode: GameMode,
 }
 impl SystemWindow {
     // constructor
     pub fn new(components: Vec<Box<dyn SystemComponent>>, game_mode: GameMode) -> SystemWindow {
+        let mut all_instance_id = vec![];
+        for _ in &game_mode.game_instances {
+            all_instance_id.push(Random::range_int(-999, 999));
+        }
+        let mut states = vec![];
+        for i in 0..game_mode.game_instances.len() {
+            let x = &game_mode.game_instances[i];
+            let id = *(&all_instance_id[i]);
+            states.push(GameState::new(x.network_mode.clone(), id, all_instance_id.clone()));
+        }
+        let mut events = vec![];
+        for i in 0..game_mode.game_instances.len() {
+            events.push(EventQueue::new());
+        }
+
         SystemWindow {
-            system_event_queue: EventQueue::new(),
-            gamestate: GameState::new(game_mode.network_mode.clone()),
+            system_event_queue: events,
+            gamestate: states,
             components: components,
             game_mode: game_mode,
         }
@@ -39,7 +55,7 @@ impl SystemWindow {
         }
 
         for c in self.components.iter_mut() {
-            c.set_game_mode(&self.game_mode);
+            c.set_game_mode(&mut self.gamestate, &self.game_mode);
         }
 
         // run
@@ -253,31 +269,31 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
                     // }
 
                     // invoke all events
-                    let queue = self
-                        .system_event_queue
-                        .get_queued_events::<EngineCommands>();
-                    for event in queue {
-                        match event {
-                            EngineCommands::Redraw => {}
-                            EngineCommands::Resize(vector3) => SystemGPU::set_resolution(vector3.x as i32, vector3.y as i32),
-                            EngineCommands::Fullscreen(is_fullscreen) => SystemGPU::set_fullscreen(*is_fullscreen),
-                            EngineCommands::Resizable(resizable) => SystemGPU::set_resizable(*resizable),
-                            EngineCommands::Cursor(visible) => SystemGPU::set_cursor_visible(*visible),
-                            EngineCommands::Exit => event_loop.exit(),
-                            EngineCommands::SetDebugMode(active) => (), //self
-                            // .gamestate
-                            // .edit::<StateDebug>(|x| x.is_inspecting = *active),
-                            EngineCommands::SetPauseMode(active) => (), //self.gamestate.edit::<StateDebug>(|x| x.is_paused = *active),
-                            EngineCommands::Tick => println!("Cannot call tick from inside tick!"),
-                            EngineCommands::SetNumInputs(_) => todo!(),
-                            EngineCommands::SetNumScreens(_) => todo!(),
-                            EngineCommands::SetHost() => todo!(),
-                            EngineCommands::SetPeer() => todo!(),
-                        }
-                    }
-                    let _ = &self
-                        .system_event_queue
-                        .clear_queued_events::<EngineCommands>();
+                    // let queue = self
+                    //     .system_event_queue
+                    //     .get_queued_events::<EngineCommands>();
+                    // for event in queue {
+                    //     match event {
+                    //         EngineCommands::Redraw => {}
+                    //         EngineCommands::Resize(vector3) => SystemGPU::set_resolution(vector3.x as i32, vector3.y as i32),
+                    //         EngineCommands::Fullscreen(is_fullscreen) => SystemGPU::set_fullscreen(*is_fullscreen),
+                    //         EngineCommands::Resizable(resizable) => SystemGPU::set_resizable(*resizable),
+                    //         EngineCommands::Cursor(visible) => SystemGPU::set_cursor_visible(*visible),
+                    //         EngineCommands::Exit => event_loop.exit(),
+                    //         EngineCommands::SetDebugMode(active) => (), //self
+                    //         // .gamestate
+                    //         // .edit::<StateDebug>(|x| x.is_inspecting = *active),
+                    //         EngineCommands::SetPauseMode(active) => (), //self.gamestate.edit::<StateDebug>(|x| x.is_paused = *active),
+                    //         EngineCommands::Tick => println!("Cannot call tick from inside tick!"),
+                    //         EngineCommands::SetNumInputs(_) => todo!(),
+                    //         EngineCommands::SetNumScreens(_) => todo!(),
+                    //         EngineCommands::SetHost() => todo!(),
+                    //         EngineCommands::SetPeer() => todo!(),
+                    //     }
+                    // }
+                    // let _ = &self
+                    //     .system_event_queue
+                    //     .clear_queued_events::<EngineCommands>();
                 }
             }
             EngineCommands::Redraw => {}

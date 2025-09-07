@@ -42,10 +42,8 @@ impl ECSSystemEventless for SystemDebugCamera {
         // rotation
         if state_input.raw.get_button(&KeyCode::MousePrimary).is_down {
             //  calculate the new angles
-            let x_angle =
-                (-state_input.raw.get_axis(&AxisCode::Cursor).delta.x / state_screen.width() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
-            let y_angle =
-                (-state_input.raw.get_axis(&AxisCode::Cursor).delta.y / state_screen.height() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
+            let x_angle = (-state_input.raw.get_axis(&AxisCode::Cursor).delta.x / state_screen.width() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
+            let y_angle = (-state_input.raw.get_axis(&AxisCode::Cursor).delta.y / state_screen.height() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
 
             // update the saved values
             self.x = self.x + x_angle;
@@ -74,8 +72,8 @@ impl ECSSystemEventless for SystemDebugCamera {
 
         // edit the state
         state.edit::<CameraState>(|x| {
-            x.cameras[0].position = x.cameras[0].position + offset;
-            x.cameras[0].rotation = rot;
+            x.cameras.position = x.cameras.position + offset;
+            x.cameras.rotation = rot;
         });
     }
 }

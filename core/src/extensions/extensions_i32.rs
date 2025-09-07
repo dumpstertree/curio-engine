@@ -8,9 +8,6 @@ impl ExtensionsI32 for i32 {
         if range == 0 {
             return min; // avoid division by zero
         }
-
-        let mut value = *self - min;
-        value = value - (value / range) * range;
-        value + min
+        ((*self - min).rem_euclid(range)) + min
     }
 }

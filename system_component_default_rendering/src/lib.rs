@@ -16,17 +16,15 @@ use crate::render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI;
 use crate::render_feature_3d::RenderFeature3D;
 use crate::render_feature_3ds::render_feature_draw_gizmos::RenderFeatureDrawGizmo;
 use built_in_state::state_camera::CameraState;
-use core::collections::game_state::GameState;
+use core::collections::game_state::{self, GameState};
 use core::collections::vector3::Vector3;
 use core::collections::{camera_uniform::CameraSnapshot, event_queue::EventQueue};
-use core::graphics::graphics_mapping::GraphicsMapping;
+use core::graphics::graphics_mapping::{self, GraphicsMapping};
 use core::io::texture_asset::TextureAsset;
 use core::system::system_component::SystemComponent;
 use core::system::system_components::system_component_graphics::SystemComponentGraphics;
 use core::system_adapters::adapter_system_gpu::SystemGPU;
-use egui_wgpu::wgpu::{
-    CommandEncoder, Device, RenderPass, RenderPassColorAttachment, RenderPassDepthStencilAttachment, Surface, SurfaceTexture, TextureView,
-};
+use egui_wgpu::wgpu::{CommandEncoder, Device, RenderPass, RenderPassColorAttachment, RenderPassDepthStencilAttachment, Surface, SurfaceTexture, TextureView};
 use render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh;
 use std::{iter, vec};
 use winit::event::WindowEvent;
@@ -43,48 +41,41 @@ impl SystemComponent for SystemComponentDefaultGraphics {
     fn order(&self) -> i32 {
         9000
     }
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue) {
-        // camera dirty flag is set
-        if self.is_dirty {
-            // reset flag
-            self.is_dirty = false;
+    fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
+        for i in 0..game_state.len() {
+            let mut game_state = &mut game_state[i];
+            let mut event_queue = &mut event_queue[i];
 
-            // update the state to have correct number of cameras
-            game_state.edit::<CameraState>(|x| {
-                // clear old
-                x.cameras.clear();
+            // system
+            let surface = &SystemGPU::get_surface();
+            let device = &SystemGPU::get_device();
+            let queue = &SystemGPU::get_queue();
 
-                // foreach mapping add new
-                for _ in 0..(self.graphics_mappings.len() as usize) {
-                    x.cameras.push(CameraSnapshot::new(Vector3::zero()));
-                }
-            });
+            // create the output
+            let output = SystemComponentDefaultGraphics::get_output_texture(surface);
+            let mut encoder = SystemComponentDefaultGraphics::get_encoder(device);
+
+            // draw all
+            self.draw_3d_features(&mut game_state, &mut encoder, &output);
+            self.draw_2d_features(&mut game_state, &mut encoder, &output, &mut event_queue);
+
+            // submit commands for execution
+            queue.submit(iter::once(encoder.finish()));
+            // present the completed texture
+            output.present();
         }
-
-        // system
-        let surface = &SystemGPU::get_surface();
-        let device = &SystemGPU::get_device();
-        let queue = &SystemGPU::get_queue();
-
-        // create the output
-        let output = SystemComponentDefaultGraphics::get_output_texture(surface);
-        let mut encoder = SystemComponentDefaultGraphics::get_encoder(device);
-
-        // draw all
-        self.draw_3d_features(game_state, &mut encoder, &output);
-        self.draw_2d_features(game_state, &mut encoder, &output, event_queue);
-
-        // submit commands for execution
-        queue.submit(iter::once(encoder.finish()));
-        // present the completed texture
-        output.present();
     }
     fn raw_event(&mut self, event: WindowEvent) {
         let window = SystemGPU::get_window();
         self.egui_renderer.handle_input(&window, &event);
     }
-    fn set_game_mode(&mut self, game_mode: &core::dumpster_engine::GameMode) {
-        self.graphics_mappings = game_mode.graphics_mappings.clone();
+    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
+        let mut graphics_mapping = vec![];
+        for x in &game_mode.game_instances {
+            graphics_mapping.push(x.graphics_mappings.clone());
+        }
+
+        self.graphics_mappings = graphics_mapping;
         self.is_dirty = true;
     }
 }
@@ -116,7 +107,7 @@ impl SystemComponentDefaultGraphics {
         // iterate over each camera in state
         for i in 0..(self.graphics_mappings.len() as usize) {
             // get camera data
-            let cur_camera_snapshot = &state_camera.cameras[i];
+            let cur_camera_snapshot = &state_camera.cameras;
             // for graphics_mapping in &self.graphics_mappings {
             let cur_graphics_mapping = &self.graphics_mappings[i];
 
@@ -140,12 +131,7 @@ impl SystemComponentDefaultGraphics {
 
             // render
             for feature in self.render_features_3d.iter_mut() {
-                feature.render(
-                    game_state,
-                    &mut render_pass,
-                    &camera_rendereing.camera_bind_group,
-                    &camera_rendereing.camera_bind_group_layout,
-                );
+                feature.render(game_state, &mut render_pass, &camera_rendereing.camera_bind_group, &camera_rendereing.camera_bind_group_layout);
             }
         }
         // done using now clear all data
@@ -160,7 +146,7 @@ impl SystemComponentDefaultGraphics {
             }
 
             for feature in self.render_features_2d.iter_mut() {
-                feature.clear(game_state);
+                // feature.clear(game_state);
             }
         }
     }
@@ -185,21 +171,14 @@ impl SystemComponentDefaultGraphics {
         surface.get_current_texture().unwrap()
     }
     fn get_encoder(device: &Device) -> CommandEncoder {
-        device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor {
-            label: Some("Render Encoder"),
-        })
+        device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") })
     }
     fn get_color_atatchment<'a>(view: &'a TextureView) -> Option<RenderPassColorAttachment<'a>> {
         Some(egui_wgpu::wgpu::RenderPassColorAttachment {
             view: view,
             resolve_target: None,
             ops: egui_wgpu::wgpu::Operations {
-                load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color {
-                    r: 0.1,
-                    g: 0.2,
-                    b: 0.3,
-                    a: 1.0,
-                }),
+                load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color { r: 0.1, g: 0.2, b: 0.3, a: 1.0 }),
                 store: egui_wgpu::wgpu::StoreOp::Store,
             },
         })

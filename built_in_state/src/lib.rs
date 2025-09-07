@@ -7,6 +7,7 @@ pub mod state_gizmos;
 pub mod state_gui;
 pub mod state_gui_debug;
 pub mod state_input;
+pub mod state_network;
 pub mod state_screeen;
 pub mod state_time;
 

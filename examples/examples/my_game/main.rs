@@ -36,7 +36,7 @@ use system_component_default_rendering::SystemComponentDefaultGraphics;
 use system_component_default_time::SystemComponentDefaultTime;
 
 fn main() {
-    let mut mode = NetworkModes::Offline;
+    let mut mode = NetworkModes::LocalHost;
 
     let host_type = env::var("HOST_TYPE").unwrap();
     println!("type: {}", host_type);
@@ -62,25 +62,25 @@ fn main() {
     let graphics_mapping_1 = GraphicsMapping::new(Vector2::new(0.5, 0.0), Vector2::new(1.0, 1.0));
     println!("init game start");
 
-    DumpsterEngine::run::<GameEvents>(
-        //
-        // loop for engine
-        SystemGPU::init().block_on(),
-        //
-        // components
-        SystemComponentDefaultTime::new(),
-        SystemComponentDefaultInput::new(),
-        SystemComponentDefaultGameplay::<GameEvents>::new(),
-        SystemComponentDefaultPhysics::new(),
-        SystemComponentDefaultGraphics::new(),
-        SystemComponentDefaultNetworking::new(),
-        //
-        // window settings
-        WindowLayout::windowed_1080(),
-        //
+    // DumpsterEngine::run::<GameEvents>(
+    //     //
+    //     // loop for engine
+    //     SystemGPU::init().block_on(),
+    //     //
+    //     // components
+    //     SystemComponentDefaultTime::new(),
+    //     SystemComponentDefaultInput::new(),
+    //     SystemComponentDefaultGameplay::<GameEvents>::new(),
+    //     SystemComponentDefaultPhysics::new(),
+    //     SystemComponentDefaultGraphics::new(),
+    //     SystemComponentDefaultNetworking::new(),
+    //     //
+    //     // window settings
+    //     WindowLayout::windowed_1080(),
+    //     //
 
-        // create game states
-        GameMode::new(vec![input_mapping_0, input_mapping_1], vec![graphics_mapping_0, graphics_mapping_1], mode),
-    );
-    println!("init game end");
+    //     // create game states
+    //     GameMode::new(vec![input_mapping_0, input_mapping_1], vec![graphics_mapping_0, graphics_mapping_1], mode),
+    // );
+    // println!("init game end");
 }

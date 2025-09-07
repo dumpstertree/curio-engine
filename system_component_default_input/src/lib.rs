@@ -1,4 +1,4 @@
-use core::collections::game_state::GameState;
+use core::collections::game_state::{self, GameState};
 use core::collections::vector2::Vector2;
 use core::collections::vector3::Vector3;
 use core::input::axis_code::AxisCode;
@@ -18,7 +18,7 @@ pub struct SystemComponentDefaultInput {
     mappings_is_dirty: bool,
     state_axis: HashMap<AxisCode, Vector2>,
     state_button: HashMap<KeyCode, bool>,
-    active_mappings: Vec<InputMapping>,
+    active_mappings: Vec<Vec<InputMapping>>,
 }
 
 impl SystemComponentDefaultInput {
@@ -37,42 +37,53 @@ impl SystemComponent for SystemComponentDefaultInput {
         1000
     }
 
-    fn tick(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
-        game_state.edit::<InputState>(|x| {
-            // if mismatched map length we need to rebuild - this is actually an issue because what if same amount
-            if self.mappings_is_dirty {
-                // clear old
-                x.mapped.clear();
+    fn tick(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) {
+        let mut cur_state = 0;
+        // iterate over each
+        for game_state in game_state {
+            //
+            game_state.edit::<InputState>(|x| {
+                // if mismatched map length we need to rebuild - this is actually an issue because what if same amount
+                if self.mappings_is_dirty {
+                    // clear old
+                    x.mapped.clear();
 
-                // create new
-                for mapping in &self.active_mappings {
-                    x.mapped.push(PlayerInputSnapshot::new(mapping.clone()));
+                    // create new
+                    for mapping in &self.active_mappings[cur_state] {
+                        x.mapped.push(PlayerInputSnapshot::new(mapping.clone()));
+                    }
                 }
-            }
 
-            // update raw input to include changes
-            x.raw.update(&self.state_button, &self.state_axis);
+                // update raw input to include changes
+                x.raw.update(&self.state_button, &self.state_axis);
 
-            // iterate over each mapped
-            for i in 0..x.mapped.len() {
-                // update mapped input to include changees
-                x.mapped
-                    .get_mut(i)
-                    .unwrap()
-                    .update(&self.state_button, &self.state_axis);
-            }
-        });
+                // iterate over each mapped
+                for i in 0..x.mapped.len() {
+                    // update mapped input to include changees
+                    x.mapped
+                        .get_mut(i)
+                        .unwrap()
+                        .update(&self.state_button, &self.state_axis);
+                }
+            });
+            cur_state += 1;
+        }
         // turn off flag
         self.mappings_is_dirty = false;
     }
-    fn input_axis(&mut self, _: &mut GameState, code: AxisCode, val: Vector3) {
+    fn input_axis(&mut self, _: &mut Vec<GameState>, code: AxisCode, val: Vector3) {
         self.state_axis.insert(code, val.to_vector2());
     }
-    fn input_button(&mut self, _: &mut GameState, code: KeyCode, val: KeyState) {
+    fn input_button(&mut self, _: &mut Vec<GameState>, code: KeyCode, val: KeyState) {
         self.state_button.insert(code, val == KeyState::Down);
     }
-    fn set_game_mode(&mut self, game_mode: &core::dumpster_engine::GameMode) {
-        self.active_mappings = game_mode.input_mappings.clone();
+    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
+        let mut active_mappings = vec![];
+        for game_instance in &game_mode.game_instances {
+            active_mappings.push(game_instance.input_mappings.clone());
+            println!("set game mode with num inputs {}", game_instance.input_mappings.len());
+        }
+        self.active_mappings = active_mappings;
         self.mappings_is_dirty = true;
     }
 }

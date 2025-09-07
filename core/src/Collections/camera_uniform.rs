@@ -38,6 +38,17 @@ pub struct CameraSnapshot {
     pub znear: f32,
     pub zfar: f32,
 }
+impl Default for CameraSnapshot {
+    fn default() -> Self {
+        Self {
+            position: Default::default(),
+            rotation: Default::default(),
+            fovy: 60.0,
+            znear: 0.1,
+            zfar: 100.0,
+        }
+    }
+}
 impl CameraSnapshot {
     pub fn new(position: Vector3) -> CameraSnapshot {
         CameraSnapshot {

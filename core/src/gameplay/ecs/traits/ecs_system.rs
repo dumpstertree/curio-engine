@@ -1,5 +1,6 @@
 use crate::{
     collections::{event_queue::EventQueue, game_state::GameState},
+    dumpster_engine::NetworkModes,
     io::asset_loader::AssetLoader,
 };
 use hecs::World;
@@ -11,6 +12,9 @@ pub trait ECSSystemEventless: CastFrom {
         0
     }
     fn is_enabled(&mut self, game_state: &mut GameState, world: &mut World) -> bool;
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::LocalPeer, NetworkModes::OnlineHost, NetworkModes::OnlinePeer]
+    }
 
     // init
     fn init(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue, _: &mut AssetLoader) {}

@@ -24,10 +24,7 @@ impl GUIStateDebug {
     pub fn finalize(&self, game_state: &mut GameState) -> GuiWindow {
         let is_paused = game_state.get_value2::<StateDebug>().is_paused;
         let mut window = GuiWindow::new("debug".to_string(), Vector3::new(10.0, 10.0, 0.0), Vector3::zero());
-        window.add(GuiElement::new_text_button(
-            if is_paused { "Play" } else { "Pause" },
-            GUIStateDebug::pause_on_click,
-        ));
+        window.add(GuiElement::new_text_button(if is_paused { "Play" } else { "Pause" }, GUIStateDebug::pause_on_click));
         for x in &self.contents {
             window.add(GuiElement::new_label(x.clone(), self.size, self.color.clone()));
         }

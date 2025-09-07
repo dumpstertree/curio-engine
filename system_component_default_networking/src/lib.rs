@@ -1,7 +1,8 @@
+use built_in_state::state_network::StateNetwork;
 use core::{
     collections::{
         event_queue::EventQueue,
-        game_state::{Event, GameState},
+        game_state::{self, GameState, StateSyncEvent},
     },
     dumpster_engine::{GameMode, NetworkModes},
     system::{
@@ -19,13 +20,16 @@ use message_io::{
     network::{NetEvent, Transport},
     node::NodeHandler,
 };
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    vec,
+};
 
 pub struct SystemComponentDefaultNetworking {
     network_mode: NetworkModes,
     node_handler: NodeHandler<Signal>,
     endpoints: Arc<Mutex<Vec<Endpoint>>>,
-    incoming_events: Arc<Mutex<Vec<Event>>>,
+    incoming_events: Arc<Mutex<Vec<StateSyncEvent>>>,
 }
 
 impl SystemComponentNetworking for SystemComponentDefaultNetworking {}
@@ -34,7 +38,7 @@ impl SystemComponentDefaultNetworking {
         let (handler, _) = node::split::<Signal>();
 
         Box::new(SystemComponentDefaultNetworking {
-            network_mode: NetworkModes::Offline,
+            network_mode: NetworkModes::LocalHost,
             node_handler: handler,
             endpoints: Arc::new(Mutex::new(Vec::new())),
             incoming_events: Arc::new(Mutex::new(Vec::new())),
@@ -110,7 +114,7 @@ impl SystemComponentDefaultNetworking {
                         println!("Client connected")
                     }
                     NetEvent::Message(_, data) => {
-                        let event = from_bytes::<Event>(data);
+                        let event = from_bytes::<StateSyncEvent>(data);
                         let Ok(mut guard) = incoming_events.lock() else {
                             panic!("Failed to lock");
                         };
@@ -145,7 +149,7 @@ impl SystemComponentDefaultNetworking {
         };
 
         let endpoints = guard.as_slice();
-        let events = game_state.get_network_sync_events();
+        let events = game_state.drain_network_sync_events();
         // println!("sending {} messages to {} peers", events.len(), endpoints.len());
 
         for event in &events {
@@ -154,7 +158,7 @@ impl SystemComponentDefaultNetworking {
 
                 self.node_handler
                     .network()
-                    .send(endpoint.clone(), to_bytes::<Event>(&event).as_slice());
+                    .send(endpoint.clone(), to_bytes::<StateSyncEvent>(&event).as_slice());
             }
         }
     }
@@ -173,28 +177,119 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     fn order(&self) -> i32 {
         10000
     }
-    fn init(&mut self, _: &mut GameState) {
+    fn init(&mut self, _: &mut Vec<GameState>) {
         println!("init networking");
     }
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue) {
-        match self.network_mode {
-            NetworkModes::Offline => self.tick_offline(game_state, event_queue),
-            NetworkModes::OnlineHost => self.tick_online_host(game_state, event_queue),
-            NetworkModes::OnlinePeer => self.tick_online_peer(game_state, event_queue),
+    fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
+        // for i in 0..game_state.len() {
+        //     let x = game_state.get_mut(i).unwrap();
+
+        //     if x.network_mode != NetworkModes::LocalHost {
+        //         continue;
+        //     }
+        //     let states = x.get_network_sync_events();
+        //     for j in 0..game_state.len() {
+        //         let y = game_state.get_mut(j).unwrap();
+        //         if i == j {
+        //             continue;
+        //         }
+        //         y.apply_network_sync_events(states.clone());
+        //     }
+        // }
+        for i in 0..game_state.len() {
+            let game_state_a = game_state.get_mut(i).unwrap();
+            let events = game_state_a.drain_network_sync_events();
+            let is_host = game_state_a.network_mode == NetworkModes::LocalHost || game_state_a.network_mode == NetworkModes::OnlineHost;
+            if !is_host {
+                continue;
+            }
+            for event in events {
+                for j in 0..event_queue.len() {
+                    let game_state_b = game_state.get_mut(j).unwrap();
+                    let is_peer = game_state_b.network_mode == NetworkModes::LocalPeer || game_state_b.network_mode == NetworkModes::OnlinePeer;
+                    if !is_peer {
+                        continue;
+                    }
+                    if i == j {
+                        continue;
+                    }
+
+                    game_state_b.apply_network_sync_events(vec![event.clone()]);
+                }
+            }
         }
+
+        for i in 0..event_queue.len() {
+            let event_queue_a = event_queue.get_mut(i).unwrap();
+            let events = event_queue_a.drain_network_sync_events();
+
+            for event in events {
+                match event.target {
+                    core::collections::event_queue::EventScope::All => {
+                        for j in 0..event_queue.len() {
+                            let event_queue_b = event_queue.get_mut(j).unwrap();
+                            if i == j {
+                                continue;
+                            }
+
+                            event_queue_b.apply_network_sync_events(vec![event.clone()]);
+                        }
+                    }
+                    core::collections::event_queue::EventScope::ConnectedHost => {
+                        for j in 0..event_queue.len() {
+                            let event_queue_b = event_queue.get_mut(j).unwrap();
+                            if i == j {
+                                continue;
+                            }
+
+                            if game_state[j].network_mode != NetworkModes::LocalHost && game_state[j].network_mode != NetworkModes::OnlineHost {
+                                continue;
+                            }
+
+                            event_queue_b.apply_network_sync_events(vec![event.clone()]);
+                        }
+                    }
+                    core::collections::event_queue::EventScope::ConnectedPeers => {
+                        for j in 0..event_queue.len() {
+                            let event_queue_b = event_queue.get_mut(j).unwrap();
+                            if i == j {
+                                continue;
+                            }
+
+                            if game_state[j].network_mode != NetworkModes::LocalPeer && game_state[j].network_mode != NetworkModes::OnlinePeer {
+                                continue;
+                            }
+
+                            event_queue_b.apply_network_sync_events(vec![event.clone()]);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+
+        // match self.network_mode {
+        //     NetworkModes::Offline => self.tick_offline(game_state, event_queue),
+        //     NetworkModes::OnlineHost => self.tick_online_host(game_state, event_queue),
+        //     NetworkModes::OnlinePeer => self.tick_online_peer(game_state, event_queue),
+        // }
     }
-    fn set_game_mode(&mut self, game_mode: &GameMode) {
-        let (handler, listener) = node::split::<Signal>();
-
-        println!("set game mode");
-        match game_mode.network_mode {
-            NetworkModes::Offline => self.init_offline(),
-            NetworkModes::OnlineHost => self.init_online_host(&handler, listener),
-            NetworkModes::OnlinePeer => self.init_online_peer(&handler, listener),
+    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
+        let v = vec![game_state[0].instance_id, game_state[1].instance_id];
+        for gs in game_state.iter_mut() {
+            gs.edit::<StateNetwork>(|x| x.set_peer_instance_ids(v.clone()));
         }
+        // let (handler, listener) = node::split::<Signal>();
 
-        self.network_mode = game_mode.network_mode.clone();
-        self.node_handler = handler;
+        // println!("set game mode");
+        // match game_mode.network_mode {
+        //     NetworkModes::Offline => self.init_offline(),
+        //     NetworkModes::OnlineHost => self.init_online_host(&handler, listener),
+        //     NetworkModes::OnlinePeer => self.init_online_peer(&handler, listener),
+        // }
+
+        // self.network_mode = game_mode.network_mode.clone();
+        // self.node_handler = handler;
     }
 }
 

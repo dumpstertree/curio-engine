@@ -21,17 +21,17 @@ impl ECSSystemEventless for PostCameraECSSystem {
         }
         for (_, (transform, _camera, camera_index)) in world.query_mut::<(&mut Transform, &Camera, &CameraIndex)>() {
             state.edit::<CameraState>(|x| {
-                let Some(cam) = x.cameras.get_mut(camera_index.index) else {
-                    println!(
-                        "Attempting to write to Camera at index {} but only has length of {}",
-                        camera_index.index,
-                        x.cameras.len()
-                    );
-                    return;
-                };
+                // let Some(cam) = x.cameras.get_mut(camera_index.index) else {
+                //     println!(
+                //         "Attempting to write to Camera at index {} but only has length of {}",
+                //         camera_index.index,
+                //         x.cameras.len()
+                //     );
+                //     return;
+                // };
 
-                cam.position = transform.position;
-                cam.rotation = transform.rotation;
+                x.cameras.position = transform.position;
+                x.cameras.rotation = transform.rotation;
             });
         }
     }

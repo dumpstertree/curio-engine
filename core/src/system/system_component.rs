@@ -12,18 +12,18 @@ pub trait SystemComponent {
     fn order(&self) -> i32 {
         0
     }
-    fn refresh(&mut self, _: &mut GameState) -> &[EngineCommands] {
+    fn refresh(&mut self, _: &mut Vec<GameState>) -> &[EngineCommands] {
         &[]
     }
 
     // lifecycle
-    fn init(&mut self, _game_state: &mut GameState) {}
-    fn tick(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue) {}
-    fn debug(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue) {}
+    fn init(&mut self, _game_state: &mut Vec<GameState>) {}
+    fn tick(&mut self, _game_state: &mut Vec<GameState>, _event_queue: &mut Vec<EventQueue>) {}
+    fn debug(&mut self, _game_state: &mut Vec<GameState>, _event_queue: &mut Vec<EventQueue>) {}
 
     // input
-    fn input_axis(&mut self, _game_statee: &mut GameState, _axis_code: AxisCode, _val: Vector3) {}
-    fn input_button(&mut self, _game_state: &mut GameState, _key_code: KeyCode, _val: KeyState) {}
+    fn input_axis(&mut self, _game_statee: &mut Vec<GameState>, _axis_code: AxisCode, _val: Vector3) {}
+    fn input_button(&mut self, _game_state: &mut Vec<GameState>, _key_code: KeyCode, _val: KeyState) {}
 
     // application
     fn application_quit(&mut self) {}
@@ -31,5 +31,5 @@ pub trait SystemComponent {
 
     // raw
     fn raw_event(&mut self, _: WindowEvent) {}
-    fn set_game_mode(&mut self, _game_mode: &GameMode) {}
+    fn set_game_mode(&mut self, _game_state: &mut Vec<GameState>, _game_mode: &GameMode) {}
 }

@@ -6,16 +6,29 @@ pub mod state {
     pub mod state_position_ball;
     pub mod state_position_player;
     pub mod state_score;
+    pub mod state_teams;
     pub mod state_turn;
 }
 pub mod ecs {
     pub mod system {
-        mod ecs_system_game_start;
-        mod ecs_system_game_turn_begin;
-        mod ecs_system_game_turn_end;
-        mod ecs_system_turn_end;
-        mod ecs_system_turn_manuever;
-        mod ecs_system_turn_move;
+        pub mod peer {
+            mod ecs_system_peer_start;
+            mod ecs_system_render;
+            mod ecs_system_turn_end;
+            mod ecs_system_turn_manuever;
+            mod ecs_system_turn_move;
+        }
+        pub mod host {
+            mod ecs_system_game_host_play_card;
+            mod ecs_system_game_host_point_scored;
+            mod ecs_system_game_host_request_manuever;
+            mod ecs_system_game_host_request_move;
+            mod ecs_system_game_host_reset_board;
+            mod ecs_system_game_start;
+            mod ecs_system_game_turn_begin;
+            mod ecs_system_game_turn_end;
+            mod ecs_system_request_turn_end;
+        }
     }
 }
 use crate::game_events::GameEvents;
@@ -36,19 +49,19 @@ use system_component_default_rendering::SystemComponentDefaultGraphics;
 use system_component_default_time::SystemComponentDefaultTime;
 
 fn main() {
-    let mut mode = NetworkModes::Offline;
+    // let mut mode = NetworkModes::Offline;
 
-    let host_type = env::var("HOST_TYPE").unwrap();
-    println!("type: {}", host_type);
-    if host_type == "host" {
-        // init_host();
-        println!("is host");
+    // let host_type = env::var("HOST_TYPE").unwrap();
+    // println!("type: {}", host_type);
+    // if host_type == "host" {
+    //     // init_host();
+    //     println!("is host");
 
-        mode = NetworkModes::OnlineHost;
-    } else if host_type == "peer" {
-        // init_peer();
-        mode = NetworkModes::OnlinePeer;
-    }
+    //     mode = NetworkModes::OnlineHost;
+    // } else if host_type == "peer" {
+    //     // init_peer();
+    //     mode = NetworkModes::OnlinePeer;
+    // }
 
     let input_mapping_0 = InputMapping::new(
         vec![
@@ -65,20 +78,18 @@ fn main() {
     );
     let input_mapping_1 = InputMapping::new(
         vec![
-            (String::from("move_forward"), KeyCode::KeyI),
-            (String::from("move_back"), KeyCode::KeyK),
-            (String::from("move_left"), KeyCode::KeyJ),
-            (String::from("move_right"), KeyCode::KeyL),
+            (String::from("move_forward"), KeyCode::KeyW),
+            (String::from("move_back"), KeyCode::KeyS),
+            (String::from("move_left"), KeyCode::KeyA),
+            (String::from("move_right"), KeyCode::KeyD),
             (String::from("turn_end"), KeyCode::KeyP),
             (String::from("card_left"), KeyCode::ArrowLeft),
             (String::from("card_right"), KeyCode::ArrowRight),
-            (String::from("card_submit"), KeyCode::ArrowRight),
             (String::from("card_submit"), KeyCode::ArrowUp),
         ],
         vec![],
     );
-    let graphics_mapping_0 = GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(0.5, 1.0));
-    let graphics_mapping_1 = GraphicsMapping::new(Vector2::new(0.5, 0.0), Vector2::new(1.0, 1.0));
+
     println!("init game start");
 
     DumpsterEngine::run::<GameEvents>(
@@ -99,7 +110,8 @@ fn main() {
         //
 
         // create game states
-        GameMode::new(vec![input_mapping_0, input_mapping_1], vec![graphics_mapping_0, graphics_mapping_1], mode),
+        GameMode::new_local_splitscreen_2p_horizontal(input_mapping_0, input_mapping_1),
+        // GameMode::new_local_single(input_mapping_0),
     );
     println!("init game end");
 }
