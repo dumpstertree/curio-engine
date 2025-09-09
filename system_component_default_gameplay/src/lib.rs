@@ -138,7 +138,8 @@ impl GameplayInstance {
             if !run_on_network_modes.contains(this_network_mode) {
                 continue;
             }
-
+            // debug
+            ecs_system.0.debug(game_state, &mut self.world, event_queue);
             // tick
             ecs_system
                 .0

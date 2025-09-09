@@ -12,7 +12,7 @@ pub trait SystemComponent {
     fn order(&self) -> i32 {
         0
     }
-    fn refresh(&mut self, _: &mut Vec<GameState>) -> &[EngineCommands] {
+    fn refresh(&mut self, _game_state: &mut Vec<GameState>, _event_queue: &mut Vec<EventQueue>) -> &[EngineCommands] {
         &[]
     }
 

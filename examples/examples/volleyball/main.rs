@@ -1,3 +1,4 @@
+pub mod game_board;
 pub mod game_events;
 pub mod state {
     pub mod state_ball_mode;
@@ -8,8 +9,16 @@ pub mod state {
     pub mod state_score;
     pub mod state_teams;
     pub mod state_turn;
+    pub mod peer {
+        pub mod state_peer_selected_card;
+    }
 }
 pub mod ecs {
+    pub mod components {
+        pub mod component_ball;
+        pub mod component_card;
+        pub mod component_player;
+    }
     pub mod system {
         pub mod peer {
             mod ecs_system_peer_start;
@@ -17,6 +26,7 @@ pub mod ecs {
             mod ecs_system_turn_end;
             mod ecs_system_turn_manuever;
             mod ecs_system_turn_move;
+            mod ecs_system_view_cards;
         }
         pub mod host {
             mod ecs_system_game_host_play_card;

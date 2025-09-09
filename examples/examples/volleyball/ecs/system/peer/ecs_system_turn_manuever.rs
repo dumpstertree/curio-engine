@@ -10,12 +10,13 @@ use core::{
 };
 
 use crate::game_events::GameEvents;
+use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::Card;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 
 #[global_ecs_system]
 pub struct ECSSystemTurnManuever {
-    card_index: i32,
+    // card_index: i32,
 }
 impl ECSSystemEventless for ECSSystemTurnManuever {
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
@@ -45,38 +46,48 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
         let bounds_min = 0;
         let bounds_max = (my_deck.hand_persistent.len() + my_deck.hand_consumable.len()) as i32;
 
-        // incase its out of bounds clamp it
-        self.card_index = self.card_index.clamp(bounds_min, bounds_max);
-
         // move left or right
         if input_card_left || input_card_right {
-            // generate the list of cards using
-            let mut list: Vec<&Card> = vec![];
-            list.extend(&my_deck.hand_persistent);
-            list.extend(&my_deck.hand_consumable);
+            // edit the selected cards
+            game_state.edit::<StatePeerSelectedCards>(|x| {
+                // clamp any old value
+                x.index = x.index.clamp(bounds_min, bounds_max);
 
-            // move left
-            if input_card_left {
-                self.card_index = (self.card_index - 1).repeat(bounds_min, bounds_max);
-                println!("card leeft -> change card : {}", list[self.card_index as usize].title);
-            }
+                // generate the list of cards using
+                let mut list: Vec<&Card> = vec![];
+                list.extend(&my_deck.hand_persistent);
+                list.extend(&my_deck.hand_consumable);
 
-            // move right
-            if input_card_right {
-                self.card_index = (self.card_index + 1).repeat(bounds_min, bounds_max);
-                println!("card right -> change card : {}", list[self.card_index as usize].title);
-            }
+                // move left
+                if input_card_left {
+                    x.index = (x.index - 1).repeat(bounds_min, bounds_max);
+                    println!("card leeft -> change card : {}", list[x.index as usize].title);
+                }
+
+                // move right
+                if input_card_right {
+                    x.index = (x.index + 1).repeat(bounds_min, bounds_max);
+                    println!("card right -> change card : {}", list[x.index as usize].title);
+                }
+            });
         }
 
         // try to submit card
         if input_card_submit {
+            // edit the selected cards
+            game_state.edit::<StatePeerSelectedCards>(|x| {
+                // incase its out of bounds clamp it
+                x.index = x.index.clamp(bounds_min, bounds_max);
+            });
+
             //
             let persistent_len = my_deck.hand_persistent.len() as i32;
-            let is_persistent = self.card_index < persistent_len;
+            let index = game_state.get_value2::<StatePeerSelectedCards>().index;
+            let is_persistent = index < persistent_len;
             if is_persistent {
-                event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, self.card_index));
+                event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, index));
             } else {
-                event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, self.card_index - persistent_len));
+                event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, index - persistent_len));
             }
         }
     }

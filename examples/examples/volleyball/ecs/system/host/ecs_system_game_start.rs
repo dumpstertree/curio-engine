@@ -63,23 +63,23 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 let deck = x.deck.get_mut(instance).unwrap();
 
                 // add all cards
-                deck.hand_persistent = vec![Card::new("Rest", CardTypes::Rest, 0), Card::new("Move", CardTypes::Move, 0)];
+                deck.hand_persistent = vec![Card::new("Rest", "card_bump.glb", CardTypes::Rest, 0)];
                 deck.pile_draw = vec![
-                    Card::new("Bump 0", CardTypes::Bump, 1),
-                    Card::new("Bump 1", CardTypes::Bump, 1),
-                    Card::new("Bump 2", CardTypes::Bump, 1),
-                    Card::new("Bump 3", CardTypes::Bump, 1),
-                    Card::new("Bump 4", CardTypes::Bump, 1),
-                    Card::new("Set 0", CardTypes::Set, 1),
-                    Card::new("Set 1", CardTypes::Set, 1),
-                    Card::new("Set 2", CardTypes::Set, 1),
-                    Card::new("Set 3", CardTypes::Set, 1),
-                    Card::new("Set 4", CardTypes::Set, 1),
-                    Card::new("Spike 0", CardTypes::Spike, 3),
-                    Card::new("Spike 1", CardTypes::Spike, 3),
-                    Card::new("Spike 2", CardTypes::Spike, 3),
-                    Card::new("Spike 3", CardTypes::Spike, 3),
-                    Card::new("Spike 4", CardTypes::Spike, 3),
+                    Card::new("Bump 0", "card_bump.glb", CardTypes::Bump, 1),
+                    Card::new("Bump 1", "card_bump.glb", CardTypes::Bump, 1),
+                    Card::new("Bump 2", "card_bump.glb", CardTypes::Bump, 1),
+                    Card::new("Bump 3", "card_bump.glb", CardTypes::Bump, 1),
+                    Card::new("Bump 4", "card_bump.glb", CardTypes::Bump, 1),
+                    Card::new("Set 0", "card_set.glb", CardTypes::Set, 1),
+                    Card::new("Set 1", "card_set.glb", CardTypes::Set, 1),
+                    Card::new("Set 2", "card_set.glb", CardTypes::Set, 1),
+                    Card::new("Set 3", "card_set.glb", CardTypes::Set, 1),
+                    Card::new("Set 4", "card_set.glb", CardTypes::Set, 1),
+                    Card::new("Spike 0", "card_spike.glb", CardTypes::Spike, 3),
+                    Card::new("Spike 1", "card_spike.glb", CardTypes::Spike, 3),
+                    Card::new("Spike 2", "card_spike.glb", CardTypes::Spike, 3),
+                    Card::new("Spike 3", "card_spike.glb", CardTypes::Spike, 3),
+                    Card::new("Spike 4", "card_spike.glb", CardTypes::Spike, 3),
                 ];
             });
         }

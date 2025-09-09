@@ -23,13 +23,13 @@ impl SystemDebugCamera {
 }
 impl ECSSystemEventless for SystemDebugCamera {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateDebug>().is_paused
+        game_state.get_value2::<StateDebug>().is_inspecting && game_state.get_value2::<StateDebug>().is_paused
     }
     fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {
         self.x = 0.0;
         self.y = 0.0;
     }
-    fn debug(&mut self, state: &mut GameState, _: &mut World, _: &mut EventQueue) {
+    fn tick(&mut self, state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // constants
         const SPEED_ROT: f32 = 10.0;
         const SPEED_MOVE: f32 = 10.0;
@@ -75,5 +75,7 @@ impl ECSSystemEventless for SystemDebugCamera {
             x.cameras.position = x.cameras.position + offset;
             x.cameras.rotation = rot;
         });
+
+        println!("edit camera");
     }
 }

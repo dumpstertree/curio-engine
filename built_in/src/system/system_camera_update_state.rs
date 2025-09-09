@@ -6,7 +6,7 @@ use core::{
 use ecs_system::global_ecs_system;
 use hecs::World;
 
-use crate::component::{component_camera::Camera, component_camera_index::CameraIndex, component_transform::Transform};
+use crate::component::{component_camera::Camera, component_transform::Transform};
 
 #[global_ecs_system]
 pub struct PostCameraECSSystem {}
@@ -19,17 +19,8 @@ impl ECSSystemEventless for PostCameraECSSystem {
         if state.get_value2::<StateDebug>().is_paused {
             return;
         }
-        for (_, (transform, _camera, camera_index)) in world.query_mut::<(&mut Transform, &Camera, &CameraIndex)>() {
+        for (_, (transform, _camera)) in world.query_mut::<(&mut Transform, &Camera)>() {
             state.edit::<CameraState>(|x| {
-                // let Some(cam) = x.cameras.get_mut(camera_index.index) else {
-                //     println!(
-                //         "Attempting to write to Camera at index {} but only has length of {}",
-                //         camera_index.index,
-                //         x.cameras.len()
-                //     );
-                //     return;
-                // };
-
                 x.cameras.position = transform.position;
                 x.cameras.rotation = transform.rotation;
             });

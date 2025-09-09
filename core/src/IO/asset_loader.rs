@@ -199,7 +199,13 @@ impl AssetLoader {
 
                         let texture_asset: TextureAsset; //= //Texture_asset::new(material.name(), device, queue, width as i32, height as i32, bytes);
                         if let Some(t) = pbr.base_color_texture() {
+                            // if t.texture().index() >= images.len() as usize {
+                            //     println!("Invalid texture length");
+                            //     continue;
+                            // }
                             let image2 = &images[t.texture().index()];
+
+                            // let image2 = &images[images.len() - 1];
                             let mut p = image2.pixels.clone();
 
                             if image2.format == gltf::image::Format::R8G8B8 {

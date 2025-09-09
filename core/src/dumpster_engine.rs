@@ -71,7 +71,7 @@ impl GameMode {
             game_instances: vec![
                 GameInstance::new(GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(1.0, 0.5)), vec![input_p1], NetworkModes::LocalPeer),
                 GameInstance::new(GraphicsMapping::new(Vector2::new(0.0, 0.5), Vector2::new(1.0, 1.0)), vec![input_p2], NetworkModes::LocalPeer),
-                GameInstance::new(GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(0.1, 0.1)), vec![], NetworkModes::LocalHost),
+                GameInstance::new(GraphicsMapping::new(Vector2::new(0.9, 0.9), Vector2::new(1.0, 1.0)), vec![], NetworkModes::LocalHost),
             ],
         }
     }

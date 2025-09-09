@@ -336,7 +336,7 @@ impl ApplicationHandler<EngineCommands> for SystemWindow {
             WindowEvent::RedrawRequested => {
                 let mut events: Vec<EngineCommands> = Vec::new();
                 for c in self.components.iter_mut() {
-                    let s = c.refresh(&mut self.gamestate);
+                    let s = c.refresh(&mut self.gamestate, &mut self.system_event_queue);
                     for x in s {
                         events.push(x.clone());
                     }

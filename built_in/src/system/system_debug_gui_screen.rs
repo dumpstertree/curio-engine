@@ -1,4 +1,4 @@
-use built_in_state::state_gui_debug::GUIStateDebug;
+use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
@@ -16,10 +16,10 @@ impl SystemDebugGuiScreen {
     }
 }
 impl ECSSystemEventless for SystemDebugGuiScreen {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
-        true
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+        game_state.get_value2::<StateDebug>().is_inspecting
     }
-    fn debug(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // get gpu data
         let sys_config = SystemGPU::get_config();
         let sys_window = SystemGPU::get_window();
@@ -27,11 +27,7 @@ impl ECSSystemEventless for SystemDebugGuiScreen {
         // edit state
         game_state.edit::<GUIStateDebug>(|x| {
             x.append(format!("Resolution: ({}, {})", sys_config.width, sys_config.height));
-            x.append(format!(
-                "Screen Size: ({}, {})",
-                sys_window.inner_size().width,
-                sys_window.inner_size().height
-            ));
+            x.append(format!("Screen Size: ({}, {})", sys_window.inner_size().width, sys_window.inner_size().height));
         });
     }
 }

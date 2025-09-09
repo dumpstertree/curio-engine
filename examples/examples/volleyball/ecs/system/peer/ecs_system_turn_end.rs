@@ -33,7 +33,6 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
             return;
         }
 
-        // println!("Instance: {}, send turn end", game_state.instance_id);
         // send event to end turn
         events.enqueue_event(GameEvents::RequestTurnEnd(game_state.instance_id));
     }

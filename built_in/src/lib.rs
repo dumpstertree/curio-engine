@@ -1,6 +1,5 @@
 pub mod component {
     pub mod component_camera;
-    pub mod component_camera_index;
     pub mod component_input_index;
     pub mod component_renderer;
     pub mod component_transform;

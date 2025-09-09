@@ -54,10 +54,16 @@ pub struct Card {
     pub title: String,
     pub card_type: CardTypes,
     pub cost: i32,
+    pub model_path: String,
 }
 impl Card {
-    pub fn new(title: &str, card_type: CardTypes, cost: i32) -> Card {
-        Card { title: String::from(title), card_type, cost }
+    pub fn new(title: &str, model_path: &str, card_type: CardTypes, cost: i32) -> Card {
+        Card {
+            title: String::from(title),
+            model_path: String::from(model_path),
+            card_type,
+            cost,
+        }
     }
 }
 

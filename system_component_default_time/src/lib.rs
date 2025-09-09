@@ -76,7 +76,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn refresh(&mut self, game_state: &mut Vec<GameState>) -> &[EngineCommands] {
+    fn refresh(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) -> &[EngineCommands] {
         // get state
         let state_time = game_state[0].get_value2::<TimeState>();
 

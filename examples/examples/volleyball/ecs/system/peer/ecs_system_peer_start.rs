@@ -1,12 +1,20 @@
-use built_in_state::state_camera::CameraState;
+use built_in::component::{component_camera::Camera, component_transform::Transform};
+use built_in_state::{state_camera::CameraState, state_time::TimeState};
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{
+        event_queue::EventQueue,
+        game_state::{self, GameState},
+        quaternion::Quaternion,
+        vector3::Vector3,
+    },
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
+
+use crate::state::state_teams::{StateTeamAssignments, Teams};
 
 #[global_ecs_system]
 pub struct ECSSystemPeerStart {}
@@ -17,7 +25,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn enable(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 
         // set resolution
@@ -25,5 +33,32 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
         });
+    }
+    fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+        let Some(team) = game_state
+            .get_value2::<StateTeamAssignments>()
+            .team_for(&game_state.instance_id)
+        else {
+            println!("no team");
+            return;
+        };
+        match team {
+            Teams::Red => {
+                world.spawn((
+                    Transform::default()
+                        .set_position(Vector3::new(0.0, 5.0, -9.0))
+                        .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
+                    Camera::default(),
+                ));
+            }
+            Teams::Blue => {
+                world.spawn((
+                    Transform::default()
+                        .set_position(Vector3::new(0.0, 5.0, 9.0))
+                        .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 180.0, 0.0))),
+                    Camera::default(),
+                ));
+            }
+        }
     }
 }

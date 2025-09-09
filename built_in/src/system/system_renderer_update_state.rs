@@ -31,11 +31,8 @@ impl ECSSystemEventless for SystemRendererUpdateState {
 
                 // add draw call
                 for _ in &asset.mesh {
-                    x.draw_calls.push(DrawCall::draw_mesh_single(
-                        asset.mesh[0].clone(),
-                        asset.materials[0].clone(),
-                        transform.get_matrix(),
-                    ));
+                    x.draw_calls
+                        .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix()));
                 }
             }
         });

@@ -1,8 +1,9 @@
+use crate::game_board::GameBoard;
 use crate::state::state_ball_mode::{BallModes, StateBallMode};
 use crate::state::state_deck::{Card, CardTypes, Deck, StateDeck};
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
-use crate::state::state_position_player::StatePositionPlayer;
+use crate::state::state_position_player::{self, StatePositionPlayer};
 use crate::state::state_teams::StateTeamAssignments;
 use crate::{game_events::GameEvents, state::state_score::StateScore};
 use built_in_state::state_network::StateNetwork;
@@ -36,18 +37,20 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                 // setup ball mode
                 game_state.edit::<StateBallMode>(|x| x.mode = BallModes::Serve);
 
-                // position -> ball
-                game_state.edit::<StatePositionBall>(|x| {
-                    x.row = 0;
-                    x.collun = 0;
-                });
                 // position -> player
+                let state_team_assignments = game_state.get_value2::<StateTeamAssignments>();
                 game_state.edit::<StatePositionPlayer>(|x| {
                     for y in x.positions.iter_mut() {
-                        y.1.0 = 0;
-                        y.1.1 = 0;
+                        let Some(team) = state_team_assignments.team_for(y.0) else {
+                            continue;
+                        };
+
+                        let serving_tile = GameBoard::get_serving_tile(&team);
+                        y.1.0 = serving_tile.0;
+                        y.1.1 = serving_tile.1;
                     }
                 });
+
                 // deck
                 game_state.edit::<StateDeck>(|x| {
                     for y in x.deck.iter_mut() {
@@ -64,7 +67,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                 });
 
                 let state_teams = game_state.get_value2::<StateTeamAssignments>();
-
+                let state_position_player = game_state.get_value2::<StatePositionPlayer>();
                 //
                 let Some(team_members) = state_teams.team_assignments.get(team) else {
                     return;
@@ -73,6 +76,16 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                 let Some(first_member) = team_members.get(0) else {
                     return;
                 };
+
+                let Some(first_member_pos) = state_position_player.positions.get(first_member) else {
+                    return;
+                };
+
+                // position -> ball
+                game_state.edit::<StatePositionBall>(|x| {
+                    x.collun = first_member_pos.0;
+                    x.row = first_member_pos.1;
+                });
 
                 // start the game
                 event_queue.enqueue_event(GameEvents::TurnBegin(*first_member));

@@ -25,7 +25,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PointScored(team) => {
-                // update points
+                // update score
                 game_state.edit::<StateScore>(|x| {
                     // if there is already a score we use that
                     let mut cur_score = 0;

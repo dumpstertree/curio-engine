@@ -16,10 +16,9 @@ use crate::render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI;
 use crate::render_feature_3d::RenderFeature3D;
 use crate::render_feature_3ds::render_feature_draw_gizmos::RenderFeatureDrawGizmo;
 use built_in_state::state_camera::CameraState;
-use core::collections::game_state::{self, GameState};
-use core::collections::vector3::Vector3;
-use core::collections::{camera_uniform::CameraSnapshot, event_queue::EventQueue};
-use core::graphics::graphics_mapping::{self, GraphicsMapping};
+use core::collections::event_queue::EventQueue;
+use core::collections::game_state::GameState;
+use core::graphics::graphics_mapping::GraphicsMapping;
 use core::io::texture_asset::TextureAsset;
 use core::system::system_component::SystemComponent;
 use core::system::system_components::system_component_graphics::SystemComponentGraphics;
@@ -42,28 +41,23 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         9000
     }
     fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
-        for i in 0..game_state.len() {
-            let mut game_state = &mut game_state[i];
-            let mut event_queue = &mut event_queue[i];
+        // system
+        let surface = &SystemGPU::get_surface();
+        let device = &SystemGPU::get_device();
+        let queue = &SystemGPU::get_queue();
 
-            // system
-            let surface = &SystemGPU::get_surface();
-            let device = &SystemGPU::get_device();
-            let queue = &SystemGPU::get_queue();
+        // create the output
+        let output = SystemComponentDefaultGraphics::get_output_texture(surface);
+        let mut encoder = SystemComponentDefaultGraphics::get_encoder(device);
 
-            // create the output
-            let output = SystemComponentDefaultGraphics::get_output_texture(surface);
-            let mut encoder = SystemComponentDefaultGraphics::get_encoder(device);
+        // draw all
+        self.draw_3d_features(game_state, &mut encoder, &output);
+        self.draw_2d_features(game_state, &mut encoder, &output, event_queue);
 
-            // draw all
-            self.draw_3d_features(&mut game_state, &mut encoder, &output);
-            self.draw_2d_features(&mut game_state, &mut encoder, &output, &mut event_queue);
-
-            // submit commands for execution
-            queue.submit(iter::once(encoder.finish()));
-            // present the completed texture
-            output.present();
-        }
+        // submit commands for execution
+        queue.submit(iter::once(encoder.finish()));
+        // present the completed texture
+        output.present();
     }
     fn raw_event(&mut self, event: WindowEvent) {
         let window = SystemGPU::get_window();
@@ -94,18 +88,17 @@ impl SystemComponentDefaultGraphics {
             is_dirty: true,
         })
     }
-    fn draw_3d_features(&mut self, game_state: &mut GameState, encoder: &mut CommandEncoder, output: &SurfaceTexture) {
+    fn draw_3d_features(&mut self, game_state: &mut Vec<GameState>, encoder: &mut CommandEncoder, output: &SurfaceTexture) {
         // get system values
         let queue = &SystemGPU::get_queue();
-
-        // get gamestate values
-        let state_camera = game_state.get_value2::<CameraState>();
 
         // generate a render pass for this instance
         let mut render_pass = SystemComponentDefaultGraphics::get_render_pass(&output, encoder);
 
         // iterate over each camera in state
         for i in 0..(self.graphics_mappings.len() as usize) {
+            let game_state = game_state.get_mut(i).unwrap();
+            let state_camera = game_state.get_value2::<CameraState>();
             // get camera data
             let cur_camera_snapshot = &state_camera.cameras;
             // for graphics_mapping in &self.graphics_mappings {
@@ -136,19 +129,26 @@ impl SystemComponentDefaultGraphics {
         }
         // done using now clear all data
         for feature in self.render_features_3d.iter_mut() {
-            feature.clear(game_state);
+            for game_state in &mut *game_state {
+                feature.clear(game_state);
+            }
         }
     }
-    fn draw_2d_features(&mut self, game_state: &mut GameState, encoder: &mut CommandEncoder, output: &SurfaceTexture, event_queue: &mut EventQueue) {
-        for _ in 0..(self.graphics_mappings.len() as usize) {
-            for feature in self.render_features_2d.iter_mut() {
-                feature.render(game_state, event_queue, &output, encoder, &mut self.egui_renderer);
-            }
+    fn draw_2d_features(&mut self, game_state: &mut Vec<GameState>, encoder: &mut CommandEncoder, output: &SurfaceTexture, event_queue: &mut Vec<EventQueue>) {
+        // THIS IS HACKED BECAUSE WE CANT ALL WRITE TO THE MAIN SCREEN
 
-            for feature in self.render_features_2d.iter_mut() {
-                // feature.clear(game_state);
-            }
+        // for i in 0..(self.graphics_mappings.len() as usize) {
+        let i = 2;
+        let game_state = game_state.get_mut(i).unwrap();
+        let event_queue = event_queue.get_mut(i).unwrap();
+        for feature in self.render_features_2d.iter_mut() {
+            feature.render(game_state, event_queue, &output, encoder, &mut self.egui_renderer);
         }
+
+        for feature in self.render_features_2d.iter_mut() {
+            feature.clear(game_state);
+        }
+        // }
     }
     fn get_render_pass<'a>(output: &'a SurfaceTexture, encoder: &'a mut CommandEncoder) -> RenderPass<'a> {
         let depth = &SystemGPU::get_depth_texture();

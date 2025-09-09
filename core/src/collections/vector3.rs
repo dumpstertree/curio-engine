@@ -70,20 +70,12 @@ impl Vector3 {
     }
     /// Returns a vector perpendicular to rhs and lhs
     pub fn cross(lhs: Vector3, rhs: Vector3) -> Vector3 {
-        Vector3::new(
-            lhs.y * rhs.z - lhs.z * rhs.y,
-            lhs.z * rhs.x - lhs.x * rhs.z,
-            lhs.x * rhs.y - lhs.y * rhs.x,
-        )
+        Vector3::new(lhs.y * rhs.z - lhs.z * rhs.y, lhs.z * rhs.x - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x)
     }
     ///
     pub fn reflect(direction: Vector3, normal: Vector3) -> Vector3 {
         let factor = Vector3::dot(normal, direction) * -2.0;
-        Vector3::new(
-            factor * normal.x + direction.x,
-            factor * normal.y + direction.y,
-            factor * normal.z + direction.z,
-        )
+        Vector3::new(factor * normal.x + direction.x, factor * normal.y + direction.y, factor * normal.z + direction.z)
     }
     /// Normalizes all the values from 0-1 of THIS instance
     pub fn normalize(&mut self) {
@@ -107,6 +99,10 @@ impl Vector3 {
             y: self.y as f32 / mag,
             z: self.z as f32 / mag,
         }
+    }
+    /// lerp from one vector to another
+    pub fn lerp(a: Vector3, b: Vector3, t: f32) -> Vector3 {
+        a + (b - a) * t
     }
     /// Clamps the x value of THIS instance between min and max inclusively
     pub fn clamp_x(&mut self, min: f32, max: f32) {
@@ -167,44 +163,28 @@ impl Vector3 {
 impl Mul<f32> for Vector3 {
     type Output = Vector3;
     fn mul(self, x: f32) -> Vector3 {
-        Vector3 {
-            x: self.x * x,
-            y: self.y * x,
-            z: self.z * x,
-        }
+        Vector3 { x: self.x * x, y: self.y * x, z: self.z * x }
     }
 }
 // whole num divide
 impl Div<f32> for Vector3 {
     type Output = Vector3;
     fn div(self, x: f32) -> Vector3 {
-        Vector3 {
-            x: self.x / x,
-            y: self.y / x,
-            z: self.z / x,
-        }
+        Vector3 { x: self.x / x, y: self.y / x, z: self.z / x }
     }
 }
 // vector add
 impl Add<Vector3> for Vector3 {
     type Output = Vector3;
     fn add(self, x: Vector3) -> Vector3 {
-        Vector3 {
-            x: self.x + x.x,
-            y: self.y + x.y,
-            z: self.z + x.z,
-        }
+        Vector3 { x: self.x + x.x, y: self.y + x.y, z: self.z + x.z }
     }
 }
 // vector subtract
 impl Sub<Vector3> for Vector3 {
     type Output = Vector3;
     fn sub(self, x: Vector3) -> Vector3 {
-        Vector3 {
-            x: self.x - x.x,
-            y: self.y - x.y,
-            z: self.z - x.z,
-        }
+        Vector3 { x: self.x - x.x, y: self.y - x.y, z: self.z - x.z }
     }
 }
 // display

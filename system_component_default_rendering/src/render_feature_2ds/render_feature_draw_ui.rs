@@ -17,13 +17,7 @@ impl RenderFeatureDrawUI {
         Box::new(RenderFeatureDrawUI {})
     }
 
-    fn draw_all_ui(
-        game_state: &mut GameState,
-        system_event_queue: &mut EventQueue,
-        output: &SurfaceTexture,
-        encoder: &mut CommandEncoder,
-        egui_renderer: &mut EguiRenderer,
-    ) {
+    fn draw_all_ui(game_state: &mut GameState, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
         let window = SystemGPU::get_window();
         let queue = SystemGPU::get_queue();
         let device = SystemGPU::get_device();
@@ -45,21 +39,16 @@ impl RenderFeatureDrawUI {
                         built_in_state::state_gui::GuiElementTypes::Ellipse => todo!(),
                         built_in_state::state_gui::GuiElementTypes::Label(label_desc) => {
                             for (_text_style, font_id) in ui.style_mut().text_styles.iter_mut() {
-                                font_id.size = label_desc.font_size // whatever size you want here
+                                // font_id.size = label_desc.font_size // whatever size you want here
                             }
-                            ui.colored_label(
-                                Color32::from_rgb(
-                                    label_desc.color.as_r_0255() as u8,
-                                    label_desc.color.as_g_0255() as u8,
-                                    label_desc.color.as_b_0255() as u8,
-                                ),
-                                &label_desc.contents,
-                            );
+                            ui.colored_label(Color32::from_rgb(label_desc.color.as_r_0255() as u8, label_desc.color.as_g_0255() as u8, label_desc.color.as_b_0255() as u8), &label_desc.contents);
+                            // ui.colored_label(Color32::from_rgb(255, 255, 255), "TEST");
                         }
                         built_in_state::state_gui::GuiElementTypes::Button(button_desc) => {
                             let b = ui.button(&button_desc.contents);
                             if b.clicked() {
                                 (button_desc.on_click)(game_state, system_event_queue);
+                                println!("clicked");
                             }
                             if b.hovered() {}
                         }
@@ -86,14 +75,7 @@ impl RenderFeatureDrawUI {
     }
 }
 impl RenderFeature2D for RenderFeatureDrawUI {
-    fn render(
-        &mut self,
-        game_state: &mut GameState,
-        system_event_queue: &mut EventQueue,
-        output: &SurfaceTexture,
-        encoder: &mut CommandEncoder,
-        egui_renderer: &mut EguiRenderer,
-    ) {
+    fn render(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
         RenderFeatureDrawUI::draw_all_ui(game_state, system_event_queue, output, encoder, egui_renderer);
     }
 

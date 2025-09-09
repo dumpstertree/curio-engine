@@ -1,9 +1,10 @@
 use crate::{
+    game_board::GameBoard,
     game_events::GameEvents,
-    state::{state_energy::StateEnergy, state_position_player::StatePositionPlayer, state_turn::StateTurn},
+    state::{state_energy::StateEnergy, state_position_player::StatePositionPlayer, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
 };
@@ -32,10 +33,10 @@ impl ECSSystemGameRequestMove {
 
         return true;
     }
-    fn check_bounds(game_state: &mut GameState, id: i32, x_diff: i32, z_diff: i32) -> bool {
+    fn check_bounds(game_state: &mut GameState, id: i32, x_diff: i32, z_diff: i32, bounds_min: Vector2Int, bounds_max: Vector2Int) -> bool {
         let cur_pos = game_state.get_value2::<StatePositionPlayer>().positions[&id];
         let new_pos = (cur_pos.0 + x_diff, cur_pos.1 + z_diff);
-        let in_bounds = new_pos.0 >= 0 && new_pos.0 <= 3 && new_pos.1 >= 0 && new_pos.1 <= 1;
+        let in_bounds = new_pos.0 >= bounds_min.x && new_pos.0 <= bounds_max.x && new_pos.1 >= bounds_min.y && new_pos.1 <= bounds_max.y;
         if !in_bounds {
             println!("Requested Move out of bounds. ({},{}) -> ({},{})", cur_pos.0, cur_pos.1, new_pos.0, new_pos.1);
             return false;
@@ -64,13 +65,22 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, 0, 1) {
+
+                let Some(team) = game_state
+                    .get_value2::<StateTeamAssignments>()
+                    .team_for(&id)
+                else {
+                    return;
+                };
+
+                let dir = team.convert_dir(0, 1);
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
                     return;
                 }
 
                 game_state.edit::<StatePositionPlayer>(|x| {
                     x.positions
-                        .insert(*id, (x.positions[id].0, x.positions[id].1 + 1));
+                        .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
                 game_state.edit::<StateEnergy>(|x| {
                     x.all_players
@@ -84,13 +94,20 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, 0, -1) {
+                let Some(team) = game_state
+                    .get_value2::<StateTeamAssignments>()
+                    .team_for(&id)
+                else {
+                    return;
+                };
+                let dir = team.convert_dir(0, -1);
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
                     return;
                 }
 
                 game_state.edit::<StatePositionPlayer>(|x| {
                     x.positions
-                        .insert(*id, (x.positions[id].0, x.positions[id].1 - 1));
+                        .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
                 game_state.edit::<StateEnergy>(|x| {
                     x.all_players
@@ -104,13 +121,21 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, 1, 0) {
+                let Some(team) = game_state
+                    .get_value2::<StateTeamAssignments>()
+                    .team_for(&id)
+                else {
+                    return;
+                };
+
+                let dir = team.convert_dir(1, 0);
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
                     return;
                 }
 
                 game_state.edit::<StatePositionPlayer>(|x| {
                     x.positions
-                        .insert(*id, (x.positions[id].0 + 1, x.positions[id].1));
+                        .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
                 game_state.edit::<StateEnergy>(|x| {
                     x.all_players
@@ -124,13 +149,21 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, -1, 0) {
+                let Some(team) = game_state
+                    .get_value2::<StateTeamAssignments>()
+                    .team_for(&id)
+                else {
+                    return;
+                };
+
+                let dir = team.convert_dir(-1, 0);
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
                     return;
                 }
 
                 game_state.edit::<StatePositionPlayer>(|x| {
                     x.positions
-                        .insert(*id, (x.positions[id].0 - 1, x.positions[id].1));
+                        .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
                 game_state.edit::<StateEnergy>(|x| {
                     x.all_players

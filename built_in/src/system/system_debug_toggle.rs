@@ -31,10 +31,8 @@ impl ECSSystemEventless for SystemDebugToggle {
         let debug_button = state_input.raw.get_button(&KeyCode::Backquote);
         if debug_button.went_up {
             // flip the toggle
-            println!("went up");
             game_state.edit::<StateDebug>(|x| {
                 x.is_inspecting = !x.is_inspecting;
-                println!("flip");
             });
         }
     }
