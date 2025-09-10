@@ -1,3 +1,5 @@
+use core::panic;
+
 use egui_wgpu::wgpu::util::DeviceExt;
 use egui_wgpu::wgpu::Buffer;
 use egui_wgpu::wgpu::BufferAddress;
@@ -8,12 +10,14 @@ use mesh_tools::primitives::{generate_plane, generate_sphere};
 use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::vector3;
 use crate::random::Random;
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+use crate::system_adapters::adapter_system_gpu::SystemGPU;
 pub struct Mesh {
     pub name: String,
     pub verticies: Vec<Vertex>,
     pub indicies: Vec<u32>,
     pub instance_num: i32,
+    vertex_buffer: Buffer,
+    index_buffer: Buffer,
 }
 
 impl Mesh {
@@ -277,37 +281,35 @@ impl Mesh {
         Mesh::new(String::from("Sphere"), v, i)
     }
     pub fn new(name: String, verticies: Vec<Vertex>, indicies: Vec<u32>) -> Mesh {
+        let device = SystemGPU::get_device();
+        let i_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
+            label: Some("Index Buffer"),
+            contents: bytemuck::cast_slice(&indicies),
+            usage: egui_wgpu::wgpu::BufferUsages::INDEX,
+        });
+        let v_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
+            label: Some("Vertex Buffer"),
+            contents: bytemuck::cast_slice(&verticies),
+            usage: egui_wgpu::wgpu::BufferUsages::VERTEX,
+        });
         Mesh {
             name,
             verticies,
             indicies,
             instance_num: Random::range_int(-9999, 9999),
+            vertex_buffer: v_buffer,
+            index_buffer: i_buffer,
         }
     }
     pub fn get_num_verticies(&self) -> i32 {
         self.verticies.len() as i32
     }
 
-    pub fn get_instance_buffer_for_device(&self, device: &egui_wgpu::wgpu::Device, transforms: &Vec<Matrix4x4>) -> Buffer {
-        device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
-            label: Some("Instance Buffer"),
-            contents: bytemuck::cast_slice(&transforms),
-            usage: egui_wgpu::wgpu::BufferUsages::VERTEX,
-        })
+    pub fn get_vertex_buffer_for_device(&self) -> &Buffer {
+        &self.vertex_buffer
     }
-    pub fn get_vertex_buffer_for_device(&self, device: &egui_wgpu::wgpu::Device) -> Buffer {
-        device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&self.verticies),
-            usage: egui_wgpu::wgpu::BufferUsages::VERTEX,
-        })
-    }
-    pub fn get_index_buffer_for_device(&self, device: &egui_wgpu::wgpu::Device) -> Buffer {
-        device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
-            label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(&self.indicies),
-            usage: egui_wgpu::wgpu::BufferUsages::INDEX,
-        })
+    pub fn get_index_buffer_for_device(&self) -> &Buffer {
+        &self.index_buffer
     }
 }
 

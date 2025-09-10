@@ -10,11 +10,11 @@ mod render_feature_3ds {
     pub mod render_feature_draw_gizmos;
     pub mod render_feature_draw_mesh;
 }
-use crate::egui_tools::EguiRenderer;
 use crate::render_feature_2d::RenderFeature2D;
 use crate::render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI;
 use crate::render_feature_3d::RenderFeature3D;
-use crate::render_feature_3ds::render_feature_draw_gizmos::RenderFeatureDrawGizmo;
+// use crate::render_feature_3ds::render_feature_draw_gizmos::RenderFeatureDrawGizmo;
+use crate::{camera_rendering_components::CameraRenderingComponents, egui_tools::EguiRenderer};
 use built_in_state::state_camera::CameraState;
 use core::collections::event_queue::EventQueue;
 use core::collections::game_state::GameState;
@@ -34,6 +34,7 @@ pub struct SystemComponentDefaultGraphics {
     render_features_3d: Vec<Box<dyn RenderFeature3D>>,
     render_features_2d: Vec<Box<dyn RenderFeature2D>>,
     is_dirty: bool,
+    camera_rendering: CameraRenderingComponents,
 }
 
 impl SystemComponent for SystemComponentDefaultGraphics {
@@ -69,6 +70,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
             graphics_mapping.push(x.graphics_mappings.clone());
         }
 
+        self.camera_rendering = CameraRenderingComponents::new(graphics_mapping.len());
         self.graphics_mappings = graphics_mapping;
         self.is_dirty = true;
     }
@@ -83,9 +85,10 @@ impl SystemComponentDefaultGraphics {
         Box::new(SystemComponentDefaultGraphics {
             egui_renderer: EguiRenderer::new(d, c.format, None, 1, w),
             graphics_mappings: Vec::new(),
-            render_features_3d: vec![RenderFeatureDrawMesh::new(), RenderFeatureDrawGizmo::new()],
+            render_features_3d: vec![RenderFeatureDrawMesh::new()],
             render_features_2d: vec![RenderFeatureDrawUI::new()],
             is_dirty: true,
+            camera_rendering: CameraRenderingComponents::new(1),
         })
     }
     fn draw_3d_features(&mut self, game_state: &mut Vec<GameState>, encoder: &mut CommandEncoder, output: &SurfaceTexture) {
@@ -117,14 +120,12 @@ impl SystemComponentDefaultGraphics {
 
             //calculate camera binding values
             let camera_uniform = cur_camera_snapshot.get_uniform(w as i32, h as i32);
-            let camera_rendereing = camera_rendering_components::CameraRenderingComponents::new(camera_uniform);
-
-            // write camera
-            queue.write_buffer(&camera_rendereing.camera_buffer, 0, bytemuck::cast_slice(&[camera_uniform]));
+            let _ = &self.camera_rendering.update(i, &camera_uniform);
+            let camera_rendering = &self.camera_rendering;
 
             // render
             for feature in self.render_features_3d.iter_mut() {
-                feature.render(game_state, &mut render_pass, &camera_rendereing.camera_bind_group, &camera_rendereing.camera_bind_group_layout);
+                feature.render(game_state, &mut render_pass, &camera_rendering, i);
             }
         }
         // done using now clear all data

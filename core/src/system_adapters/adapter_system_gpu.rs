@@ -193,7 +193,7 @@ impl SystemGPU {
             .request_device(
                 &egui_wgpu::wgpu::DeviceDescriptor {
                     label: None,
-                    required_features: egui_wgpu::wgpu::Features::POLYGON_MODE_LINE,
+                    required_features: egui_wgpu::wgpu::Features::POLYGON_MODE_LINE | egui_wgpu::wgpu::Features::BUFFER_BINDING_ARRAY,
                     //  features: (optional_features & adapter_features) | required_features,
                     // WebGL doesn't support all of egui_wgpu::wgpu's features, so if
                     // we're building for the web we'll have to disable some.

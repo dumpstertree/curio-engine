@@ -165,9 +165,11 @@ impl AssetLoader {
     }
     pub fn load_gltf<'a>(&mut self, path: &str) -> Option<Arc<ModelAsset>> {
         // return cached
+        println!("importing");
         if self.asset_cache.contains_key(path) {
             return Some(self.asset_cache[path].clone());
         }
+
         // build new
 
         // let device = SystemGPU::get_device();
@@ -185,14 +187,14 @@ impl AssetLoader {
                 let images = x.2;
 
                 // declare output mesh
-                let mut all_mesh: Vec<Mesh> = Vec::new();
-                let mut all_material: Vec<Material> = Vec::new();
+                let mut all_mesh: Vec<Arc<Mesh>> = Vec::new();
+                let mut all_material: Vec<Arc<Material>> = Vec::new();
                 // let shader_desc = ShaderDesc::new_from_module("../shader.wgsl", vec![ShaderTextureDesc::new("diffuse")]);
 
                 let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
 
                 if gltf.materials().len() == 0 {
-                    all_material.push(Material::new(shader_desc.clone()));
+                    all_material.push(Arc::new(Material::new(shader_desc.clone())));
                 } else {
                     for material in gltf.materials() {
                         let pbr = material.pbr_metallic_roughness();
@@ -221,10 +223,10 @@ impl AssetLoader {
 
                         let mut m = Material::new(shader_desc.clone());
                         m.set_texture_with_label(Some(texture_asset), "diffuse");
-                        all_material.push(m);
+                        all_material.push(Arc::new(m));
                     }
                 }
-                // }
+
                 // iterate over gltf
                 for mesh in gltf.meshes() {
                     println!("add mesh: {}", mesh.name().unwrap());
@@ -328,7 +330,7 @@ impl AssetLoader {
                         let mesh_id = mesh_id.to_str().unwrap();
 
                         // add mesh to list
-                        all_mesh.push(Mesh::new(String::from(mesh_id), verticies, indices));
+                        all_mesh.push(Arc::new(Mesh::new(String::from(mesh_id), verticies, indices)));
                     }
                 }
                 let asset = Arc::new(ModelAsset::new(all_mesh, all_material));

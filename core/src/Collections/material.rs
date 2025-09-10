@@ -8,7 +8,6 @@ use crate::{
 };
 
 //data
-#[derive(Clone)]
 pub struct Material {
     pub shader: ShaderModule,
     shader_desc: ShaderDesc,
@@ -99,10 +98,7 @@ impl Material {
             let Some(buffer) = t else {
                 continue;
             };
-            entries.push(egui_wgpu::wgpu::BindGroupEntry {
-                binding: (i),
-                resource: buffer.as_entire_binding(),
-            });
+            entries.push(egui_wgpu::wgpu::BindGroupEntry { binding: (i), resource: buffer.as_entire_binding() });
             i = i + 1;
         }
 
@@ -123,10 +119,7 @@ impl Material {
             i = i + 1;
         }
 
-        let texture_bind_group_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor {
-            entries: &layouts[..],
-            label: None,
-        });
+        let texture_bind_group_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor { entries: &layouts[..], label: None });
 
         let diffuse_bind_group = device.create_bind_group(&egui_wgpu::wgpu::BindGroupDescriptor {
             layout: &texture_bind_group_layout,
@@ -185,10 +178,7 @@ impl Material {
             i = i + 1;
         }
 
-        let texture_bind_group_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor {
-            entries: &layouts[..],
-            label: None,
-        });
+        let texture_bind_group_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor { entries: &layouts[..], label: None });
 
         let diffuse_bind_group = device.create_bind_group(&egui_wgpu::wgpu::BindGroupDescriptor {
             layout: &texture_bind_group_layout,

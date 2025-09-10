@@ -1,14 +1,11 @@
-use crate::render_feature_3d::RenderFeature3D;
+use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use built_in_state::state_draw::DrawCallsState;
 use core::{
     collections::{draw_call::DrawCall, game_state::GameState, matrix4x4::Matrix4x4, mesh::Vertex},
     io::texture_asset::TextureAsset,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
-use egui_wgpu::wgpu::{
-    BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration,
-    util::DeviceExt,
-};
+use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
 use std::sync::Arc;
 
 pub struct RenderFeatureDrawMesh {}
@@ -16,35 +13,14 @@ impl RenderFeatureDrawMesh {
     pub fn new() -> Box<RenderFeatureDrawMesh> {
         Box::new(RenderFeatureDrawMesh {})
     }
-    fn draw_all_mesh(
-        &mut self,
-        game_state: &mut GameState,
-        config: &Arc<SurfaceConfiguration>,
-        device: &Arc<Device>,
-        render_pass: &mut RenderPass,
-        camera_bind: &BindGroup,
-        camera_bind_layout: &BindGroupLayout,
-    ) {
+    fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize) {
         let state_draws = game_state.get_value2::<DrawCallsState>();
         let draw_calls = &state_draws.draw_calls;
         for draw_call in draw_calls {
-            self.draw_draw_call(draw_call, config, device, render_pass, camera_bind, camera_bind_layout);
+            self.draw_draw_call(draw_call, config, device, render_pass, &camera, camera_index);
         }
-
-        // clear state
-        // game_state.edit::<DrawCallsState>(|x| {
-        //     x.draw_calls.clear();
-        // });
     }
-    fn draw_draw_call(
-        &mut self,
-        draw_call: &DrawCall,
-        config: &SurfaceConfiguration,
-        device: &Device,
-        render_pass: &mut RenderPass,
-        camera_bind: &BindGroup,
-        camera_bind_layout: &BindGroupLayout,
-    ) {
+    fn draw_draw_call(&mut self, draw_call: &DrawCall, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize) {
         // iterate over each mesh in the draw call
         for i in 0..draw_call.mesh.len() {
             //
@@ -55,15 +31,7 @@ impl RenderFeatureDrawMesh {
             let diffuse_bind_group = material.get_texture_binding_group(device);
             let color_bind_group = material.get_color_binding_group(device);
             // set render pipeline
-            let rp = RenderFeatureDrawMesh::get_render_pipeline(
-                camera_bind_layout,
-                config,
-                device,
-                material.shader.clone(),
-                &diffuse_bind_group.1,
-                &color_bind_group.1,
-                false,
-            );
+            let rp = RenderFeatureDrawMesh::get_render_pipeline(&camera.camera_bind_group_layout, config, device, material.shader.clone(), &diffuse_bind_group.1, &color_bind_group.1, false);
             render_pass.set_pipeline(&rp);
 
             // create the instance buffer
@@ -74,7 +42,7 @@ impl RenderFeatureDrawMesh {
             });
             // fetch the cached buffers for the mesh
             // let buffers: (&Buffer, &Buffer) = self.buffer_cache.get_vertex_buffer(device, mesh);
-            let buffers = (mesh.get_vertex_buffer_for_device(device), mesh.get_index_buffer_for_device(device));
+            let buffers = (mesh.get_vertex_buffer_for_device(), mesh.get_index_buffer_for_device());
 
             // set buffers
             render_pass.set_vertex_buffer(0, buffers.0.slice(..));
@@ -83,22 +51,15 @@ impl RenderFeatureDrawMesh {
 
             // set bind groups
             render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
-            render_pass.set_bind_group(1, camera_bind, &[]);
+            // render_pass.set_bind_group(1, camera_bind, &[]);
+            render_pass.set_bind_group(1, &camera.camera_bind_group, &[(256 * camera_index).try_into().unwrap()]);
             render_pass.set_bind_group(2, &color_bind_group.0, &[]);
 
             // draw
             render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
         }
     }
-    fn get_render_pipeline(
-        camera_bind: &BindGroupLayout,
-        config: &SurfaceConfiguration,
-        device: &Device,
-        shader: ShaderModule,
-        texture_bind_group_layout: &BindGroupLayout,
-        color_bind_group_layout: &BindGroupLayout,
-        wireframe: bool,
-    ) -> RenderPipeline {
+    fn get_render_pipeline(camera_bind: &BindGroupLayout, config: &SurfaceConfiguration, device: &Device, shader: ShaderModule, texture_bind_group_layout: &BindGroupLayout, color_bind_group_layout: &BindGroupLayout, wireframe: bool) -> RenderPipeline {
         let render_pipeline_layout = device.create_pipeline_layout(&egui_wgpu::wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[&texture_bind_group_layout, &camera_bind, &color_bind_group_layout],
@@ -133,11 +94,7 @@ impl RenderFeatureDrawMesh {
                 strip_index_format: None,
                 front_face: egui_wgpu::wgpu::FrontFace::Ccw,
                 cull_mode: Some(egui_wgpu::wgpu::Face::Back),
-                polygon_mode: if wireframe {
-                    egui_wgpu::wgpu::PolygonMode::Line
-                } else {
-                    egui_wgpu::wgpu::PolygonMode::Fill
-                },
+                polygon_mode: if wireframe { egui_wgpu::wgpu::PolygonMode::Line } else { egui_wgpu::wgpu::PolygonMode::Fill },
                 unclipped_depth: false,
                 conservative: false,
             },
@@ -149,11 +106,7 @@ impl RenderFeatureDrawMesh {
                 bias: egui_wgpu::wgpu::DepthBiasState::default(),
             }),
             // depth_stencil: None,
-            multisample: egui_wgpu::wgpu::MultisampleState {
-                count: 1,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
+            multisample: egui_wgpu::wgpu::MultisampleState { count: 1, mask: !0, alpha_to_coverage_enabled: false },
             // If the pipeline will be used with a multiview render pass, this
             // indicates how many array layers the attachments will have.
             multiview: None,
@@ -163,18 +116,12 @@ impl RenderFeatureDrawMesh {
     }
 }
 impl RenderFeature3D for RenderFeatureDrawMesh {
-    fn render(
-        &mut self,
-        game_state: &mut GameState,
-        render_pass: &mut RenderPass,
-        camera_bind_group: &BindGroup,
-        camera_bind_group_layout: &BindGroupLayout,
-    ) {
+    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize) {
         // get system values
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();
         // draw all
-        self.draw_all_mesh(game_state, &config, &device, render_pass, &camera_bind_group, &camera_bind_group_layout);
+        self.draw_all_mesh(game_state, &config, &device, render_pass, &camera, camera_index);
     }
     fn clear(&mut self, game_state: &mut GameState) {
         game_state.edit::<DrawCallsState>(|x| {
