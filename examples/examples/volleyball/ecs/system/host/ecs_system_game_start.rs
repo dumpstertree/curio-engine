@@ -15,7 +15,7 @@ use crate::{
     game_events::GameEvents,
     state::{
         state_ball_mode::{BallModes, StateBallMode},
-        state_deck::{Card, CardTypes, Deck, StateDeck},
+        state_deck::{Card, CardInstance, CardLibrary, CardTypes, Deck, StateDeck},
         state_energy::StateEnergy,
         state_position_ball::StatePositionBall,
         state_position_player::StatePositionPlayer,
@@ -63,23 +63,22 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 let deck = x.deck.get_mut(instance).unwrap();
 
                 // add all cards
-                deck.hand_persistent = vec![Card::new("Rest", "card_bump.glb", CardTypes::Rest, 0)];
+                // deck.hand_persistent = vec![CardInstance::new("rest")];
                 deck.pile_draw = vec![
-                    Card::new("Bump 0", "card_bump.glb", CardTypes::Bump, 1),
-                    Card::new("Bump 1", "card_bump.glb", CardTypes::Bump, 1),
-                    Card::new("Bump 2", "card_bump.glb", CardTypes::Bump, 1),
-                    Card::new("Bump 3", "card_bump.glb", CardTypes::Bump, 1),
-                    Card::new("Bump 4", "card_bump.glb", CardTypes::Bump, 1),
-                    Card::new("Set 0", "card_set.glb", CardTypes::Set, 1),
-                    Card::new("Set 1", "card_set.glb", CardTypes::Set, 1),
-                    Card::new("Set 2", "card_set.glb", CardTypes::Set, 1),
-                    Card::new("Set 3", "card_set.glb", CardTypes::Set, 1),
-                    Card::new("Set 4", "card_set.glb", CardTypes::Set, 1),
-                    Card::new("Spike 0", "card_spike.glb", CardTypes::Spike, 3),
-                    Card::new("Spike 1", "card_spike.glb", CardTypes::Spike, 3),
-                    Card::new("Spike 2", "card_spike.glb", CardTypes::Spike, 3),
-                    Card::new("Spike 3", "card_spike.glb", CardTypes::Spike, 3),
-                    Card::new("Spike 4", "card_spike.glb", CardTypes::Spike, 3),
+                    CardInstance::new("bump"),
+                    CardInstance::new("bump"),
+                    CardInstance::new("bump"),
+                    CardInstance::new("set+move"),
+                    CardInstance::new("set+move"),
+                    CardInstance::new("set+move"),
+                    CardInstance::new("spike"),
+                    CardInstance::new("spike"),
+                    CardInstance::new("spike"),
+                    CardInstance::new("extra_oomph"),
+                    CardInstance::new("hold_back"),
+                    CardInstance::new("curse"),
+                    CardInstance::new("blessing"),
+                    CardInstance::new("deep_breath"),
                 ];
             });
         }

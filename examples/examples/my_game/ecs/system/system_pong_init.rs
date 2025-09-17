@@ -33,7 +33,7 @@ impl ECSSystemEventless for SystemPongInit {
             Transform::default()
                 .set_position(Vector3::new(0.0, 5.0, -20.0))
                 .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-            CameraIndex::default().set_index(0),
+            // CameraIndex::default().set_index(0),
             Camera::default(),
         ));
         world.spawn((
@@ -41,7 +41,7 @@ impl ECSSystemEventless for SystemPongInit {
                 .set_position(Vector3::new(0.0, 5.0, 20.0))
                 .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0))),
             Camera::default(),
-            CameraIndex::default().set_index(1),
+            // CameraIndex::default().set_index(1),
         ));
 
         // paddle

@@ -6,13 +6,14 @@ use crate::collections::vector4::Vector4;
 use crate::collections::vector4_int::Vector4Int;
 use core::fmt;
 use fmt::Display;
+use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Formatter;
 use std::fmt::Result;
 use std::ops::{Add, Div, Mul, Sub};
 
 /// A 2D Vector backed by i32
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
 pub struct Vector2Int {
     pub x: i32,
     pub y: i32,
@@ -109,40 +110,28 @@ impl Vector2Int {
 impl Mul<i32> for Vector2Int {
     type Output = Vector2Int;
     fn mul(self, x: i32) -> Vector2Int {
-        Vector2Int {
-            x: self.x * x,
-            y: self.y * x,
-        }
+        Vector2Int { x: self.x * x, y: self.y * x }
     }
 }
 // whole num divide
 impl Div<i32> for Vector2Int {
     type Output = Vector2Int;
     fn div(self, x: i32) -> Vector2Int {
-        Vector2Int {
-            x: self.x / x,
-            y: self.y / x,
-        }
+        Vector2Int { x: self.x / x, y: self.y / x }
     }
 }
 // vector add
 impl Add<Vector2Int> for Vector2Int {
     type Output = Vector2Int;
     fn add(self, x: Vector2Int) -> Vector2Int {
-        Vector2Int {
-            x: self.x + x.x,
-            y: self.y + x.y,
-        }
+        Vector2Int { x: self.x + x.x, y: self.y + x.y }
     }
 }
 // vector subtract
 impl Sub<Vector2Int> for Vector2Int {
     type Output = Vector2Int;
     fn sub(self, x: Vector2Int) -> Vector2Int {
-        Vector2Int {
-            x: self.x - x.x,
-            y: self.y - x.y,
-        }
+        Vector2Int { x: self.x - x.x, y: self.y - x.y }
     }
 }
 // display

@@ -4,7 +4,7 @@ use crate::ecs::components::component_player::ComponentPlayer;
 use crate::game_board::GameBoard;
 use crate::game_events;
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
-use crate::state::state_deck::{Card, StateDeck};
+use crate::state::state_deck::{Card, CardLibrary, StateDeck};
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionPlayer;
 use crate::state::state_teams::Teams;
@@ -70,8 +70,9 @@ impl ECSSystemEventless for ECSSystemViewCards {
             let mut i = 0;
             for x in my_deck.hand_persistent.iter() {
                 let camera_state = game_state.get_value2::<CameraState>();
+
                 world.spawn((
-                    Renderer::default().set_asset(self.asset_card[&String::from(&x.model_path)].clone()),
+                    Renderer::default().set_asset(self.asset_card[&String::from("card_bump.glb")].clone()),
                     Transform::default().set_rotation(camera_state.cameras.rotation),
                     ComponentCard::default().set_index(i),
                 ));
@@ -80,7 +81,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
             for x in my_deck.hand_consumable.iter() {
                 let camera_state = game_state.get_value2::<CameraState>();
                 world.spawn((
-                    Renderer::default().set_asset(self.asset_card[&String::from(&x.model_path)].clone()),
+                    Renderer::default().set_asset(self.asset_card[&String::from("card_bump.glb")].clone()),
                     Transform::default().set_rotation(camera_state.cameras.rotation),
                     ComponentCard::default().set_index(i),
                 ));

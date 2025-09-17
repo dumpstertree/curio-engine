@@ -11,6 +11,7 @@ use core::{
 };
 
 use crate::{
+    card_parser::{AttributeClearFlag, CardParser},
     game_events::GameEvents,
     state::{state_position_ball::StatePositionBall, state_teams::StateTeamAssignments},
 };
@@ -66,6 +67,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
                 let peer_ids = state_network.peer_instance_ids();
                 let wrapped_index = (index + 1).repeat(0, peer_ids.len() as i32);
                 let new_id = peer_ids[wrapped_index as usize];
+
+                // clear any attributes tied to only the turn
+                CardParser::active_attributes_clear(AttributeClearFlag::Turn);
+
                 // begin the next player
                 event_queue.enqueue_event(GameEvents::TurnBegin(new_id));
             }

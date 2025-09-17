@@ -55,7 +55,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                 game_state.edit::<StateDeck>(|x| {
                     for y in x.deck.iter_mut() {
                         y.1.reshuffle();
-                        y.1.draw();
+                        for _ in 0..5 {
+                            y.1.draw();
+                        }
                     }
                 });
                 // energy
