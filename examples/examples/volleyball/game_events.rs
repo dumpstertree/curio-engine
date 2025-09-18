@@ -4,18 +4,18 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{self};
 
 use crate::{
-    card_parser::DataDepsFilled,
-    state::{state_deck::Card, state_teams::Teams},
+    cards::{card_instance::CardInstance, data_dep_filled::DataDepsFilled},
+    state::state_teams::Teams,
 };
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct FilledCardResponse {
-    pub state: Vec<Vec<DataDepsFilled>>,
+    pub modifiers: Vec<Vec<DataDepsFilled>>,
     pub event: Vec<Vec<DataDepsFilled>>,
 }
 impl FilledCardResponse {
     pub fn new(state: Vec<Vec<DataDepsFilled>>, event: Vec<Vec<DataDepsFilled>>) -> FilledCardResponse {
-        FilledCardResponse { state, event }
+        FilledCardResponse { modifiers: state, event }
     }
 }
 
@@ -26,7 +26,7 @@ pub enum GameEvents {
     PointScored(Teams),
     TurnBegin(i32),
     TurnEnd(i32),
-    PlayCard(i32, String, FilledCardResponse),
+    PlayCard(i32, CardInstance, FilledCardResponse),
     ResetBoard(Teams),
     DrawCard(),
     DiscardCards(),
@@ -40,8 +40,8 @@ pub enum GameEvents {
     RequestMoveZNeg(i32),
     RequestMoveXPos(i32),
     RequestMoveXNeg(i32),
-    RequestUseManeuverPersistent(i32, i32, FilledCardResponse),
-    RequestUseManeuverConsumable(i32, i32, FilledCardResponse),
+    RequestUseManeuverPersistent(i32, CardInstance, FilledCardResponse),
+    RequestUseManeuverConsumable(i32, CardInstance, FilledCardResponse),
 }
 
 impl IGameEvent for GameEvents {

@@ -1,12 +1,7 @@
 use crate::{
-    card_parser::{DataDepsEmpty, DataDepsFilled},
-    game_events::GameEvents,
-    state::{
-        state_deck::{CardLibrary, StateDeck},
-        state_energy::StateEnergy,
-        state_position_player::StatePositionPlayer,
-        state_turn::StateTurn,
-    },
+    cards::{card_instance::CardInstance, card_library::CardLibrary, card_master::CardMaster},
+    game_events::{FilledCardResponse, GameEvents},
+    state::{state_deck::StateDeck, state_energy::StateEnergy, state_turn::StateTurn},
 };
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -16,51 +11,144 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
+use std::sync::Arc;
 
 #[global_ecs_system]
 pub struct ECSSystemGameRequestManuever {}
+impl ECSSystemEventless for ECSSystemGameRequestManuever {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    }
+}
+#[global_ecs_system_event_reciever(GameEvents)]
+impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+        match event {
+            GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
+                // make sure the correct player is sending an event
+                if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
+                    return;
+                }
+                // make sure the card they sent is a valid index
+                // if !ECSSystemGameRequestManuever::check_card_index_persistent(game_state, *id, *card_instance) {
+                //     return;
+                // }
+
+                // get state
+                // let state_deck = &game_state.get_value2::<StateDeck>();
+
+                // get the deck for play id
+                // let Some(deck) = &state_deck.deck.get(id) else {
+                //     return;
+                // };
+
+                // get the card instance
+                // let card_instance = &deck.hand_persistent[*card_instance as usize];
+
+                // play
+                ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
+            }
+            GameEvents::RequestUseManeuverConsumable(id, card_instance, data) => {
+                // make sure the correct player is sending an event
+                if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
+                    return;
+                }
+                // make sure the card they sent is a valid index
+                // if !ECSSystemGameRequestManuever::check_card_index_consumable(game_state, *id, *card_index) {
+                //     return;
+                // }
+
+                // let state_deck = &game_state.get_value2::<StateDeck>();
+
+                // get the deck for play id
+                // let Some(deck) = &state_deck.deck.get(id) else {
+                //     return;
+                // };
+
+                // get the card instance
+                // let card_instance = &deck.hand_consumable[*card_index as usize];
+
+                // play
+                ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
+            }
+
+            _ => {}
+        }
+    }
+}
 impl ECSSystemGameRequestManuever {
-    fn dependencies_match(empty: Vec<DataDepsEmpty>, filled: Vec<DataDepsFilled>) -> bool {
-        if empty.len() != filled.len() {
-            println!("incorrect lengths :, {}, {}", empty.len(), filled.len());
+    fn check_dependencies_match(card: &CardInstance, response: &FilledCardResponse) -> bool {
+        // get the full list of dependencies
+        let deps_empty = card.get_attributes_events();
+        let deps_filled = &response.event;
+
+        // check that they have the same length
+        if deps_empty.len() != deps_filled.len() {
+            println!("Event dependency length mismatch");
             return false;
         }
 
-        for i in 0..empty.len() {
-            let a = &empty[i];
-            let b = &filled[i];
+        // get the count of one because they should be the same
+        let count = deps_empty.len();
 
-            match a {
-                DataDepsEmpty::Players(target_types_players) => println!(" a player"),
-                DataDepsEmpty::Entities(target_types_entities) => println!(" a entity"),
-                DataDepsEmpty::Cards(target_types_cards) => println!(" a card"),
-                DataDepsEmpty::Tiles(target_types_tiles) => println!(" a tile"),
+        // iterate over the range
+        for i in 0..count {
+            // get the two
+            let dep_empty = &deps_empty[i].get_data_dependencies_empty();
+            let dep_filled = &deps_filled[i];
+
+            // check that they have the same length
+            if dep_empty.len() != dep_filled.len() {
+                println!("Event Dependency '{}' length mismatch:, {}, {}", i, dep_empty.len(), dep_filled.len());
+                return false;
             }
-            match b {
-                DataDepsFilled::Players(target_types_players) => println!(" b player"),
-                DataDepsFilled::Entities(target_types_entities) => println!(" b entity"),
-                DataDepsFilled::Cards(target_types_cards) => println!(" b card"),
-                DataDepsFilled::Tiles(target_types_tiles) => println!(" b tile"),
+            // get the count of one because they should be the same
+            let count = dep_empty.len();
+
+            // iterate over the range
+            for i in 0..count {
+                // check if the dependencies are aligned
+                if !dep_filled[i].is_aligned(&dep_empty[i]) {
+                    return false;
+                }
             }
-            match a {
-                DataDepsEmpty::Entities(_) => match b {
-                    DataDepsFilled::Entities(_) => continue,
-                    _ => return false,
-                },
-                DataDepsEmpty::Cards(_) => match b {
-                    DataDepsFilled::Cards(_) => continue,
-                    _ => return false,
-                },
-                DataDepsEmpty::Tiles(_) => match b {
-                    DataDepsFilled::Tiles(_) => continue,
-                    _ => return false,
-                },
-                DataDepsEmpty::Players(_) => match b {
-                    DataDepsFilled::Players(_) => continue,
-                    _ => return false,
-                },
-            };
         }
+        let deps_empty = card.get_attributes_modifiers();
+        let deps_filled = &response.modifiers;
+        let count = deps_empty.len();
+
+        // check that they have the same length
+        if deps_empty.len() != deps_filled.len() {
+            println!("Modifier dependency length mismatch");
+            return false;
+        }
+
+        // iterate over the range
+        for i in 0..count {
+            // get the two
+            let dep_empty = &deps_empty[i].get_data_dependencies_empty();
+            let dep_filled = &deps_filled[i];
+
+            // check that they have the same length
+            if dep_empty.len() != dep_filled.len() {
+                println!("Modifier Dependency '{}' length mismatch:, {}, {}", i, dep_empty.len(), dep_filled.len());
+                return false;
+            }
+            // get the count of one because they should be the same
+            let count = dep_empty.len();
+
+            // iterate over the range
+            for i in 0..count {
+                // check if the dependencies are aligned
+                if !dep_filled[i].is_aligned(&dep_empty[i]) {
+                    return false;
+                }
+            }
+        }
+
         return true;
     }
     fn check_energy(game_state: &mut GameState, id: i32, cost: i32) -> bool {
@@ -101,115 +189,36 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-}
-impl ECSSystemEventless for ECSSystemGameRequestManuever {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    }
-}
-#[global_ecs_system_event_reciever(GameEvents)]
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
-        match event {
-            GameEvents::RequestUseManeuverPersistent(id, card_index, data) => {
-                if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
-                    return;
-                }
-                if !ECSSystemGameRequestManuever::check_card_index_persistent(game_state, *id, *card_index) {
-                    return;
-                }
+    fn try_play_card(game_state: &mut GameState, event_queue: &mut EventQueue, card_instance: &CardInstance, data: &FilledCardResponse, id: &i32) {
+        // let library = CardLibrary::new();
+        // let card = &library.get_card(&card_instance.card_id);
 
-                let state_deck = &game_state.get_value2::<StateDeck>();
-                let deck = &state_deck.deck[id];
-                let card = &deck.hand_persistent[*card_index as usize];
-                let library = CardLibrary::new();
-                let card = library.get_card(&card.card_id);
-
-                if !ECSSystemGameRequestManuever::check_energy(game_state, *id, card.cost) {
-                    return;
-                }
-
-                // pull card from library
-                let card_events = &card.get_events();
-                if card_events.len() != data.event.len() {
-                    println!("incorrecte attributes and data events{}, {}", card_events.len(), data.event.len());
-                    return;
-                }
-                for i in 0..card_events.len() {
-                    let a = card.get_events()[i].get_data_dependencies();
-                    let b: Vec<DataDepsFilled> = data.event[i].clone();
-                    let do_match = ECSSystemGameRequestManuever::dependencies_match(a.clone(), b.clone());
-                    if !do_match {
-                        println!("incorrecte attributes and data events at index {} : {}, {}", i, a.len(), b.len());
-                        return;
-                    }
-                }
-
-                // spend
-                game_state.edit::<StateEnergy>(|x| {
-                    x.all_players
-                        .insert(*id, (x.all_players[id].0 - card.cost, x.all_players[id].1));
-                });
-
-                // play the card
-                event_queue.enqueue_event(GameEvents::PlayCard(*id, card.title.clone(), data.clone()));
-            }
-            GameEvents::RequestUseManeuverConsumable(id, card_index, data) => {
-                if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
-                    return;
-                }
-                if !ECSSystemGameRequestManuever::check_card_index_consumable(game_state, *id, *card_index) {
-                    return;
-                }
-
-                let state_deck = &game_state.get_value2::<StateDeck>();
-                let deck = &state_deck.deck[id];
-                let card = &deck.hand_consumable[*card_index as usize];
-                let library = CardLibrary::new();
-                let card = library.get_card(&card.card_id);
-
-                if !ECSSystemGameRequestManuever::check_energy(game_state, *id, card.cost) {
-                    return;
-                }
-
-                // pull card from library
-                let card_events = &card.get_events();
-                if card_events.len() != data.event.len() {
-                    println!("incorrecte attributes and data events{}, {}", card_events.len(), data.event.len());
-                    return;
-                }
-                for i in 0..card_events.len() {
-                    let a = card.get_events()[i].get_data_dependencies();
-                    let b: Vec<DataDepsFilled> = data.event[i].clone();
-                    let do_match = ECSSystemGameRequestManuever::dependencies_match(a.clone(), b.clone());
-                    if !do_match {
-                        println!("incorrecte attributes and data events at index {} : {}, {}", i, a.len(), b.len());
-                        return;
-                    }
-                }
-
-                // spend
-                game_state.edit::<StateEnergy>(|x| {
-                    x.all_players
-                        .insert(*id, (x.all_players[id].0 - card.cost, x.all_players[id].1));
-                });
-
-                // consume
-                game_state.edit::<StateDeck>(|x| {
-                    let Some(deck) = x.deck.get_mut(id) else {
-                        return;
-                    };
-                    deck.hand_consumable.remove(*card_index as usize);
-                });
-
-                // play the card
-                event_queue.enqueue_event(GameEvents::PlayCard(*id, card.title.clone(), data.clone()));
-            }
-
-            _ => {}
+        if !ECSSystemGameRequestManuever::check_energy(game_state, *id, card_instance.get_cost()) {
+            return;
         }
+        if !ECSSystemGameRequestManuever::check_dependencies_match(card_instance, data) {
+            return;
+        }
+
+        // spend
+        game_state.edit::<StateEnergy>(|x| {
+            x.all_players
+                .insert(*id, (x.all_players[id].0 - card_instance.get_cost(), x.all_players[id].1));
+        });
+
+        // consume
+        game_state.edit::<StateDeck>(|x| {
+            // get this deck
+            let Some(deck) = x.deck.get_mut(id) else {
+                return;
+            };
+
+            // remove cards equal to card instance
+            deck.hand_consumable.retain(|x| x != card_instance);
+            deck.pile_discard.push(card_instance.clone());
+        });
+
+        // play the card
+        event_queue.enqueue_event(GameEvents::PlayCard(*id, card_instance.clone(), data.clone()));
     }
 }

@@ -1,7 +1,10 @@
+use crate::cards::card_instance::CardInstance;
+use crate::cards::card_master::CardMaster;
+use crate::dependency_filler::DependencyFiller;
+use crate::game_events::{FilledCardResponse, GameEvents};
+use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
+use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use built_in_state::state_input::InputState;
-use ecs_system::global_ecs_system;
-use hecs::World;
-
 use core::collections::vector2_int::Vector2Int;
 use core::dumpster_engine::NetworkModes;
 use core::extensions::extensions_i32::ExtensionsI32;
@@ -9,14 +12,9 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
+use ecs_system::global_ecs_system;
+use hecs::World;
 use std::sync::Arc;
-
-use crate::card_parser::DataDepsFilled;
-use crate::dependency_filler::DependencyFiller;
-use crate::game_events::{FilledCardResponse, GameEvents};
-use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
-use crate::state::state_deck::{Card, CardLibrary};
-use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 
 #[global_ecs_system]
 pub struct ECSSystemTurnManuever {
@@ -58,26 +56,25 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                 // clamp any old value
                 x.index = x.index.clamp(bounds_min, bounds_max);
 
-                let library = CardLibrary::new();
                 // generate the list of cards using
-                let mut list: Vec<Arc<Card>> = vec![];
+                let mut list: Vec<CardInstance> = vec![];
                 for x in my_deck.hand_persistent.clone() {
-                    list.push(library.get_card(&x.card_id));
+                    list.push(x);
                 }
                 for x in my_deck.hand_consumable.clone() {
-                    list.push(library.get_card(&x.card_id));
+                    list.push(x);
                 }
 
                 // move left
                 if input_card_left {
                     x.index = (x.index - 1).repeat(bounds_min, bounds_max);
-                    println!("card leeft -> change card : {}", list[x.index as usize].title);
+                    println!("card leeft -> change card : {}", list[x.index as usize].get_title());
                 }
 
                 // move right
                 if input_card_right {
                     x.index = (x.index + 1).repeat(bounds_min, bounds_max);
-                    println!("card right -> change card : {}", list[x.index as usize].title);
+                    println!("card right -> change card : {}", list[x.index as usize].get_title());
                 }
             });
         }
@@ -96,76 +93,46 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
             let is_persistent = index < persistent_len;
             if is_persistent {
                 let index = game_state.get_value2::<StatePeerSelectedCards>().index;
-                let library = CardLibrary::new();
                 // generate the list of cards using
-                let mut list: Vec<Arc<Card>> = vec![];
+                let mut list0 = vec![];
                 for x in my_deck.hand_persistent.clone() {
-                    list.push(library.get_card(&x.card_id));
+                    list0.push(x);
                 }
                 for x in my_deck.hand_consumable.clone() {
-                    list.push(library.get_card(&x.card_id));
+                    list0.push(x);
                 }
 
-                let mut att_filled = vec![];
-                // for att in &list[index as usize].attributes {
-                //     let mut v = vec![];
-                //     let deps = att.1.get_data_dependencies();
-                //     for dep in deps {
-                //         match dep {
-                //             crate::card_parser::DataDepsEmpty::Players(target_types) => todo!(),
-                //             crate::card_parser::DataDepsEmpty::Entities(target_type) => v.push(ECSSystemTurnManuever::get_entity_target(game_state, &target_type)),
-                //             crate::card_parser::DataDepsEmpty::Cards(target_types) => todo!(),
-                //             crate::card_parser::DataDepsEmpty::Tiles(target_types) => v.push(ECSSystemTurnManuever::get_tile_target(game_state, &target_types)),
-                //         }
-                //     }
-                //     att_filled.push(v);
-                // }
                 let mut evnt_filled = vec![];
-                for evnt in &list[index as usize].get_events() {
-                    evnt_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies()));
+                for evnt in &list0[index as usize].get_attributes_events() {
+                    evnt_filled.push(DependencyFiller::fill_events(game_state, &&evnt.get_data_dependencies_empty()));
+                }
+                let mut mod_filled = vec![];
+                for evnt in &list0[index as usize].get_attributes_modifiers() {
+                    mod_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
                 }
 
-                event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, index, FilledCardResponse::new(att_filled, evnt_filled)));
+                event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, list0[index as usize].clone(), FilledCardResponse::new(mod_filled, evnt_filled)));
             } else {
                 let index = game_state.get_value2::<StatePeerSelectedCards>().index;
-                let library = CardLibrary::new();
                 // generate the list of cards using
-                let mut list: Vec<Arc<Card>> = vec![];
+                let mut list0 = vec![];
                 for x in my_deck.hand_persistent.clone() {
-                    list.push(library.get_card(&x.card_id));
+                    list0.push(x);
                 }
                 for x in my_deck.hand_consumable.clone() {
-                    list.push(library.get_card(&x.card_id));
+                    list0.push(x);
                 }
-
-                let mut state_filled = vec![];
-                // for att in &list[index as usize].attributes {
-                //     let mut v = vec![];
-                //     let deps = att.1.get_data_dependencies();
-                //     for dep in deps {
-                //         match dep {
-                //             crate::card_parser::DataDepsEmpty::Entities(target_type) => v.push(ECSSystemTurnManuever::get_entity_target(game_state, &target_type)),
-                //             crate::card_parser::DataDepsEmpty::Cards(target_types) => todo!(),
-                //             crate::card_parser::DataDepsEmpty::Tiles(target_types) => v.push(ECSSystemTurnManuever::get_tile_target(game_state, &target_types)),
-                //             crate::card_parser::DataDepsEmpty::Players(target_types_players) => todo!(),
-                //         }
-                //     }
-                //     state_filled.push(v);
-                // }
-                for x in &list {
-                    println!("card {} as events {}", x.title, x.get_events().len());
-                }
-                let card = &list[index as usize];
 
                 let mut evnt_filled = vec![];
-                for evnt in &card.get_events() {
-                    evnt_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies()));
+                for evnt in &list0[index as usize].get_attributes_events() {
+                    evnt_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
+                }
+                let mut mod_filled = vec![];
+                for evnt in &list0[index as usize].get_attributes_modifiers() {
+                    mod_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
                 }
 
-                println!("filled {} {} of {}", card.title, evnt_filled.len(), card.get_events().len());
-
-                println!("sending data state :{}, event: {}", state_filled.len(), evnt_filled.len());
-                event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, index - persistent_len, FilledCardResponse::new(state_filled, evnt_filled)));
+                event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, list0[index as usize].clone(), FilledCardResponse::new(mod_filled, evnt_filled)));
             }
         }
     }

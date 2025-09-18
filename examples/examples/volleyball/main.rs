@@ -2,6 +2,20 @@ pub mod card_parser;
 pub mod dependency_filler;
 pub mod game_board;
 pub mod game_events;
+pub mod cards {
+    pub mod attribute_target_type_cards;
+    pub mod attribute_target_type_entities;
+    pub mod attribute_target_type_players;
+    pub mod attribute_target_type_tiles;
+    pub mod card_attribute_events;
+    pub mod card_attribute_modifier;
+    pub mod card_instance;
+    pub mod card_library;
+    pub mod card_master;
+    pub mod card_modifier;
+    pub mod data_dep_empty;
+    pub mod data_dep_filled;
+}
 pub mod state {
     pub mod state_ball_mode;
     pub mod state_deck;
@@ -13,6 +27,9 @@ pub mod state {
     pub mod state_turn;
     pub mod peer {
         pub mod state_peer_selected_card;
+    }
+    pub mod host {
+        pub mod state_card_attribute_modifier_stack;
     }
 }
 pub mod ecs {

@@ -1,6 +1,7 @@
 use crate::game_board::GameBoard;
+use crate::state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack;
 use crate::state::state_ball_mode::{BallModes, StateBallMode};
-use crate::state::state_deck::{Card, CardTypes, Deck, StateDeck};
+use crate::state::state_deck::StateDeck;
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::{self, StatePositionPlayer};
@@ -87,6 +88,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                 game_state.edit::<StatePositionBall>(|x| {
                     x.collun = first_member_pos.0;
                     x.row = first_member_pos.1;
+                });
+                game_state.edit::<StateCardAttributeModifierStack>(|x| {
+                    x.clear_all();
                 });
 
                 // start the game

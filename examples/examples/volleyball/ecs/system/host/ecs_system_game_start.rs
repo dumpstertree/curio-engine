@@ -12,10 +12,11 @@ use core::{
 };
 
 use crate::{
+    cards::card_instance::CardInstance,
     game_events::GameEvents,
     state::{
         state_ball_mode::{BallModes, StateBallMode},
-        state_deck::{Card, CardInstance, CardLibrary, CardTypes, Deck, StateDeck},
+        state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
         state_position_ball::StatePositionBall,
         state_position_player::StatePositionPlayer,
@@ -63,7 +64,7 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 let deck = x.deck.get_mut(instance).unwrap();
 
                 // add all cards
-                // deck.hand_persistent = vec![CardInstance::new("rest")];
+                deck.hand_persistent = vec![CardInstance::new("rest")];
                 deck.pile_draw = vec![
                     CardInstance::new("bump"),
                     CardInstance::new("bump"),
