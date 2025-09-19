@@ -36,10 +36,14 @@ impl StateCardAttributeModifierStack {
         self.stack.clear();
     }
     pub fn add_to_stack(&mut self, modifier: CardModifier) {
+        println!("add from stack {} ", self.stack.len());
         self.stack.push(modifier);
+        println!("add from stack {} ", self.stack.len());
     }
     pub fn clear_from_stack(&mut self, clear_flag: AttributeClearFlag) {
+        println!("remove from stack {} ", self.stack.len());
         self.stack.retain(|x| x.clear_flag != clear_flag);
+        println!("remove from stack {}", self.stack.len());
     }
 }
 impl IState for StateCardAttributeModifierStack {

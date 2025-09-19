@@ -32,6 +32,20 @@ pub mod state {
         pub mod state_card_attribute_modifier_stack;
     }
 }
+pub mod event_recievers {
+    mod event_reciever_apply_card_attribute_event_cards_discard;
+    mod event_reciever_apply_card_attribute_event_cards_draw;
+    mod event_reciever_apply_card_attribute_event_cards_energy_edit;
+    mod event_reciever_apply_card_attribute_event_cards_energy_refill;
+    mod event_reciever_apply_card_attribute_event_move_ball_forward;
+    mod event_reciever_apply_card_attribute_event_move_ball_horizontal;
+    mod event_reciever_apply_card_attribute_event_move_entities;
+    mod event_reciever_apply_card_attribute_modifier_cost_for_entities;
+    mod event_reciever_apply_card_attribute_modifier_energy_for_entities;
+    mod event_reciever_apply_card_attribute_modifier_range_for_entities;
+    mod event_reciever_clear_card_attribute_modifiers_all;
+    mod event_reciever_clear_card_attribute_modifiers_for_flag;
+}
 pub mod ecs {
     pub mod components {
         pub mod component_ball;

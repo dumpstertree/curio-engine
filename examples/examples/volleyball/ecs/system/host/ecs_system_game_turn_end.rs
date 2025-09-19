@@ -71,11 +71,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
                 println!("next turn?");
 
                 // clear stack
-                game_state.edit::<StateCardAttributeModifierStack>(|x| {
-                    println!("clear from stack?");
-                    x.clear_from_stack(AttributeClearFlag::Turn);
-                    println!("did clear from stack?");
-                });
+                event_queue.enqueue_event(GameEvents::ClearCardAttributeModifiersForFlag(AttributeClearFlag::Turn));
 
                 // begin the next player
                 event_queue.enqueue_event(GameEvents::TurnBegin(new_id));

@@ -1,9 +1,13 @@
-use core::collections::{event_queue::IGameEvent, vector2_int::Vector2Int};
+use core::collections::{
+    event_queue::{EventScope, IGameEvent},
+    vector2_int::Vector2Int,
+};
 use macro_events::global_events;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self};
 
 use crate::{
+    card_parser::AttributeClearFlag,
     cards::{card_instance::CardInstance, data_dep_filled::DataDepsFilled},
     state::state_teams::Teams,
 };
@@ -31,6 +35,20 @@ pub enum GameEvents {
     DrawCard(),
     DiscardCards(),
     MoveEntity(Vec<i32>, Vector2Int),
+    // to -> instance -> card events
+    ApplyCardAttributeEventRefillEnergy(Vec<i32>),
+    ApplyCardAttributeEventGainEnergy(Vec<i32>, i32),
+    ApplyCardAttributeEventMoveEntity(Vec<i32>, Vec<Vector2Int>),
+    ApplyCardAttributeEventDrawCards(Vec<i32>, i32),
+    ApplyCardAttributeEventDiscardCards(Vec<i32>),
+    ApplyCardAttributeEventMoveBallForward(i32, i32, i32),
+    ApplyCardAttributeEventMoveBallHorizontal(i32),
+    // to -> instance -> card modifiers
+    ApplyCardAttributeModifierCostForEntities(AttributeClearFlag, Vec<i32>, i32),
+    ApplyCardAttributeModifierRangeForEntities(AttributeClearFlag, Vec<i32>, i32),
+    ApplyCardAttributeModifierEnergyForEntities(AttributeClearFlag, Vec<i32>, i32),
+    ClearCardAttributeModifiersForFlag(AttributeClearFlag),
+    ClearCardAttributeModifiersAll(),
     // to -> peer
     DidTurnEnd(i32),
     DidTurnBegin(i32),
@@ -45,26 +63,38 @@ pub enum GameEvents {
 }
 
 impl IGameEvent for GameEvents {
-    fn get_scope(&self) -> core::collections::event_queue::EventScope {
+    fn get_scope(&self) -> EventScope {
         match &self {
-            GameEvents::DrawCard() => core::collections::event_queue::EventScope::Instance,
-            GameEvents::DiscardCards() => core::collections::event_queue::EventScope::Instance,
-            GameEvents::MoveEntity(_, _) => core::collections::event_queue::EventScope::Instance,
-            GameEvents::Begin => core::collections::event_queue::EventScope::Instance,
+            GameEvents::DrawCard() => EventScope::Instance,
+            GameEvents::DiscardCards() => EventScope::Instance,
+            GameEvents::MoveEntity(_, _) => EventScope::Instance,
+            GameEvents::Begin => EventScope::Instance,
             GameEvents::TurnEnd(_) => core::collections::event_queue::EventScope::Instance,
-            GameEvents::TurnBegin(_) => core::collections::event_queue::EventScope::Instance,
-            GameEvents::PlayCard(_, _, _) => core::collections::event_queue::EventScope::Instance,
-            GameEvents::PointScored(_) => core::collections::event_queue::EventScope::Instance,
-            GameEvents::ResetBoard(_) => core::collections::event_queue::EventScope::Instance,
-            GameEvents::RequestTurnEnd(_) => core::collections::event_queue::EventScope::ConnectedHost,
-            GameEvents::RequestMoveZPos(_) => core::collections::event_queue::EventScope::ConnectedHost,
-            GameEvents::RequestMoveZNeg(_) => core::collections::event_queue::EventScope::ConnectedHost,
-            GameEvents::RequestMoveXPos(_) => core::collections::event_queue::EventScope::ConnectedHost,
-            GameEvents::RequestMoveXNeg(_) => core::collections::event_queue::EventScope::ConnectedHost,
-            GameEvents::RequestUseManeuverPersistent(_, _, _) => core::collections::event_queue::EventScope::ConnectedHost,
-            GameEvents::RequestUseManeuverConsumable(_, _, _) => core::collections::event_queue::EventScope::ConnectedHost,
-            GameEvents::DidTurnEnd(_) => core::collections::event_queue::EventScope::ConnectedPeers,
-            GameEvents::DidTurnBegin(_) => core::collections::event_queue::EventScope::ConnectedPeers,
+            GameEvents::TurnBegin(_) => EventScope::Instance,
+            GameEvents::PlayCard(_, _, _) => EventScope::Instance,
+            GameEvents::PointScored(_) => EventScope::Instance,
+            GameEvents::ResetBoard(_) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventRefillEnergy(_) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventGainEnergy(_, _) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventMoveEntity(_, _) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventDrawCards(_, _) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventDiscardCards(_) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventMoveBallForward(_, _, _) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventMoveBallHorizontal(_) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeModifierEnergyForEntities(_, _, _) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeModifierCostForEntities(_, _, _) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeModifierRangeForEntities(_, _, _) => EventScope::Instance,
+            GameEvents::ClearCardAttributeModifiersForFlag(attribute_clear_flag) => EventScope::Instance,
+            GameEvents::ClearCardAttributeModifiersAll() => EventScope::Instance,
+            GameEvents::RequestTurnEnd(_) => EventScope::ConnectedHost,
+            GameEvents::RequestMoveZPos(_) => EventScope::ConnectedHost,
+            GameEvents::RequestMoveZNeg(_) => EventScope::ConnectedHost,
+            GameEvents::RequestMoveXPos(_) => EventScope::ConnectedHost,
+            GameEvents::RequestMoveXNeg(_) => EventScope::ConnectedHost,
+            GameEvents::RequestUseManeuverPersistent(_, _, _) => EventScope::ConnectedHost,
+            GameEvents::RequestUseManeuverConsumable(_, _, _) => EventScope::ConnectedHost,
+            GameEvents::DidTurnEnd(_) => EventScope::ConnectedPeers,
+            GameEvents::DidTurnBegin(_) => EventScope::ConnectedPeers,
         }
     }
 }
@@ -90,6 +120,18 @@ impl fmt::Display for GameEvents {
             GameEvents::DrawCard() => write!(f, "DrawCard"),
             GameEvents::DiscardCards() => write!(f, "DiscardCards"),
             GameEvents::MoveEntity(_, _) => write!(f, "MoveEntity"),
+            GameEvents::ApplyCardAttributeModifierEnergyForEntities(_, _, _) => todo!(),
+            GameEvents::ApplyCardAttributeModifierCostForEntities(_, _, _) => todo!(),
+            GameEvents::ApplyCardAttributeModifierRangeForEntities(_, _, _) => todo!(),
+            GameEvents::ApplyCardAttributeEventRefillEnergy(_) => todo!(),
+            GameEvents::ApplyCardAttributeEventGainEnergy(_, _) => todo!(),
+            GameEvents::ApplyCardAttributeEventMoveEntity(_, _) => todo!(),
+            GameEvents::ApplyCardAttributeEventDrawCards(_, _) => todo!(),
+            GameEvents::ApplyCardAttributeEventDiscardCards(_) => todo!(),
+            GameEvents::ApplyCardAttributeEventMoveBallForward(_, _, _) => todo!(),
+            GameEvents::ApplyCardAttributeEventMoveBallHorizontal(_) => todo!(),
+            GameEvents::ClearCardAttributeModifiersForFlag(_) => todo!(),
+            GameEvents::ClearCardAttributeModifiersAll() => todo!(),
         }
     }
 }

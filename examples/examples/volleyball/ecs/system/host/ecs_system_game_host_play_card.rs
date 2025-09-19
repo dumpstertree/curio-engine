@@ -30,47 +30,6 @@ use std::{panic, vec};
 #[global_ecs_system]
 pub struct ECSSystemGameRequestManuever {}
 impl ECSSystemGameRequestManuever {
-    fn modify_energy_for_entity(game_state: &mut GameState, clear_flag: &AttributeClearFlag, entity_ids: &Vec<i32>, count: &i32) {
-        game_state.edit::<StateCardAttributeModifierStack>(|x| {
-            x.add_to_stack(CardModifier {
-                clear_flag: *clear_flag,
-                applies_to_players: vec![],
-                applies_to_entities: entity_ids.clone(),
-                applies_to_cards: vec![],
-                range: 0,
-                cost: 0,
-                energy: *count,
-            });
-        });
-    }
-    fn modify_range_for_entity(game_state: &mut GameState, clear_flag: &AttributeClearFlag, entity_ids: &Vec<i32>, count: &i32) {
-        game_state.edit::<StateCardAttributeModifierStack>(|x| {
-            x.add_to_stack(CardModifier {
-                clear_flag: *clear_flag,
-                applies_to_players: vec![],
-                applies_to_entities: entity_ids.clone(),
-                applies_to_cards: vec![],
-                range: *count,
-                cost: 0,
-                energy: 0,
-            });
-        });
-    }
-    fn modify_cost_for_entity(game_state: &mut GameState, clear_flag: &AttributeClearFlag, entity_ids: &Vec<i32>, count: &i32) {
-        game_state.edit::<StateCardAttributeModifierStack>(|x| {
-            x.add_to_stack(CardModifier {
-                clear_flag: *clear_flag,
-                applies_to_players: vec![],
-                applies_to_entities: entity_ids.clone(),
-                applies_to_cards: vec![],
-                range: 0,
-                cost: *count,
-                energy: 0,
-            });
-        });
-    }
-}
-impl ECSSystemGameRequestManuever {
     fn dequeue_move_entity(game_state: &mut GameState, player_ids: &DataDepsFilled, tile_ids: &DataDepsFilled) {
         let unwraped_player_ids: &Vec<i32>;
         match player_ids {
@@ -192,18 +151,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
             GameEvents::PlayCard(id, card_instance, data) => {
                 println!("Played Card ({})", card_instance.card_id);
 
-                let modifiers = card_instance.get_attributes_modifiers();
-                for i in 0..modifiers.len() {
-                    let modifiers = &modifiers[i];
-                    let data = &data.modifiers[i];
-
-                    match modifiers {
-                        CardAttributeModifiers::EditEnergyForEntities(clear_flag, _, count) => ECSSystemGameRequestManuever::modify_energy_for_entity(game_state, clear_flag, &data[0].as_entities(), count),
-                        CardAttributeModifiers::EditRangeForEntities(clear_flag, _, count) => ECSSystemGameRequestManuever::modify_range_for_entity(game_state, clear_flag, &data[0].as_entities(), count),
-                        CardAttributeModifiers::EditCostForEntities(clear_flag, _, count) => ECSSystemGameRequestManuever::modify_cost_for_entity(game_state, clear_flag, &data[0].as_entities(), count),
-                    }
-                }
-
+                // get the stack for the current use case
                 let state_card_attribute_modifier_stack = game_state.get_value2::<StateCardAttributeModifierStack>();
                 let state_turn = game_state.get_value2::<StateTurn>();
                 let active_modifiers = CardModifier::flatten(&vec![
@@ -214,9 +162,6 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                         .get_flat_stack_for_card(card_instance.instance_id)
                         .clone(),
                 ]);
-
-                println!("modss {}", active_modifiers.range);
-
                 // set the ball state
                 game_state.edit::<StateBallMode>(|x| match card_instance.get_manuever_type() {
                     CardTypes::Set => x.mode = BallModes::Set,
@@ -225,19 +170,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                     _ => {}
                 });
 
-                // if its a rest card do rest logic
-                if card_instance.get_manuever_type() == CardTypes::Rest {
-                    game_state.edit::<StateEnergy>(|x| {
-                        let Some(energy) = x.all_players.get_mut(id) else {
-                            return;
-                        };
-
-                        energy.1 = energy.1 - 1;
-                        energy.0 = energy.1;
-                    });
-                }
-
-                // deeduce energy cost
+                // reduce energy by cost
                 game_state.edit::<StateEnergy>(|x| {
                     let Some(energy) = x.all_players.get_mut(id) else {
                         return;
@@ -246,25 +179,32 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                     energy.0 = energy.0 - card_instance.get_cost() + &active_modifiers.cost;
                 });
 
+                let modifiers = card_instance.get_attributes_modifiers();
+                for i in 0..modifiers.len() {
+                    let modifiers = &modifiers[i];
+                    let data = &data.modifiers[i];
+                    match modifiers {
+                        CardAttributeModifiers::EditEnergyForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierEnergyForEntities(*attribute_clear_flag, data[0].as_entities(), *count)),
+                        CardAttributeModifiers::EditRangeForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierRangeForEntities(*attribute_clear_flag, data[0].as_entities(), *count)),
+                        CardAttributeModifiers::EditCostForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierCostForEntities(*attribute_clear_flag, data[0].as_entities(), *count)),
+                    }
+                }
+
                 let events = card_instance.get_attributes_events();
-                // enqueue any events from the card data
                 for i in 0..events.len() {
                     let event = &events[i];
                     let data = &data.event[i];
                     match event {
-                        CardAttributeEvents::DrawCards(count, _) => ECSSystemGameRequestManuever::dequeue_card_draw(game_state, &count, &data[0]),
-                        CardAttributeEvents::DiscardCards(_) => ECSSystemGameRequestManuever::dequeue_card_discard(game_state, data[0].as_cards()),
-                        CardAttributeEvents::MoveEntity(_, _) => ECSSystemGameRequestManuever::dequeue_move_entity(game_state, &data[0], &data[1]),
-                        CardAttributeEvents::MoveBallForward(count) => ECSSystemGameRequestManuever::dequeue_move_ball_forward(game_state, 0, &(count + active_modifiers.range)),
-                        CardAttributeEvents::GainEnergy(count, _) => ECSSystemGameRequestManuever::dequeue_gain_energy(game_state, &count, &data[0]),
-                        CardAttributeEvents::RefillEnergy(_) => ECSSystemGameRequestManuever::dequeue_refill_energy(game_state, data[0].as_entities()),
+                        CardAttributeEvents::DrawCards(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDrawCards(data[0].as_players(), *count)),
+                        CardAttributeEvents::DiscardCards(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDiscardCards(data[0].as_cards())),
+                        CardAttributeEvents::MoveEntity(_, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveEntity(data[0].as_entities(), data[1].as_tiles())),
+                        CardAttributeEvents::MoveBallForward(count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveBallForward(*count, state_turn.active_instance_id, card_instance.instance_id)),
+                        CardAttributeEvents::GainEnergy(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventGainEnergy(data[0].as_entities(), *count)),
+                        CardAttributeEvents::RefillEnergy(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventRefillEnergy(data[0].as_entities())),
                     }
                 }
 
-                // clear stack
-                game_state.edit::<StateCardAttributeModifierStack>(|x| {
-                    x.clear_from_stack(AttributeClearFlag::Play);
-                });
+                event_queue.enqueue_event(GameEvents::ClearCardAttributeModifiersForFlag(AttributeClearFlag::Play));
             }
 
             _ => {}
