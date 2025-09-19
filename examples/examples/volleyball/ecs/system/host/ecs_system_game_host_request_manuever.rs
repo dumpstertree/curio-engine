@@ -1,5 +1,5 @@
 use crate::{
-    cards::{card_instance::CardInstance, card_library::CardLibrary, card_master::CardMaster},
+    cards::card_instance::CardInstance,
     game_events::{FilledCardResponse, GameEvents},
     state::{state_deck::StateDeck, state_energy::StateEnergy, state_turn::StateTurn},
 };
@@ -11,7 +11,6 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
-use std::sync::Arc;
 
 #[global_ecs_system]
 pub struct ECSSystemGameRequestManuever {}

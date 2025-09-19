@@ -1,5 +1,5 @@
 use core::collections::game_state::GameState;
-use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass};
+use egui_wgpu::wgpu::RenderPass;
 
 use crate::camera_rendering_components::CameraRenderingComponents;
 

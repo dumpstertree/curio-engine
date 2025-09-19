@@ -1,4 +1,4 @@
-use core::collections::game_state::{self, GameState};
+use core::collections::game_state::GameState;
 use core::collections::vector2::Vector2;
 use core::collections::vector3::Vector3;
 use core::input::axis_code::AxisCode;

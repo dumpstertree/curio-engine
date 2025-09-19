@@ -2,8 +2,7 @@ use crate::{
     cards::card_modifier::CardModifier,
     game_events::GameEvents,
     state::{
-        host::state_card_attribute_modifier_stack::{self, StateCardAttributeModifierStack},
-        state_energy::StateEnergy,
+        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
         state_position_ball::StatePositionBall,
         state_teams::StateTeamAssignments,
         state_turn::StateTurn,

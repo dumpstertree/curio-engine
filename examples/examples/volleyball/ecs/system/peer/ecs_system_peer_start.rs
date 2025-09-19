@@ -1,12 +1,12 @@
 use built_in::component::{component_camera::Camera, component_transform::Transform};
-use built_in_state::{state_camera::CameraState, state_time::TimeState};
+use built_in_state::state_camera::CameraState;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 use core::{
     collections::{
         event_queue::EventQueue,
-        game_state::{self, GameState},
+        game_state::GameState,
         quaternion::Quaternion,
         vector3::Vector3,
     },

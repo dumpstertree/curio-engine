@@ -1,16 +1,13 @@
 use core::{
     collections::{
-        game_state::{GameState, StateOwnerships},
+        game_state::StateOwnerships,
         vector2_int::Vector2Int,
     },
     system::system_game_state::IState,
 };
-use macro_state::global_state;
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::sync::Arc;
-use winit::event;
 
 #[global_state_serialize]
 pub struct StateDeck {
@@ -27,14 +24,7 @@ impl IState for StateDeck {
 use rand::rng;
 use rand::seq::SliceRandom;
 
-use crate::{
-    card_parser::AttributeClearFlag,
-    cards::{
-        attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_players::AtrributeTargetTypesPlayers, attribute_target_type_tiles::AttributeTargetTypesTiles, card_attribute_events::CardAttributeEvents,
-        card_attribute_modifier::CardAttributeModifiers, card_instance::CardInstance,
-    },
-    game_events::GameEvents,
-}; // brings in the shuffle() method
+use crate::cards::card_instance::CardInstance; // brings in the shuffle() method
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Deck {

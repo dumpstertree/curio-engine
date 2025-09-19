@@ -13,7 +13,7 @@ use core::{
 use crate::{
     card_parser::AttributeClearFlag,
     game_events::GameEvents,
-    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_position_ball::StatePositionBall, state_teams::StateTeamAssignments},
+    state::{state_position_ball::StatePositionBall, state_teams::StateTeamAssignments},
 };
 
 #[global_ecs_system]

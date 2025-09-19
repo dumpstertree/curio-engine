@@ -2,9 +2,9 @@ use built_in_state::state_network::StateNetwork;
 use core::{
     collections::{
         event_queue::EventQueue,
-        game_state::{self, GameState, StateSyncEvent},
+        game_state::{GameState, StateSyncEvent},
     },
-    dumpster_engine::{GameMode, NetworkModes},
+    dumpster_engine::NetworkModes,
     system::{
         system_component::SystemComponent,
         system_components::system_component_networking::SystemComponentNetworking,

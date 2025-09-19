@@ -7,7 +7,6 @@ use egui_wgpu::wgpu::VertexAttribute;
 use egui_wgpu::wgpu::VertexBufferLayout;
 use mesh_tools::primitives::{generate_plane, generate_sphere};
 
-use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::vector3;
 use crate::random::Random;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;

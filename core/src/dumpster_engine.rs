@@ -96,7 +96,7 @@ impl DumpsterEngine {
         let type_id = type_name::<T>();
         println!("register {}", type_id);
 
-        let Ok(mut guard) = REGISTERED_GLOBAL_STATES.lock() else {
+        let Ok(guard) = REGISTERED_GLOBAL_STATES.lock() else {
             println!("failed to lock REGISTERED_STATE");
             return;
         };

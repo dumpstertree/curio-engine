@@ -76,14 +76,11 @@ pub mod ecs {
 }
 use crate::game_events::GameEvents;
 use core::{
-    collections::vector2::Vector2,
-    dumpster_engine::{DumpsterEngine, GameMode, NetworkModes, WindowLayout},
-    graphics::graphics_mapping::GraphicsMapping,
+    dumpster_engine::{DumpsterEngine, GameMode, WindowLayout},
     input::{input_mapping::InputMapping, key_code::KeyCode},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use pollster::FutureExt;
-use std::env;
 use system_component_default_gameplay::SystemComponentDefaultGameplay;
 use system_component_default_input::SystemComponentDefaultInput;
 use system_component_default_networking::SystemComponentDefaultNetworking;

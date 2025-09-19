@@ -1,4 +1,3 @@
-use crate::game_events::GameEvents;
 
 pub(crate) mod constants;
 pub(crate) mod game_events;
@@ -21,19 +20,11 @@ pub mod state {
 
 use core::{
     collections::vector2::Vector2,
-    dumpster_engine::{DumpsterEngine, GameMode, NetworkModes, WindowLayout},
+    dumpster_engine::NetworkModes,
     graphics::graphics_mapping::GraphicsMapping,
     input::{input_mapping::InputMapping, key_code::KeyCode},
-    system_adapters::adapter_system_gpu::SystemGPU,
 };
-use pollster::FutureExt;
 use std::env;
-use system_component_default_gameplay::SystemComponentDefaultGameplay;
-use system_component_default_input::SystemComponentDefaultInput;
-use system_component_default_networking::SystemComponentDefaultNetworking;
-use system_component_default_physics::SystemComponentDefaultPhysics;
-use system_component_default_rendering::SystemComponentDefaultGraphics;
-use system_component_default_time::SystemComponentDefaultTime;
 
 fn main() {
     let mut mode = NetworkModes::LocalHost;

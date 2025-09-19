@@ -1,8 +1,7 @@
 use core::collections::camera_uniform::CameraSnapshot;
 
-use cgmath::{Matrix4, Point3};
 use core::{
-    collections::{camera_uniform::CameraUniform, projection::Projection, quaternion::Quaternion, vector3::Vector3},
+    collections::vector3::Vector3,
     system::system_game_state::IState,
 };
 use macro_state::global_state;

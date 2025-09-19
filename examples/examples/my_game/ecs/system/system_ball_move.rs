@@ -1,18 +1,17 @@
 use built_in::component::{component_colliders::component_collider_box::ComponentColliderBox, component_transform::Transform};
 use built_in_state::state_time::TimeState;
-use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
-use crate::{ecs::component::component_ball::ComponentBall, game_events::GameEvents, state::state_score::StateScore};
+use crate::{ecs::component::component_ball::ComponentBall, state::state_score::StateScore};
 
 use core::{
     collections::{
         event_queue::EventQueue,
-        game_state::{self, GameState},
+        game_state::GameState,
         vector3::Vector3,
     },
-    gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
+    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     random::Random,
 };
 

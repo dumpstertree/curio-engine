@@ -1,7 +1,5 @@
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use serde::Deserialize;
-use serde::Serialize;
 use syn::{parse_macro_input, parse_quote, ItemStruct};
 
 #[proc_macro_attribute]

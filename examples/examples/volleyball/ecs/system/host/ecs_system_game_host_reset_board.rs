@@ -4,10 +4,9 @@ use crate::state::state_ball_mode::{BallModes, StateBallMode};
 use crate::state::state_deck::StateDeck;
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
-use crate::state::state_position_player::{self, StatePositionPlayer};
+use crate::state::state_position_player::StatePositionPlayer;
 use crate::state::state_teams::StateTeamAssignments;
-use crate::{game_events::GameEvents, state::state_score::StateScore};
-use built_in_state::state_network::StateNetwork;
+use crate::game_events::GameEvents;
 use core::gameplay::ecs::traits::ecs_event_reciever;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},

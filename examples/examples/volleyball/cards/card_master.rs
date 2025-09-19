@@ -1,5 +1,4 @@
 use crate::{
-    card_parser::AttributeClearFlag,
     cards::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers},
     state::state_deck::CardTypes,
 };

@@ -6,7 +6,7 @@ use egui::mutex::Mutex;
 use serde::de::DeserializeOwned;
 
 use crate::dumpster_engine::NetworkModes;
-use crate::system::system_game_state::{to_bytes, IState};
+use crate::system::system_game_state::IState;
 
 pub struct NetworkSynchEvent {
     id: i32,
@@ -164,7 +164,7 @@ impl GameState {
             let Some(unwrapped) = &REGISTERED_GLOBAL_STATES else {
                 panic!("Failed to unwrap state");
             };
-            let mut guard = unwrapped;
+            let guard = unwrapped;
             let z = guard.lock();
 
             for x in z.iter() {
@@ -174,7 +174,7 @@ impl GameState {
             let Some(unwrapped) = &REGISTERED_GLOBAL_STATES_SERIALIZE else {
                 panic!("Failed to unwrap state");
             };
-            let mut guard = unwrapped;
+            let guard = unwrapped;
             let z = guard.lock();
 
             for x in z.iter() {
@@ -184,7 +184,7 @@ impl GameState {
             let Some(unwrapped) = &REGISTERED_GLOBAL_STATES_DESERIALIZE else {
                 panic!("Failed to unwrap state");
             };
-            let mut guard = unwrapped;
+            let guard = unwrapped;
             let z = guard.lock();
 
             for x in z.iter() {

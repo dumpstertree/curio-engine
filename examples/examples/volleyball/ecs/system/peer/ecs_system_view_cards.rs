@@ -1,30 +1,10 @@
-use crate::ecs::components::component_ball::ComponentBall;
 use crate::ecs::components::component_card::ComponentCard;
-use crate::ecs::components::component_player::ComponentPlayer;
-use crate::game_board::GameBoard;
-use crate::game_events;
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::StateDeck;
-use crate::state::state_position_ball::StatePositionBall;
-use crate::state::state_position_player::StatePositionPlayer;
-use crate::state::state_teams::Teams;
-use crate::state::state_turn::StateTurn;
-use crate::{game_events::GameEvents, state::state_position_player};
 use built_in::component::component_renderer::Renderer;
 use built_in::component::component_transform::Transform;
-use built_in::system::system_renderer_update_state::SystemRendererUpdateState;
 use built_in_state::state_camera::CameraState;
-use built_in_state::state_draw::DrawCallsState;
-use built_in_state::state_input::InputState;
-use core::collections::camera_uniform::CameraSnapshot;
-use core::collections::draw_call::DrawCall;
-use core::collections::game_state;
-use core::collections::material::Material;
-use core::collections::matrix4x4::Matrix4x4;
-use core::collections::mesh::Mesh;
-use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
-use core::io::asset_loader::AssetLoader;
 use core::io::model_asset::ModelAsset;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -33,8 +13,7 @@ use core::{
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
-use std::collections::{HashMap, HashSet};
-use std::iter;
+use std::collections::HashMap;
 use std::sync::Arc;
 
 #[global_ecs_system]

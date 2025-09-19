@@ -4,7 +4,7 @@ use hecs::World;
 
 use core::{
     collections::{
-        event_queue::{self, EventQueue},
+        event_queue::EventQueue,
         game_state::GameState,
     },
     dumpster_engine::NetworkModes,
@@ -13,7 +13,7 @@ use core::{
 
 use crate::{
     game_events::GameEvents,
-    state::{state_energy::StateEnergy, state_turn::StateTurn},
+    state::state_turn::StateTurn,
 };
 
 #[global_ecs_system]

@@ -1,7 +1,7 @@
 use crate::{
     cards::card_modifier::CardModifier,
     game_events::GameEvents,
-    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_energy::StateEnergy, state_turn::StateTurn},
+    state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
 };
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},

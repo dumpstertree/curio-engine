@@ -1,8 +1,4 @@
-use crate::{
-    collections::game_state::{AnyMap, NetworkSynchEvent},
-    dumpster_engine::NetworkModes,
-    system::system_game_state::to_bytes,
-};
+use crate::collections::game_state::AnyMap;
 use egui::{mutex::Mutex, util::id_type_map::TypeId};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
@@ -10,7 +6,6 @@ use std::{
     collections::{hash_map::DefaultHasher, HashMap},
     fmt::Display,
     hash::{Hash, Hasher},
-    vec::Drain,
 };
 #[derive(Clone)]
 pub struct EventSyncEvent {

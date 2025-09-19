@@ -5,7 +5,7 @@ use core::{
     io::texture_asset::TextureAsset,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
-use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
+use egui_wgpu::wgpu::{BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
 use std::sync::Arc;
 
 pub struct RenderFeatureDrawMesh {}

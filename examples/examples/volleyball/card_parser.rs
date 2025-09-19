@@ -1,19 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    cards::{card_master::CardMaster, card_modifier::CardModifier},
-    game_events::GameEvents,
-    state::{state_deck::AttributeTargets, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    cards::card_modifier::CardModifier,
+    state::state_deck::AttributeTargets,
 };
-use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::{self, GameState},
-        vector2_int::Vector2Int,
-    },
-    random::Random,
-};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 static ACTIVE_ATTS: Mutex<Vec<(AttributeTargets, AttributeClearFlag, CardModifier)>> = Mutex::new(vec![]);
 

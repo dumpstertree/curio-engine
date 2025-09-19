@@ -1,11 +1,9 @@
 use crate::cards::card_instance::CardInstance;
-use crate::cards::card_master::CardMaster;
 use crate::dependency_filler::DependencyFiller;
 use crate::game_events::{FilledCardResponse, GameEvents};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use built_in_state::state_input::InputState;
-use core::collections::vector2_int::Vector2Int;
 use core::dumpster_engine::NetworkModes;
 use core::extensions::extensions_i32::ExtensionsI32;
 use core::{
@@ -14,7 +12,6 @@ use core::{
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
-use std::sync::Arc;
 
 #[global_ecs_system]
 pub struct ECSSystemTurnManuever {
