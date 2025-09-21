@@ -7,6 +7,7 @@ use egui_wgpu::wgpu::VertexAttribute;
 use egui_wgpu::wgpu::VertexBufferLayout;
 use mesh_tools::primitives::{generate_plane, generate_sphere};
 
+use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::vector3;
 use crate::random::Random;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
@@ -15,6 +16,7 @@ pub struct Mesh {
     pub verticies: Vec<Vertex>,
     pub indicies: Vec<u32>,
     pub instance_num: i32,
+    pub matrix: Matrix4x4,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
 }
@@ -71,7 +73,7 @@ impl Mesh {
         for x in indices {
             i.push(x as u32);
         }
-        Mesh::new(String::from("Cube"), v, i)
+        Mesh::new(String::from("Cube"), v, i, Matrix4x4::default())
     }
     pub fn create_cube(size: vector3::Vector3) -> (Vec<[f32; 3]>, Vec<i32>, Vec<[f32; 2]>, Vec<[f32; 3]>) {
         // Each face has 2 triangles = 6 vertices
@@ -146,7 +148,7 @@ impl Mesh {
             i.push(x.b);
             i.push(x.c);
         }
-        Mesh::new(String::from("Plane"), v, i)
+        Mesh::new(String::from("Plane"), v, i, Matrix4x4::default())
     }
     pub fn primitive_cube(size: crate::collections::vector3::Vector3) -> Mesh {
         let cube_length = size.z;
@@ -253,7 +255,7 @@ impl Mesh {
             2 + 4 * 5,
             1 + 4 * 5,
         ];
-        Mesh::new(String::from("Cube"), v, i)
+        Mesh::new(String::from("Cube"), v, i, Matrix4x4::default())
     }
     pub fn primitive_sphere(diameter: f32, width_segments: usize, height_segments: usize) -> Mesh {
         let (positions, indices, normals, uvs) = generate_sphere(diameter / 2.0, width_segments, height_segments);
@@ -277,9 +279,9 @@ impl Mesh {
             i.push(x.b);
             i.push(x.c);
         }
-        Mesh::new(String::from("Sphere"), v, i)
+        Mesh::new(String::from("Sphere"), v, i, Matrix4x4::default())
     }
-    pub fn new(name: String, verticies: Vec<Vertex>, indicies: Vec<u32>) -> Mesh {
+    pub fn new(name: String, verticies: Vec<Vertex>, indicies: Vec<u32>, matrix: Matrix4x4) -> Mesh {
         let device = SystemGPU::get_device();
         let i_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
@@ -298,6 +300,7 @@ impl Mesh {
             instance_num: Random::range_int(-9999, 9999),
             vertex_buffer: v_buffer,
             index_buffer: i_buffer,
+            matrix,
         }
     }
     pub fn get_num_verticies(&self) -> i32 {

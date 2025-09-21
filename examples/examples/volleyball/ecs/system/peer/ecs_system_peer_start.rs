@@ -1,17 +1,13 @@
-use built_in::component::{component_camera::Camera, component_transform::Transform};
+use built_in::component::{component_camera::Camera, component_renderer::Renderer, component_transform::Transform};
 use built_in_state::state_camera::CameraState;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-        quaternion::Quaternion,
-        vector3::Vector3,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    io::asset_loader::AssetLoader,
 };
 
 use crate::state::state_teams::{StateTeamAssignments, Teams};
@@ -33,6 +29,14 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
         });
+
+        let spine = AssetLoader::load_spine("path");
+        world.spawn((
+            Transform::default()
+                .set_position(Vector3::new(0.0, -5.0, 0.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
+            Renderer::default().set_asset_animated(Some(spine)),
+        ));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let Some(team) = game_state

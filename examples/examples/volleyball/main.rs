@@ -78,6 +78,7 @@ use crate::game_events::GameEvents;
 use core::{
     dumpster_engine::{DumpsterEngine, GameMode, WindowLayout},
     input::{input_mapping::InputMapping, key_code::KeyCode},
+    io::asset_loader::AssetLoader,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use pollster::FutureExt;

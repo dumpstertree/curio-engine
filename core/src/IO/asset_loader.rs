@@ -2,18 +2,33 @@ use core::panic;
 use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
+use std::thread::sleep;
+use std::time::Duration;
 
+use egui_wgpu::wgpu::hal::auxil::db::imgtec;
 use egui_wgpu::wgpu::Device;
 use egui_wgpu::wgpu::ShaderModule;
+use rusty_spine::Animation;
 
 // use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::collections::material::Material;
 use crate::collections::material::ShaderDesc;
+use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::mesh::Mesh;
 use crate::collections::mesh::Vertex;
+use crate::io::model_asset_animated::ModelAssetAnimated;
 
 use super::model_asset::ModelAsset;
 use super::texture_asset::TextureAsset;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
+
+use rusty_spine::AnimationState;
+use rusty_spine::AnimationStateData;
+use rusty_spine::Atlas;
+use rusty_spine::Skeleton;
+use rusty_spine::SkeletonJson;
 
 // static mut CUBE: Mutex<Option<Arc<Mesh>>> = None;
 // static mut SPHERE: Mutex<Option<Arc<Mesh>>> = None;
@@ -112,11 +127,11 @@ impl AssetLoader {
         // convert bytes to jpg
         let image: Result<image::DynamicImage, image::ImageError> = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png);
 
-        // unwrap or return null
-        match image {
-            Ok(x) => Some(x),
-            _ => panic!("Failed to load image"),
-        };
+        println!("has image , {}", image.is_ok());
+
+        if let Ok(image) = image {
+            return Some(TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes()));
+        }
 
         // fallthrough
         None
@@ -148,6 +163,56 @@ impl AssetLoader {
 
         // fallthrough
         None
+    }
+    pub fn load_spine(path: &str) -> Arc<ModelAssetAnimated> {
+        // 1. Load atlas text
+
+        // 2. Create Atlas
+        // The second arg is a texture loader callback; for now we can pass `None`
+        // if we’re not actually rendering yet.
+        // let atlas = Atlas::new(&atlas_text, );
+        let atlas_file = std::fs::read("assets/test.atlas").unwrap();
+        let atlas = Arc::new(Atlas::new(&atlas_file, "").unwrap());
+
+        // 2. Load skeleton data (JSON format example)
+        let mut json = SkeletonJson::new(atlas.clone());
+        json.set_scale(0.01);
+        // Optionally configure scale / other settings on json...
+        let file = fs::read("assets/test.json").unwrap();
+        let skeleton_data = Arc::new(json.read_skeleton_data(&file).unwrap());
+        // let mut skeleton = Skeleton::new(skeleton_data.clone());
+        // skeleton.update_world_transform(rusty_spine::Physics::None);
+
+        let state_data = Arc::new(AnimationStateData::new(skeleton_data.clone()));
+        // state_data.set_mix("walk", "run", 0.2);
+        // let mut state = AnimationState::new(state_data);
+        // let animation = skeleton_data.find_animation("walk").unwrap();
+        // // 5. Play an animation
+        // state.set_animation(0, &animation, true);
+
+        // for x in 0..120 {
+        //     // Step/update once (simulate 1/60s frame)
+        //     state.update(1.0 / 60.0);
+        //     state.apply(&mut skeleton);
+
+        //     // animate
+        //     skeleton.update_world_transform(rusty_spine::Physics::None);
+
+        //     for bone in skeleton.bones() {
+        //         let d = bone.data();
+        //         let name = d.name();
+        //         let x = bone.world_x();
+        //         let y = bone.world_y();
+        //         println!("Frame {}: Bone {} at ({:.2}, {:.2})", x, name, x, y);
+        //     }
+        //     sleep(Duration::from_secs((1.0 / 60.0) as u64));
+        // }
+        let texture_asset = AssetLoader::load_png(String::from("assets/test.png"));
+        println!("let texture is none {}", texture_asset.is_none());
+        let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+        let mut material = Material::new(shader_desc.clone());
+        material.set_texture_with_label(texture_asset, "diffuse");
+        Arc::new(ModelAssetAnimated::new(Arc::new(material), skeleton_data, state_data.clone()))
     }
 
     pub fn load_shader_module(device: &Device, path: &str) -> ShaderModule {
@@ -330,7 +395,7 @@ impl AssetLoader {
                         let mesh_id = mesh_id.to_str().unwrap();
 
                         // add mesh to list
-                        all_mesh.push(Arc::new(Mesh::new(String::from(mesh_id), verticies, indices)));
+                        all_mesh.push(Arc::new(Mesh::new(String::from(mesh_id), verticies, indices, Matrix4x4::default())));
                     }
                 }
                 let asset = Arc::new(ModelAsset::new(all_mesh, all_material));

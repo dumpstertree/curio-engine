@@ -35,6 +35,21 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                         .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix()));
                 }
             }
+            for (_, (renderer, transform)) in world.query::<(&mut Renderer, &Transform)>().iter() {
+                // guard - no mesh
+                if renderer.asset_animated.is_some() {
+                    let mesh = renderer.generate_mesh();
+                    let Some(asset) = &renderer.asset_animated else {
+                        continue;
+                    };
+                    // add draw call
+
+                    for m in &mesh {
+                        x.draw_calls
+                            .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform.get_matrix()));
+                    }
+                }
+            }
         });
     }
 }
