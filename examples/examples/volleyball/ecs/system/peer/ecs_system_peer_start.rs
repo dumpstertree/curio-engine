@@ -1,4 +1,4 @@
-use built_in::component::{component_camera::Camera, component_renderer::Renderer, component_transform::Transform};
+use built_in::component::{component_camera::Camera, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
 use built_in_state::state_camera::CameraState;
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -35,7 +35,10 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             Transform::default()
                 .set_position(Vector3::new(0.0, -5.0, 0.0))
                 .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-            Renderer::default().set_asset_animated(Some(spine)),
+            RendererAnimated::default()
+                .set_asset(Some(spine))
+                .set_animation("walk", true)
+                .set_skin("goblin"),
         ));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {

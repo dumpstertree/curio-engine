@@ -1,61 +1,100 @@
-use std::sync::Arc;
-
 use core::{
     collections::{
         matrix4x4::Matrix4x4,
         mesh::{Mesh, Vertex},
     },
-    io::{model_asset::ModelAsset, model_asset_animated::ModelAssetAnimated},
+    io::model_asset_animated::ModelAssetAnimated,
 };
-
 use rusty_spine::{AnimationState, Skeleton};
+use std::sync::Arc;
 
 // #[derive(Clone)]
-pub struct Renderer {
-    pub asset: Option<Arc<ModelAsset>>,
-    pub asset_animated: Option<Arc<ModelAssetAnimated>>,
-    pub skeleton: Option<Skeleton>,
-    pub state: Option<AnimationState>,
+pub struct RendererAnimated {
+    skeleton: Option<Skeleton>,
+    state: Option<AnimationState>,
+    fps: i32,
+    last_update: f64,
+    pub asset: Option<Arc<ModelAssetAnimated>>,
+    pub mesh: Vec<Arc<Mesh>>,
 }
 
-impl Renderer {
-    pub fn default() -> Renderer {
-        Renderer {
+impl RendererAnimated {
+    pub fn default() -> RendererAnimated {
+        RendererAnimated {
             asset: None,
-            asset_animated: None,
             skeleton: None,
             state: None,
+            mesh: vec![],
+            fps: 10,
+            last_update: -9999.0,
         }
     }
-    pub fn set_asset(mut self, asset: Option<Arc<ModelAsset>>) -> Renderer {
+    /// Set the current playing animation
+    pub fn set_animation(mut self, name: &str, looping: bool) -> Self {
+        if let Some(asset_animated) = &self.asset {
+            if let Some(state) = &mut self.state {
+                if let Some(animation) = asset_animated.skeleton_data.find_animation(name) {
+                    // set animation
+                    state.set_animation(0, &animation, looping);
+
+                    // update mesh
+                    self.update_mesh(self.last_update);
+                }
+            }
+        }
+        self
+    }
+    /// Set the visible skin
+    pub fn set_skin(mut self, name: &str) -> Self {
+        if let Some(skeleton) = &mut self.skeleton {
+            let resukt = skeleton.set_skin_by_name(name);
+            match resukt {
+                Err(e) => println!("{}", e),
+                _ => {}
+            }
+
+            // update mesh
+            self.update_mesh(self.last_update);
+        }
+        self
+    }
+    /// Set the asset
+    pub fn set_asset(mut self, asset: Option<Arc<ModelAssetAnimated>>) -> Self {
+        // set the asset
         self.asset = asset;
-        self.asset_animated = None;
-        self
-    }
-    pub fn set_asset_animated(mut self, asset: Option<Arc<ModelAssetAnimated>>) -> Renderer {
-        self.asset_animated = asset;
-        self.asset = None;
 
-        if let Some(asset_animated) = &self.asset_animated {
-            let state_data = asset_animated.state_data.clone();
-            let mut skel = Skeleton::new(asset_animated.skeleton_data.clone());
-            skel.set_skin_by_name("goblin").unwrap();
-            skel.set_to_setup_pose();
-            self.skeleton = Some(skel);
-            let mut s = AnimationState::new(state_data);
-            let animation = asset_animated.skeleton_data.find_animation("walk").unwrap();
-            s.set_animation(0, &animation, true);
-            self.state = Some(s);
+        // if asset has
+        if let Some(asset_animated) = &self.asset {
+            // create state
+            let state = AnimationState::new(asset_animated.state_data.clone());
+
+            // create skeleton
+            let mut skeleton = Skeleton::new(asset_animated.skeleton_data.clone());
+            skeleton.set_to_setup_pose();
+
+            // set for asset
+            self.state = Some(state);
+            self.skeleton = Some(skeleton);
+
+            // update mesh
+            self.update_mesh(self.last_update);
+        } else {
+            // clear
+            self.state = None;
+            self.skeleton = None;
         }
 
-        // let mut state = AnimationState::new(state_data);
-        // let animation = skeleton_data.find_animation("walk").unwrap();
-        // state.set_animation(0, &animation, true);
-
+        // return this
         self
     }
-    pub fn generate_mesh(&mut self) -> Vec<Arc<Mesh>> {
-        let mut out = Vec::new();
+    /// Updates the mesh to match the current animation state. This should only be called ONCE per frame.
+    pub fn update_mesh(&mut self, time: f64) {
+        let delta = time - self.last_update;
+        if delta < 1.0 / (self.fps as f64) {
+            return;
+        }
+
+        self.last_update = time;
 
         let Some(skeleton) = &mut self.skeleton else {
             panic!();
@@ -64,23 +103,20 @@ impl Renderer {
             panic!();
         };
 
-        let Some(asset_animated) = &mut self.asset_animated else {
-            panic!();
-        };
-
-        // 5. Play an animation
-
-        // Step/update once (simulate 1/60s frame)
-
-        skeleton.update(1.0 / 60.0);
-        state.update(1.0 / 60.0);
+        // update skeleton
+        skeleton.update(delta as f32);
+        // update state
+        state.update(delta as f32);
+        // apply all changes
         state.apply(skeleton);
+        // update all transforms
         skeleton.update_world_transform(rusty_spine::Physics::None);
 
         let mut z: f32 = 0.0;
+        let mut out = Vec::new();
         // iterate slots in draw order so attachments are in correct order
         for slot in skeleton.draw_order() {
-            z += -0.1;
+            z += -0.01;
             if let Some(attachment) = slot.attachment() {
                 // Region attachments (quads)
                 if let Some(region) = attachment.as_region() {
@@ -172,6 +208,6 @@ impl Renderer {
             }
         }
 
-        out
+        self.mesh = out;
     }
 }

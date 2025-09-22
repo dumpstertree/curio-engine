@@ -93,7 +93,7 @@ impl RenderFeatureDrawMesh {
                 topology: egui_wgpu::wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
                 front_face: egui_wgpu::wgpu::FrontFace::Ccw,
-                cull_mode: None,
+                cull_mode: Some(egui_wgpu::wgpu::Face::Back),
                 polygon_mode: if wireframe { egui_wgpu::wgpu::PolygonMode::Line } else { egui_wgpu::wgpu::PolygonMode::Fill },
                 unclipped_depth: false,
                 conservative: false,

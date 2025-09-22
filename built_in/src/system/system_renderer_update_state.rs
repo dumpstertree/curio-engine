@@ -1,5 +1,5 @@
-use crate::component::{component_renderer::Renderer, component_transform::Transform};
-use built_in_state::state_draw::DrawCallsState;
+use crate::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
+use built_in_state::{state_draw::DrawCallsState, state_time::TimeState};
 use core::{
     collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
@@ -20,6 +20,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
     }
 
     fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+        let time = state.get_value2::<TimeState>().scaled_time;
         //edit draw call states
         state.edit::<DrawCallsState>(|x| {
             // iterate over each renderer
@@ -35,16 +36,19 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                         .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix()));
                 }
             }
-            for (_, (renderer, transform)) in world.query::<(&mut Renderer, &Transform)>().iter() {
+            for (_, (renderer, _)) in world.query::<(&mut RendererAnimated, &Transform)>().iter() {
+                // update all mesh
+                renderer.update_mesh(time);
+            }
+            for (_, (renderer, transform)) in world.query::<(&mut RendererAnimated, &Transform)>().iter() {
                 // guard - no mesh
-                if renderer.asset_animated.is_some() {
-                    let mesh = renderer.generate_mesh();
-                    let Some(asset) = &renderer.asset_animated else {
+                if renderer.asset.is_some() {
+                    let Some(asset) = &renderer.asset else {
                         continue;
                     };
-                    // add draw call
 
-                    for m in &mesh {
+                    // add draw call
+                    for m in &renderer.mesh {
                         x.draw_calls
                             .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform.get_matrix()));
                     }

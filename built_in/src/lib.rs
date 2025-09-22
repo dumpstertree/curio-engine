@@ -1,7 +1,8 @@
 pub mod component {
     pub mod component_camera;
     pub mod component_input_index;
-    pub mod component_renderer;
+    pub mod component_renderer_animated;
+    pub mod component_renderer_static;
     pub mod component_transform;
     pub mod component_colliders {
         pub mod component_collider_box;

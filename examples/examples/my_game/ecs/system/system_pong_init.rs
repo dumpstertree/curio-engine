@@ -1,4 +1,4 @@
-use built_in::component::{component_camera::Camera, component_colliders::component_collider_box::ComponentColliderBox, component_input_index::InputIndex, component_renderer::Renderer, component_transform::Transform};
+use built_in::component::{component_camera::Camera, component_colliders::component_collider_box::ComponentColliderBox, component_input_index::InputIndex, component_renderer_static::Renderer, component_transform::Transform};
 use built_in_state::state_camera::CameraState;
 use ecs_system::global_ecs_system;
 use hecs::World;
