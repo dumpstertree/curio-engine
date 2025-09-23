@@ -1,14 +1,8 @@
 {
-    "shader_module_path" : "assets/shader/shader.wgsl",
+    "shader_module_path" : "assets/shader/shader_unlit.wgsl",
     "textures" : [
         {
             "label" : "diffuse"
-        },
-        {
-            "label" : "roughness"
-        },
-        {
-            "label" : "specular"
         }
     ],
     "colors" : [

@@ -1,7 +1,8 @@
 // use crate::ecs::components::component_card::ComponentCard;
 // use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 // use crate::state::state_deck::StateDeck;
-// use built_in::component::component_renderer::Renderer;
+// use built_in::component::component_renderer_static::Renderer;
+// // use built_in::component::component_renderer::Renderer;
 // use built_in::component::component_transform::Transform;
 // use built_in_state::state_camera::CameraState;
 // use core::collections::vector3::Vector3;

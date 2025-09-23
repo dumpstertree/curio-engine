@@ -176,7 +176,7 @@ impl AssetLoader {
 
         // 2. Load skeleton data (JSON format example)
         let mut json = SkeletonJson::new(atlas.clone());
-        json.set_scale(0.01);
+        json.set_scale(0.03);
         // Optionally configure scale / other settings on json...
         let file = fs::read("assets/test.json").unwrap();
         let skeleton_data = Arc::new(json.read_skeleton_data(&file).unwrap());
