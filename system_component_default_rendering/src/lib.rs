@@ -62,6 +62,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
             let offscreen_view = &mut self.offscreen_view;
             SystemComponentDefaultGraphics::draw_3d_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view);
             // self.draw_2d_features(game_state, &mut encoder, &self.offscreen_view, event_queue);
+            SystemComponentDefaultGraphics::draw_post_process_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view);
         }
 
         {
@@ -256,6 +257,35 @@ impl SystemComponentDefaultGraphics {
         })
     }
 
+    fn draw_post_process_features(
+        camera_rendering: &CameraRenderingComponents,
+        render_features_3d: &mut Vec<Box<dyn RenderFeature3D>>,
+        graphics_mappings: &mut Vec<GraphicsMapping>,
+        game_state: &mut Vec<GameState>,
+        encoder: &mut egui_wgpu::wgpu::CommandEncoder,
+        target_view: &mut egui_wgpu::wgpu::TextureView, // <-- changed from SurfaceTexture
+    ) {
+        let depth = &SystemGPU::get_depth_texture();
+
+        let mut rpass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
+            label: Some("postprocess pass"),
+            color_attachments: &[Some(egui_wgpu::wgpu::RenderPassColorAttachment {
+                view: &output.texture.create_view(&Default::default()),
+                resolve_target: None,
+                ops: egui_wgpu::wgpu::Operations {
+                    load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color::WHITE),
+                    store: egui_wgpu::wgpu::StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: SystemComponentDefaultGraphics::get_depth_attatchment(depth),
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
+
+        rpass.set_pipeline(&self.post_pipeline);
+        rpass.set_bind_group(0, &self.post_bind_group, &[]);
+        rpass.draw(0..3, 0..1); // fullscreen triangle
+    }
     fn draw_3d_features(
         camera_rendering: &CameraRenderingComponents,
         render_features_3d: &mut Vec<Box<dyn RenderFeature3D>>,

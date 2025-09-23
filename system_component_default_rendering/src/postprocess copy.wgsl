@@ -1,16 +1,13 @@
 // === Bindings ===
 // group(0) binding(0): sampler
 // group(0) binding(1): texture2D
-// group(0) binding(2): uniform vec2<i32> or vec2<f32> resolution
+// group(0) binding(2): uniform vec2<f32> resolution
 
 @group(0) @binding(0)
 var mySampler: sampler;
 
 @group(0) @binding(1)
 var myTexture: texture_2d<f32>;
-
-@group(0) @binding(2)
-var<uniform> iResolution: vec2<f32>;
 
 // --- structs for pipeline ---
 struct VertexOut {
@@ -20,7 +17,7 @@ struct VertexOut {
 
 // --- full screen quad ---
 @vertex
-fn vs_main(@builtin(vertex_index) vid: u32) -> VertexOut {
+fn vs_fullscreen(@builtin(vertex_index) vid: u32) -> VertexOut {
     var positions = array<vec2<f32>, 6>(
         vec2<f32>(-1.0, -1.0),
         vec2<f32>( 1.0, -1.0),
@@ -41,15 +38,20 @@ fn vs_main(@builtin(vertex_index) vid: u32) -> VertexOut {
 
     var out: VertexOut;
     out.pos = vec4<f32>(positions[vid], 0.0, 1.0);
-    out.uv = uvs[vid];
+
+    // flip Y to fix upside-down rendering
+    out.uv = vec2<f32>(uvs[vid].x, 1.0 - uvs[vid].y);
+
     return out;
 }
 
 // === Sobel Edge Detection ===
 fn Sobel(uv: vec2<f32>) -> f32 {
+
+    let dims = vec2<f32>(textureDimensions(myTexture));
+    let texel = 1.0 / dims;
     var gx: f32 = 0.0;
     var gy: f32 = 0.0;
-    let texel = 1.0 / iResolution;
 
     for (var xi: i32 = -1; xi <= 1; xi = xi + 1) {
         for (var yi: i32 = -1; yi <= 1; yi = yi + 1) {
@@ -88,8 +90,9 @@ fn Kuwahara(uv: vec2<f32>) -> vec3<f32> {
         varSum[i] = 0.0;
         count[i] = 0.0;
     }
-
-    let texel = 1.0 / iResolution;
+    
+    let dims = vec2<f32>(textureDimensions(myTexture));
+    let texel = 1.0 / dims;
 
     for (var xi: i32 = -RADIUS; xi <= RADIUS; xi = xi + 1) {
         for (var yi: i32 = -RADIUS; yi <= RADIUS; yi = yi + 1) {
@@ -136,7 +139,7 @@ fn Kuwahara(uv: vec2<f32>) -> vec3<f32> {
 
 // === Fragment ===
 @fragment
-fn fs_main(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+fn fs_fullscreen(@location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {    
     let color = Kuwahara(uv);
     let edge = Sobel(uv);
     let edgeStrength = clamp(edge * 0.25, 0.0, 1.0);

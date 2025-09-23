@@ -131,7 +131,7 @@ fn Kuwahara(uv: vec2<f32>) -> vec3<f32> {
 fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let color = Kuwahara(in.uv);
     let edge = Sobel(in.uv);
-    let edgeStrength = clamp(edge * 0.9, 0.0, 1.0);
+    let edgeStrength = clamp(edge * 0.25, 0.0, 1.0);
 
     let finalColor = mix(color, vec3<f32>(0.0), edgeStrength);
     return vec4<f32>(finalColor, 1.0);
