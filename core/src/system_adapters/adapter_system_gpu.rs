@@ -140,11 +140,11 @@ impl SystemGPU {
             surface.configure(&(*device), &config);
         }
         {
-            let dt = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
+            // let dt = Some(Arc::new(TextureAsset::create_depth_texture("depth_texture")));
             let Ok(mut guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
                 panic!("FAILED");
             };
-            guard.depth_texture = dt;
+            // guard.depth_texture = dt;
             guard.config = Some(Arc::new(config));
         }
     }

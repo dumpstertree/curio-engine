@@ -25,6 +25,8 @@ impl TextureAsset {
             height: config.height.max(1),
             depth_or_array_layers: 1,
         };
+
+        println!("create depth with size {}, {}", config.width.max(1), config.height.max(1));
         let desc = egui_wgpu::wgpu::TextureDescriptor {
             label: Some(label),
             mip_level_count: 1,
@@ -65,11 +67,7 @@ impl TextureAsset {
     pub fn none() -> TextureAsset {
         let device = SystemGPU::get_device();
 
-        let size = egui_wgpu::wgpu::Extent3d {
-            width: 1,
-            height: 1,
-            depth_or_array_layers: 1,
-        };
+        let size = egui_wgpu::wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 };
         let texture = device.create_texture(&egui_wgpu::wgpu::TextureDescriptor {
             label: None,
             mip_level_count: 1,
@@ -92,11 +90,7 @@ impl TextureAsset {
         });
 
         // return
-        TextureAsset {
-            sampler: sampler,
-            texture: texture,
-            view: view,
-        }
+        TextureAsset { sampler: sampler, texture: texture, view: view }
     }
     pub fn default() -> TextureAsset {
         let bytes = include_bytes!("../../../assets/default_texture.jpg");
@@ -115,11 +109,7 @@ impl TextureAsset {
         if height % 2 != 0 {
             panic!("texture height not power of 2")
         }
-        let size = egui_wgpu::wgpu::Extent3d {
-            width: width,
-            height: height,
-            depth_or_array_layers: 1,
-        };
+        let size = egui_wgpu::wgpu::Extent3d { width: width, height: height, depth_or_array_layers: 1 };
 
         let texture = device.create_texture(&egui_wgpu::wgpu::TextureDescriptor {
             label,
