@@ -1,14 +1,14 @@
-use crate::camera_rendering_components::CameraRenderingComponents;
 use core::collections::game_state::GameState;
-use egui_wgpu::wgpu::RenderPass;
 
 pub trait RenderFeaturePostProcess {
-    fn render(
-        &mut self,
-        game_state: &mut GameState,
-        render_pass: &mut egui_wgpu::wgpu::RenderPass<'_>,
-        input_view: &egui_wgpu::wgpu::TextureView, // ← offscreen texture from 3D pass
-    );
+    fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &egui_wgpu::wgpu::TextureView, output_view: &egui_wgpu::wgpu::TextureView, source: PostProcessSource);
 
     fn clear(&mut self, game_state: &mut GameState);
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum PostProcessSource {
+    Offscreen, // original 3D render target
+    ViewA,     // ping-pong view A
+    ViewB,     // ping-pong view B
 }

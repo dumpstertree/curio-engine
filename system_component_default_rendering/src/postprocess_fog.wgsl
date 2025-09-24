@@ -79,3 +79,10 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
 
     return vec4<f32>(finalColor, color.a);
 }
+// @fragment
+// fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
+//         // let color = textureSample(myTexture, mySampler, in.uv);
+
+//     // return vec4<f32>(color.rgb, 1.0);
+//     return vec4<f32>(1.0, 0.0, 1.0, 1.0); // bright magenta
+// }

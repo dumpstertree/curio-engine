@@ -36,6 +36,7 @@ use core::system::system_components::system_component_graphics::SystemComponentG
 use core::system_adapters::adapter_system_gpu::SystemGPU;
 use egui_wgpu::wgpu::{BindGroup, CommandEncoder, DepthStencilState, Device, FragmentState, RenderPass, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, Sampler, Surface, SurfaceTexture, Texture, TextureView};
 use render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh;
+use std::sync::Arc;
 use std::{iter, vec};
 use winit::event::WindowEvent;
 
@@ -48,6 +49,7 @@ pub struct SystemComponentDefaultGraphics {
     is_dirty: bool,
     camera_rendering: CameraRenderingComponents,
     offscreen_view: TextureView,
+    post_process_resources: PostProcessResources,
 }
 
 impl SystemComponent for SystemComponentDefaultGraphics {
@@ -76,15 +78,14 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // draw all post-process
         {
             // post-processing into swapchain output
-            let output_view = &output
-                .texture
-                .create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
             SystemComponentDefaultGraphics::draw_post_features(
-                &mut self.render_features_post_process,
-                game_state,
                 &mut encoder,
-                &self.offscreen_view, // input
-                &output_view,         // target
+                &mut self.render_features_post_process, // <- Vec<Box<dyn RenderFeaturePost>>
+                &self.offscreen_view,                   // <- input: result of 3D rendering
+                &self.post_process_resources,           // <- contains texture_a/view_a, texture_b/view_b
+                &output
+                    .texture
+                    .create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default()),
             );
         }
         // draw all 2d
@@ -152,60 +153,73 @@ impl SystemComponentDefaultGraphics {
         let depth_texture = SystemGPU::get_depth_texture();
         let depth_view = &depth_texture.view;
 
+        let r = PostProcessResources::new(d, c.width, c.height, c.format);
         Box::new(SystemComponentDefaultGraphics {
             egui_renderer: EguiRenderer::new(d, c.format, None, 1, w),
             graphics_mappings: Vec::new(),
             render_features_3d: vec![RenderFeatureDrawMesh::new()],
             render_features_2d: vec![RenderFeatureDrawUI::new()],
             render_features_post_process: vec![
-                RenderFeaturePostProcessKuwahara::new(device.clone(), &offscreen_view, &post_sampler, depth_view),
-                RenderFeaturePostProcessOutline::new(device.clone(), &offscreen_view, &post_sampler, depth_view),
-                RenderFeaturePostProcessFog::new(device.clone(), &offscreen_view, &post_sampler, depth_view),
+                RenderFeaturePostProcessKuwahara::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
+                RenderFeaturePostProcessOutline::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
+                RenderFeaturePostProcessFog::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
             ],
             is_dirty: true,
             camera_rendering: CameraRenderingComponents::new(1),
             offscreen_view,
+            post_process_resources: r,
         })
     }
 
     // draw
-    fn draw_post_features(
-        render_features_post: &mut Vec<Box<dyn RenderFeaturePostProcess>>,
-        game_state: &mut Vec<GameState>,
+    pub fn draw_post_features(
         encoder: &mut egui_wgpu::wgpu::CommandEncoder,
-        input_view: &egui_wgpu::wgpu::TextureView,  // ← offscreen (3D pass result)
-        target_view: &egui_wgpu::wgpu::TextureView, // ← swapchain output
+        post_features: &mut [Box<dyn RenderFeaturePostProcess>],
+        input_view: &egui_wgpu::wgpu::TextureView, // offscreen scene render
+        resources: &PostProcessResources,
+        output_view: &egui_wgpu::wgpu::TextureView, // final swapchain target
     ) {
-        // new render pass for post-processing
-        let mut render_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
-            label: Some("Post-processing render pass"),
-            color_attachments: &[Some(egui_wgpu::wgpu::RenderPassColorAttachment {
-                view: target_view,
-                resolve_target: None,
-                ops: egui_wgpu::wgpu::Operations {
-                    load: egui_wgpu::wgpu::LoadOp::Load,
-                    store: egui_wgpu::wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None, // post passes don’t need depth
-            timestamp_writes: None,
-            occlusion_query_set: None,
-        });
+        use crate::render_feature_post_process::PostProcessSource;
 
-        // iterate over features
-        for feature in render_features_post.iter_mut() {
-            // usually just one "screen" target, but keeping consistent with 3D pattern
-            let game_state = game_state.get_mut(0).unwrap();
-            feature.render(game_state, &mut render_pass, input_view);
-        }
+        // src starts as the offscreen scene
+        let mut src: &egui_wgpu::wgpu::TextureView = input_view;
 
-        // cleanup
-        for feature in render_features_post.iter_mut() {
-            for game_state in &mut *game_state {
-                feature.clear(game_state);
+        // ping/pong targets — keep them distinct and swap between them
+        let mut ping: &egui_wgpu::wgpu::TextureView = &resources.view_a;
+        let mut pong: &egui_wgpu::wgpu::TextureView = &resources.view_b;
+
+        // track logical source for bind-group selection
+        let mut current_source = PostProcessSource::Offscreen;
+
+        let post_features_len = post_features.len();
+
+        for (i, feature) in post_features.iter_mut().enumerate() {
+            let is_last = i == post_features_len - 1;
+
+            // destination: final swapchain if last pass, otherwise ping
+            let target: &egui_wgpu::wgpu::TextureView = if is_last { output_view } else { ping };
+
+            // run the pass
+            feature.render(encoder, src, target, current_source);
+
+            if !is_last {
+                // advance the pipeline:
+                // next src is what we just wrote (target)
+                src = target;
+
+                // advance logical source for bind-group selection
+                current_source = match current_source {
+                    PostProcessSource::Offscreen => PostProcessSource::ViewA,
+                    PostProcessSource::ViewA => PostProcessSource::ViewB,
+                    PostProcessSource::ViewB => PostProcessSource::ViewA,
+                };
+
+                // swap ping/pong so next write goes into the other ping-pong texture
+                std::mem::swap(&mut ping, &mut pong);
             }
         }
     }
+
     fn draw_3d_features(
         camera_rendering: &CameraRenderingComponents,
         render_features_3d: &mut Vec<Box<dyn RenderFeature3D>>,
@@ -302,5 +316,36 @@ impl SystemComponentDefaultGraphics {
             }),
             stencil_ops: None,
         })
+    }
+}
+
+pub struct PostProcessResources {
+    pub texture_a: egui_wgpu::wgpu::Texture,
+    pub view_a: egui_wgpu::wgpu::TextureView,
+    pub texture_b: egui_wgpu::wgpu::Texture,
+    pub view_b: egui_wgpu::wgpu::TextureView,
+}
+
+impl PostProcessResources {
+    pub fn new(device: &egui_wgpu::wgpu::Device, width: u32, height: u32, format: egui_wgpu::wgpu::TextureFormat) -> Self {
+        let usage = egui_wgpu::wgpu::TextureUsages::RENDER_ATTACHMENT | egui_wgpu::wgpu::TextureUsages::TEXTURE_BINDING;
+        let desc = |label| egui_wgpu::wgpu::TextureDescriptor {
+            label: Some(label),
+            size: egui_wgpu::wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: egui_wgpu::wgpu::TextureDimension::D2,
+            format,
+            usage,
+            view_formats: &[],
+        };
+
+        let texture_a = device.create_texture(&desc("post A"));
+        let view_a = texture_a.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
+
+        let texture_b = device.create_texture(&desc("post B"));
+        let view_b = texture_b.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
+
+        Self { texture_a, view_a, texture_b, view_b }
     }
 }

@@ -132,7 +132,7 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let combined: f32 = max(sobelStrength, depthStrength);
 
     if (combined < EDGE_THRESHOLD) {
-        discard;
+        return vec4<f32>(color.rgb, 1.0);
     }
 
     // return black outline; change to mix(color, ...) to overlay
