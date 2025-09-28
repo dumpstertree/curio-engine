@@ -13,7 +13,8 @@ use std::fmt::Result;
 use std::ops::{Add, Div, Mul, Sub};
 
 /// A 3D Vector backed by f32
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vector3 {
     pub x: f32,
     pub y: f32,

@@ -151,8 +151,8 @@ fn main() {
         //
 
         // create game states
-        GameMode::new_local_splitscreen_2p_horizontal(input_mapping_0, input_mapping_1),
-        // GameMode::new_local_single(input_mapping_0),
+        // GameMode::new_local_splitscreen_2p_horizontal(input_mapping_0, input_mapping_1),
+        GameMode::new_local_single(input_mapping_0),
     );
     println!("init game end");
 }

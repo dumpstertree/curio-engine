@@ -55,7 +55,10 @@ impl GameMode {
 
     pub fn new_local_single(input: InputMapping) -> GameMode {
         GameMode {
-            game_instances: vec![GameInstance::new(GraphicsMapping::new(Vector2::zero(), Vector2::one()), vec![input], NetworkModes::LocalHost)],
+            game_instances: vec![
+                GameInstance::new(GraphicsMapping::new(Vector2::zero(), Vector2::one()), vec![input], NetworkModes::LocalPeer),
+                GameInstance::new(GraphicsMapping::new(Vector2::new(0.9, 0.9), Vector2::new(1.0, 1.0)), vec![], NetworkModes::LocalHost),
+            ],
         }
     }
     pub fn new_local_splitscreen_2p_vertical(input_p1: InputMapping, input_p2: InputMapping) -> GameMode {

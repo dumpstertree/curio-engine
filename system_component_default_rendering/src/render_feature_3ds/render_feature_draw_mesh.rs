@@ -1,4 +1,4 @@
-use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
+use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D, shadow_system::ShadowSystem};
 use built_in_state::{state_draw::DrawCallsState, state_lights::StateLights};
 use core::{
     collections::{
@@ -6,7 +6,9 @@ use core::{
         game_state::{self, GameState},
         light_uniform::LightSystem,
         matrix4x4::Matrix4x4,
-        mesh::Vertex,
+        mesh::{Mesh, Vertex},
+        quaternion::Quaternion,
+        vector3::Vector3,
     },
     io::texture_asset::TextureAsset,
     system_adapters::adapter_system_gpu::SystemGPU,
@@ -20,19 +22,19 @@ pub struct RenderFeatureDrawMesh {
 
 impl RenderFeatureDrawMesh {
     pub fn new() -> Box<RenderFeatureDrawMesh> {
-        Box::new(RenderFeatureDrawMesh { light_system: LightSystem::new(16) })
+        Box::new(RenderFeatureDrawMesh { light_system: LightSystem::new() })
     }
 
-    fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize) {
+    fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem) {
         let state_draws = game_state.get_value2::<DrawCallsState>();
         let draw_calls = &state_draws.draw_calls;
 
         for draw_call in draw_calls {
-            self.draw_draw_call(draw_call, config, device, render_pass, camera, camera_index);
+            self.draw_draw_call(draw_call, config, device, render_pass, camera, camera_index, shadow_system);
         }
     }
 
-    fn draw_draw_call(&mut self, draw_call: &DrawCall, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize) {
+    fn draw_draw_call(&mut self, draw_call: &DrawCall, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem) {
         for i in 0..draw_call.mesh.len() {
             let mesh = &draw_call.mesh[i];
             let material = &draw_call.materials[i];
@@ -47,6 +49,7 @@ impl RenderFeatureDrawMesh {
                 &diffuse_bind_group.1,                // diffuse layout
                 &color_bind_group.1,                  // color layout
                 &self.light_system.bind_group_layout, // lights layout
+                &shadow_system.bind_group_layout,
                 config,
                 device,
                 material.shader.clone(),
@@ -73,20 +76,32 @@ impl RenderFeatureDrawMesh {
             render_pass.set_bind_group(1, &camera.camera_bind_group, &[(256 * camera_index).try_into().unwrap()]);
             // render_pass.set_bind_group(2, &color_bind_group.0, &[]);
             render_pass.set_bind_group(2, &self.light_system.bind_group, &[]);
-
+            render_pass.set_bind_group(3, &shadow_system.bind_group, &[]); // 👈 ADD THIS
+            // render_pass.set_bind_group(4, &shadow_system.light_ubo_bind_group, &[]);
             // Draw
             render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
         }
     }
 
-    fn get_render_pipeline(camera_bind: &BindGroupLayout, diffuse_bind_layout: &BindGroupLayout, color_bind_layout: &BindGroupLayout, light_bind_layout: &BindGroupLayout, config: &SurfaceConfiguration, device: &Device, shader: ShaderModule, wireframe: bool) -> RenderPipeline {
+    fn get_render_pipeline(
+        camera_bind: &BindGroupLayout,
+        diffuse_bind_layout: &BindGroupLayout,
+        color_bind_layout: &BindGroupLayout,
+        light_bind_layout: &BindGroupLayout,
+        shadow_bind_layout: &BindGroupLayout,
+        config: &SurfaceConfiguration,
+        device: &Device,
+        shader: ShaderModule,
+        wireframe: bool,
+    ) -> RenderPipeline {
         let pipeline_layout = device.create_pipeline_layout(&egui_wgpu::wgpu::PipelineLayoutDescriptor {
             label: Some("Render Pipeline Layout"),
             bind_group_layouts: &[
                 diffuse_bind_layout, // group 0
                 camera_bind,         // group 1
                 // color_bind_layout,   // group 2
-                light_bind_layout, // group 3
+                light_bind_layout,  // group 2
+                shadow_bind_layout, // group(3) 👈
             ],
             push_constant_ranges: &[],
         });
@@ -134,14 +149,14 @@ impl RenderFeatureDrawMesh {
 }
 
 impl RenderFeature3D for RenderFeatureDrawMesh {
-    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize) {
+    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem) {
         self.light_system
             .update(&game_state.get_value2::<StateLights>().all_lights);
 
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();
 
-        self.draw_all_mesh(game_state, &config, &device, render_pass, camera, camera_index);
+        self.draw_all_mesh(game_state, &config, &device, render_pass, camera, camera_index, shadow_system);
     }
 
     fn clear(&mut self, game_state: &mut GameState) {
@@ -149,3 +164,4 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
         game_state.edit::<StateLights>(|x| x.all_lights.clear());
     }
 }
+// shadow_system.rs

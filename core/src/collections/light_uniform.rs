@@ -53,7 +53,7 @@ pub struct LightSystem {
 }
 impl LightSystem {
     /// Create a LightSystem: allocates uniform buffer sized for MAX_LIGHTS and creates bind group layout.
-    pub fn new(max_lights: usize) -> Self {
+    pub fn new() -> Self {
         let device = SystemGPU::get_device();
 
         // Each GpuLight is 64 bytes, plus a 16-byte header
@@ -105,22 +105,6 @@ impl LightSystem {
         bytes.extend(&(1 as u32).to_le_bytes());
         bytes.extend(&[0u8; 12]); // padding to 16 bytes
 
-        // array padding
-        // bytes.extend(&[0u8; 16]); // padding to 16 bytes
-
-        // println!("Uploading {} lights", n);
-        for l in lights.iter().take(n) {
-            // println!(
-            //     "Light: pos=({:?}) type={} color={:?} intensity={}",
-            //     l.position,
-            //     match l.light_type {
-            //         LightType::Directional => "Dir",
-            //         LightType::Point => "Point",
-            //     },
-            //     l.color,
-            //     l.intensity
-            // );
-        }
         // Serialize each light
         for l in lights.iter().take(n) {
             let mut g = GpuLight::zeroed();
@@ -143,12 +127,6 @@ impl LightSystem {
             // _padding already zeroed
             bytes.extend_from_slice(bytemuck::bytes_of(&g));
         }
-
-        // Pad remaining lights to maintain consistent buffer size
-        // let expected_len = 16 + 64 * MAX_LIGHTS;
-        // if bytes.len() < expected_len {
-        //     bytes.resize(expected_len, 0);
-        // }
 
         queue.write_buffer(&self.buffer, 0, &bytes);
     }

@@ -26,7 +26,17 @@ struct VSOut {
     @location(0) tex_coords: vec2<f32>,
     @location(1) normal: vec3<f32>,
     @location(2) world_pos: vec3<f32>,
+
+    // --- NEW ---
+    @location(3) shadow_pos: vec4<f32>,
 }
+
+// --- NEW: Shadow uniform (light view-projection) ---
+struct ShadowCamera {
+    light_view_proj: mat4x4<f32>,
+}
+@group(3) @binding(0)
+var<uniform> shadow_camera: ShadowCamera;
 
 // ----------------- Vertex Shader -----------------
 @vertex
@@ -50,6 +60,10 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VSOut {
     out.tex_coords = model.tex_coords;
     out.world_pos = world_position.xyz;
     out.normal = normalize(normal_matrix * model.normal);
+
+    // --- NEW: transform vertex into light clip space ---
+    out.shadow_pos = shadow_camera.light_view_proj * world_position;
+
     return out;
 }
 
@@ -59,11 +73,17 @@ var t_diffuse: texture_2d<f32>;
 @group(0) @binding(1)
 var s_diffuse: sampler;
 
+// --- NEW: shadow map texture & sampler ---
+@group(3) @binding(1)
+var shadow_map: texture_depth_2d;
+@group(3) @binding(2)
+var shadow_sampler: sampler_comparison;
+
 // ----------------- Lighting -----------------
 struct GpuLight {
-    position: vec4<f32>,          // xyz = position, w = light_type (0 = directional, 1 = point)
-    color_intensity: vec4<f32>,   // rgb = color, a = intensity
-    direction_radius: vec4<f32>,  // xyz = direction (dir light) or unused (point), w = radius
+    position: vec4<f32>,
+    color_intensity: vec4<f32>,
+    direction_radius: vec4<f32>,
 };
 
 struct LightBuffer {
@@ -78,8 +98,27 @@ var<storage, read> light_buffer: LightBuffer;
 
 const AMBIENT_LIGHT: f32 = 0.2;
 
+// --- NEW: shadow calculation ---
+fn compute_shadow_factor(shadow_pos: vec4<f32>) -> f32 {
+    // Perspective divide
+    let proj_coords = shadow_pos.xyz / shadow_pos.w;
+
+    // Transform from clip [-1,1] to texture [0,1]
+    let uv = proj_coords.xy * 0.5 + vec2<f32>(0.5, 0.5);
+    let depth = proj_coords.z * 0.5 + 0.5;
+
+    // Only apply shadows if inside the light frustum
+    if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+        return 1.0;
+    }
+
+    // Sample shadow map (PCF could be added here)
+    let shadow_sample = textureSampleCompare(shadow_map, shadow_sampler, uv, depth - 0.001);
+    return shadow_sample;
+}
+
 // Compute contribution of all active lights
-fn compute_forward_lighting(N: vec3<f32>, V: vec3<f32>, world_pos: vec3<f32>) -> vec3<f32> {
+fn compute_forward_lighting(N: vec3<f32>, V: vec3<f32>, world_pos: vec3<f32>, shadow_factor: f32) -> vec3<f32> {
     var total_light = vec3<f32>(0.0);
     let count = light_buffer.count;
 
@@ -95,7 +134,7 @@ fn compute_forward_lighting(N: vec3<f32>, V: vec3<f32>, world_pos: vec3<f32>) ->
             let H = normalize(L + V);
             let spec = pow(max(dot(N, H), 0.0), 32.0);
 
-            total_light += light.color_intensity.rgb * light.color_intensity.a * (diff + spec * 0.3);
+            total_light += light.color_intensity.rgb * light.color_intensity.a * (diff + spec * 0.3) * shadow_factor;
 
         } else if (light_type == 1u) {
             // ----------------- Point Light -----------------
@@ -123,7 +162,6 @@ fn compute_forward_lighting(N: vec3<f32>, V: vec3<f32>, world_pos: vec3<f32>) ->
 fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
     let tex_sample = textureSample(t_diffuse, s_diffuse, in.tex_coords);
 
-    // Alpha test
     if (tex_sample.a < 0.5) {
         discard;
     }
@@ -132,7 +170,10 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
     let N = normalize(in.normal);
     let V = normalize(camera.view_pos.xyz - in.world_pos);
 
-    let light_color = compute_forward_lighting(N, V, in.world_pos);
+    // --- NEW: get shadow factor ---
+    let shadow_factor = compute_shadow_factor(in.shadow_pos);
+
+    let light_color = compute_forward_lighting(N, V, in.world_pos, shadow_factor);
     let final_color = albedo * light_color;
 
     return vec4<f32>(final_color, 1.0);

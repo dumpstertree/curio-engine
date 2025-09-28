@@ -9,7 +9,8 @@ use std::fmt::Result;
 use std::ops::Mul;
 
 /// A representation of 3D rotation
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default, bytemuck::Zeroable, bytemuck::Pod)]
 pub struct Quaternion {
     pub x: f32,
     pub y: f32,

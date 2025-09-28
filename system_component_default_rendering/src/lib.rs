@@ -2,6 +2,8 @@ mod camera_rendering_components;
 mod egui_app_state;
 mod egui_tools;
 mod render_feature_2d;
+mod shadow_camera;
+mod shadow_system;
 mod render_feature_2ds {
     pub mod render_feature_draw_ui;
 }
@@ -23,13 +25,19 @@ use crate::render_feature_post_process::RenderFeaturePostProcess;
 use crate::render_feature_post_processes::render_feature_post_process_fog::RenderFeaturePostProcessFog;
 use crate::render_feature_post_processes::render_feature_post_process_kuwahara::RenderFeaturePostProcessKuwahara;
 use crate::render_feature_post_processes::render_feature_post_process_sobel_outline::RenderFeaturePostProcessOutline;
+use crate::shadow_system::ShadowSystem;
 // use crate::render_feature_post_processes::render_feature_post_process_kuwahara::RenderFeaturePostProcessKuwahara;
 // use crate::render_feature_3ds::render_feature_draw_gizmos::RenderFeatureDrawGizmo;
 use crate::{camera_rendering_components::CameraRenderingComponents, egui_tools::EguiRenderer};
 use built_in_state::state_camera::CameraState;
+use built_in_state::state_draw::DrawCallsState;
+use built_in_state::state_lights::StateLights;
 use core::collections::event_queue::EventQueue;
-use core::collections::game_state::GameState;
+use core::collections::game_state::{self, GameState};
 use core::collections::light_uniform::{DrawCallLight, LightSystem};
+use core::collections::matrix4x4::Matrix4x4;
+use core::collections::quaternion::Quaternion;
+use core::collections::vector3::Vector3;
 use core::graphics::graphics_mapping::GraphicsMapping;
 use core::io::texture_asset::TextureAsset;
 use core::system::system_component::SystemComponent;
@@ -51,6 +59,7 @@ pub struct SystemComponentDefaultGraphics {
     camera_rendering: CameraRenderingComponents,
     offscreen_view: TextureView,
     post_process_resources: PostProcessResources,
+    shadow_system: ShadowSystem,
 }
 
 impl SystemComponent for SystemComponentDefaultGraphics {
@@ -68,12 +77,22 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // create the output
         let output = SystemComponentDefaultGraphics::get_output_texture(surface);
         let mut encoder = SystemComponentDefaultGraphics::get_encoder(device);
+
+        // for game_state in game_state.iter_mut() {
+        if game_state[0].get_value2::<StateLights>().all_lights.len() > 0 {
+            let light = &game_state[0].get_value2::<StateLights>().all_lights[0];
+            let light_pos = Vector3::new(light.position[0], light.position[1], light.position[2]);
+            let light_rot = Quaternion::from_look_rotation(Vector3::new(light.direction[0], light.direction[1], light.direction[2]), Vector3::up());
+            let matrix = Matrix4x4::new(light_pos, light_rot, Vector3::one());
+            self.shadow_system.update(&matrix);
+        }
+        // }
         // let lights = SystemComponentDefaultGraphics::collect_lights(game_state);
         // draw all 3d
         {
             // draw 3D into offscreen
             let offscreen_view = &mut self.offscreen_view;
-            SystemComponentDefaultGraphics::draw_3d_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view);
+            SystemComponentDefaultGraphics::draw_3d_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view, &self.shadow_system);
         }
 
         // draw all post-process
@@ -168,6 +187,7 @@ impl SystemComponentDefaultGraphics {
             camera_rendering: CameraRenderingComponents::new(1),
             offscreen_view,
             post_process_resources: r,
+            shadow_system: ShadowSystem::new(Matrix4x4::default()),
         })
     }
 
@@ -236,6 +256,7 @@ impl SystemComponentDefaultGraphics {
         game_state: &mut Vec<GameState>,
         encoder: &mut egui_wgpu::wgpu::CommandEncoder,
         target_view: &mut egui_wgpu::wgpu::TextureView, // <-- changed from SurfaceTexture
+        shadow_system: &ShadowSystem,
     ) {
         // generate a render pass for this instance
         let depth = SystemGPU::get_depth_texture();
@@ -282,7 +303,7 @@ impl SystemComponentDefaultGraphics {
             // render features
             for feature in render_features_3d.iter_mut() {
                 // render
-                feature.render(game_state, &mut render_pass, camera_rendering, i);
+                feature.render(game_state, &mut render_pass, camera_rendering, i, shadow_system);
             }
         }
 
@@ -297,7 +318,7 @@ impl SystemComponentDefaultGraphics {
         // THIS IS HACKED BECAUSE WE CANT ALL WRITE TO THE MAIN SCREEN
 
         // for i in 0..(self.graphics_mappings.len() as usize) {
-        let i = 2;
+        let i = self.graphics_mappings.len() - 1;
         let game_state = game_state.get_mut(i).unwrap();
         let event_queue = event_queue.get_mut(i).unwrap();
         for feature in self.render_features_2d.iter_mut() {

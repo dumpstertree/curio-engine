@@ -275,7 +275,10 @@ impl SystemComponent for SystemComponentDefaultNetworking {
         // }
     }
     fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
-        let v = vec![game_state[0].instance_id, game_state[1].instance_id];
+        let mut v = vec![];
+        for x in game_state.iter() {
+            v.push(x.instance_id);
+        }
         for gs in game_state.iter_mut() {
             gs.edit::<StateNetwork>(|x| x.set_peer_instance_ids(v.clone()));
         }

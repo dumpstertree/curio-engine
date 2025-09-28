@@ -7,7 +7,7 @@ use crate::collections::{quaternion::Quaternion, vector3::Vector3, vector4::Vect
 #[repr(C)]
 #[derive(Copy, Clone, Serialize, Deserialize, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Matrix4x4 {
-    model: [[f32; 4]; 4],
+    pub model: [[f32; 4]; 4],
 }
 impl Matrix4x4 {
     pub fn zero() -> Matrix4x4 {
@@ -43,12 +43,7 @@ impl Matrix4x4 {
         let f = 1.0 / (fov_y * 0.5).tan();
 
         Matrix4x4::transpose(&Matrix4x4 {
-            model: [
-                [f / aspect, 0.0, 0.0, 0.0],
-                [0.0, f, 0.0, 0.0],
-                [0.0, 0.0, far / (far - near), 1.0],
-                [0.0, 0.0, (-near * far) / (far - near), 0.0],
-            ],
+            model: [[f / aspect, 0.0, 0.0, 0.0], [0.0, f, 0.0, 0.0], [0.0, 0.0, far / (far - near), 1.0], [0.0, 0.0, (-near * far) / (far - near), 0.0]],
         })
     }
 
@@ -62,24 +57,35 @@ impl Matrix4x4 {
                 [right.x, up_corrected.x, forward.x, 0.0],
                 [right.y, up_corrected.y, forward.y, 0.0],
                 [right.z, up_corrected.z, forward.z, 0.0],
-                [
-                    -Vector3::dot(right, eye),
-                    -Vector3::dot(up_corrected, eye),
-                    -Vector3::dot(forward, eye),
-                    1.0,
-                ],
+                [-Vector3::dot(right, eye), -Vector3::dot(up_corrected, eye), -Vector3::dot(forward, eye), 1.0],
             ],
         })
     }
+    /// Create a left-handed orthographic projection matrix
+    pub fn orthographic_lh(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Matrix4x4 {
+        let r_l = right - left;
+        let t_b = top - bottom;
+        let f_n = far - near;
+
+        let mut m = [[0.0; 4]; 4];
+
+        m[0][0] = 2.0 / r_l;
+        m[1][1] = 2.0 / t_b;
+        m[2][2] = 1.0 / f_n; // z goes 0..1 in LH
+        m[3][0] = -(right + left) / r_l;
+        m[3][1] = -(top + bottom) / t_b;
+        m[3][2] = -near / f_n;
+        m[3][3] = 1.0;
+
+        Matrix4x4 { model: m }
+    }
+
     pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
         let pos2 = cgmath::Vector3::new(pos.x, pos.y, pos.z);
         let rot2 = cgmath::Quaternion::new(rot.w, rot.x, rot.y, rot.z);
 
         Matrix4x4 {
-            model: (cgmath::Matrix4::from_translation(pos2)
-                * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)
-                * cgmath::Matrix4::from(rot2))
-            .into(),
+            model: (cgmath::Matrix4::from_translation(pos2) * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z) * cgmath::Matrix4::from(rot2)).into(),
         }
     }
     pub fn from_raw(matrix: [[f32; 4]; 4]) -> Matrix4x4 {
