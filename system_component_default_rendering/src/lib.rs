@@ -29,6 +29,7 @@ use crate::{camera_rendering_components::CameraRenderingComponents, egui_tools::
 use built_in_state::state_camera::CameraState;
 use core::collections::event_queue::EventQueue;
 use core::collections::game_state::GameState;
+use core::collections::light_uniform::{DrawCallLight, LightSystem};
 use core::graphics::graphics_mapping::GraphicsMapping;
 use core::io::texture_asset::TextureAsset;
 use core::system::system_component::SystemComponent;
@@ -67,7 +68,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // create the output
         let output = SystemComponentDefaultGraphics::get_output_texture(surface);
         let mut encoder = SystemComponentDefaultGraphics::get_encoder(device);
-
+        // let lights = SystemComponentDefaultGraphics::collect_lights(game_state);
         // draw all 3d
         {
             // draw 3D into offscreen
@@ -149,7 +150,6 @@ impl SystemComponentDefaultGraphics {
             min_filter: egui_wgpu::wgpu::FilterMode::Linear,
             ..Default::default()
         });
-        let post_sampler = sampler;
         let depth_texture = SystemGPU::get_depth_texture();
         let depth_view = &depth_texture.view;
 
@@ -171,6 +171,15 @@ impl SystemComponentDefaultGraphics {
         })
     }
 
+    // pub fn collect_lights(game_state: &Vec<GameState>) -> Vec<Light> {
+    //     let mut out = Vec::new();
+    //     for gs in game_state.iter() {
+    //         // adapt to your component storage: here's an example
+    //         let state_lights = gs.get_value2::<StateLights>()
+    //         out.extend_from_slice(ls);
+    //     }
+    //     out
+    // }
     // draw
     pub fn draw_post_features(
         encoder: &mut egui_wgpu::wgpu::CommandEncoder,
@@ -272,6 +281,7 @@ impl SystemComponentDefaultGraphics {
 
             // render features
             for feature in render_features_3d.iter_mut() {
+                // render
                 feature.render(game_state, &mut render_pass, camera_rendering, i);
             }
         }

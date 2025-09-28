@@ -1,5 +1,5 @@
 {
-    "shader_module_path" : "assets/shader/shader_unlit.wgsl",
+    "shader_module_path" : "assets/shader/shader.wgsl",
     "textures" : [
         {
             "label" : "diffuse"

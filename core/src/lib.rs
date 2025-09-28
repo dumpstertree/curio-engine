@@ -31,6 +31,7 @@ pub mod collections {
     pub mod input_button;
     pub mod input_cursor;
     pub mod key_state;
+    pub mod light_uniform;
     pub mod material;
     pub mod matrix4x4;
     pub mod mesh;

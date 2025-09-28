@@ -228,12 +228,12 @@ impl AssetLoader {
         let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
         my_struct
     }
-    pub fn load_gltf<'a>(&mut self, path: &str) -> Option<Arc<ModelAsset>> {
+    pub fn load_gltf<'a>(path: &str) -> Option<Arc<ModelAsset>> {
         // return cached
         println!("importing");
-        if self.asset_cache.contains_key(path) {
-            return Some(self.asset_cache[path].clone());
-        }
+        // if self.asset_cache.contains_key(path) {
+        //     return Some(self.asset_cache[path].clone());
+        // }
 
         // build new
 
@@ -400,7 +400,7 @@ impl AssetLoader {
                 }
                 let asset = Arc::new(ModelAsset::new(all_mesh, all_material));
 
-                self.asset_cache.insert(String::from(path), asset.clone());
+                // self.asset_cache.insert(String::from(path), asset.clone());
 
                 return Some(asset);
             }

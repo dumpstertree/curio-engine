@@ -1,4 +1,4 @@
-use built_in::component::{component_camera::Camera, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
+use built_in::component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
 use built_in_state::state_camera::CameraState;
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -21,6 +21,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
+    fn init(&mut self, _: &mut GameState, world: &mut World, _: &mut EventQueue, assetloader: &mut AssetLoader) {}
     fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 
@@ -42,8 +43,8 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         ));
         world.spawn((
             Transform::default()
-                .set_position(Vector3::new(1.0, -5.0, 10.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
+                .set_position(Vector3::new(5.0, -5.0, 10.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(20.0, -45.0, 0.0))),
             RendererAnimated::default()
                 .set_asset(Some(spine.clone()))
                 .set_animation("walk", true)
@@ -51,13 +52,49 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         ));
         world.spawn((
             Transform::default()
-                .set_position(Vector3::new(2.0, -5.0, 20.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-            RendererAnimated::default()
-                .set_asset(Some(spine.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin"),
+                .set_position(Vector3::new(0.0, 0.0, 0.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
+            ComponentLight::default(),
         ));
+        world.spawn((
+            Transform::default()
+                .set_position(Vector3::new(5.0, -5.0, -2.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 45.0, 0.0))),
+            Renderer::default().set_asset(AssetLoader::load_gltf("cube3.glb")),
+        ));
+        world.spawn((
+            Transform::default()
+                .set_position(Vector3::new(0.0, -5.0, 0.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))),
+            Renderer::default().set_asset(AssetLoader::load_gltf("ground.glb")),
+        ));
+        // world.spawn((
+        //     Transform::default()
+        //         .set_position(Vector3::new(1.0, -5.0, 10.0))
+        //         .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
+        //     RendererAnimated::default()
+        //         .set_asset(Some(spine.clone()))
+        //         .set_animation("walk", true)
+        //         .set_skin("goblin"),
+        // ));
+        // world.spawn((
+        //     Transform::default()
+        //         .set_position(Vector3::new(2.0, -5.0, 20.0))
+        //         .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
+        //     RendererAnimated::default()
+        //         .set_asset(Some(spine.clone()))
+        //         .set_animation("walk", true)
+        //         .set_skin("goblin"),
+        // ));
+        // world.spawn((
+        //     Transform::default()
+        //         .set_position(Vector3::new(2.0, -5.0, 20.0))
+        //         .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
+        //     RendererAnimated::default()
+        //         .set_asset(Some(spine.clone()))
+        //         .set_animation("walk", true)
+        //         .set_skin("goblin"),
+        // ));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let Some(team) = game_state

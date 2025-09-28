@@ -8,6 +8,7 @@ pub mod component {
         pub mod component_collider_box;
         pub mod component_collider_sphere;
     }
+    pub mod component_light;
 }
 pub mod system {
     pub mod system_camera_update_state;
@@ -20,6 +21,7 @@ pub mod system {
     pub mod system_debug_gui_screen;
     pub mod system_debug_gui_time;
     pub mod system_debug_toggle;
+    pub mod system_renderer_update_light_state;
     pub mod system_renderer_update_state;
 }
 
