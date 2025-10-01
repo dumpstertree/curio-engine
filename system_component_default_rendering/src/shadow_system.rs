@@ -1,12 +1,12 @@
 use ::core::collections::matrix4x4::Matrix4x4;
 use ::core::system_adapters::adapter_system_gpu::SystemGPU;
-use core::collections::{draw_call::DrawCall, mesh::Vertex, quaternion::Quaternion, vector3::Vector3};
+use core::collections::{draw_call::DrawCall, mesh::Vertex, quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
 use std::num::NonZeroU64;
 
 use bytemuck::bytes_of;
 use egui_wgpu::wgpu::{
     AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Buffer, BufferBindingType, BufferUsages, CommandEncoder, CompareFunction, DepthBiasState, Extent3d, FilterMode, RenderPipeline, Sampler,
-    SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension,
+    SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension,
     util::{self, DeviceExt},
 };
 
@@ -52,7 +52,7 @@ impl ShadowSystem {
             usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
-        let depth_view = depth_texture.create_view(&TextureViewDescriptor::default());
+        let depth_view = depth_texture.create_view(&TextureViewDescriptor { aspect: TextureAspect::DepthOnly, ..Default::default() });
 
         // 3) comparison sampler (for sampling shadow map in main pass)
         let sampler = device.create_sampler(&SamplerDescriptor {
@@ -172,7 +172,10 @@ impl ShadowSystem {
                 compilation_options: Default::default(),
             },
             fragment: None, // depth-only pass
-            primitive: egui_wgpu::wgpu::PrimitiveState::default(),
+            primitive: egui_wgpu::wgpu::PrimitiveState {
+                cull_mode: None, // ensure nothing gets culled
+                ..Default::default()
+            },
             depth_stencil: Some(egui_wgpu::wgpu::DepthStencilState {
                 format: TextureFormat::Depth32Float,
                 depth_write_enabled: true,
@@ -203,28 +206,38 @@ impl ShadowSystem {
     // ... update() method unchanged (writes buffer) ...
 
     /// Recompute light matrix each frame
-    pub fn update(&self) {
+    pub fn update(&self, t: f32) {
         let queue = SystemGPU::get_queue();
 
-        let light_dir = (Quaternion::from_euler(Vector3::new(-45.0, 45.0, 0.0)) * Vector3::forward()).normalize_and_copy();
-        let light_pos = Vector3::zero() - light_dir * 100.0;
+        let pos = 10.0; //f32::abs(f32::sin(t)) * 10.0;
+        println!("pos {}", pos);
+        let light_pos = Vector3::new(5.0, 10.0, -10.0); // example
+        let target = Vector3::zero(); // look at world origin
+        let up = Vector3::down();
 
-        let light_view = Matrix4x4::look_at(light_pos, Vector3::zero(), Vector3::new(0.0, 1.0, 0.0));
-        // let light_proj = Matrix4x4::orthographic_fit_scene(Vector3::one() * -50.0, Vector3::one() * 50.0, &light_view);
+        let light_view = Matrix4x4::look_at(light_pos, target, up);
         let light_proj = Matrix4x4::orthographic_lh(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
-        // let light_view_proj = Matrix4x4::multiply(&light_view, &light_proj);
-        let light_view_proj = Matrix4x4::multiply(&light_proj, &light_view);
+        let light_view_proj = Matrix4x4::multiply(&light_view, &light_proj);
 
+        let world_origin = Vector4::new(0.0, 0.0, 0.0, 1.0);
+        let clip = light_view_proj.multiply_vec4(world_origin);
+
+        // compute NDC coordinates (watch out for w == 0)
+        if clip.w.abs() > 1e-9 {
+            let ndc_x = clip.x / clip.w;
+            let ndc_y = clip.y / clip.w;
+            let ndc_z = clip.z / clip.w;
+            println!("clip = {:?}, ndc = ({:.6}, {:.6}, {:.6})", clip, ndc_x, ndc_y, ndc_z);
+        } else {
+            println!("clip.w is ~0 -> invalid projection: clip = {:?}", clip);
+        }
         queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&light_view_proj));
-        // let tx = Matrix4x4::transpose(&light_view_proj);
-        // queue.write_buffer(&self.buffer, 0, bytes_of(&light_view_proj));
-
-        // queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&tx));
-        // queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&light_view_proj));
     }
 
     /// Render depth from the light’s perspective
     pub fn render(&self, encoder: &mut CommandEncoder, draw_calls: &[DrawCall]) {
+        println!("Shadow render: draw_calls.len={} total_instances={}", draw_calls.len(), draw_calls.iter().map(|d| d.matrix.len()).sum::<usize>());
+
         let device = SystemGPU::get_device();
         let mut shadow_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
             label: Some("shadow pass"),
@@ -247,6 +260,10 @@ impl ShadowSystem {
         shadow_pass.set_bind_group(0, &self.light_matrix_bind_group, &[]);
 
         for draw_call in draw_calls {
+            // if !draw_call.matrix.is_empty() {
+            //     let m = &draw_call.matrix[0];
+            //     println!("Instance matrix[0] first column: {:?}", m.model[0]);
+            // }
             for mesh in &draw_call.mesh {
                 let n_buffer = device.create_buffer_init(&util::BufferInitDescriptor {
                     label: Some("Instance Buffer"),

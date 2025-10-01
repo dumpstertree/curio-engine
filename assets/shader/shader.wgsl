@@ -158,7 +158,38 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
 
     let shadow_factor = compute_shadow_factor(in.shadow_pos);
     let light_color = compute_forward_lighting(N, V, in.world_pos, shadow_factor);
-    return vec4<f32>(shadow_factor);
+    // return vec4<f32>(shadow_factor);
 
-    // return vec4<f32>(albedo * light_color, 1.0);
+    return vec4<f32>(albedo * light_color, 1.0);
 }
+
+// const SHADOW_SIZE: f32 = 2048.0;
+
+// @group(0) @binding(0)
+// var shadow_map: texture_depth_2d;
+
+// struct VSOut {
+//     @builtin(position) pos: vec4<f32>,
+//     @location(0) uv: vec2<f32>,
+// };
+
+// @vertex
+// fn vs_main(@location(0) pos: vec2<f32>, @location(1) uv: vec2<f32>) -> VSOut {
+//     var out: VSOut;
+//     out.pos = vec4<f32>(pos, 0.0, 1.0);
+//     out.uv = uv;
+//     return out;
+// }
+
+// @fragment
+// fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
+//     // clamp UVs to avoid out-of-bounds reads
+//     let tex_x = i32(clamp(in.uv.x * (SHADOW_SIZE - 1.0), 0.0, SHADOW_SIZE - 1.0));
+//     let tex_y = i32(clamp(in.uv.y * (SHADOW_SIZE - 1.0), 0.0, SHADOW_SIZE - 1.0));
+
+//     // load the depth (f32)
+//     let depth_val: f32 = textureLoad(shadow_map, vec2<i32>(tex_x, tex_y), 0);
+
+//     // visualize it as grayscale
+//     return vec4<f32>(depth_val, depth_val, depth_val, 1.0);
+// }

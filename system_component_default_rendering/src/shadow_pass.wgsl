@@ -21,15 +21,12 @@ struct VSOut {
 @vertex
 fn vs_main(input: VertexInput) -> VSOut {
     let model = mat4x4<f32>(
-        input.model_matrix_0, // column 0
-        input.model_matrix_1, // column 1
-        input.model_matrix_2, // column 2
-        input.model_matrix_3, // column 3
+        input.model_matrix_0,
+        input.model_matrix_1,
+        input.model_matrix_2,
+        input.model_matrix_3,
     );
-
     var out: VSOut;
-    // Column-major multiplication: view_proj * model * position
     out.clip_position = shadow_camera.view_proj * model * vec4<f32>(input.position, 1.0);
-
     return out;
 }

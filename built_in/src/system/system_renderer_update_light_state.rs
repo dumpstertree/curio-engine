@@ -47,7 +47,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 let dir = Vector3::new(20.0, -45.0, -15.0).normalize_and_copy();
                 x.all_lights.push(DrawCallLight {
                     light_type: core::collections::light_uniform::LightType::Directional,
-                    position: [0.0, 0.0, 0.0],
+                    position: [0.0, 50.0, 100.0],
                     direction: [dir.x, dir.y, dir.z],
                     color: [1.0, 0.0, 0.0],
                     intensity: 1.0,

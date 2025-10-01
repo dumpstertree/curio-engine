@@ -1,4 +1,7 @@
 use cgmath::Matrix4;
+use egui_wgpu::wgpu::BufferAddress;
+use egui_wgpu::wgpu::VertexAttribute;
+use egui_wgpu::wgpu::VertexBufferLayout;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -27,6 +30,17 @@ impl Matrix4x4 {
             }
         }
         result
+    }
+    /// Multiply this (column-major) 4x4 matrix by a column vector (x,y,z,w).
+    /// Returns the resulting Vector4.
+    pub fn multiply_vec4(&self, v: crate::collections::vector4::Vector4) -> crate::collections::vector4::Vector4 {
+        let m = &self.model;
+        crate::collections::vector4::Vector4 {
+            x: m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0] * v.w,
+            y: m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1] * v.w,
+            z: m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z + m[3][2] * v.w,
+            w: m[0][3] * v.x + m[1][3] * v.y + m[2][3] * v.z + m[3][3] * v.w,
+        }
     }
 
     /// Column-major matrix multiplication: result = a * b
@@ -70,16 +84,6 @@ impl Matrix4x4 {
         Matrix4x4::orthographic_lh(min.x, max.x, min.y, max.y, min.z, max.z)
     }
 
-    pub fn multiply_vec4(&self, v: Vector4) -> Vector4 {
-        let m = &self.model;
-        Vector4 {
-            x: m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z + m[0][3] * v.w,
-            y: m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z + m[1][3] * v.w,
-            z: m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z + m[2][3] * v.w,
-            w: m[3][0] * v.x + m[3][1] * v.y + m[3][2] * v.z + m[3][3] * v.w,
-        }
-    }
-
     pub fn perspective_lh(fov_y: f32, aspect: f32, near: f32, far: f32) -> Matrix4x4 {
         let f = 1.0 / (fov_y * 0.5).tan();
         Matrix4x4 {
@@ -89,17 +93,32 @@ impl Matrix4x4 {
 
     /// Column-major left-handed LookAt
     pub fn look_at(eye: Vector3, target: Vector3, up: Vector3) -> Matrix4x4 {
-        let f = (target - eye).normalize_and_copy();
-        let s = Vector3::cross(up, f).normalize_and_copy();
-        let u = Vector3::cross(f, s);
+        let zaxis = (target - eye).normalize_and_copy(); // Forward (+Z)
+        let xaxis = Vector3::cross(up, zaxis).normalize_and_copy(); // Right (+X)
+        let yaxis = Vector3::cross(zaxis, xaxis); // Up (+Y)
 
         Matrix4x4 {
-            model: [[s.x, u.x, -f.x, 0.0], [s.y, u.y, -f.y, 0.0], [s.z, u.z, -f.z, 0.0], [-Vector3::dot(s, eye), -Vector3::dot(u, eye), Vector3::dot(f, eye), 1.0]],
+            model: [
+                [xaxis.x, yaxis.x, zaxis.x, 0.0],
+                [xaxis.y, yaxis.y, zaxis.y, 0.0],
+                [xaxis.z, yaxis.z, zaxis.z, 0.0],
+                [Vector3::dot(xaxis * -1.0, eye), Vector3::dot(yaxis * -1.0, eye), Vector3::dot(zaxis * -1.0, eye), 1.0],
+            ],
         }
     }
 
     /// Column-major left-handed orthographic projection
     pub fn orthographic_lh(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Matrix4x4 {
+        let r_l = right - left;
+        let t_b = top - bottom;
+        let f_n = far - near;
+
+        Matrix4x4 {
+            model: [[2.0 / r_l, 0.0, 0.0, 0.0], [0.0, 2.0 / t_b, 0.0, 0.0], [0.0, 0.0, 1.0 / f_n, 0.0], [-(right + left) / r_l, -(top + bottom) / t_b, -near / f_n, 1.0]],
+        }
+    }
+
+    pub fn orthographic_lh_zo(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Matrix4x4 {
         let r_l = right - left;
         let t_b = top - bottom;
         let f_n = far - near;
@@ -245,4 +264,31 @@ impl Matrix4x4 {
 pub struct QuadVertex {
     pos: [f32; 2],
     uv: [f32; 2],
+}
+
+impl QuadVertex {
+    pub fn new(pos: [f32; 2], uv: [f32; 2]) -> QuadVertex {
+        QuadVertex { pos, uv }
+    }
+    pub fn desc() -> VertexBufferLayout<'static> {
+        use std::mem;
+        egui_wgpu::wgpu::VertexBufferLayout {
+            array_stride: mem::size_of::<QuadVertex>() as BufferAddress,
+            step_mode: egui_wgpu::wgpu::VertexStepMode::Vertex,
+            attributes: &[
+                VertexAttribute {
+                    // position
+                    offset: mem::size_of::<[f32; 0]>() as BufferAddress,
+                    shader_location: 0,
+                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
+                },
+                VertexAttribute {
+                    // normal
+                    offset: mem::size_of::<[f32; 2]>() as BufferAddress,
+                    shader_location: 1,
+                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
+                },
+            ],
+        }
+    }
 }

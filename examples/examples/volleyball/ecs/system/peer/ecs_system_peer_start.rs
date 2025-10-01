@@ -34,7 +34,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         let spine = AssetLoader::load_spine("path");
         world.spawn((
             Transform::default()
-                .set_position(Vector3::new(0.0, -5.0, 0.0))
+                .set_position(Vector3::new(0.0, -0.0, 0.0))
                 .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
             RendererAnimated::default()
                 .set_asset(Some(spine.clone()))
@@ -58,7 +58,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         ));
         world.spawn((
             Transform::default()
-                .set_position(Vector3::new(5.0, -5.0, -2.0))
+                .set_position(Vector3::new(5.0, -0.0, -2.0))
                 .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 60.0, 0.0))),
             Renderer::default().set_asset(AssetLoader::load_gltf("cube3.glb")),
         ));

@@ -32,10 +32,11 @@ use crate::{camera_rendering_components::CameraRenderingComponents, egui_tools::
 use built_in_state::state_camera::CameraState;
 use built_in_state::state_draw::DrawCallsState;
 use built_in_state::state_lights::StateLights;
+use built_in_state::state_time::TimeState;
 use core::collections::event_queue::EventQueue;
 use core::collections::game_state::{self, GameState};
 use core::collections::light_uniform::{DrawCallLight, LightSystem};
-use core::collections::matrix4x4::Matrix4x4;
+use core::collections::matrix4x4::{Matrix4x4, QuadVertex};
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
 use core::graphics::graphics_mapping::GraphicsMapping;
@@ -43,6 +44,7 @@ use core::io::texture_asset::TextureAsset;
 use core::system::system_component::SystemComponent;
 use core::system::system_components::system_component_graphics::SystemComponentGraphics;
 use core::system_adapters::adapter_system_gpu::SystemGPU;
+use egui_wgpu::wgpu::util::DeviceExt;
 use egui_wgpu::wgpu::{BindGroup, CommandEncoder, DepthStencilState, Device, FragmentState, RenderPass, RenderPassColorAttachment, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, Sampler, Surface, SurfaceTexture, Texture, TextureView};
 use render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh;
 use std::sync::Arc;
@@ -60,13 +62,29 @@ pub struct SystemComponentDefaultGraphics {
     offscreen_view: TextureView,
     post_process_resources: PostProcessResources,
     shadow_system: ShadowSystem,
+    shadow_debug_pipeline: Option<egui_wgpu::wgpu::RenderPipeline>,
+    shadow_debug_bind_group: Option<egui_wgpu::wgpu::BindGroup>,
+    shadow_debug_quad: Option<(egui_wgpu::wgpu::Buffer, egui_wgpu::wgpu::Buffer)>,
 }
 
 impl SystemComponent for SystemComponentDefaultGraphics {
     fn order(&self) -> i32 {
         9000
     }
-    fn init(&mut self, _game_state: &mut Vec<GameState>) {}
+    fn init(&mut self, _game_state: &mut Vec<GameState>) {
+        let device = &SystemGPU::get_device();
+
+        let config = &SystemGPU::get_config();
+
+        self.init_shadow_debug(&device);
+        let debug_shader = device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
+            label: Some("shadow debug shader"),
+            source: egui_wgpu::wgpu::ShaderSource::Wgsl(include_str!("shadow_debug.wgsl").into()),
+        });
+        let x = SystemComponentDefaultGraphics::create_shadow_debug_pipeline(&device, &debug_shader, &self.shadow_system, config.format);
+        self.shadow_debug_bind_group = x.1;
+        self.shadow_debug_pipeline = x.0;
+    }
 
     fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
         // system
@@ -84,7 +102,8 @@ impl SystemComponent for SystemComponentDefaultGraphics {
             // let light_pos = Vector3::new(light.position[0], light.position[1], light.position[2]);
             // let light_rot = Quaternion::from_look_rotation(Vector3::new(light.direction[0], light.direction[1], light.direction[2]), Vector3::up());
             // let matrix = Matrix4x4::new(light_pos, light_rot, Vector3::one());
-            self.shadow_system.update();
+            self.shadow_system
+                .update(game_state[0].get_value2::<TimeState>().scaled_time as f32);
             self.shadow_system
                 .render(&mut encoder, &game_state[0].get_value2::<DrawCallsState>().draw_calls);
         }
@@ -93,8 +112,35 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // draw all 3d
         {
             // draw 3D into offscreen
-            let offscreen_view = &mut self.offscreen_view;
-            SystemComponentDefaultGraphics::draw_3d_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view, &self.shadow_system);
+            // let offscreen_view = &mut self.offscreen_view;
+            // SystemComponentDefaultGraphics::draw_3d_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view, &self.shadow_system);
+            if let (Some(pipeline), Some(bind_group), Some((vb, ib))) = (&self.shadow_debug_pipeline, &self.shadow_debug_bind_group, &self.shadow_debug_quad) {
+                let mut pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
+                    label: Some("Shadow Map Debug Pass"),
+                    color_attachments: &[Some(egui_wgpu::wgpu::RenderPassColorAttachment {
+                        view: &self.offscreen_view, // or swapchain view for direct output
+                        resolve_target: None,
+                        ops: egui_wgpu::wgpu::Operations {
+                            load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color::BLACK),
+                            store: egui_wgpu::wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                });
+
+                pass.set_pipeline(pipeline);
+                pass.set_bind_group(0, bind_group, &[]);
+                pass.set_vertex_buffer(0, vb.slice(..));
+                pass.set_index_buffer(ib.slice(..), egui_wgpu::wgpu::IndexFormat::Uint16);
+                pass.draw_indexed(0..6, 0, 0..1);
+            }
+            for game_state in game_state.iter_mut() {
+                for x in &mut self.render_features_3d {
+                    x.clear(game_state);
+                }
+            }
         }
 
         // draw all post-process
@@ -190,9 +236,86 @@ impl SystemComponentDefaultGraphics {
             offscreen_view,
             post_process_resources: r,
             shadow_system: ShadowSystem::new(Matrix4x4::default()),
+            shadow_debug_pipeline: None,
+            shadow_debug_bind_group: None,
+            shadow_debug_quad: None,
         })
     }
+    fn create_shadow_debug_pipeline(device: &egui_wgpu::wgpu::Device, shader: &egui_wgpu::wgpu::ShaderModule, shadow_system: &ShadowSystem, format: egui_wgpu::wgpu::TextureFormat) -> (Option<RenderPipeline>, Option<BindGroup>) {
+        // Bind group layout
+        let bind_layout = device.create_bind_group_layout(&egui_wgpu::wgpu::BindGroupLayoutDescriptor {
+            label: Some("shadow debug layout"),
+            entries: &[
+                egui_wgpu::wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: egui_wgpu::wgpu::ShaderStages::FRAGMENT,
+                    ty: egui_wgpu::wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: egui_wgpu::wgpu::TextureViewDimension::D2,
+                        sample_type: egui_wgpu::wgpu::TextureSampleType::Depth,
+                    },
+                    count: None,
+                },
+                egui_wgpu::wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: egui_wgpu::wgpu::ShaderStages::FRAGMENT,
+                    ty: egui_wgpu::wgpu::BindingType::Sampler(egui_wgpu::wgpu::SamplerBindingType::Comparison),
+                    count: None,
+                },
+            ],
+        });
 
+        // Bind group
+        let bind_group = device.create_bind_group(&egui_wgpu::wgpu::BindGroupDescriptor {
+            label: Some("shadow debug bind group"),
+            layout: &bind_layout,
+            entries: &[
+                egui_wgpu::wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: egui_wgpu::wgpu::BindingResource::TextureView(&shadow_system.depth_view),
+                },
+                egui_wgpu::wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: egui_wgpu::wgpu::BindingResource::Sampler(&shadow_system.sampler),
+                },
+            ],
+        });
+
+        // Pipeline
+        let pipeline_layout = device.create_pipeline_layout(&egui_wgpu::wgpu::PipelineLayoutDescriptor {
+            label: Some("Shadow Debug Pipeline Layout"),
+            bind_group_layouts: &[&bind_layout],
+            push_constant_ranges: &[],
+        });
+
+        let pipeline = device.create_render_pipeline(&egui_wgpu::wgpu::RenderPipelineDescriptor {
+            label: Some("Shadow Debug Pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: egui_wgpu::wgpu::VertexState {
+                module: shader,
+                entry_point: Some("vs_main"),
+                buffers: &[QuadVertex::desc()],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(egui_wgpu::wgpu::FragmentState {
+                module: shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(egui_wgpu::wgpu::ColorTargetState {
+                    format,
+                    blend: Some(egui_wgpu::wgpu::BlendState::REPLACE),
+                    write_mask: egui_wgpu::wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: egui_wgpu::wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: egui_wgpu::wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        (Some(pipeline), Some(bind_group))
+    }
     // pub fn collect_lights(game_state: &Vec<GameState>) -> Vec<Light> {
     //     let mut out = Vec::new();
     //     for gs in game_state.iter() {
@@ -349,6 +472,26 @@ impl SystemComponentDefaultGraphics {
             }),
             stencil_ops: None,
         })
+    }
+
+    fn init_shadow_debug(&mut self, device: &egui_wgpu::wgpu::Device) {
+        let vertices = [QuadVertex::new([-1.0, -1.0], [0.0, 0.0]), QuadVertex::new([1.0, -1.0], [1.0, 0.0]), QuadVertex::new([1.0, 1.0], [1.0, 1.0]), QuadVertex::new([-1.0, 1.0], [0.0, 1.0])];
+
+        let indices: [u16; 6] = [0, 1, 2, 2, 3, 0];
+
+        let vertex_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
+            label: Some("Shadow Debug Quad VB"),
+            contents: bytemuck::cast_slice(&vertices),
+            usage: egui_wgpu::wgpu::BufferUsages::VERTEX,
+        });
+
+        let index_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
+            label: Some("Shadow Debug Quad IB"),
+            contents: bytemuck::cast_slice(&indices),
+            usage: egui_wgpu::wgpu::BufferUsages::INDEX,
+        });
+
+        self.shadow_debug_quad = Some((vertex_buffer, index_buffer));
     }
 }
 
