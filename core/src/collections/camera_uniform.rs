@@ -56,7 +56,7 @@ impl CameraSnapshot {
             rotation: Quaternion::identity(),
             fovy: 60.0,
             znear: 0.1,
-            zfar: 100.0,
+            zfar: 512.0,
         }
     }
 

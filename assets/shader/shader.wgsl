@@ -96,7 +96,8 @@ struct LightBuffer {
 @group(2) @binding(0)
 var<storage, read> light_buffer: LightBuffer;
 
-const AMBIENT_LIGHT: f32 = 0.0;
+const AMBIENT_LIGHT: f32 = 0.1;
+const SHADOW_STRENGTH: f32 = 0.75;
 
 // ----------------- Shadow Calculation -----------------
 fn compute_shadow_factor(shadow_pos: vec4<f32>) -> f32 {
@@ -112,9 +113,18 @@ fn compute_shadow_factor(shadow_pos: vec4<f32>) -> f32 {
 }
 
 // ----------------- Lighting -----------------
-fn compute_forward_lighting(N: vec3<f32>, V: vec3<f32>, world_pos: vec3<f32>, shadow_factor: f32) -> vec3<f32> {
+
+fn compute_forward_lighting(
+    N: vec3<f32>,
+    V: vec3<f32>,
+    world_pos: vec3<f32>,
+    shadow_factor: f32
+) -> vec3<f32> {
     var total_light = vec3<f32>(0.0);
     let count = light_buffer.count;
+
+    // blend shadow_factor based on strength
+    let final_shadow = mix(1.0, shadow_factor, SHADOW_STRENGTH);
 
     for (var i = 0u; i < count; i = i + 1u) {
         let light = light_buffer.lights[i];
@@ -126,7 +136,8 @@ fn compute_forward_lighting(N: vec3<f32>, V: vec3<f32>, world_pos: vec3<f32>, sh
             let H = normalize(L + V);
             let spec = pow(max(dot(N, H), 0.0), 32.0);
 
-            total_light += light.color_intensity.rgb * light.color_intensity.a * (diff + spec * 0.3) * shadow_factor;
+            total_light += light.color_intensity.rgb * light.color_intensity.a 
+                         * (diff + spec * 0.3) * final_shadow;
         } else if (light_type == 1u) {
             let L_vec = light.position.xyz - world_pos;
             let dist = length(L_vec);
@@ -136,7 +147,9 @@ fn compute_forward_lighting(N: vec3<f32>, V: vec3<f32>, world_pos: vec3<f32>, sh
                 let diff = max(dot(N, L), 0.0);
                 let H = normalize(L + V);
                 let spec = pow(max(dot(N, H), 0.0), 32.0);
-                total_light += light.color_intensity.rgb * light.color_intensity.a * attenuation * (diff + spec * 0.3);
+
+                total_light += light.color_intensity.rgb * light.color_intensity.a 
+                             * attenuation * (diff + spec * 0.3) * final_shadow;
             }
         }
     }
@@ -156,40 +169,9 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
     let N = normalize(in.normal);
     let V = normalize(camera.view_pos.xyz - in.world_pos);
 
-    let shadow_factor = compute_shadow_factor(in.shadow_pos);
-    let light_color = compute_forward_lighting(N, V, in.world_pos, shadow_factor);
+    let shadow_factor = compute_shadow_factor(in.shadow_pos) * SHADOW_STRENGTH;
+    let light_color = compute_forward_lighting(N, V, in.world_pos, shadow_factor) ;
     // return vec4<f32>(shadow_factor);
 
-    return vec4<f32>(albedo * light_color, 1.0);
+    return vec4<f32>( albedo * light_color, 1.0);
 }
-
-// const SHADOW_SIZE: f32 = 2048.0;
-
-// @group(0) @binding(0)
-// var shadow_map: texture_depth_2d;
-
-// struct VSOut {
-//     @builtin(position) pos: vec4<f32>,
-//     @location(0) uv: vec2<f32>,
-// };
-
-// @vertex
-// fn vs_main(@location(0) pos: vec2<f32>, @location(1) uv: vec2<f32>) -> VSOut {
-//     var out: VSOut;
-//     out.pos = vec4<f32>(pos, 0.0, 1.0);
-//     out.uv = uv;
-//     return out;
-// }
-
-// @fragment
-// fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
-//     // clamp UVs to avoid out-of-bounds reads
-//     let tex_x = i32(clamp(in.uv.x * (SHADOW_SIZE - 1.0), 0.0, SHADOW_SIZE - 1.0));
-//     let tex_y = i32(clamp(in.uv.y * (SHADOW_SIZE - 1.0), 0.0, SHADOW_SIZE - 1.0));
-
-//     // load the depth (f32)
-//     let depth_val: f32 = textureLoad(shadow_map, vec2<i32>(tex_x, tex_y), 0);
-
-//     // visualize it as grayscale
-//     return vec4<f32>(depth_val, depth_val, depth_val, 1.0);
-// }

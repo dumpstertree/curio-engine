@@ -68,33 +68,33 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))),
             Renderer::default().set_asset(AssetLoader::load_gltf("ground.glb")),
         ));
-        // world.spawn((
-        //     Transform::default()
-        //         .set_position(Vector3::new(1.0, -5.0, 10.0))
-        //         .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
-        //     RendererAnimated::default()
-        //         .set_asset(Some(spine.clone()))
-        //         .set_animation("walk", true)
-        //         .set_skin("goblin"),
-        // ));
-        // world.spawn((
-        //     Transform::default()
-        //         .set_position(Vector3::new(2.0, -5.0, 20.0))
-        //         .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-        //     RendererAnimated::default()
-        //         .set_asset(Some(spine.clone()))
-        //         .set_animation("walk", true)
-        //         .set_skin("goblin"),
-        // ));
-        // world.spawn((
-        //     Transform::default()
-        //         .set_position(Vector3::new(2.0, -5.0, 20.0))
-        //         .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-        //     RendererAnimated::default()
-        //         .set_asset(Some(spine.clone()))
-        //         .set_animation("walk", true)
-        //         .set_skin("goblin"),
-        // ));
+        world.spawn((
+            Transform::default()
+                .set_position(Vector3::new(-5.0, -5.0, 10.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
+            RendererAnimated::default()
+                .set_asset(Some(spine.clone()))
+                .set_animation("walk", true)
+                .set_skin("goblin"),
+        ));
+        world.spawn((
+            Transform::default()
+                .set_position(Vector3::new(-10.0, -5.0, 20.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
+            RendererAnimated::default()
+                .set_asset(Some(spine.clone()))
+                .set_animation("walk", true)
+                .set_skin("goblin"),
+        ));
+        world.spawn((
+            Transform::default()
+                .set_position(Vector3::new(-15.0, -5.0, 20.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
+            RendererAnimated::default()
+                .set_asset(Some(spine.clone()))
+                .set_animation("walk", true)
+                .set_skin("goblin"),
+        ));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let Some(team) = game_state

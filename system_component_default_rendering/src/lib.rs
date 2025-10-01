@@ -229,7 +229,7 @@ impl SystemComponentDefaultGraphics {
             render_features_post_process: vec![
                 RenderFeaturePostProcessKuwahara::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
                 RenderFeaturePostProcessOutline::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
-                // RenderFeaturePostProcessFog::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
+                RenderFeaturePostProcessFog::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
             ],
             is_dirty: true,
             camera_rendering: CameraRenderingComponents::new(1),

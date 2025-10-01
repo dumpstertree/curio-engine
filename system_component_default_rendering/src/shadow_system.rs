@@ -210,7 +210,6 @@ impl ShadowSystem {
         let queue = SystemGPU::get_queue();
 
         let pos = f32::sin(t) * 5.0;
-        println!("pos {}", pos);
         let light_pos = Vector3::new(pos, 10.0, -10.0); // example
         let target = Vector3::zero(); // look at world origin
         let up = Vector3::up();
@@ -219,25 +218,11 @@ impl ShadowSystem {
         let light_proj = Matrix4x4::orthographic_lh_zo(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
         let light_view_proj = Matrix4x4::multiply(&light_view, &light_proj);
 
-        let world_origin = Vector4::new(0.0, 0.0, 0.0, 1.0);
-        let clip = light_view_proj.multiply_vec4(world_origin);
-
-        // compute NDC coordinates (watch out for w == 0)
-        if clip.w.abs() > 1e-9 {
-            let ndc_x = clip.x / clip.w;
-            let ndc_y = clip.y / clip.w;
-            let ndc_z = clip.z / clip.w;
-            println!("clip = {:?}, ndc = ({:.6}, {:.6}, {:.6})", clip, ndc_x, ndc_y, ndc_z);
-        } else {
-            println!("clip.w is ~0 -> invalid projection: clip = {:?}", clip);
-        }
         queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&light_view_proj));
     }
 
     /// Render depth from the light’s perspective
     pub fn render(&self, encoder: &mut CommandEncoder, draw_calls: &[DrawCall]) {
-        println!("Shadow render: draw_calls.len={} total_instances={}", draw_calls.len(), draw_calls.iter().map(|d| d.matrix.len()).sum::<usize>());
-
         let device = SystemGPU::get_device();
         let mut shadow_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
             label: Some("shadow pass"),

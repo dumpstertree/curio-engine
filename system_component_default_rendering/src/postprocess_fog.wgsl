@@ -14,10 +14,10 @@ var myDepthTex: texture_depth_2d;
 
 // --- Human-editable constants ---
 const FOG_COLOR: vec3<f32>   = vec3<f32>(0.7, 0.8, 0.9); // light blue fog
-const FOG_NEAR: f32          = 10.0;  // start applying fog
+const FOG_NEAR: f32          = 15.0;  // start applying fog
 const FOG_FAR: f32           = 100.0; // fully fogged
 const CAMERA_NEAR: f32       = 0.1;  // must match your camera near
-const CAMERA_FAR: f32        = 100.0; // must match your camera far
+const CAMERA_FAR: f32        = 512.0; // must match your camera far
 const DEPTH_EPSILON: f32     = 0.999; // threshold for "no object" (far plane)
 
 // --- Vertex output ---
@@ -64,9 +64,9 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let depthRaw: f32 = textureLoad(myDepthTex, clamp(coord, vec2<i32>(0,0), vec2<i32>(i32(dims_u.x)-1, i32(dims_u.y)-1)), 0);
 
     // skip fog if depth is at far plane (no geometry)
-    if (depthRaw >= DEPTH_EPSILON) {
-        return color;
-    }
+    // if (depthRaw >= DEPTH_EPSILON) {
+    //     return color;
+    // }
 
     // linearize depth
     let linearDepth: f32 = linearizeDepth(depthRaw, CAMERA_NEAR, CAMERA_FAR);
