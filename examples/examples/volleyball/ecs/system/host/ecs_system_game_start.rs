@@ -3,10 +3,7 @@ use ecs_system::global_ecs_system;
 use hecs::World;
 
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };

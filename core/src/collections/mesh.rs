@@ -319,21 +319,21 @@ impl Mesh {
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, serde::Serialize, serde::Deserialize)]
 
 pub struct Vertex {
-    pub uv0: [f32; 2],
-    pub uv1: [f32; 2],
     pub position: [f32; 3],
     pub normal: [f32; 3],
     pub color: [f32; 4],
+    pub uv0: [f32; 2],
+    pub uv1: [f32; 2],
 }
 
 impl Vertex {
     pub fn default() -> Vertex {
         Vertex {
-            uv0: [0.0, 0.0],
-            uv1: [0.0, 0.0],
             position: [0.0, 0.0, 0.0],
             normal: [0.0, 0.0, 0.0],
             color: [0.0, 0.0, 0.0, 0.0],
+            uv0: [0.0, 0.0],
+            uv1: [0.0, 0.0],
         }
     }
     pub fn desc() -> VertexBufferLayout<'static> {
@@ -343,34 +343,34 @@ impl Vertex {
             step_mode: egui_wgpu::wgpu::VertexStepMode::Vertex,
             attributes: &[
                 VertexAttribute {
-                    // uv0
-                    offset: 0,
-                    shader_location: 0,
-                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
-                },
-                VertexAttribute {
-                    // uv1
-                    offset: mem::size_of::<[f32; 2]>() as BufferAddress,
-                    shader_location: 1,
-                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
-                },
-                VertexAttribute {
                     // position
-                    offset: mem::size_of::<[f32; 4]>() as BufferAddress,
-                    shader_location: 2,
+                    offset: mem::size_of::<[f32; 0]>() as BufferAddress,
+                    shader_location: 0,
                     format: egui_wgpu::wgpu::VertexFormat::Float32x3,
                 },
                 VertexAttribute {
                     // normal
-                    offset: mem::size_of::<[f32; 7]>() as BufferAddress,
-                    shader_location: 3,
+                    offset: mem::size_of::<[f32; 3]>() as BufferAddress,
+                    shader_location: 1,
                     format: egui_wgpu::wgpu::VertexFormat::Float32x3,
                 },
                 VertexAttribute {
                     // color
-                    offset: mem::size_of::<[f32; 10]>() as BufferAddress,
-                    shader_location: 4,
+                    offset: mem::size_of::<[f32; 6]>() as BufferAddress,
+                    shader_location: 2,
                     format: egui_wgpu::wgpu::VertexFormat::Float32x4,
+                },
+                VertexAttribute {
+                    // uv0
+                    offset: mem::size_of::<[f32; 10]>() as BufferAddress,
+                    shader_location: 3,
+                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
+                },
+                VertexAttribute {
+                    // uv1
+                    offset: mem::size_of::<[f32; 12]>() as BufferAddress,
+                    shader_location: 4,
+                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
                 },
             ],
         }

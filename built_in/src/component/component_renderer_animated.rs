@@ -25,7 +25,7 @@ impl RendererAnimated {
             skeleton: None,
             state: None,
             mesh: vec![],
-            fps: 10,
+            fps: 24,
             last_update: -9999.0,
         }
     }

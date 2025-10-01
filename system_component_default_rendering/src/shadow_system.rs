@@ -1,36 +1,43 @@
 use ::core::collections::matrix4x4::Matrix4x4;
 use ::core::system_adapters::adapter_system_gpu::SystemGPU;
+use core::collections::{draw_call::DrawCall, mesh::Vertex, quaternion::Quaternion, vector3::Vector3};
 use std::num::NonZeroU64;
 
+use bytemuck::bytes_of;
 use egui_wgpu::wgpu::{
-    AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Buffer, BufferBindingType, BufferUsages, CompareFunction, Extent3d, FilterMode, Sampler, SamplerBindingType, SamplerDescriptor,
-    ShaderStages, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension,
+    AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Buffer, BufferBindingType, BufferUsages, CommandEncoder, CompareFunction, DepthBiasState, Extent3d, FilterMode, RenderPipeline, Sampler,
+    SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension,
     util::{self, DeviceExt},
 };
+
 pub const SHADOW_SIZE: u32 = 2048;
 
 pub struct ShadowSystem {
+    pub shadow_pipeline: RenderPipeline,
     pub bind_group: BindGroup,
     pub bind_group_layout: BindGroupLayout,
     pub buffer: Buffer,
     pub depth_texture: Texture,
     pub depth_view: TextureView,
     pub sampler: Sampler,
+    pub light_matrix_bind_group: BindGroup,
+    pub light_matrix_bind_group_layout: BindGroupLayout,
 }
 
+// ... earlier imports and constants unchanged ...
+
 impl ShadowSystem {
-    pub fn new(light_view_proj: Matrix4x4) -> Self {
+    pub fn new(initial_light_view_proj: Matrix4x4) -> Self {
         let device = SystemGPU::get_device();
 
-        // ------------------ Uniform buffer for light VP ------------------
-        // let shadow_camera = ShadowCamera { view_proj: light_view_proj };
+        // 1) buffer (light view-proj)
         let buffer = device.create_buffer_init(&util::BufferInitDescriptor {
             label: Some("shadow camera buffer"),
-            contents: bytemuck::bytes_of(&light_view_proj),
+            contents: bytemuck::bytes_of(&initial_light_view_proj),
             usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
         });
 
-        // ------------------ Depth texture ------------------
+        // 2) depth texture (shadow map)
         let depth_texture = device.create_texture(&TextureDescriptor {
             label: Some("shadow depth texture"),
             size: Extent3d {
@@ -47,7 +54,7 @@ impl ShadowSystem {
         });
         let depth_view = depth_texture.create_view(&TextureViewDescriptor::default());
 
-        // ------------------ Comparison sampler ------------------
+        // 3) comparison sampler (for sampling shadow map in main pass)
         let sampler = device.create_sampler(&SamplerDescriptor {
             label: Some("shadow comparison sampler"),
             address_mode_u: AddressMode::ClampToEdge,
@@ -62,10 +69,37 @@ impl ShadowSystem {
             ..Default::default()
         });
 
-        // ------------------ Bind group layout ------------------
-        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("shadow bind group layout"),
+        // -------------------------
+        // 4) Layout: matrix only (for shadow-pass pipeline)
+        // -------------------------
+        let matrix_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("shadow.matrix.layout"),
+            entries: &[BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages::VERTEX, // vertex shader only for depth pass
+                ty: BindingType::Buffer {
+                    ty: BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: NonZeroU64::new(std::mem::size_of::<Matrix4x4>() as u64),
+                },
+                count: None,
+            }],
+        });
+
+        // matrix bind group (for shadow pass)
+        let matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("shadow.matrix.bind_group"),
+            layout: &matrix_layout,
+            entries: &[BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() }],
+        });
+
+        // -------------------------
+        // 5) Layout: sampling (matrix + shadow_map + sampler) (for main pass)
+        // -------------------------
+        let sampling_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            label: Some("shadow.sampling.layout"),
             entries: &[
+                // 0 = matrix (also needed for sampling shader)
                 BindGroupLayoutEntry {
                     binding: 0,
                     visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
@@ -76,6 +110,7 @@ impl ShadowSystem {
                     },
                     count: None,
                 },
+                // 1 = depth texture (shadow map)
                 BindGroupLayoutEntry {
                     binding: 1,
                     visibility: ShaderStages::FRAGMENT,
@@ -86,6 +121,7 @@ impl ShadowSystem {
                     },
                     count: None,
                 },
+                // 2 = comparison sampler
                 BindGroupLayoutEntry {
                     binding: 2,
                     visibility: ShaderStages::FRAGMENT,
@@ -95,10 +131,10 @@ impl ShadowSystem {
             ],
         });
 
-        // ------------------ Bind group ------------------
-        let bind_group = device.create_bind_group(&BindGroupDescriptor {
-            label: Some("shadow bind group"),
-            layout: &bind_group_layout,
+        // sampling bind group (for main pass)
+        let sampling_bind_group = device.create_bind_group(&BindGroupDescriptor {
+            label: Some("shadow.sampling.bind_group"),
+            layout: &sampling_layout,
             entries: &[
                 BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() },
                 BindGroupEntry {
@@ -112,21 +148,119 @@ impl ShadowSystem {
             ],
         });
 
+        // -------------------------
+        // 6) Shadow pipeline uses matrix_layout only (depth-only)
+        // -------------------------
+        let shadow_shader = device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
+            label: Some("shadow shader"),
+            source: egui_wgpu::wgpu::ShaderSource::Wgsl(include_str!("shadow_pass.wgsl").into()),
+        });
+
+        let shadow_pipeline_layout = device.create_pipeline_layout(&egui_wgpu::wgpu::PipelineLayoutDescriptor {
+            label: Some("shadow pipeline layout"),
+            bind_group_layouts: &[&matrix_layout], // IMPORTANT: only matrix layout here
+            push_constant_ranges: &[],
+        });
+
+        let shadow_pipeline = device.create_render_pipeline(&egui_wgpu::wgpu::RenderPipelineDescriptor {
+            label: Some("shadow pipeline"),
+            layout: Some(&shadow_pipeline_layout),
+            vertex: egui_wgpu::wgpu::VertexState {
+                module: &shadow_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[Vertex::desc(), Matrix4x4::desc()],
+                compilation_options: Default::default(),
+            },
+            fragment: None, // depth-only pass
+            primitive: egui_wgpu::wgpu::PrimitiveState::default(),
+            depth_stencil: Some(egui_wgpu::wgpu::DepthStencilState {
+                format: TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: egui_wgpu::wgpu::CompareFunction::LessEqual,
+                stencil: egui_wgpu::wgpu::StencilState::default(),
+                bias: DepthBiasState { constant: 2, slope_scale: 2.0, clamp: 0.0 },
+            }),
+            multisample: egui_wgpu::wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
         Self {
-            bind_group,
-            bind_group_layout,
+            shadow_pipeline,
+            // we keep sampling_layout and matrix_layout around so caller can include sampling_layout in main pipeline creation
+            bind_group: sampling_bind_group,    // use this in main pass to sample
+            bind_group_layout: sampling_layout, // layout to be inserted into main pipeline
             buffer,
             depth_texture,
             depth_view,
             sampler,
+            // store matrix bind group separately so shadow pass can bind it:
+            light_matrix_bind_group: matrix_bind_group,
+            light_matrix_bind_group_layout: matrix_layout,
         }
     }
 
-    /// Update the shadow camera buffer each frame
-    pub fn update(&self, light_view_proj: &Matrix4x4) {
-        let queue = SystemGPU::get_queue();
-        // let shadow_camera = ShadowCamera { view_proj: light_view_proj.model };
+    // ... update() method unchanged (writes buffer) ...
 
-        queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(light_view_proj));
+    /// Recompute light matrix each frame
+    pub fn update(&self) {
+        let queue = SystemGPU::get_queue();
+
+        let light_dir = (Quaternion::from_euler(Vector3::new(-45.0, 45.0, 0.0)) * Vector3::forward()).normalize_and_copy();
+        let light_pos = Vector3::zero() - light_dir * 100.0;
+
+        let light_view = Matrix4x4::look_at(light_pos, Vector3::zero(), Vector3::new(0.0, 1.0, 0.0));
+        // let light_proj = Matrix4x4::orthographic_fit_scene(Vector3::one() * -50.0, Vector3::one() * 50.0, &light_view);
+        let light_proj = Matrix4x4::orthographic_lh(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
+        // let light_view_proj = Matrix4x4::multiply(&light_view, &light_proj);
+        let light_view_proj = Matrix4x4::multiply(&light_proj, &light_view);
+
+        queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&light_view_proj));
+        // let tx = Matrix4x4::transpose(&light_view_proj);
+        // queue.write_buffer(&self.buffer, 0, bytes_of(&light_view_proj));
+
+        // queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&tx));
+        // queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&light_view_proj));
+    }
+
+    /// Render depth from the light’s perspective
+    pub fn render(&self, encoder: &mut CommandEncoder, draw_calls: &[DrawCall]) {
+        let device = SystemGPU::get_device();
+        let mut shadow_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
+            label: Some("shadow pass"),
+            color_attachments: &[],
+            depth_stencil_attachment: Some(egui_wgpu::wgpu::RenderPassDepthStencilAttachment {
+                view: &self.depth_view,
+                depth_ops: Some(egui_wgpu::wgpu::Operations {
+                    load: egui_wgpu::wgpu::LoadOp::Clear(1.0),
+                    store: egui_wgpu::wgpu::StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
+
+        shadow_pass.set_pipeline(&self.shadow_pipeline);
+
+        // bind matrix-only group (no texture/sampler)
+        shadow_pass.set_bind_group(0, &self.light_matrix_bind_group, &[]);
+
+        for draw_call in draw_calls {
+            for mesh in &draw_call.mesh {
+                let n_buffer = device.create_buffer_init(&util::BufferInitDescriptor {
+                    label: Some("Instance Buffer"),
+                    contents: bytemuck::cast_slice(&draw_call.matrix),
+                    usage: BufferUsages::VERTEX,
+                });
+
+                shadow_pass.set_vertex_buffer(0, mesh.get_vertex_buffer_for_device().slice(..));
+                shadow_pass.set_vertex_buffer(1, n_buffer.slice(..));
+                shadow_pass.set_index_buffer(mesh.get_index_buffer_for_device().slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
+
+                // draw
+                shadow_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
+            }
+        }
     }
 }

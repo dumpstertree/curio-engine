@@ -80,11 +80,13 @@ impl SystemComponent for SystemComponentDefaultGraphics {
 
         // for game_state in game_state.iter_mut() {
         if game_state[0].get_value2::<StateLights>().all_lights.len() > 0 {
-            let light = &game_state[0].get_value2::<StateLights>().all_lights[0];
-            let light_pos = Vector3::new(light.position[0], light.position[1], light.position[2]);
-            let light_rot = Quaternion::from_look_rotation(Vector3::new(light.direction[0], light.direction[1], light.direction[2]), Vector3::up());
-            let matrix = Matrix4x4::new(light_pos, light_rot, Vector3::one());
-            self.shadow_system.update(&matrix);
+            // let light = &game_state[0].get_value2::<StateLights>().all_lights[0];
+            // let light_pos = Vector3::new(light.position[0], light.position[1], light.position[2]);
+            // let light_rot = Quaternion::from_look_rotation(Vector3::new(light.direction[0], light.direction[1], light.direction[2]), Vector3::up());
+            // let matrix = Matrix4x4::new(light_pos, light_rot, Vector3::one());
+            self.shadow_system.update();
+            self.shadow_system
+                .render(&mut encoder, &game_state[0].get_value2::<DrawCallsState>().draw_calls);
         }
         // }
         // let lights = SystemComponentDefaultGraphics::collect_lights(game_state);
@@ -181,7 +183,7 @@ impl SystemComponentDefaultGraphics {
             render_features_post_process: vec![
                 RenderFeaturePostProcessKuwahara::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
                 RenderFeaturePostProcessOutline::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
-                RenderFeaturePostProcessFog::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
+                // RenderFeaturePostProcessFog::new(device.clone(), c.format, &r, depth_view, &offscreen_view),
             ],
             is_dirty: true,
             camera_rendering: CameraRenderingComponents::new(1),

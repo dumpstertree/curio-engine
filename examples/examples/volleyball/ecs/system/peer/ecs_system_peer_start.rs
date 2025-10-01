@@ -41,15 +41,15 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 .set_animation("walk", true)
                 .set_skin("goblin"),
         ));
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(5.0, -5.0, 10.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(20.0, -45.0, 0.0))),
-            RendererAnimated::default()
-                .set_asset(Some(spine.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin"),
-        ));
+        // world.spawn((
+        //     Transform::default()
+        //         .set_position(Vector3::new(5.0, -5.0, 10.0))
+        //         .set_rotation(Quaternion::from_euler(Vector3::new(20.0, -45.0, 0.0))),
+        //     RendererAnimated::default()
+        //         .set_asset(Some(spine.clone()))
+        //         .set_animation("walk", true)
+        //         .set_skin("goblin"),
+        // ));
         world.spawn((
             Transform::default()
                 .set_position(Vector3::new(0.0, 0.0, 0.0))
@@ -59,7 +59,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         world.spawn((
             Transform::default()
                 .set_position(Vector3::new(5.0, -5.0, -2.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 45.0, 0.0))),
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 60.0, 0.0))),
             Renderer::default().set_asset(AssetLoader::load_gltf("cube3.glb")),
         ));
         world.spawn((

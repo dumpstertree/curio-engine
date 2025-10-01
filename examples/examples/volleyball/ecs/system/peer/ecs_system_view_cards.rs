@@ -6,6 +6,7 @@
 // use built_in::component::component_transform::Transform;
 // use built_in_state::state_camera::CameraState;
 // use core::collections::vector3::Vector3;
+// use core::io::asset_loader::AssetLoader;
 // use core::io::model_asset::ModelAsset;
 // use core::{
 //     collections::{event_queue::EventQueue, game_state::GameState},
@@ -32,11 +33,11 @@
 //     }
 //     fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue, asset_loader: &mut core::io::asset_loader::AssetLoader) {
 //         self.asset_card
-//             .insert(String::from("card_bump.glb"), asset_loader.load_gltf("card_bump.glb"));
+//             .insert(String::from("card_bump.glb"), AssetLoader::load_gltf("card_bump.glb"));
 //         self.asset_card
-//             .insert(String::from("card_set.glb"), asset_loader.load_gltf("card_set.glb"));
+//             .insert(String::from("card_set.glb"), AssetLoader::load_gltf("card_set.glb"));
 //         self.asset_card
-//             .insert(String::from("card_spike.glb"), asset_loader.load_gltf("card_spike.glb"));
+//             .insert(String::from("card_spike.glb"), AssetLoader::load_gltf("card_spike.glb"));
 //     }
 
 //     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
