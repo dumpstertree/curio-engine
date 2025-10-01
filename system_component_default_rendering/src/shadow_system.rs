@@ -209,14 +209,14 @@ impl ShadowSystem {
     pub fn update(&self, t: f32) {
         let queue = SystemGPU::get_queue();
 
-        let pos = 10.0; //f32::abs(f32::sin(t)) * 10.0;
+        let pos = f32::sin(t) * 5.0;
         println!("pos {}", pos);
-        let light_pos = Vector3::new(5.0, 10.0, -10.0); // example
+        let light_pos = Vector3::new(pos, 10.0, -10.0); // example
         let target = Vector3::zero(); // look at world origin
-        let up = Vector3::down();
+        let up = Vector3::up();
 
         let light_view = Matrix4x4::look_at(light_pos, target, up);
-        let light_proj = Matrix4x4::orthographic_lh(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
+        let light_proj = Matrix4x4::orthographic_lh_zo(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
         let light_view_proj = Matrix4x4::multiply(&light_view, &light_proj);
 
         let world_origin = Vector4::new(0.0, 0.0, 0.0, 1.0);

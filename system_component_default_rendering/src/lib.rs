@@ -112,35 +112,35 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // draw all 3d
         {
             // draw 3D into offscreen
-            // let offscreen_view = &mut self.offscreen_view;
-            // SystemComponentDefaultGraphics::draw_3d_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view, &self.shadow_system);
-            if let (Some(pipeline), Some(bind_group), Some((vb, ib))) = (&self.shadow_debug_pipeline, &self.shadow_debug_bind_group, &self.shadow_debug_quad) {
-                let mut pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
-                    label: Some("Shadow Map Debug Pass"),
-                    color_attachments: &[Some(egui_wgpu::wgpu::RenderPassColorAttachment {
-                        view: &self.offscreen_view, // or swapchain view for direct output
-                        resolve_target: None,
-                        ops: egui_wgpu::wgpu::Operations {
-                            load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color::BLACK),
-                            store: egui_wgpu::wgpu::StoreOp::Store,
-                        },
-                    })],
-                    depth_stencil_attachment: None,
-                    timestamp_writes: None,
-                    occlusion_query_set: None,
-                });
+            let offscreen_view = &mut self.offscreen_view;
+            SystemComponentDefaultGraphics::draw_3d_features(&self.camera_rendering, &mut self.render_features_3d, &mut self.graphics_mappings, game_state, &mut encoder, offscreen_view, &self.shadow_system);
+            // if let (Some(pipeline), Some(bind_group), Some((vb, ib))) = (&self.shadow_debug_pipeline, &self.shadow_debug_bind_group, &self.shadow_debug_quad) {
+            //     let mut pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
+            //         label: Some("Shadow Map Debug Pass"),
+            //         color_attachments: &[Some(egui_wgpu::wgpu::RenderPassColorAttachment {
+            //             view: &self.offscreen_view, // or swapchain view for direct output
+            //             resolve_target: None,
+            //             ops: egui_wgpu::wgpu::Operations {
+            //                 load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color::BLACK),
+            //                 store: egui_wgpu::wgpu::StoreOp::Store,
+            //             },
+            //         })],
+            //         depth_stencil_attachment: None,
+            //         timestamp_writes: None,
+            //         occlusion_query_set: None,
+            //     });
 
-                pass.set_pipeline(pipeline);
-                pass.set_bind_group(0, bind_group, &[]);
-                pass.set_vertex_buffer(0, vb.slice(..));
-                pass.set_index_buffer(ib.slice(..), egui_wgpu::wgpu::IndexFormat::Uint16);
-                pass.draw_indexed(0..6, 0, 0..1);
-            }
-            for game_state in game_state.iter_mut() {
-                for x in &mut self.render_features_3d {
-                    x.clear(game_state);
-                }
-            }
+            //     pass.set_pipeline(pipeline);
+            //     pass.set_bind_group(0, bind_group, &[]);
+            //     pass.set_vertex_buffer(0, vb.slice(..));
+            //     pass.set_index_buffer(ib.slice(..), egui_wgpu::wgpu::IndexFormat::Uint16);
+            //     pass.draw_indexed(0..6, 0, 0..1);
+            // }
+            // for game_state in game_state.iter_mut() {
+            //     for x in &mut self.render_features_3d {
+            //         x.clear(game_state);
+            //     }
+            // }
         }
 
         // draw all post-process

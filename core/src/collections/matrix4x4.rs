@@ -90,19 +90,27 @@ impl Matrix4x4 {
             model: [[f / aspect, 0.0, 0.0, 0.0], [0.0, f, 0.0, 0.0], [0.0, 0.0, far / (far - near), 1.0], [0.0, 0.0, (-near * far) / (far - near), 0.0]],
         }
     }
+    pub fn perspective_lh_zo(fovy: f32, aspect: f32, near: f32, far: f32) -> Matrix4x4 {
+        let f = 1.0 / (0.5 * fovy).tan();
+        let nf = 1.0 / (far - near);
+
+        Matrix4x4 {
+            model: [[f / aspect, 0.0, 0.0, 0.0], [0.0, f, 0.0, 0.0], [0.0, 0.0, far * nf, 1.0], [0.0, 0.0, -near * far * nf, 0.0]],
+        }
+    }
 
     /// Column-major left-handed LookAt
     pub fn look_at(eye: Vector3, target: Vector3, up: Vector3) -> Matrix4x4 {
         let zaxis = (target - eye).normalize_and_copy(); // Forward (+Z)
-        let xaxis = Vector3::cross(up, zaxis).normalize_and_copy(); // Right (+X)
-        let yaxis = Vector3::cross(zaxis, xaxis); // Up (+Y)
+        let xaxis = Vector3::cross(zaxis, up).normalize_and_copy(); // Right (+X)
+        let yaxis = Vector3::cross(xaxis, zaxis).normalize_and_copy(); // Up (+Y)
 
         Matrix4x4 {
             model: [
                 [xaxis.x, yaxis.x, zaxis.x, 0.0],
                 [xaxis.y, yaxis.y, zaxis.y, 0.0],
                 [xaxis.z, yaxis.z, zaxis.z, 0.0],
-                [Vector3::dot(xaxis * -1.0, eye), Vector3::dot(yaxis * -1.0, eye), Vector3::dot(zaxis * -1.0, eye), 1.0],
+                [-Vector3::dot(xaxis, eye), -Vector3::dot(yaxis, eye), -Vector3::dot(zaxis, eye), 1.0],
             ],
         }
     }

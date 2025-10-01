@@ -28,5 +28,6 @@ fn vs_main(input: VertexInput) -> VSOut {
     );
     var out: VSOut;
     out.clip_position = shadow_camera.view_proj * model * vec4<f32>(input.position, 1.0);
+    out.clip_position.y = -out.clip_position.y;
     return out;
 }
