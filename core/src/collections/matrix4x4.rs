@@ -266,37 +266,3 @@ impl Matrix4x4 {
         }
     }
 }
-
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct QuadVertex {
-    pos: [f32; 2],
-    uv: [f32; 2],
-}
-
-impl QuadVertex {
-    pub fn new(pos: [f32; 2], uv: [f32; 2]) -> QuadVertex {
-        QuadVertex { pos, uv }
-    }
-    pub fn desc() -> VertexBufferLayout<'static> {
-        use std::mem;
-        egui_wgpu::wgpu::VertexBufferLayout {
-            array_stride: mem::size_of::<QuadVertex>() as BufferAddress,
-            step_mode: egui_wgpu::wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                VertexAttribute {
-                    // position
-                    offset: mem::size_of::<[f32; 0]>() as BufferAddress,
-                    shader_location: 0,
-                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
-                },
-                VertexAttribute {
-                    // normal
-                    offset: mem::size_of::<[f32; 2]>() as BufferAddress,
-                    shader_location: 1,
-                    format: egui_wgpu::wgpu::VertexFormat::Float32x2,
-                },
-            ],
-        }
-    }
-}

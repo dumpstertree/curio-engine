@@ -1589,6 +1589,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "macro_render_feature_driver"
+version = "0.1.0"
+dependencies = [
+ "core",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.104",
+]
+
+[[package]]
 name = "macro_state"
 version = "0.1.0"
 dependencies = [
