@@ -1,5 +1,5 @@
 use built_in::component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
-use built_in_state::state_camera::CameraState;
+use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::global_ecs_system;
 use hecs::World;
 
@@ -10,7 +10,11 @@ use core::{
     io::asset_loader::AssetLoader,
 };
 
-use crate::state::state_teams::{StateTeamAssignments, Teams};
+use crate::{
+    AssetMappingUIDs,
+    ecs::components::{component_ball::ComponentBall, component_player::ComponentPlayer},
+    state::state_teams::{StateTeamAssignments, Teams},
+};
 
 #[global_ecs_system]
 pub struct ECSSystemPeerStart {}
@@ -31,69 +35,46 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             x.resolution_height = 1080 / 1;
         });
 
-        let spine = AssetLoader::load_spine("path");
+        // let spine = AssetLoader::load_spine_from_path("path");
+        let asset_goblin = AssetLoader::load_spine_from_database(AssetMappingUIDs::Goblin.uid());
+        let asset_court = AssetLoader::load_mesh_static_from_database(AssetMappingUIDs::Court.uid());
+
+        // court
         world.spawn((
             Transform::default()
-                .set_position(Vector3::new(0.0, -5.0, 0.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-            RendererAnimated::default()
-                .set_asset(Some(spine.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin"),
+                .set_position(Vector3::new(0.0, 0.0, 0.0))
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))),
+            Renderer::default().set_asset(Some(asset_court)),
         ));
-        // world.spawn((
-        //     Transform::default()
-        //         .set_position(Vector3::new(5.0, -5.0, 10.0))
-        //         .set_rotation(Quaternion::from_euler(Vector3::new(20.0, -45.0, 0.0))),
-        //     RendererAnimated::default()
-        //         .set_asset(Some(spine.clone()))
-        //         .set_animation("walk", true)
-        //         .set_skin("goblin"),
-        // ));
+        for id in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
+            let mut rend = RendererAnimated::default();
+            rend.set_asset(Some(asset_goblin.clone()))
+                .set_animation("walk", true)
+                .set_skin("goblin");
+            // players
+            world.spawn((
+                ComponentPlayer::default().set_player_id(*id),
+                Transform::default()
+                    .set_position(Vector3::new(-5.0, -5.0, 10.0))
+                    .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
+                rend,
+            ));
+        }
+        {
+            let mut rend = RendererAnimated::default();
+            rend.set_asset(Some(asset_goblin.clone()))
+                .set_animation("walk", true)
+                .set_skin("goblin");
+            // players
+            world.spawn((ComponentBall::default(), Transform::default(), rend));
+        }
+
+        // lighting
         world.spawn((
             Transform::default()
                 .set_position(Vector3::new(0.0, 0.0, 0.0))
                 .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
             ComponentLight::default(),
-        ));
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(5.0, -5.0, -2.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 60.0, 0.0))),
-            Renderer::default().set_asset(AssetLoader::load_gltf("cube3.glb")),
-        ));
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(0.0, -5.0, 0.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))),
-            Renderer::default().set_asset(AssetLoader::load_gltf("ground.glb")),
-        ));
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(-5.0, -5.0, 10.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
-            RendererAnimated::default()
-                .set_asset(Some(spine.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin"),
-        ));
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(-10.0, -5.0, 20.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-            RendererAnimated::default()
-                .set_asset(Some(spine.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin"),
-        ));
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(-15.0, -5.0, 20.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0))),
-            RendererAnimated::default()
-                .set_asset(Some(spine.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin"),
         ));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
@@ -108,7 +89,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             Teams::Red => {
                 world.spawn((
                     Transform::default()
-                        .set_position(Vector3::new(0.0, 5.0, -9.0))
+                        .set_position(Vector3::new(0.0, 6.0, -14.0))
                         .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
                     Camera::default(),
                 ));
@@ -116,7 +97,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             Teams::Blue => {
                 world.spawn((
                     Transform::default()
-                        .set_position(Vector3::new(0.0, 5.0, 9.0))
+                        .set_position(Vector3::new(0.0, 6.0, 14.0))
                         .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 180.0, 0.0))),
                     Camera::default(),
                 ));

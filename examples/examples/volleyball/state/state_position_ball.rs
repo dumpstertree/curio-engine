@@ -5,7 +5,7 @@ use macro_state_serialize::global_state_serialize;
 #[global_state_serialize]
 pub struct StatePositionBall {
     pub row: i32,
-    pub collun: i32,
+    pub column: i32,
 }
 impl IState for StatePositionBall {
     fn id() -> i32 {

@@ -14,11 +14,7 @@ use crate::{
     },
 };
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-        vector2_int::Vector2Int,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
 };
@@ -100,10 +96,10 @@ impl ECSSystemGameRequestManuever {
             // convert based on team
             let diff = team.convert_dir(0, move_forward + modifier_range);
             // move
-            x.collun = x.collun + diff.0;
+            x.column = x.column + diff.0;
             x.row = x.row + diff.1;
 
-            println!("Ball moved for team ({}): ({},{}) -> ({},{})", team, x.collun - diff.0, x.row - diff.1, x.collun, x.row);
+            println!("Ball moved for team ({}): ({},{}) -> ({},{})", team, x.column - diff.0, x.row - diff.1, x.column, x.row);
         })
     }
     fn dequeue_card_discard(game_state: &mut GameState, card_ids: Vec<i32>) {

@@ -16,6 +16,7 @@ pub struct RendererAnimated {
     last_update: f64,
     pub asset: Option<Arc<ModelAssetAnimated>>,
     pub mesh: Vec<Arc<Mesh>>,
+    last_animation: String,
 }
 
 impl RendererAnimated {
@@ -27,25 +28,36 @@ impl RendererAnimated {
             mesh: vec![],
             fps: 24,
             last_update: -9999.0,
+            last_animation: String::new(),
         }
     }
+
     /// Set the current playing animation
-    pub fn set_animation(mut self, name: &str, looping: bool) -> Self {
+    pub fn set_animation(&mut self, name: &str, looping: bool) -> &mut Self {
+        if name.to_string() == self.last_animation {
+            return self;
+        }
         if let Some(asset_animated) = &self.asset {
             if let Some(state) = &mut self.state {
                 if let Some(animation) = asset_animated.skeleton_data.find_animation(name) {
                     // set animation
                     state.set_animation(0, &animation, looping);
+                    // update mesh
+                    self.update_mesh(self.last_update);
+                } else {
+                    // set animation
+                    state.set_empty_animation(0, 0.0);
 
                     // update mesh
                     self.update_mesh(self.last_update);
                 }
             }
         }
+        self.last_animation = name.to_string();
         self
     }
     /// Set the visible skin
-    pub fn set_skin(mut self, name: &str) -> Self {
+    pub fn set_skin(&mut self, name: &str) -> &mut Self {
         if let Some(skeleton) = &mut self.skeleton {
             let resukt = skeleton.set_skin_by_name(name);
             match resukt {
@@ -59,7 +71,7 @@ impl RendererAnimated {
         self
     }
     /// Set the asset
-    pub fn set_asset(mut self, asset: Option<Arc<ModelAssetAnimated>>) -> Self {
+    pub fn set_asset(&mut self, asset: Option<Arc<ModelAssetAnimated>>) -> &mut Self {
         // set the asset
         self.asset = asset;
 
@@ -110,7 +122,8 @@ impl RendererAnimated {
         // apply all changes
         state.apply(skeleton);
         // update all transforms
-        skeleton.update_world_transform(rusty_spine::Physics::None);
+        // skeleton.update_world_transform(rusty_spine::Physics::None);
+        skeleton.update_world_transform();
 
         let mut z: f32 = 0.0;
         let mut out = Vec::new();
@@ -124,7 +137,8 @@ impl RendererAnimated {
                     let mut world = [0f32; 8]; // 4 * (x,y)
                     // offset = 0, stride = 2 (tight x,y)
                     unsafe {
-                        region.compute_world_vertices(&slot, &mut world, 0, 2);
+                        // region.compute_world_vertices(&slot, &mut world, 0, 2);
+                        region.compute_world_vertices(&*slot.bone(), &mut world, 0, 2);
                     }
 
                     let uvs = region.uvs(); // [f32; 8]

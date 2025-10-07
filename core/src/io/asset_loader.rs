@@ -1,14 +1,20 @@
 use core::panic;
 use std::collections::HashMap;
+use std::error::Error;
 use std::fs;
+use std::io::Cursor;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::thread::sleep;
 use std::time::Duration;
 
 use egui_wgpu::wgpu::hal::auxil::db::imgtec;
 use egui_wgpu::wgpu::Device;
 use egui_wgpu::wgpu::ShaderModule;
+use image::DynamicImage;
 use rusty_spine::Animation;
+use rusty_spine::SkeletonData;
+use zip::ZipArchive;
 
 // use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::collections::material::Material;
@@ -16,6 +22,7 @@ use crate::collections::material::ShaderDesc;
 use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::mesh::Mesh;
 use crate::collections::mesh::Vertex;
+use crate::io::asset_database::AssetDatabase;
 use crate::io::model_asset_animated::ModelAssetAnimated;
 
 use super::model_asset::ModelAsset;
@@ -33,6 +40,8 @@ use rusty_spine::SkeletonJson;
 // static mut CUBE: Mutex<Option<Arc<Mesh>>> = None;
 // static mut SPHERE: Mutex<Option<Arc<Mesh>>> = None;
 // static mut PLANE: Mutex<Option<Arc<Mesh>>> = None;
+
+static mut ASSET_DATABASE: Mutex<Option<AssetDatabase>> = Mutex::new(None);
 
 pub struct AssetLoader {
     asset_cache: HashMap<String, Arc<ModelAsset>>, // shader_cache: ShaderCache<'a>,
@@ -137,6 +146,13 @@ impl AssetLoader {
         None
     }
 
+    pub fn set_database(database: AssetDatabase) {
+        unsafe {
+            let mut guard = ASSET_DATABASE.lock().unwrap();
+            *guard = Some(database);
+        }
+    }
+
     // const PATH_TEXTURE: &str = "Assets/Texture";
     // const PATH_MESH: &str = "assets";
 
@@ -164,7 +180,93 @@ impl AssetLoader {
         // fallthrough
         None
     }
-    pub fn load_spine(path: &str) -> Arc<ModelAssetAnimated> {
+
+    pub fn load_mesh_static_from_database(uid: String) -> Arc<ModelAsset> {
+        unsafe {
+            let Ok(guard) = ASSET_DATABASE.lock() else {
+                panic!();
+            };
+
+            match &(*guard) {
+                None => panic!("AssetDatabase has not been set"),
+                Some(x) => {
+                    let data = x.fetch_asset(uid);
+
+                    if data.len() == 0 {
+                        panic!("No data!");
+                    }
+                    let unwraped_gltf = Self::unwrap_gltf(data.as_slice()).unwrap();
+
+                    return Arc::new(ModelAsset::new(unwraped_gltf.0, unwraped_gltf.1));
+                }
+            }
+        }
+    }
+    pub fn load_spine_from_database(uid: String) -> Arc<ModelAssetAnimated> {
+        unsafe {
+            let Ok(guard) = ASSET_DATABASE.lock() else {
+                panic!();
+            };
+
+            match &(*guard) {
+                None => panic!("AssetDatabase has not been set"),
+                Some(x) => {
+                    let data = x.fetch_asset(uid);
+                    let spine_data = Self::unwrap_spine(data.as_slice());
+                    let Ok(spine_data) = spine_data else {
+                        panic!("Err {}", spine_data.err().unwrap());
+                    };
+
+                    //create a material
+                    let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+                    let mut material = Material::new(shader_desc.clone());
+                    material.set_texture_with_label(Some(spine_data.2), "diffuse");
+
+                    // create the asset
+                    let x = Arc::new(ModelAssetAnimated::new(Arc::new(material), spine_data.1.clone(), Arc::new(AnimationStateData::new(spine_data.1.clone()))));
+
+                    return x;
+                }
+            }
+        }
+    }
+    pub fn unwrap_spine(data: &[u8]) -> Result<(Arc<Atlas>, Arc<SkeletonData>, TextureAsset), Box<dyn Error>> {
+        // Wrap the data so zip can read from it like a file
+        let reader = Cursor::new(data);
+        let mut archive = ZipArchive::new(reader)?;
+
+        // Try to read the files
+        let mut json_bytes = Vec::new();
+        let mut atlas_bytes = Vec::new();
+        let mut texture_bytes = Vec::new();
+
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)?;
+            let name = file.name().to_string();
+
+            if name.ends_with(".json") {
+                std::io::copy(&mut file, &mut json_bytes)?;
+            } else if name.ends_with(".atlas") {
+                std::io::copy(&mut file, &mut atlas_bytes)?;
+            } else if name.ends_with(".png") {
+                std::io::copy(&mut file, &mut texture_bytes)?;
+            }
+        }
+
+        if json_bytes.is_empty() || atlas_bytes.is_empty() || texture_bytes.is_empty() {
+            return Err("Missing .json or .atlas or .png in ZIP".into());
+        }
+
+        let atlas = Arc::new(Atlas::new(atlas_bytes.as_slice(), "").unwrap());
+
+        let mut json = SkeletonJson::new(atlas.clone());
+        json.set_scale(0.01);
+        let skeleton_data = Arc::new(json.read_skeleton_data(json_bytes.as_slice()).unwrap());
+        let image = image::load_from_memory_with_format(&texture_bytes, image::ImageFormat::Png).unwrap();
+        let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
+        Ok((atlas, skeleton_data, texture))
+    }
+    pub fn load_spine_from_path(path: &str) -> Arc<ModelAssetAnimated> {
         // 1. Load atlas text
 
         // 2. Create Atlas
@@ -176,7 +278,7 @@ impl AssetLoader {
 
         // 2. Load skeleton data (JSON format example)
         let mut json = SkeletonJson::new(atlas.clone());
-        json.set_scale(0.03);
+        json.set_scale(0.01);
         // Optionally configure scale / other settings on json...
         let file = fs::read("assets/test.json").unwrap();
         let skeleton_data = Arc::new(json.read_skeleton_data(&file).unwrap());
@@ -208,10 +310,10 @@ impl AssetLoader {
         //     sleep(Duration::from_secs((1.0 / 60.0) as u64));
         // }
         let texture_asset = AssetLoader::load_png(String::from("assets/test.png"));
-        println!("let texture is none {}", texture_asset.is_none());
         let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
         let mut material = Material::new(shader_desc.clone());
         material.set_texture_with_label(texture_asset, "diffuse");
+
         Arc::new(ModelAssetAnimated::new(Arc::new(material), skeleton_data, state_data.clone()))
     }
 
@@ -228,6 +330,107 @@ impl AssetLoader {
         let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
         my_struct
     }
+
+    pub fn unwrap_gltf(data: &[u8]) -> Option<(Vec<Arc<Mesh>>, Vec<Arc<Material>>)> {
+        println!("Importing GLTF from memory...");
+
+        // Import GLTF directly from memory slice
+        let (gltf, buffers, images) = gltf::import_slice(data).ok()?;
+
+        let mut all_meshes = Vec::with_capacity(gltf.meshes().len());
+        let mut all_materials = Vec::with_capacity(gltf.materials().len());
+
+        let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+
+        // --- Materials ---
+        if gltf.materials().count() == 0 {
+            all_materials.push(Arc::new(Material::new(shader_desc.clone())));
+        } else {
+            for material in gltf.materials() {
+                let pbr = material.pbr_metallic_roughness();
+
+                let texture_asset = if let Some(tex_info) = pbr.base_color_texture() {
+                    let image = &images[tex_info.texture().index()];
+                    let mut pixels = image.pixels.clone();
+
+                    // Convert 3-channel to 4-channel (R8G8B8 → R8G8B8A8)
+                    if image.format == gltf::image::Format::R8G8B8 {
+                        let mut rgba = Vec::with_capacity((image.width * image.height * 4) as usize);
+                        for chunk in pixels.chunks(3) {
+                            rgba.extend_from_slice(chunk);
+                            rgba.push(255); // default alpha
+                        }
+                        pixels = rgba;
+                    }
+
+                    TextureAsset::new_from_buffer(None, image.width, image.height, &pixels)
+                } else {
+                    TextureAsset::default()
+                };
+
+                let mut mat = Material::new(shader_desc.clone());
+                mat.set_texture_with_label(Some(texture_asset), "diffuse");
+                all_materials.push(Arc::new(mat));
+            }
+        }
+
+        // --- Meshes ---
+        for mesh in gltf.meshes() {
+            let mesh_name = mesh.name().unwrap_or("Unnamed");
+            println!("Adding mesh: {}", mesh_name);
+
+            for (primitive_index, primitive) in mesh.primitives().enumerate() {
+                let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+
+                // Positions are required
+                let positions: Vec<[f32; 3]> = reader.read_positions()?.collect();
+                let vertex_count = positions.len();
+                let mut vertices = vec![Vertex::default(); vertex_count];
+
+                // Fill position data
+                for (v, pos) in vertices.iter_mut().zip(positions) {
+                    v.position = pos;
+                }
+
+                // Fill optional attributes
+                if let Some(normals) = reader.read_normals() {
+                    for (v, normal) in vertices.iter_mut().zip(normals) {
+                        v.normal = normal;
+                    }
+                }
+
+                if let Some(tex0) = reader.read_tex_coords(0) {
+                    for (v, uv) in vertices.iter_mut().zip(tex0.into_f32()) {
+                        v.uv0 = uv;
+                    }
+                }
+
+                if let Some(tex1) = reader.read_tex_coords(1) {
+                    for (v, uv) in vertices.iter_mut().zip(tex1.into_f32()) {
+                        v.uv1 = uv;
+                    }
+                }
+
+                if let Some(colors) = reader.read_colors(0) {
+                    for (v, color) in vertices.iter_mut().zip(colors.into_rgba_f32()) {
+                        v.color = color;
+                    }
+                }
+
+                // Indices
+                let indices: Vec<u32> = reader
+                    .read_indices()
+                    .map(|i| i.into_u32().collect())
+                    .unwrap_or_default();
+
+                let mesh_id = format!("{}:{}", mesh_name, primitive_index);
+                all_meshes.push(Arc::new(Mesh::new(mesh_id, vertices, indices, Matrix4x4::default())));
+            }
+        }
+
+        Some((all_meshes, all_materials))
+    }
+
     pub fn load_gltf<'a>(path: &str) -> Option<Arc<ModelAsset>> {
         // return cached
         println!("importing");

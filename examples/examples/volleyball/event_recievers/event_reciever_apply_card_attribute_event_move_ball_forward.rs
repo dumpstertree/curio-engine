@@ -54,10 +54,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
                     // convert based on team
                     let diff = team.convert_dir(0, move_forward + active_modifiers.range);
                     // move
-                    x.collun = x.collun + diff.0;
+                    x.column = x.column + diff.0;
                     x.row = x.row + diff.1;
 
-                    println!("Ball moved for team ({}): ({},{}) -> ({},{})", team, x.collun - diff.0, x.row - diff.1, x.collun, x.row);
+                    println!("Ball moved for team ({}): ({},{}) -> ({},{})", team, x.column - diff.0, x.row - diff.1, x.column, x.row);
                 })
             }
             _ => {}

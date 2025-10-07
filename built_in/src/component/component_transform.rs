@@ -1,6 +1,6 @@
 use core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct Transform {
     pub position: Vector3,
     pub rotation: Quaternion,
@@ -15,8 +15,18 @@ impl Transform {
             scale: Vector3::one(),
         }
     }
-    pub fn get_matrix(self) -> Matrix4x4 {
+    pub fn get_matrix(&self) -> Matrix4x4 {
         Matrix4x4::new(self.position, self.rotation, self.scale)
+    }
+    pub fn move_towards_position(&mut self, position: Vector3, delta: f32) -> f32 {
+        let dist = f32::min((position - self.position).magnitude(), delta);
+        if dist == 0.0 {
+            return 0.0;
+        }
+        let dir = (position - self.position).normalize_and_copy();
+
+        self.position = self.position + dir * dist;
+        dist
     }
     pub fn set_position(mut self, position: Vector3) -> Transform {
         self.position = position;

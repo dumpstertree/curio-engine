@@ -3,17 +3,17 @@ use ecs_system::global_ecs_system;
 use hecs::World;
 
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 
 use crate::{
     game_events::GameEvents,
-    state::state_turn::StateTurn,
+    state::{
+        peer::state_peer_input_mode::{InputModes, StatePeerInputMode},
+        state_turn::StateTurn,
+    },
 };
 
 #[global_ecs_system]
@@ -23,7 +23,7 @@ impl ECSSystemEventless for ECSSystemTurnMove {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id
+        game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get_value2::<StatePeerInputMode>().mode == InputModes::Move
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
         // get states

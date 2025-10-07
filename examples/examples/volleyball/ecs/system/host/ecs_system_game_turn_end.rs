@@ -43,7 +43,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
                 };
 
                 let state_position_ball = game_state.get_value2::<StatePositionBall>();
-                let ball_is_on_side = team.on_side(state_position_ball.collun, state_position_ball.row);
+                let ball_is_on_side = team.on_side(state_position_ball.column, state_position_ball.row);
                 if ball_is_on_side {
                     println!("Point scored for {}!", team.next_team());
                     event_queue.enqueue_event(GameEvents::PointScored(team));

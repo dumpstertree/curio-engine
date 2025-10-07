@@ -1,6 +1,7 @@
 use crate::cards::card_instance::CardInstance;
 use crate::dependency_filler::DependencyFiller;
 use crate::game_events::{FilledCardResponse, GameEvents};
+use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use built_in_state::state_input::InputState;
@@ -23,7 +24,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id
+        game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get_value2::<StatePeerInputMode>().mode == InputModes::Manuever
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
         let state_input = game_state.get_value2::<InputState>();
