@@ -13,28 +13,28 @@ use core::{
     io::texture_asset::TextureAsset,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
-use egui_wgpu::wgpu::{BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
+use egui_wgpu::wgpu::{BindGroup, BindGroupEntry, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
 use std::sync::Arc;
 
 pub struct RenderFeatureDrawMesh {
-    light_system: LightSystem,
+    light_system: Vec<LightSystem>,
 }
 
 impl RenderFeatureDrawMesh {
     pub fn new() -> Box<RenderFeatureDrawMesh> {
-        Box::new(RenderFeatureDrawMesh { light_system: LightSystem::new() })
+        Box::new(RenderFeatureDrawMesh { light_system: Vec::new() })
     }
 
-    fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem) {
+    fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         let state_draws = game_state.get_value2::<DrawCallsState>();
         let draw_calls = &state_draws.draw_calls;
 
         for draw_call in draw_calls {
-            self.draw_draw_call(draw_call, config, device, render_pass, camera, camera_index, shadow_system);
+            self.draw_draw_call(draw_call, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
         }
     }
 
-    fn draw_draw_call(&mut self, draw_call: &DrawCall, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem) {
+    fn draw_draw_call(&mut self, draw_call: &DrawCall, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         for i in 0..draw_call.mesh.len() {
             let mesh = &draw_call.mesh[i];
             let material = &draw_call.materials[i];
@@ -46,10 +46,10 @@ impl RenderFeatureDrawMesh {
             // Use layouts, not bind groups, for pipeline
             let rp = RenderFeatureDrawMesh::get_render_pipeline(
                 &camera.camera_bind_group_layout,
-                &diffuse_bind_group.1,                // diffuse layout
-                &color_bind_group.1,                  // color layout
-                &self.light_system.bind_group_layout, // lights layout
-                &shadow_system.bind_group_layout,
+                &diffuse_bind_group.1,                              // diffuse layout
+                &color_bind_group.1,                                // color layout
+                &self.light_system[camera_index].bind_group_layout, // lights layout
+                &shadow_system_bind_group_layout,
                 config,
                 device,
                 material.shader.clone(),
@@ -75,8 +75,8 @@ impl RenderFeatureDrawMesh {
             render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
             render_pass.set_bind_group(1, &camera.camera_bind_group, &[(256 * camera_index).try_into().unwrap()]);
             // render_pass.set_bind_group(2, &color_bind_group.0, &[]);
-            render_pass.set_bind_group(2, &self.light_system.bind_group, &[]);
-            render_pass.set_bind_group(3, &shadow_system.bind_group, &[]); // 👈 ADD THIS
+            render_pass.set_bind_group(2, &self.light_system[camera_index].bind_group, &[]);
+            render_pass.set_bind_group(3, shadow_system_bind_group, &[]);
             // render_pass.set_bind_group(4, &shadow_system.light_ubo_bind_group, &[]);
             // Draw
             render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
@@ -149,20 +149,16 @@ impl RenderFeatureDrawMesh {
 }
 
 impl RenderFeature3D for RenderFeatureDrawMesh {
-    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem) {
-        println!(
-            "sun values {}, {}, {}",
-            &game_state.get_value2::<StateSun>().get_draw_call().color[0],
-            &game_state.get_value2::<StateSun>().get_draw_call().color[1],
-            &game_state.get_value2::<StateSun>().get_draw_call().color[2],
-        );
-        self.light_system
-            .update(&game_state.get_value2::<StateSun>().get_draw_call(), &game_state.get_value2::<StateLights>().all_lights);
+    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+        while self.light_system.len() <= camera_index {
+            self.light_system.push(LightSystem::new());
+        }
+        self.light_system[camera_index].update(&game_state.get_value2::<StateSun>().get_draw_call(), &game_state.get_value2::<StateLights>().all_lights);
 
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();
 
-        self.draw_all_mesh(game_state, &config, &device, render_pass, camera, camera_index, shadow_system);
+        self.draw_all_mesh(game_state, &config, &device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
     }
 
     fn clear(&mut self, game_state: &mut GameState) {

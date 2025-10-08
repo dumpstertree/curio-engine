@@ -9,6 +9,7 @@ use core::{
         light_uniform::DrawCallLight,
         vector3::Vector3,
     },
+    dumpster_engine::{GameInstance, NetworkModes},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
@@ -24,6 +25,9 @@ impl SystemRendererUpdateState {
 impl ECSSystemEventless for SystemRendererUpdateState {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
+    }
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        vec![NetworkModes::LocalHost]
     }
     fn enable(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // game_state.edit::<StateSun>(|x| {

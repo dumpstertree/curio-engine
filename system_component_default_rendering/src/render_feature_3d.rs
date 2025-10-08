@@ -5,12 +5,12 @@ use core::{
     io::texture_asset::TextureAsset,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
-use egui_wgpu::wgpu::{RenderPass, RenderPassDepthStencilAttachment};
+use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 
 use crate::{SystemComponentDefaultGraphics, camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};
 
 pub trait RenderFeature3D {
-    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem);
+    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup);
     fn clear(&mut self, game_state: &mut GameState);
 }
 
@@ -80,7 +80,7 @@ impl RenderFeature3DHelper {
 
             // render features
             for feature in self.features.iter_mut() {
-                feature.render(game_state, &mut render_pass, camera_rendering, i, shadow_system);
+                feature.render(game_state, &mut render_pass, camera_rendering, i, &shadow_system.bind_group_layout, shadow_system.sampling_bind_group_for(i).unwrap());
             }
         }
 

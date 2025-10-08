@@ -62,15 +62,16 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         let output = drawing_resources.0;
         let output_view = drawing_resources.2;
 
-        for game_state in game_state.iter_mut() {
-            let state_sun = game_state.get_value2::<StateSun>();
+        self.shadow_system
+            .ensure_screens(game_state.len(), Matrix4x4::default());
+        for i in 0..game_state.len() {
+            let state_sun = game_state[i].get_value2::<StateSun>();
             if state_sun.cast_shadows {
-                println!("cast shadow");
-                self.shadow_system.update(&state_sun.direction);
                 self.shadow_system
-                    .render(&mut encoder, &game_state.get_value2::<DrawCallsState>().draw_calls);
+                    .update_for_screen(i, &state_sun.direction);
+                self.shadow_system
+                    .render_for_screen(&mut encoder, i, &game_state[i].get_value2::<DrawCallsState>().draw_calls);
             }
-            break;
         }
 
         // draw 3D into offscreen
@@ -119,7 +120,7 @@ impl SystemComponentDefaultGraphics {
         Box::new(SystemComponentDefaultGraphics {
             is_dirty: true,
             graphics_mappings: Vec::new(),
-            shadow_system: ShadowSystem::new(Matrix4x4::default()),
+            shadow_system: ShadowSystem::new(Matrix4x4::default(), 1),
             render_feature_2d_helper: RenderFeature2DHelper::new(),
             render_feature_3d_helper: RenderFeature3DHelper::new(),
             render_feature_pp_helper: RenderFeaturePostProcessHelper::new(&rt.1),

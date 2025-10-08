@@ -14,6 +14,7 @@ use core::{
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     io::asset_loader::AssetLoader,
+    random::Random,
 };
 
 use crate::{
@@ -92,6 +93,11 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
             ComponentLight::default(),
         ));
+
+        game_state.edit::<StateSun>(|x| {
+            x.cast_shadows = true;
+            x.color = Color::white();
+        });
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let Some(team) = game_state
@@ -120,13 +126,10 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 ));
             }
         }
-    }
-    fn did_tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
-        println!("set sun");
+
+        let cam = game_state.get_value2::<CameraState>().cameras.rotation * Vector3::forward();
         game_state.edit::<StateSun>(|x| {
-            x.cast_shadows = true;
-            x.color = Color::red();
-            x.direction = (Vector3::down() + Vector3::forward()).normalize_and_copy()
+            x.direction = cam;
         });
     }
 }

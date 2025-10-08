@@ -14,60 +14,28 @@ pub const SHADOW_SIZE: u32 = 2048;
 
 pub struct ShadowSystem {
     pub shadow_pipeline: RenderPipeline,
-    pub bind_group: BindGroup,
-    pub bind_group_layout: BindGroupLayout,
-    pub buffer: Buffer,
-    pub depth_texture: Texture,
-    pub depth_view: TextureView,
-    pub sampler: Sampler,
-    pub light_matrix_bind_group: BindGroup,
-    pub light_matrix_bind_group_layout: BindGroupLayout,
+
+    // per-screen resources:
+    pub sampling_bind_groups: Vec<BindGroup>, // for main pass sampling per screen
+    pub matrix_bind_groups: Vec<BindGroup>,   // for depth pass per screen
+    pub buffers: Vec<Buffer>,                 // uniform buffers containing each screen's light view-proj
+    pub depth_textures: Vec<Texture>,
+    pub depth_views: Vec<TextureView>,
+    pub samplers: Vec<Sampler>,
+
+    // kept layouts so caller can include the sampling layout in main pipeline creation
+    pub bind_group_layout: BindGroupLayout, // sampling layout
+    pub light_matrix_bind_group_layout: BindGroupLayout, // matrix layout
+
+                                            // single pipeline / shader reused for all screens
 }
 
 // ... earlier imports and constants unchanged ...
 
 impl ShadowSystem {
-    pub fn new(initial_light_view_proj: Matrix4x4) -> Self {
+    /// Create a shadow system for `num_screens` screens. Each screen will get its own shadow map and uniform buffer.
+    pub fn new(initial_light_view_proj: Matrix4x4, num_screens: usize) -> Self {
         let device = SystemGPU::get_device();
-
-        // 1) buffer (light view-proj)
-        let buffer = device.create_buffer_init(&util::BufferInitDescriptor {
-            label: Some("shadow camera buffer"),
-            contents: bytemuck::bytes_of(&initial_light_view_proj),
-            usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
-        });
-
-        // 2) depth texture (shadow map)
-        let depth_texture = device.create_texture(&TextureDescriptor {
-            label: Some("shadow depth texture"),
-            size: Extent3d {
-                width: SHADOW_SIZE,
-                height: SHADOW_SIZE,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: TextureDimension::D2,
-            format: TextureFormat::Depth32Float,
-            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
-        let depth_view = depth_texture.create_view(&TextureViewDescriptor { aspect: TextureAspect::DepthOnly, ..Default::default() });
-
-        // 3) comparison sampler (for sampling shadow map in main pass)
-        let sampler = device.create_sampler(&SamplerDescriptor {
-            label: Some("shadow comparison sampler"),
-            address_mode_u: AddressMode::ClampToEdge,
-            address_mode_v: AddressMode::ClampToEdge,
-            address_mode_w: AddressMode::ClampToEdge,
-            mag_filter: FilterMode::Linear,
-            min_filter: FilterMode::Linear,
-            mipmap_filter: FilterMode::Nearest,
-            compare: Some(CompareFunction::LessEqual),
-            lod_min_clamp: 0.0,
-            lod_max_clamp: 100.0,
-            ..Default::default()
-        });
 
         // -------------------------
         // 4) Layout: matrix only (for shadow-pass pipeline)
@@ -84,13 +52,6 @@ impl ShadowSystem {
                 },
                 count: None,
             }],
-        });
-
-        // matrix bind group (for shadow pass)
-        let matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
-            label: Some("shadow.matrix.bind_group"),
-            layout: &matrix_layout,
-            entries: &[BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() }],
         });
 
         // -------------------------
@@ -127,23 +88,6 @@ impl ShadowSystem {
                     visibility: ShaderStages::FRAGMENT,
                     ty: BindingType::Sampler(SamplerBindingType::Comparison),
                     count: None,
-                },
-            ],
-        });
-
-        // sampling bind group (for main pass)
-        let sampling_bind_group = device.create_bind_group(&BindGroupDescriptor {
-            label: Some("shadow.sampling.bind_group"),
-            layout: &sampling_layout,
-            entries: &[
-                BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() },
-                BindGroupEntry {
-                    binding: 1,
-                    resource: BindingResource::TextureView(&depth_view),
-                },
-                BindGroupEntry {
-                    binding: 2,
-                    resource: BindingResource::Sampler(&sampler),
                 },
             ],
         });
@@ -188,26 +132,191 @@ impl ShadowSystem {
             cache: None,
         });
 
+        // Prepare per-screen vectors
+        let mut buffers = Vec::with_capacity(num_screens);
+        let mut depth_textures = Vec::with_capacity(num_screens);
+        let mut depth_views = Vec::with_capacity(num_screens);
+        let mut samplers = Vec::with_capacity(num_screens);
+        let mut matrix_bind_groups = Vec::with_capacity(num_screens);
+        let mut sampling_bind_groups = Vec::with_capacity(num_screens);
+
+        for _ in 0..num_screens {
+            // (1) buffer
+            let buffer = device.create_buffer_init(&util::BufferInitDescriptor {
+                label: Some("shadow camera buffer"),
+                contents: bytemuck::bytes_of(&initial_light_view_proj),
+                usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+            });
+
+            // (2) depth texture
+            let depth_texture = device.create_texture(&TextureDescriptor {
+                label: Some("shadow depth texture"),
+                size: Extent3d {
+                    width: SHADOW_SIZE,
+                    height: SHADOW_SIZE,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: TextureDimension::D2,
+                format: TextureFormat::Depth32Float,
+                usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            });
+            let depth_view = depth_texture.create_view(&TextureViewDescriptor { aspect: TextureAspect::DepthOnly, ..Default::default() });
+
+            // (3) comparison sampler
+            let sampler = device.create_sampler(&SamplerDescriptor {
+                label: Some("shadow comparison sampler"),
+                address_mode_u: AddressMode::ClampToEdge,
+                address_mode_v: AddressMode::ClampToEdge,
+                address_mode_w: AddressMode::ClampToEdge,
+                mag_filter: FilterMode::Linear,
+                min_filter: FilterMode::Linear,
+                mipmap_filter: FilterMode::Nearest,
+                compare: Some(CompareFunction::LessEqual),
+                lod_min_clamp: 0.0,
+                lod_max_clamp: 100.0,
+                ..Default::default()
+            });
+
+            // matrix bind group (for shadow pass)
+            let matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
+                label: Some("shadow.matrix.bind_group"),
+                layout: &matrix_layout,
+                entries: &[BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() }],
+            });
+
+            // sampling bind group (for main pass)
+            let sampling_bind_group = device.create_bind_group(&BindGroupDescriptor {
+                label: Some("shadow.sampling.bind_group"),
+                layout: &sampling_layout,
+                entries: &[
+                    BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: BindingResource::TextureView(&depth_view),
+                    },
+                    BindGroupEntry {
+                        binding: 2,
+                        resource: BindingResource::Sampler(&sampler),
+                    },
+                ],
+            });
+
+            buffers.push(buffer);
+            depth_textures.push(depth_texture);
+            depth_views.push(depth_view);
+            samplers.push(sampler);
+            matrix_bind_groups.push(matrix_bind_group);
+            sampling_bind_groups.push(sampling_bind_group);
+        }
+
         Self {
             shadow_pipeline,
-            // we keep sampling_layout and matrix_layout around so caller can include sampling_layout in main pipeline creation
-            bind_group: sampling_bind_group,    // use this in main pass to sample
-            bind_group_layout: sampling_layout, // layout to be inserted into main pipeline
-            buffer,
-            depth_texture,
-            depth_view,
-            sampler,
-            // store matrix bind group separately so shadow pass can bind it:
-            light_matrix_bind_group: matrix_bind_group,
+            sampling_bind_groups,
+            matrix_bind_groups,
+            buffers,
+            depth_textures,
+            depth_views,
+            samplers,
+            bind_group_layout: sampling_layout,
             light_matrix_bind_group_layout: matrix_layout,
         }
     }
 
-    // ... update() method unchanged (writes buffer) ...
+    /// Ensure the system has resources for at least `num_screens`.
+    /// This will allocate additional per-screen resources if needed using `initial_matrix` as initial contents.
+    pub fn ensure_screens(&mut self, num_screens: usize, initial_matrix: Matrix4x4) {
+        let device = SystemGPU::get_device();
 
-    /// Recompute light matrix each frame
-    pub fn update(&mut self, direction: &Vector3) {
+        if self.buffers.len() >= num_screens {
+            return;
+        }
+
+        let matrix_layout = &self.light_matrix_bind_group_layout;
+        let sampling_layout = &self.bind_group_layout;
+
+        for _ in self.buffers.len()..num_screens {
+            // buffer
+            let buffer = device.create_buffer_init(&util::BufferInitDescriptor {
+                label: Some("shadow camera buffer"),
+                contents: bytemuck::bytes_of(&initial_matrix),
+                usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
+            });
+
+            // depth texture + view
+            let depth_texture = device.create_texture(&TextureDescriptor {
+                label: Some("shadow depth texture"),
+                size: Extent3d {
+                    width: SHADOW_SIZE,
+                    height: SHADOW_SIZE,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: TextureDimension::D2,
+                format: TextureFormat::Depth32Float,
+                usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
+                view_formats: &[],
+            });
+            let depth_view = depth_texture.create_view(&TextureViewDescriptor { aspect: TextureAspect::DepthOnly, ..Default::default() });
+
+            // sampler
+            let sampler = device.create_sampler(&SamplerDescriptor {
+                label: Some("shadow comparison sampler"),
+                address_mode_u: AddressMode::ClampToEdge,
+                address_mode_v: AddressMode::ClampToEdge,
+                address_mode_w: AddressMode::ClampToEdge,
+                mag_filter: FilterMode::Linear,
+                min_filter: FilterMode::Linear,
+                mipmap_filter: FilterMode::Nearest,
+                compare: Some(CompareFunction::LessEqual),
+                lod_min_clamp: 0.0,
+                lod_max_clamp: 100.0,
+                ..Default::default()
+            });
+
+            // bind groups
+            let matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
+                label: Some("shadow.matrix.bind_group"),
+                layout: matrix_layout,
+                entries: &[BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() }],
+            });
+
+            let sampling_bind_group = device.create_bind_group(&BindGroupDescriptor {
+                label: Some("shadow.sampling.bind_group"),
+                layout: sampling_layout,
+                entries: &[
+                    BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() },
+                    BindGroupEntry {
+                        binding: 1,
+                        resource: BindingResource::TextureView(&depth_view),
+                    },
+                    BindGroupEntry {
+                        binding: 2,
+                        resource: BindingResource::Sampler(&sampler),
+                    },
+                ],
+            });
+
+            self.buffers.push(buffer);
+            self.depth_textures.push(depth_texture);
+            self.depth_views.push(depth_view);
+            self.samplers.push(sampler);
+            self.matrix_bind_groups.push(matrix_bind_group);
+            self.sampling_bind_groups.push(sampling_bind_group);
+        }
+    }
+
+    /// Recompute light matrix for a specific screen and write into its buffer.
+    pub fn update_for_screen(&mut self, screen_index: usize, direction: &Vector3) {
         let queue = SystemGPU::get_queue();
+
+        if screen_index >= self.buffers.len() {
+            // silently ignore or consider logging; here we early return
+            return;
+        }
 
         let target = Vector3::zero();
         let up = Vector3::up();
@@ -217,17 +326,24 @@ impl ShadowSystem {
         let light_proj = Matrix4x4::orthographic_lh_zo(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
         let light_view_proj = Matrix4x4::multiply(&light_view, &light_proj);
 
-        queue.write_buffer(&self.buffer, 0, bytemuck::bytes_of(&light_view_proj));
+        queue.write_buffer(&self.buffers[screen_index], 0, bytemuck::bytes_of(&light_view_proj));
     }
 
-    /// Render depth from the light’s perspective
-    pub fn render(&self, encoder: &mut CommandEncoder, draw_calls: &[DrawCall]) {
+    /// Render depth from the light’s perspective for a single screen (screen_index).
+    pub fn render_for_screen(&self, encoder: &mut CommandEncoder, screen_index: usize, draw_calls: &[DrawCall]) {
+        if screen_index >= self.depth_views.len() {
+            // out of range; silently ignore
+            return;
+        }
+
         let device = SystemGPU::get_device();
+        let depth_view = &self.depth_views[screen_index];
+
         let mut shadow_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
-            label: Some("shadow pass"),
+            label: Some(&format!("shadow pass screen {}", screen_index)),
             color_attachments: &[],
             depth_stencil_attachment: Some(egui_wgpu::wgpu::RenderPassDepthStencilAttachment {
-                view: &self.depth_view,
+                view: depth_view,
                 depth_ops: Some(egui_wgpu::wgpu::Operations {
                     load: egui_wgpu::wgpu::LoadOp::Clear(1.0),
                     store: egui_wgpu::wgpu::StoreOp::Store,
@@ -240,14 +356,10 @@ impl ShadowSystem {
 
         shadow_pass.set_pipeline(&self.shadow_pipeline);
 
-        // bind matrix-only group (no texture/sampler)
-        shadow_pass.set_bind_group(0, &self.light_matrix_bind_group, &[]);
+        // bind matrix-only group for this screen (no texture/sampler)
+        shadow_pass.set_bind_group(0, &self.matrix_bind_groups[screen_index], &[]);
 
         for draw_call in draw_calls {
-            // if !draw_call.matrix.is_empty() {
-            //     let m = &draw_call.matrix[0];
-            //     println!("Instance matrix[0] first column: {:?}", m.model[0]);
-            // }
             for mesh in &draw_call.mesh {
                 let n_buffer = device.create_buffer_init(&util::BufferInitDescriptor {
                     label: Some("Instance Buffer"),
@@ -263,5 +375,10 @@ impl ShadowSystem {
                 shadow_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
             }
         }
+    }
+
+    /// Convenience getter: sampling bind group for a screen so main pass can sample correct shadow map for that screen.
+    pub fn sampling_bind_group_for(&self, screen_index: usize) -> Option<&BindGroup> {
+        self.sampling_bind_groups.get(screen_index)
     }
 }
