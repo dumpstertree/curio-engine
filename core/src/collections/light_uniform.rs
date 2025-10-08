@@ -96,7 +96,7 @@ impl LightSystem {
     }
 
     /// Write lights to GPU buffer. Call each frame before drawing 3D.
-    pub fn update(&self, lights: &[DrawCallLight]) {
+    pub fn update(&self, sun: &DrawCallLight, lights: &[DrawCallLight]) {
         let queue = &SystemGPU::get_queue();
         let n = lights.len().min(MAX_LIGHTS);
 
@@ -105,29 +105,34 @@ impl LightSystem {
         bytes.extend(&(1 as u32).to_le_bytes());
         bytes.extend(&[0u8; 12]); // padding to 16 bytes
 
+        Self::add_light(sun, &mut bytes);
         // Serialize each light
-        for l in lights.iter().take(n) {
-            let mut g = GpuLight::zeroed();
-
-            // position.xyz ; w = light type (0 = dir, 1 = point)
-            g.position[0..3].copy_from_slice(&l.position);
-            g.position[3] = match l.light_type {
-                LightType::Directional => 0.0,
-                LightType::Point => 1.0,
-            };
-
-            // color.rgb + intensity
-            g.color_intensity[0..3].copy_from_slice(&l.color);
-            g.color_intensity[3] = l.intensity;
-
-            // direction.xyz + radius in w
-            g.direction_radius[0..3].copy_from_slice(&l.direction);
-            g.direction_radius[3] = l.radius;
-
-            // _padding already zeroed
-            bytes.extend_from_slice(bytemuck::bytes_of(&g));
+        for light in lights.iter().take(n) {
+            Self::add_light(light, &mut bytes);
         }
 
         queue.write_buffer(&self.buffer, 0, &bytes);
+    }
+
+    fn add_light(l: &DrawCallLight, bytes: &mut Vec<u8>) {
+        let mut g = GpuLight::zeroed();
+
+        // position.xyz ; w = light type (0 = dir, 1 = point)
+        g.position[0..3].copy_from_slice(&l.position);
+        g.position[3] = match l.light_type {
+            LightType::Directional => 0.0,
+            LightType::Point => 1.0,
+        };
+
+        // color.rgb + intensity
+        g.color_intensity[0..3].copy_from_slice(&l.color);
+        g.color_intensity[3] = l.intensity;
+
+        // direction.xyz + radius in w
+        g.direction_radius[0..3].copy_from_slice(&l.direction);
+        g.direction_radius[3] = l.radius;
+
+        // _padding already zeroed
+        bytes.extend_from_slice(bytemuck::bytes_of(&g));
     }
 }

@@ -1,22 +1,5 @@
-use core::panic;
-use std::collections::HashMap;
-use std::error::Error;
-use std::fs;
-use std::io::Cursor;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::thread::sleep;
-use std::time::Duration;
-
-use egui_wgpu::wgpu::hal::auxil::db::imgtec;
-use egui_wgpu::wgpu::Device;
-use egui_wgpu::wgpu::ShaderModule;
-use image::DynamicImage;
-use rusty_spine::Animation;
-use rusty_spine::SkeletonData;
-use zip::ZipArchive;
-
-// use crate::system_adapters::adapter_system_gpu::SystemGPU;
+use super::model_asset::ModelAsset;
+use super::texture_asset::TextureAsset;
 use crate::collections::material::Material;
 use crate::collections::material::ShaderDesc;
 use crate::collections::matrix4x4::Matrix4x4;
@@ -24,128 +7,26 @@ use crate::collections::mesh::Mesh;
 use crate::collections::mesh::Vertex;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::model_asset_animated::ModelAssetAnimated;
-
-use super::model_asset::ModelAsset;
-use super::texture_asset::TextureAsset;
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-
-use rusty_spine::AnimationState;
+use core::panic;
+use egui_wgpu::wgpu::Device;
+use egui_wgpu::wgpu::ShaderModule;
 use rusty_spine::AnimationStateData;
 use rusty_spine::Atlas;
-use rusty_spine::Skeleton;
+use rusty_spine::SkeletonData;
 use rusty_spine::SkeletonJson;
-
-// static mut CUBE: Mutex<Option<Arc<Mesh>>> = None;
-// static mut SPHERE: Mutex<Option<Arc<Mesh>>> = None;
-// static mut PLANE: Mutex<Option<Arc<Mesh>>> = None;
+use std::error::Error;
+use std::fs;
+use std::io::Cursor;
+use std::sync::Arc;
+use std::sync::Mutex;
+use zip::ZipArchive;
 
 static mut ASSET_DATABASE: Mutex<Option<AssetDatabase>> = Mutex::new(None);
 
-pub struct AssetLoader {
-    asset_cache: HashMap<String, Arc<ModelAsset>>, // shader_cache: ShaderCache<'a>,
-                                                   // path_texture: String,
-                                                   // path_model: String,
-                                                   // device: &'a Device,
-                                                   // queue: &'a egui_wgpu::wgpu::Queue,
-                                                   // state: &'a State,
-}
-// impl ISystemComponent for AssetLoader {
-//     fn init(&mut self, asset_loader: &mut AssetLoader, gs: &mut crate::Window::SystemWindow::GameState) {}
-// }
-// construction
-impl AssetLoader {
-    // pub fn get_cube() -> Arc<Mesh> {
-    //     unsafe {
-    //         let guard = CUBE.lock();
-    //         let Ok(guard) = guard else {
-    //             panic!();
-    //         };
-
-    //         let Some(cube) = guard else {
-    //             CUBE = Some(Arc::new(Mesh::primitive_cube(crate::collections::vector3::Vector3::one())));
-    //             if let Some(cube) = &CUBE {
-    //                 return cube.clone();
-    //             };
-    //             panic!();
-    //         };
-    //         cube.clone()
-    //     }
-    // }
-    // pub fn generate_sphere() -> Arc<Mesh> {
-    //     unsafe {
-    //         let Some(sphere) = &SPHERE else {
-    //             SPHERE = Some(Arc::new(Mesh::primitive_sphere(1.0, 10, 10)));
-    //             if let Some(sphere) = &SPHERE {
-    //                 return sphere.clone();
-    //             };
-    //             panic!();
-    //         };
-    //         sphere.clone()
-    //     }
-    // }
-    // pub fn generate_plane() -> Arc<Mesh> {
-    //     unsafe {
-    //         let Some(plane) = &PLANE else {
-    //             PLANE = Some(Arc::new(Mesh::primitive_plane(1.0, 1.0, 1, 1)));
-    //             if let Some(plane) = &PLANE {
-    //                 return plane.clone();
-    //             };
-    //             panic!();
-    //         };
-    //         plane.clone()
-    //     }
-    // }
-    pub fn new() -> AssetLoader {
-        AssetLoader { asset_cache: HashMap::new() }
-    }
-    // pub fn new<'a>(shader_cache: ShaderCache<'a>, device: &'a Device, queue: &'a egui_wgpu::wgpu::Queue) -> AssetLoader<'a> {
-    //     AssetLoader {
-    //         shader_cache: shader_cache,
-    //         path_texture: String::from("Assets/Texture"),
-    //         path_model: String::from("assets"),
-    //         device: device,
-    //         queue: queue,
-    //     }
-    // }
-    // pub fn new<'a>(shader_cache: ShaderCache<'a>, state: &'a State) -> AssetLoader {
-    //     AssetLoader {
-    //         // shader_cache: shader_cache,
-    //         // path_texture: String::from("Assets/Texture"),
-    //         // path_model: String::from("assets"),
-    //         // state: state,
-    //     }
-    // }
-}
-
-const PATH_MESH: &str = "assets/mesh";
+pub struct AssetLoader {}
 // private
 impl AssetLoader {
-    pub fn clear_cache(&mut self) {
-        self.asset_cache.clear();
-    }
-    pub fn reduce_cache() {}
-    pub fn load_png(path: String) -> Option<TextureAsset> {
-        // unwrap into vec of bytes
-        let bytes = std::fs::read(path);
-
-        // unwrap value
-        let bytes = bytes.unwrap();
-
-        // convert bytes to jpg
-        let image: Result<image::DynamicImage, image::ImageError> = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png);
-
-        println!("has image , {}", image.is_ok());
-
-        if let Ok(image) = image {
-            return Some(TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes()));
-        }
-
-        // fallthrough
-        None
-    }
-
+    // set database
     pub fn set_database(database: AssetDatabase) {
         unsafe {
             let mut guard = ASSET_DATABASE.lock().unwrap();
@@ -153,35 +34,8 @@ impl AssetLoader {
         }
     }
 
-    // const PATH_TEXTURE: &str = "Assets/Texture";
-    // const PATH_MESH: &str = "assets";
-
-    pub fn load_jpg(_: &str) -> Option<TextureAsset> {
-        // // get the path using env path as base
-        // let full_path = std::path::Path::new(PATH_MESH).join(path);
-
-        // // unwrap into vec of bytes
-        // let bytes = std::fs::read(full_path);
-
-        // // unwrap value
-        // let bytes = bytes.unwrap();
-
-        // // convert bytes to jpg
-        // let image: Result<image::DynamicImage, image::ImageError> = image::load_from_memory_with_format(&bytes, image::ImageFormat::Jpeg);
-
-        // unwrap or return null
-        // match image {
-        //     Ok(x) => {
-        //         Texture_asset::new(x.width() as i32, x.height() as i32, bytes);
-        //     }
-        //     _ => panic!("Failed to load image"),
-        // };
-
-        // fallthrough
-        None
-    }
-
-    pub fn load_mesh_static_from_database(uid: String) -> Arc<ModelAsset> {
+    // load - from database
+    pub fn load_model_static_from_database(uid: String) -> Arc<ModelAsset> {
         unsafe {
             let Ok(guard) = ASSET_DATABASE.lock() else {
                 panic!();
@@ -202,7 +56,7 @@ impl AssetLoader {
             }
         }
     }
-    pub fn load_spine_from_database(uid: String) -> Arc<ModelAssetAnimated> {
+    pub fn load_model_animated_from_database(uid: String) -> Arc<ModelAssetAnimated> {
         unsafe {
             let Ok(guard) = ASSET_DATABASE.lock() else {
                 panic!();
@@ -230,6 +84,8 @@ impl AssetLoader {
             }
         }
     }
+
+    // unwrap
     pub fn unwrap_spine(data: &[u8]) -> Result<(Arc<Atlas>, Arc<SkeletonData>, TextureAsset), Box<dyn Error>> {
         // Wrap the data so zip can read from it like a file
         let reader = Cursor::new(data);
@@ -266,74 +122,7 @@ impl AssetLoader {
         let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
         Ok((atlas, skeleton_data, texture))
     }
-    pub fn load_spine_from_path(path: &str) -> Arc<ModelAssetAnimated> {
-        // 1. Load atlas text
-
-        // 2. Create Atlas
-        // The second arg is a texture loader callback; for now we can pass `None`
-        // if we’re not actually rendering yet.
-        // let atlas = Atlas::new(&atlas_text, );
-        let atlas_file = std::fs::read("assets/test.atlas").unwrap();
-        let atlas = Arc::new(Atlas::new(&atlas_file, "").unwrap());
-
-        // 2. Load skeleton data (JSON format example)
-        let mut json = SkeletonJson::new(atlas.clone());
-        json.set_scale(0.01);
-        // Optionally configure scale / other settings on json...
-        let file = fs::read("assets/test.json").unwrap();
-        let skeleton_data = Arc::new(json.read_skeleton_data(&file).unwrap());
-        // let mut skeleton = Skeleton::new(skeleton_data.clone());
-        // skeleton.update_world_transform(rusty_spine::Physics::None);
-
-        let state_data = Arc::new(AnimationStateData::new(skeleton_data.clone()));
-        // state_data.set_mix("walk", "run", 0.2);
-        // let mut state = AnimationState::new(state_data);
-        // let animation = skeleton_data.find_animation("walk").unwrap();
-        // // 5. Play an animation
-        // state.set_animation(0, &animation, true);
-
-        // for x in 0..120 {
-        //     // Step/update once (simulate 1/60s frame)
-        //     state.update(1.0 / 60.0);
-        //     state.apply(&mut skeleton);
-
-        //     // animate
-        //     skeleton.update_world_transform(rusty_spine::Physics::None);
-
-        //     for bone in skeleton.bones() {
-        //         let d = bone.data();
-        //         let name = d.name();
-        //         let x = bone.world_x();
-        //         let y = bone.world_y();
-        //         println!("Frame {}: Bone {} at ({:.2}, {:.2})", x, name, x, y);
-        //     }
-        //     sleep(Duration::from_secs((1.0 / 60.0) as u64));
-        // }
-        let texture_asset = AssetLoader::load_png(String::from("assets/test.png"));
-        let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
-        let mut material = Material::new(shader_desc.clone());
-        material.set_texture_with_label(texture_asset, "diffuse");
-
-        Arc::new(ModelAssetAnimated::new(Arc::new(material), skeleton_data, state_data.clone()))
-    }
-
-    pub fn load_shader_module(device: &Device, path: &str) -> ShaderModule {
-        let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-        device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
-            label: Some(path),
-            source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
-        })
-    }
-    pub fn load_shader_desc(path: &str) -> ShaderDesc {
-        let file = fs::File::open(path).expect("file should open read only");
-        let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
-        let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
-        my_struct
-    }
-
     pub fn unwrap_gltf(data: &[u8]) -> Option<(Vec<Arc<Mesh>>, Vec<Arc<Material>>)> {
-        println!("Importing GLTF from memory...");
-
         // Import GLTF directly from memory slice
         let (gltf, buffers, images) = gltf::import_slice(data).ok()?;
 
@@ -431,220 +220,18 @@ impl AssetLoader {
         Some((all_meshes, all_materials))
     }
 
-    pub fn load_gltf<'a>(path: &str) -> Option<Arc<ModelAsset>> {
-        // return cached
-        println!("importing");
-        // if self.asset_cache.contains_key(path) {
-        //     return Some(self.asset_cache[path].clone());
-        // }
-
-        // build new
-
-        // let device = SystemGPU::get_device();
-        // let queue = SystemGPU::get_queue();
-        // let Some(device) = &sys.device else { return None };
-        // let Some(queue) = &sys.queue else { return None };
-        // get the path using env path as base
-        let full_path = std::path::Path::new(PATH_MESH).join(path);
-        let z = gltf::import(&full_path);
-
-        match z {
-            Ok(x) => {
-                let gltf = x.0;
-                let buffers = x.1;
-                let images = x.2;
-
-                // declare output mesh
-                let mut all_mesh: Vec<Arc<Mesh>> = Vec::new();
-                let mut all_material: Vec<Arc<Material>> = Vec::new();
-                // let shader_desc = ShaderDesc::new_from_module("../shader.wgsl", vec![ShaderTextureDesc::new("diffuse")]);
-
-                let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
-
-                if gltf.materials().len() == 0 {
-                    all_material.push(Arc::new(Material::new(shader_desc.clone())));
-                } else {
-                    for material in gltf.materials() {
-                        let pbr = material.pbr_metallic_roughness();
-
-                        let texture_asset: TextureAsset; //= //Texture_asset::new(material.name(), device, queue, width as i32, height as i32, bytes);
-                        if let Some(t) = pbr.base_color_texture() {
-                            // if t.texture().index() >= images.len() as usize {
-                            //     println!("Invalid texture length");
-                            //     continue;
-                            // }
-                            let image2 = &images[t.texture().index()];
-
-                            // let image2 = &images[images.len() - 1];
-                            let mut p = image2.pixels.clone();
-
-                            if image2.format == gltf::image::Format::R8G8B8 {
-                                for i in 0..(image2.width * image2.height) {
-                                    p.insert((3 + (i * 4)) as usize, 0);
-                                }
-                            }
-
-                            texture_asset = TextureAsset::new_from_buffer(None, image2.width, image2.height, &p[..]);
-                        } else {
-                            texture_asset = TextureAsset::default();
-                        }
-
-                        let mut m = Material::new(shader_desc.clone());
-                        m.set_texture_with_label(Some(texture_asset), "diffuse");
-                        all_material.push(Arc::new(m));
-                    }
-                }
-
-                // iterate over gltf
-                for mesh in gltf.meshes() {
-                    println!("add mesh: {}", mesh.name().unwrap());
-                    for primitive in mesh.primitives() {
-                        // allows you to read data from the primitive
-                        let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-
-                        // output values - will be set to empty if reference has no value
-                        let mut indices: Vec<u32> = Vec::new();
-                        let mut verticies: Vec<Vertex> = Vec::new();
-
-                        // assume the positions are the count of verticies
-                        match reader.read_positions() {
-                            Some(positions) => {
-                                for _ in 0..positions.len() {
-                                    verticies.push(Vertex::default());
-                                }
-                            }
-                            _ => return None,
-                        }
-                        // update the normal - if exists
-                        match reader.read_positions() {
-                            Some(positions) => {
-                                let mut i = 0;
-                                for j in positions {
-                                    verticies[i].position[0] = j[0]; // x
-                                    verticies[i].position[1] = j[1]; // y
-                                    verticies[i].position[2] = j[2]; // z
-                                    i += 1;
-                                }
-                            }
-                            _ => {}
-                        }
-                        // // update the normal - if exists
-                        match reader.read_normals() {
-                            Some(normals) => {
-                                let mut i = 0;
-                                for j in normals {
-                                    verticies[i].normal[0] = j[0]; // x
-                                    verticies[i].normal[1] = j[1]; // y
-                                    verticies[i].normal[2] = j[2]; // z
-                                    i += 1;
-                                }
-                            }
-                            _ => {}
-                        }
-                        // update uv 0 - if exists
-                        match reader.read_tex_coords(0) {
-                            Some(uv) => {
-                                let mut i = 0;
-                                for j in uv.into_f32() {
-                                    verticies[i].uv0[0] = j[0]; // u
-                                    verticies[i].uv0[1] = j[1]; // v
-                                    i += 1;
-                                }
-                            }
-                            _ => {}
-                        }
-                        // update uv 1 - if exists
-                        match reader.read_tex_coords(1) {
-                            Some(uv) => {
-                                let mut i = 0;
-                                for j in uv.into_f32() {
-                                    verticies[i].uv1[0] = j[0]; // u
-                                    verticies[i].uv1[1] = j[1]; // v
-                                    i += 1;
-                                }
-                            }
-                            _ => {}
-                        }
-                        // update color - if exists
-                        match reader.read_colors(0) {
-                            Some(color) => {
-                                let mut i = 0;
-                                for j in color.into_rgba_f32() {
-                                    verticies[i].color[0] = j[0]; // r
-                                    verticies[i].color[1] = j[1]; // g
-                                    verticies[i].color[2] = j[2]; // b
-                                    verticies[i].color[3] = j[3]; // a
-                                    i += 1;
-                                }
-                            }
-                            _ => {}
-                        }
-
-                        // set indicies
-                        match reader.read_indices() {
-                            Some(indicies) => {
-                                for i in indicies.into_u32() {
-                                    indices.push(i);
-                                }
-                            }
-                            _ => {
-                                println!("Indicies failed");
-                                return None;
-                            }
-                        }
-
-                        let m = mesh.name().unwrap();
-                        let mesh_id = full_path.join(m);
-                        let mesh_id = mesh_id.to_str().unwrap();
-
-                        // add mesh to list
-                        all_mesh.push(Arc::new(Mesh::new(String::from(mesh_id), verticies, indices, Matrix4x4::default())));
-                    }
-                }
-                let asset = Arc::new(ModelAsset::new(all_mesh, all_material));
-
-                // self.asset_cache.insert(String::from(path), asset.clone());
-
-                return Some(asset);
-            }
-            Err(e) => {
-                println!("{}", e);
-                return None;
-            }
-        }
+    // load
+    pub fn load_shader_module(device: &Device, path: &str) -> ShaderModule {
+        let contents = fs::read_to_string(path).expect("Should have been able to read the file");
+        device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
+            label: Some(path),
+            source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
+        })
+    }
+    pub fn load_shader_desc(path: &str) -> ShaderDesc {
+        let file = fs::File::open(path).expect("file should open read only");
+        let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+        let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
+        my_struct
     }
 }
-
-// pub struct ShaderCache<'a> {
-//     device: &'a State,
-//     cache: HashMap<String, ShaderModule>,
-// }
-// impl ShaderCache<'_> {
-//     pub fn new<'a>(device: &State) -> ShaderCache {
-//         ShaderCache {
-//             device: device,
-//             cache: HashMap::new(),
-//         }
-//     }
-//     pub fn load(&self, path: &str) -> ShaderModule {
-//         // get key for path
-//         let key = String::from(path);
-
-//         // if not cached create
-//         // let is_cached = &self.cache.contains_key(&key);
-//         // if !is_cached {
-//         // load shader using saved device
-//         let shader = self.device.box_device.create_shader_module(wgpu::ShaderModuleDescriptor {
-//             label: Some("Shader"),
-//             source: egui_wgpu::wgpu::ShaderSource::Wgsl(include_str!("../shader.wgsl").into()),
-//         });
-
-//         shader
-
-//         // &self.cache.insert(key.clone(), shader);
-//         // }
-
-//         //
-//         // &self.cache[&key]
-//     }
-// }

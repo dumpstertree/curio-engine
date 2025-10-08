@@ -12,7 +12,7 @@ use std::sync::Arc;
 pub struct RendererAnimated {
     skeleton: Option<Skeleton>,
     state: Option<AnimationState>,
-    fps: i32,
+    pub fps: i32,
     last_update: f64,
     pub asset: Option<Arc<ModelAssetAnimated>>,
     pub mesh: Vec<Arc<Mesh>>,
@@ -68,6 +68,10 @@ impl RendererAnimated {
             // update mesh
             self.update_mesh(self.last_update);
         }
+        self
+    }
+    pub fn set_fps(&mut self, fps: i32) -> &mut Self {
+        self.fps = fps;
         self
     }
     /// Set the asset

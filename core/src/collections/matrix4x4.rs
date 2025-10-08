@@ -136,29 +136,6 @@ impl Matrix4x4 {
         }
     }
 
-    // pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
-    //     let pos2 = cgmath::Vector3::new(pos.x, pos.y, pos.z);
-    //     let rot2 = cgmath::Quaternion::new(rot.w, rot.x, rot.y, rot.z);
-
-    //     // Matrix4x4 {
-    //     //     model: (cgmath::Matrix4::from_translation(pos2) * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z) * cgmath::Matrix4::from(rot2)).into(),
-    //     // }
-
-    //     // Matrix4x4 {
-    //     //     model: (cgmath::Matrix4::from(rot2) * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z) * cgmath::Matrix4::from_translation(pos2)).into(),
-    //     // }
-    //     Matrix4x4 {
-    //         model: Matrix4x4::from_cgmath(cgmath::Matrix4::from_translation(pos2) * cgmath::Matrix4::from(rot2) * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z)).model,
-    //     }
-    // }
-    // pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Matrix4x4 {
-    //     let pos2 = cgmath::Vector3::new(pos.x, pos.y, pos.z);
-    //     let rot2 = cgmath::Quaternion::new(rot.w, rot.x, rot.y, rot.z);
-
-    //     let mat = cgmath::Matrix4::from_translation(pos2) * cgmath::Matrix4::from(rot2) * cgmath::Matrix4::from_nonuniform_scale(scale.x, scale.y, scale.z);
-
-    //     Matrix4x4::from_cgmath(mat)
-    // }
     pub fn new(pos: Vector3, rot: Quaternion, scale: Vector3) -> Self {
         let translation = cgmath::Matrix4::from_translation(cgmath::Vector3::new(pos.x, pos.y, pos.z));
         let rotation = cgmath::Matrix4::from(cgmath::Quaternion::new(rot.w, rot.x, rot.y, rot.z));
@@ -166,14 +143,8 @@ impl Matrix4x4 {
 
         let mat = translation * rotation * scaling;
 
-        // Convert to column-major layout for WGSL
         Self {
-            model: [
-                [mat.x[0], mat.x[1], mat.x[2], mat.x[3]], // column 0
-                [mat.y[0], mat.y[1], mat.y[2], mat.y[3]], // column 1
-                [mat.z[0], mat.z[1], mat.z[2], mat.z[3]], // column 2
-                [mat.w[0], mat.w[1], mat.w[2], mat.w[3]], // column 3
-            ],
+            model: [[mat.x[0], mat.x[1], mat.x[2], mat.x[3]], [mat.y[0], mat.y[1], mat.y[2], mat.y[3]], [mat.z[0], mat.z[1], mat.z[2], mat.z[3]], [mat.w[0], mat.w[1], mat.w[2], mat.w[3]]],
         }
     }
 
@@ -181,25 +152,8 @@ impl Matrix4x4 {
         Matrix4x4 { model: matrix }
     }
     pub fn from_cgmath(mat: cgmath::Matrix4<f32>) -> Self {
-        // let cols = mat.as_ref(); // cgmath::Matrix4 implements AsRef<[f32; 16]>
-
-        // cgmath stores matrices column-major internally already,
-        // so we can just copy directly. But we'll make it explicit for clarity:
-        // Self {
-        //     model: [
-        //         [cols[0], cols[1], cols[2], cols[3]],     // column 0
-        //         [cols[4], cols[5], cols[6], cols[7]],     // column 1
-        //         [cols[8], cols[9], cols[10], cols[11]],   // column 2
-        //         [cols[12], cols[13], cols[14], cols[15]], // column 3
-        //     ],
-        // }
         Self {
-            model: [
-                [mat.x[0], mat.x[1], mat.x[2], mat.x[3]], // column 0
-                [mat.y[0], mat.y[1], mat.y[2], mat.y[3]], // column 1
-                [mat.z[0], mat.z[1], mat.z[2], mat.z[3]], // column 2
-                [mat.w[0], mat.w[1], mat.w[2], mat.w[3]], // column 3
-            ],
+            model: [[mat.x[0], mat.x[1], mat.x[2], mat.x[3]], [mat.y[0], mat.y[1], mat.y[2], mat.y[3]], [mat.z[0], mat.z[1], mat.z[2], mat.z[3]], [mat.w[0], mat.w[1], mat.w[2], mat.w[3]]],
         }
     }
 

@@ -1,8 +1,5 @@
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
     io::asset_loader::AssetLoader,
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
@@ -43,7 +40,7 @@ impl GameplayInstance {
 
             // initialize each
             for x in self.ecs_systems.iter_mut() {
-                x.0.init(game_state, &mut self.world, event_queue, &mut AssetLoader::new());
+                x.0.init(game_state, &mut self.world, event_queue);
             }
         }
 
@@ -158,7 +155,6 @@ where
 {
     ecs_systems_eventless: Vec<(Box<dyn ECSSystemEventless>, bool)>,
     scene: World,
-    asset_loader: AssetLoader,
     event_queue: EventQueue,
     phantom_data: PhantomData<T>,
     child_init: bool,
@@ -175,7 +171,6 @@ where
             game_instance: vec![],
             ecs_systems_eventless: vec![],
             scene: World::new(),
-            asset_loader: AssetLoader::new(),
             event_queue: EventQueue::new(),
             phantom_data: PhantomData,
             child_init: false,

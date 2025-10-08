@@ -1,6 +1,6 @@
 use ::core::collections::matrix4x4::Matrix4x4;
 use ::core::system_adapters::adapter_system_gpu::SystemGPU;
-use core::collections::{draw_call::DrawCall, mesh::Vertex, quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
+use core::collections::{color::Color, draw_call::DrawCall, mesh::Vertex, quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
 use std::num::NonZeroU64;
 
 use bytemuck::bytes_of;
@@ -206,13 +206,12 @@ impl ShadowSystem {
     // ... update() method unchanged (writes buffer) ...
 
     /// Recompute light matrix each frame
-    pub fn update(&self, t: f32) {
+    pub fn update(&mut self, direction: &Vector3) {
         let queue = SystemGPU::get_queue();
 
-        let pos = f32::sin(t) * 5.0;
-        let light_pos = Vector3::new(pos, 10.0, -10.0); // example
-        let target = Vector3::zero(); // look at world origin
+        let target = Vector3::zero();
         let up = Vector3::up();
+        let light_pos = direction.clone() * -10.0;
 
         let light_view = Matrix4x4::look_at(light_pos, target, up);
         let light_proj = Matrix4x4::orthographic_lh_zo(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);

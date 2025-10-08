@@ -12,7 +12,7 @@ use built_in::component::component_transform::Transform;
 use built_in_state::state_camera::CameraState;
 use built_in_state::state_time::TimeState;
 use core::collections::quaternion::Quaternion;
-use core::collections::vector3::Vector3;
+use core::collections::vector3::{self, Vector3};
 use core::io::asset_database::AssetDatabaseListing;
 use core::io::asset_loader::AssetLoader;
 use core::{
@@ -38,16 +38,15 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
 
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
         if self.did_init == 15 {
-            let asset = AssetLoader::load_spine_from_database(AssetMappingUIDs::EnergyToken.uid());
+            let asset = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::EnergyToken.uid());
             for team in game_state
                 .get_value2::<StateTeamAssignments>()
                 .team_assignments
             {
                 for player_id in team.1 {
-                    for i in 0..1 {
+                    for i in 0..9 {
                         let mut r = RendererAnimated::default();
-                        println!("create for team {}", team.0);
-                        r.set_asset(Some(asset.clone()));
+                        r.set_fps(60).set_asset(Some(asset.clone()));
                         // r.set_animation("add", true);
                         world.spawn((ComponentEnergyToken::default().set_index(i), ComponentPlayer::default().set_player_id(player_id), Transform::default(), r));
                     }
@@ -76,11 +75,14 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
                 continue;
             };
 
+            transform.scale = Vector3::one() * 0.05;
+            transform.rotation = game_state.get_value2::<CameraState>().cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
+
             transform.position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * z + state_camera.cameras.rotation * Vector3::down() * y + state_camera.cameras.rotation * Vector3::right() * x;
             if energy.index < player_energy.0 {
                 renderer.set_animation("add", false);
             } else {
-                transform.position = Vector3::zero();
+                // transform.position = Vector3::zero();
                 renderer.set_animation("remove", false);
             }
         }

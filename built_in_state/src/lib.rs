@@ -10,6 +10,8 @@ pub mod state_input;
 pub mod state_lights;
 pub mod state_network;
 pub mod state_screeen;
+pub mod state_skybox;
+pub mod state_sun;
 pub mod state_time;
 
 pub fn main() {}

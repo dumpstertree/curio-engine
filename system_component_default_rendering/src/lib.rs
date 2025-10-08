@@ -24,9 +24,10 @@ use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePost
 use crate::shadow_system::ShadowSystem;
 use built_in_state::state_draw::DrawCallsState;
 use built_in_state::state_lights::StateLights;
+use built_in_state::state_sun::StateSun;
 use built_in_state::state_time::TimeState;
 use core::collections::event_queue::EventQueue;
-use core::collections::game_state::GameState;
+use core::collections::game_state::{self, GameState};
 use core::collections::matrix4x4::Matrix4x4;
 use core::graphics::graphics_mapping::GraphicsMapping;
 use core::system::system_component::SystemComponent;
@@ -61,12 +62,15 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         let output = drawing_resources.0;
         let output_view = drawing_resources.2;
 
-        // for game_state in game_state.iter_mut() {
-        if game_state[0].get_value2::<StateLights>().all_lights.len() > 0 {
-            self.shadow_system
-                .update(game_state[0].get_value2::<TimeState>().scaled_time as f32);
-            self.shadow_system
-                .render(&mut encoder, &game_state[0].get_value2::<DrawCallsState>().draw_calls);
+        for game_state in game_state.iter_mut() {
+            let state_sun = game_state.get_value2::<StateSun>();
+            if state_sun.cast_shadows {
+                println!("cast shadow");
+                self.shadow_system.update(&state_sun.direction);
+                self.shadow_system
+                    .render(&mut encoder, &game_state.get_value2::<DrawCallsState>().draw_calls);
+            }
+            break;
         }
 
         // draw 3D into offscreen

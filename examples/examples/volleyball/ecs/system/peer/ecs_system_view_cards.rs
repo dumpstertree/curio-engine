@@ -1,3 +1,4 @@
+use crate::AssetMappingUIDs;
 use crate::ecs::components::component_card::ComponentCard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
@@ -34,13 +35,13 @@ impl ECSSystemEventless for ECSSystemViewCards {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue, asset_loader: &mut core::io::asset_loader::AssetLoader) {
+    fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         self.asset_card
-            .insert(String::from("card_bump.glb"), AssetLoader::load_gltf("card_bump.glb"));
+            .insert(String::from("card_bump.glb"), Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid())));
         self.asset_card
-            .insert(String::from("card_set.glb"), AssetLoader::load_gltf("card_set.glb"));
+            .insert(String::from("card_set.glb"), Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid())));
         self.asset_card
-            .insert(String::from("card_spike.glb"), AssetLoader::load_gltf("card_spike.glb"));
+            .insert(String::from("card_spike.glb"), Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid())));
     }
 
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {

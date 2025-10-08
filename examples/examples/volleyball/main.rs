@@ -53,6 +53,7 @@ pub mod ecs {
         pub mod component_card;
         pub mod component_energy_token;
         pub mod component_player;
+        pub mod component_view_player;
     }
     pub mod system {
         pub mod peer {

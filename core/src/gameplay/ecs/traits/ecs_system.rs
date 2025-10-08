@@ -17,7 +17,7 @@ pub trait ECSSystemEventless: CastFrom {
     }
 
     // init
-    fn init(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue, _: &mut AssetLoader) {}
+    fn init(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {}
 
     // events
     fn debug(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {}

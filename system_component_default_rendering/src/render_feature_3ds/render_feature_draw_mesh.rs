@@ -1,5 +1,5 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D, shadow_system::ShadowSystem};
-use built_in_state::{state_draw::DrawCallsState, state_lights::StateLights};
+use built_in_state::{state_draw::DrawCallsState, state_lights::StateLights, state_sun::StateSun};
 use core::{
     collections::{
         draw_call::DrawCall,
@@ -150,8 +150,14 @@ impl RenderFeatureDrawMesh {
 
 impl RenderFeature3D for RenderFeatureDrawMesh {
     fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system: &ShadowSystem) {
+        println!(
+            "sun values {}, {}, {}",
+            &game_state.get_value2::<StateSun>().get_draw_call().color[0],
+            &game_state.get_value2::<StateSun>().get_draw_call().color[1],
+            &game_state.get_value2::<StateSun>().get_draw_call().color[2],
+        );
         self.light_system
-            .update(&game_state.get_value2::<StateLights>().all_lights);
+            .update(&game_state.get_value2::<StateSun>().get_draw_call(), &game_state.get_value2::<StateLights>().all_lights);
 
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();
