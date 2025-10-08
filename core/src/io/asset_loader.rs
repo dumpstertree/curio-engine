@@ -6,6 +6,8 @@ use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::mesh::Mesh;
 use crate::collections::mesh::Vertex;
 use crate::io::asset_database::AssetDatabase;
+use crate::io::file::File;
+use crate::io::font_asset::FontAsset;
 use crate::io::model_asset_animated::ModelAssetAnimated;
 use core::panic;
 use egui_wgpu::wgpu::Device;
@@ -32,6 +34,23 @@ impl AssetLoader {
             let mut guard = ASSET_DATABASE.lock().unwrap();
             *guard = Some(database);
         }
+    }
+
+    // load - from path
+    pub fn load_texture_from_path(path: &str) -> TextureAsset {
+        let data = File::read(path);
+        if data.len() == 0 {
+            eprintln!("Something went wrong and data came back as empty for path {}", path);
+            panic!();
+        }
+
+        let result = Self::unwrap_texture(&data);
+        let Ok(result) = result else {
+            eprintln!("Something went wrong: {}", result.err().unwrap());
+            panic!();
+        };
+
+        result
     }
 
     // load - from database
@@ -86,6 +105,11 @@ impl AssetLoader {
     }
 
     // unwrap
+    pub fn unwrap_texture(data: &[u8]) -> (Result<TextureAsset, Box<dyn Error>>) {
+        let image = image::load_from_memory(&data).unwrap();
+        let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
+        Ok(texture)
+    }
     pub fn unwrap_spine(data: &[u8]) -> Result<(Arc<Atlas>, Arc<SkeletonData>, TextureAsset), Box<dyn Error>> {
         // Wrap the data so zip can read from it like a file
         let reader = Cursor::new(data);
@@ -232,6 +256,13 @@ impl AssetLoader {
         let file = fs::File::open(path).expect("file should open read only");
         let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
         let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
+        my_struct
+    }
+    pub fn load_font_asset_from_path(path: &str) -> FontAsset {
+        let file = File::read(path);
+        println!("len {}", file.len());
+        let json: serde_json::Value = serde_json::from_slice(file.as_slice()).expect("file should be proper JSON");
+        let my_struct: FontAsset = serde_json::from_str(&json.to_string()).unwrap();
         my_struct
     }
 }

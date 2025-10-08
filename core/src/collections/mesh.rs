@@ -1,5 +1,6 @@
 use core::panic;
 
+use egui::epaint::color;
 use egui_wgpu::wgpu::util::DeviceExt;
 use egui_wgpu::wgpu::Buffer;
 use egui_wgpu::wgpu::BufferAddress;
@@ -327,6 +328,9 @@ pub struct Vertex {
 }
 
 impl Vertex {
+    pub fn new(position: [f32; 3], normal: [f32; 3], color: [f32; 4], uv0: [f32; 2], uv1: [f32; 2]) -> Vertex {
+        Vertex { position, normal, color, uv0, uv1 }
+    }
     pub fn default() -> Vertex {
         Vertex {
             position: [0.0, 0.0, 0.0],

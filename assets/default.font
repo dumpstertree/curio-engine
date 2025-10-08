@@ -1,0 +1,13 @@
+{
+  "texture_path": "font.png",
+  "shader_path": "shader/my_shader.shader",
+  "char_spacing": -0.05,
+  "line_spacing": 0.1,
+  "padding_left": 1,
+  "padding_right": 99,
+  "padding_top": 1,
+  "padding_bottom": 19,
+  "columns": 13,
+  "rows": 9,
+  "char_order": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890   .,:;!?$"
+}

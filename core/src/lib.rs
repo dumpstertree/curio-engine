@@ -18,6 +18,7 @@ pub mod io {
     pub mod asset_database;
     pub mod asset_loader;
     pub mod file;
+    pub mod font_asset;
     pub mod model_asset;
     pub mod model_asset_animated;
     pub mod texture_asset;
@@ -46,6 +47,7 @@ pub mod collections {
     pub mod vector4;
     pub mod vector4_int;
 }
+pub mod prefab;
 pub mod random;
 
 mod window {

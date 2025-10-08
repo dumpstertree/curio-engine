@@ -1,7 +1,7 @@
-use crate::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
+use crate::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_renderer_text::ComponentRendererText, component_transform::Transform};
 use built_in_state::{state_draw::DrawCallsState, state_time::TimeState};
 use core::{
-    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState},
+    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
@@ -51,6 +51,24 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     for m in &renderer.mesh {
                         x.draw_calls
                             .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform.get_matrix()));
+                    }
+                }
+            }
+            for (_, (renderer, transform)) in world
+                .query::<(&mut ComponentRendererText, &Transform)>()
+                .iter()
+            {
+                for asset_for_matricies in &renderer.asset {
+                    for arc_mesh in &asset_for_matricies.0.mesh {
+                        let transform_matrix = transform.get_matrix();
+                        let mut inst_matricies = Vec::new();
+                        for mesh_matrix in &asset_for_matricies.1 {
+                            inst_matricies.push(Matrix4x4::multiply(mesh_matrix, &transform_matrix));
+                        }
+                        for inst_matrix in inst_matricies {
+                            x.draw_calls
+                                .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
+                        }
                     }
                 }
             }
