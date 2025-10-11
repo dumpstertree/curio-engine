@@ -13,54 +13,64 @@ use std::{collections::HashMap, sync::Arc};
 
 pub struct ComponentRendererText {
     pub asset: Vec<(Arc<ModelAsset>, Vec<Matrix4x4>)>,
-    pub font_asset: Option<FontAsset>,
-    pub contents: String,
-    pub align_horizontal: AligmentHorizontal,
-    pub align_vertical: AligmentVertical,
-    pub font_size: f32,
-    pub bounds: Vector2,
+    font_asset: Option<FontAsset>,
+    contents: String,
+    align_horizontal: AligmentHorizontal,
+    align_vertical: AligmentVertical,
+    font_size: f32,
+    bounds: Vector2,
+    is_dirty: bool,
 }
 
 impl ComponentRendererText {
     pub fn default() -> ComponentRendererText {
-        let mut t = ComponentRendererText {
+        ComponentRendererText {
             asset: Vec::new(),
             font_asset: None,
-            contents: String::from("Call me Ishmael. Some years ago—never mind how long precisely—having little or no money in my purse, and nothing particular to interest me on shore, I thought I would sail about a little and see the watery part of the world."),
-            align_horizontal: AligmentHorizontal::Left,
-            align_vertical: AligmentVertical::Top,
+            contents: String::from("Lorum ipsum..."),
+            align_horizontal: AligmentHorizontal::Center,
+            align_vertical: AligmentVertical::Center,
             font_size: 0.05,
-            bounds: Vector2::new(1.5, 0.5),
-        };
-        t.rebuild();
-        t
+            bounds: Vector2::new(1.0, 1.0),
+            is_dirty: true,
+        }
     }
     pub fn set_font_asset(&mut self, font_asset: Option<FontAsset>) -> &mut Self {
         self.font_asset = font_asset;
+        self.is_dirty = true;
         self
     }
     pub fn set_contents(&mut self, contents: &str) -> &mut Self {
         self.contents = String::from(contents);
+        self.is_dirty = true;
         self
     }
     pub fn set_horizontal_alignment(&mut self, align: AligmentHorizontal) -> &mut Self {
         self.align_horizontal = align;
+        self.is_dirty = true;
         self
     }
     pub fn set_vertical_alignment(&mut self, align: AligmentVertical) -> &mut Self {
         self.align_vertical = align;
+        self.is_dirty = true;
         self
     }
     pub fn set_font_size(&mut self, font_size: f32) -> &mut Self {
         self.font_size = font_size;
+        self.is_dirty = true;
         self
     }
     pub fn set_bounds(&mut self, bounds: Vector2) -> &mut Self {
         self.bounds = bounds;
+        self.is_dirty = true;
         self
     }
 
     pub fn rebuild(&mut self) {
+        if !self.is_dirty {
+            return;
+        }
+        self.is_dirty = false;
         let font_asset: FontAsset = self
             .font_asset
             .clone()

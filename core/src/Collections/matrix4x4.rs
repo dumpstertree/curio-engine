@@ -48,7 +48,7 @@ impl Matrix4x4 {
         let mut result = [[0.0; 4]; 4];
         for row in 0..4 {
             for col in 0..4 {
-                result[row][col] = a.model[row][0] * b.model[0][col] + a.model[row][1] * b.model[1][col] + a.model[row][2] * b.model[2][col] + a.model[row][3] * b.model[3][col];
+                result[row][col] = b.model[row][0] * a.model[0][col] + b.model[row][1] * a.model[1][col] + b.model[row][2] * a.model[2][col] + b.model[row][3] * a.model[3][col];
             }
         }
         Matrix4x4 { model: result }

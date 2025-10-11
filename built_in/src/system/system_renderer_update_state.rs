@@ -58,17 +58,20 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 .query::<(&mut ComponentRendererText, &Transform)>()
                 .iter()
             {
+                renderer.rebuild();
                 for asset_for_matricies in &renderer.asset {
                     for arc_mesh in &asset_for_matricies.0.mesh {
-                        let transform_matrix = transform.get_matrix();
+                        let transform_matrix = transform.get_world_matrix(world);
                         let mut inst_matricies = Vec::new();
                         for mesh_matrix in &asset_for_matricies.1 {
-                            inst_matricies.push(Matrix4x4::multiply(mesh_matrix, &transform_matrix));
+                            inst_matricies.push(Matrix4x4::multiply(&transform_matrix, mesh_matrix));
                         }
-                        for inst_matrix in inst_matricies {
-                            x.draw_calls
-                                .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
-                        }
+                        // for inst_matrix in inst_matricies {
+                        //     x.draw_calls
+                        //         .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
+                        // }
+                        x.draw_calls
+                            .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies));
                     }
                 }
             }

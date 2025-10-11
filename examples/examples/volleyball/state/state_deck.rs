@@ -1,13 +1,14 @@
 use core::{
-    collections::{
-        game_state::StateOwnerships,
-        vector2_int::Vector2Int,
-    },
+    collections::{game_state::StateOwnerships, vector2_int::Vector2Int},
     system::system_game_state::IState,
 };
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    fmt::{Display, write},
+    sync::Arc,
+};
 
 #[global_state_serialize]
 pub struct StateDeck {
@@ -26,6 +27,12 @@ use rand::seq::SliceRandom;
 
 use crate::cards::card_instance::CardInstance; // brings in the shuffle() method
 
+pub enum CardLocation {
+    Deck,
+    Discard,
+    Hand,
+}
+
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Deck {
     pub pile_draw: Vec<CardInstance>,
@@ -34,6 +41,39 @@ pub struct Deck {
     pub hand_persistent: Vec<CardInstance>,
 }
 impl Deck {
+    // pub fn get_instance(&self, card_guid: i32) -> Arc<CardInstance> {}
+    pub fn get_location(&self, card_instance: Arc<CardInstance>) -> CardLocation {
+        if self
+            .pile_draw
+            .iter()
+            .any(|x| x.card_id == card_instance.card_id)
+        {
+            return CardLocation::Deck;
+        }
+        if self
+            .pile_discard
+            .iter()
+            .any(|x| x.card_id == card_instance.card_id)
+        {
+            return CardLocation::Discard;
+        }
+        if self
+            .hand_consumable
+            .iter()
+            .any(|x| x.card_id == card_instance.card_id)
+        {
+            return CardLocation::Hand;
+        }
+        if self
+            .hand_persistent
+            .iter()
+            .any(|x| x.card_id == card_instance.card_id)
+        {
+            return CardLocation::Hand;
+        }
+
+        panic!();
+    }
     pub fn reshuffle(&mut self) {
         println!("shuffle");
         for x in &self.hand_consumable {
@@ -84,4 +124,17 @@ pub enum CardTypes {
     Spike,
     Move,
     Spell,
+}
+impl Display for CardTypes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CardTypes::Serve => write!(f, "SERVE"),
+            CardTypes::Rest => write!(f, "REST"),
+            CardTypes::Bump => write!(f, "BUMP"),
+            CardTypes::Set => write!(f, "SET"),
+            CardTypes::Spike => write!(f, "SPIKE"),
+            CardTypes::Move => write!(f, "_"),
+            CardTypes::Spell => write!(f, "SPELL"),
+        }
+    }
 }

@@ -1,7 +1,10 @@
 use core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
 
+use hecs::{Entity, World};
+
 #[derive(Clone)]
 pub struct Transform {
+    pub parent: Option<Entity>,
     pub position: Vector3,
     pub rotation: Quaternion,
     pub scale: Vector3,
@@ -10,6 +13,7 @@ pub struct Transform {
 impl Transform {
     pub fn default() -> Transform {
         Transform {
+            parent: None,
             position: Vector3::zero(),
             rotation: Quaternion::identity(),
             scale: Vector3::one(),
@@ -39,5 +43,26 @@ impl Transform {
     pub fn set_scale(mut self, scale: Vector3) -> Transform {
         self.scale = scale;
         self
+    }
+    pub fn set_parent(mut self, parent: Option<Entity>) -> Transform {
+        self.parent = parent;
+        self
+    }
+    pub fn get_world_matrix(&self, world: &World) -> Matrix4x4 {
+        let mut matrix = self.get_matrix();
+        let mut current = self.parent;
+
+        while let Some(parent_entity) = current {
+            if let Ok(parent_transform) = world.get::<&Transform>(parent_entity) {
+                // matrix = Matrix4x4::multiply(&matrix, &parent_transform.get_matrix());
+
+                matrix = Matrix4x4::multiply(&parent_transform.get_matrix(), &matrix);
+                current = parent_transform.parent;
+            } else {
+                break;
+            }
+        }
+
+        matrix
     }
 }

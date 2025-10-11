@@ -24,6 +24,7 @@ impl CardLibrary {
                 "card_bump.glb",
                 CardTypes::Rest,
                 0,
+                String::from("do a rest"),
                 vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
                 vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AtrributeTargetTypesPlayers::User)],
             )),
@@ -32,7 +33,16 @@ impl CardLibrary {
         // basic
         hashmap.insert(
             String::from("set+draw"),
-            Arc::new(CardMaster::new("set+draw", "card_set.glb", CardTypes::Set, 1, vec![], vec![CardAttributeEvents::DrawCards(1, AtrributeTargetTypesPlayers::User)])),
+            Arc::new(CardMaster::new(
+                //
+                "set+draw",
+                "card_set.glb",
+                CardTypes::Set,
+                1,
+                String::from("Draw a Card"),
+                vec![],
+                vec![CardAttributeEvents::DrawCards(1, AtrributeTargetTypesPlayers::User)],
+            )),
         );
         hashmap.insert(
             String::from("set+move"),
@@ -41,25 +51,72 @@ impl CardLibrary {
                 "card_set.glb",
                 CardTypes::Set,
                 1,
+                String::from("Move +1"),
                 vec![],
                 vec![CardAttributeEvents::MoveEntity(AttribtuteTargetTypesEntities::User, AttributeTargetTypesTiles::RandomOnTeamUser)],
             )),
         );
-        hashmap.insert(String::from("bump"), Arc::new(CardMaster::new("bump", "card_bump.glb", CardTypes::Bump, 1, vec![], vec![CardAttributeEvents::MoveBallForward(1)])));
-        hashmap.insert(String::from("spike"), Arc::new(CardMaster::new("spike", "card_spike.glb", CardTypes::Spike, 1, vec![], vec![CardAttributeEvents::MoveBallForward(2)])));
+        hashmap.insert(
+            String::from("bump"),
+            Arc::new(CardMaster::new(
+                "bump",
+                "card_bump.glb",
+                CardTypes::Bump,
+                1,
+                String::from("Forward +1"), //
+                vec![],
+                vec![CardAttributeEvents::MoveBallForward(1)],
+            )),
+        );
+        hashmap.insert(
+            String::from("spike"),
+            Arc::new(CardMaster::new(
+                "spike",
+                "card_spike.glb",
+                CardTypes::Spike,
+                1,
+                String::from("Forward +2"), //
+                vec![],
+                vec![CardAttributeEvents::MoveBallForward(2)],
+            )),
+        );
 
         // spells
         hashmap.insert(
             String::from("curse"),
-            Arc::new(CardMaster::new("curse", "card_spike.glb", CardTypes::Spell, 1, vec![], vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::RandomOpponent)])),
+            Arc::new(CardMaster::new(
+                "curse",
+                "card_spike.glb",
+                CardTypes::Spell,
+                1,
+                String::from("Target DISCARDs a card"),
+                vec![],
+                vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::RandomOpponent)],
+            )),
         );
         hashmap.insert(
             String::from("blessing"),
-            Arc::new(CardMaster::new("blessing", "card_spike.glb", CardTypes::Spell, 1, vec![], vec![CardAttributeEvents::DrawCards(2, AtrributeTargetTypesPlayers::User)])),
+            Arc::new(CardMaster::new(
+                "blessing",
+                "card_spike.glb",
+                CardTypes::Spell,
+                1,
+                String::from("Target DRAWs 2 cards"),
+                vec![],
+                vec![CardAttributeEvents::DrawCards(2, AtrributeTargetTypesPlayers::User)],
+            )),
         );
         hashmap.insert(
             String::from("deep_breath"),
-            Arc::new(CardMaster::new("deep_breath", "card_spike.glb", CardTypes::Spell, 1, vec![], vec![CardAttributeEvents::GainEnergy(2, AttribtuteTargetTypesEntities::User)])),
+            Arc::new(CardMaster::new(
+                "deep_breath",
+                "card_spike.glb",
+                CardTypes::Spell,
+                1,
+                String::from("RANGE +1 on until end of turn"),
+                vec![],
+                vec![CardAttributeEvents::GainEnergy(2, AttribtuteTargetTypesEntities::User)],
+            )),
         );
 
         hashmap.insert(
@@ -69,6 +126,7 @@ impl CardLibrary {
                 "card_spike.glb",
                 CardTypes::Spell,
                 1,
+                String::from("RANGE -1 on until end of turn"),
                 vec![CardAttributeModifiers::EditRangeForEntities(AttributeClearFlag::Turn, AttribtuteTargetTypesEntities::User, -1)],
                 vec![],
             )),
@@ -76,10 +134,11 @@ impl CardLibrary {
         hashmap.insert(
             String::from("extra_oomph"),
             Arc::new(CardMaster::new(
-                "extra_oomph",
+                "Extra Oomph",
                 "card_spike.glb",
                 CardTypes::Spell,
                 1,
+                String::from("RANGE +1 on until end of turn"),
                 vec![(CardAttributeModifiers::EditRangeForEntities(AttributeClearFlag::Turn, AttribtuteTargetTypesEntities::User, 1))],
                 vec![],
             )),

@@ -1,7 +1,7 @@
 {
-  "texture_path": "font.png",
+  "texture_path": "font2.png",
   "shader_path": "shader/my_shader.shader",
-  "char_spacing": -0.05,
+  "char_spacing": -0.1,
   "line_spacing": 0.1,
   "padding_left": 1,
   "padding_right": 99,

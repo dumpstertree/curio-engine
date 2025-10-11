@@ -1,15 +1,19 @@
 use crate::AssetMappingUIDs;
+use crate::cards::card_instance::CardInstance;
 use crate::ecs::components::component_card::ComponentCard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::StateDeck;
 use built_in::component::component_renderer_static::Renderer;
+use built_in::component::component_renderer_text::ComponentRendererText;
 // use built_in::component::component_renderer::Renderer;
 use built_in::component::component_transform::Transform;
 use built_in_state::state_camera::CameraState;
 use built_in_state::state_input::InputState;
 use core::collections::input_button::InputButtonState;
-use core::collections::vector3::Vector3;
+use core::collections::quaternion::Quaternion;
+use core::collections::vector2::Vector2;
+use core::collections::vector3::{self, Vector3};
 use core::io::asset_loader::AssetLoader;
 use core::io::model_asset::ModelAsset;
 use core::{
@@ -19,13 +23,14 @@ use core::{
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
+use inline_tweak::{tweak, watch};
 use std::collections::HashMap;
 use std::sync::Arc;
 
 #[global_ecs_system]
 pub struct ECSSystemViewCards {
-    asset: Option<Arc<ModelAsset>>,
-    asset_card: HashMap<String, Option<Arc<ModelAsset>>>,
+    // asset: Arc<ModelAsset>,
+    // asset_card: HashMap<String, Option<Arc<ModelAsset>>>,
     cnt: i32,
 }
 impl ECSSystemEventless for ECSSystemViewCards {
@@ -36,12 +41,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
         true
     }
     fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        self.asset_card
-            .insert(String::from("card_bump.glb"), Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid())));
-        self.asset_card
-            .insert(String::from("card_set.glb"), Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid())));
-        self.asset_card
-            .insert(String::from("card_spike.glb"), Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid())));
+        // self.asset_card = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
     }
 
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
@@ -55,21 +55,19 @@ impl ECSSystemEventless for ECSSystemViewCards {
             let mut i = 0;
             for x in my_deck.hand_persistent.iter() {
                 let camera_state = game_state.get_value2::<CameraState>();
-
-                world.spawn((
-                    Renderer::default().set_asset(self.asset_card[&String::from("card_bump.glb")].clone()),
-                    Transform::default().set_rotation(camera_state.cameras.rotation),
-                    ComponentCard::default().set_index(i),
-                ));
+                self.spawn_card(world, x, i, camera_state.cameras.rotation);
                 i += 1;
             }
             for x in my_deck.hand_consumable.iter() {
                 let camera_state = game_state.get_value2::<CameraState>();
-                world.spawn((
-                    Renderer::default().set_asset(self.asset_card[&String::from("card_bump.glb")].clone()),
-                    Transform::default().set_rotation(camera_state.cameras.rotation),
-                    ComponentCard::default().set_index(i),
-                ));
+
+                // world.spawn((
+                //     Renderer::default().set_asset(self.asset_card[&String::from("card_bump.glb")].clone()),
+                //     Transform::default().set_rotation(camera_state.cameras.rotation),
+                //     ComponentCard::default().set_index(i),
+                // ));
+                self.spawn_card(world, x, i, camera_state.cameras.rotation);
+
                 i += 1;
             }
         }
@@ -97,8 +95,61 @@ impl ECSSystemEventless for ECSSystemViewCards {
             }
 
             let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::forward()) * z + Vector3::right() * ((card.index - state_selected.index) as f32 * spacing) + camera_state.cameras.rotation * Vector3::down() * y;
-
             transform.position = Vector3::lerp(transform.position, pos, 0.2);
         }
+    }
+}
+impl ECSSystemViewCards {
+    fn spawn_card(&self, world: &mut World, x: &CardInstance, i: i32, rotation: Quaternion) {
+        let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
+        let parent = world.spawn((Transform::default().set_rotation(rotation), Renderer::default().set_asset(Some(asset.clone())), ComponentCard::default().set_index(i)));
+        // create description
+        let mut r = ComponentRendererText::default();
+        r.set_bounds(Vector2::new(0.25, 0.2));
+        r.set_font_size(0.02);
+        r.set_contents(&x.get_master().description);
+        world.spawn((
+            r,
+            Transform::default()
+                .set_position(Vector3::back() * 0.02 + Vector3::down() * 0.155)
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
+                .set_parent(Some(parent)),
+        ));
+        // create title
+        let mut r = ComponentRendererText::default();
+        r.set_bounds(Vector2::new(0.5, 0.2));
+        r.set_font_size(0.03);
+        r.set_contents(&x.get_title());
+        world.spawn((
+            r,
+            Transform::default()
+                .set_position(Vector3::back() * 0.02 + Vector3::up() * 0.235)
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
+                .set_parent(Some(parent)),
+        ));
+        // create type
+        let mut r = ComponentRendererText::default();
+        r.set_bounds(Vector2::new(0.25, 0.2));
+        r.set_font_size(0.02);
+        r.set_contents(&format!("{}", x.get_manuever_type()));
+        world.spawn((
+            r,
+            Transform::default()
+                .set_position(Vector3::back() * 0.02 + Vector3::down() * 0.06)
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
+                .set_parent(Some(parent)),
+        ));
+        // create cost
+        let mut r = ComponentRendererText::default();
+        r.set_bounds(Vector2::new(0.25, 0.2));
+        r.set_font_size(0.03);
+        r.set_contents(&x.get_cost().to_string());
+        world.spawn((
+            r,
+            Transform::default()
+                .set_position(Vector3::back() * 0.02 + Vector3::down() * 0.25 + Vector3::right() * 0.135)
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
+                .set_parent(Some(parent)),
+        ));
     }
 }

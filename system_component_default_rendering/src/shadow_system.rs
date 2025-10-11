@@ -324,7 +324,7 @@ impl ShadowSystem {
 
         let light_view = Matrix4x4::look_at(light_pos, target, up);
         let light_proj = Matrix4x4::orthographic_lh_zo(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
-        let light_view_proj = Matrix4x4::multiply(&light_view, &light_proj);
+        let light_view_proj = Matrix4x4::multiply(&light_proj, &light_view);
 
         queue.write_buffer(&self.buffers[screen_index], 0, bytemuck::bytes_of(&light_view_proj));
     }

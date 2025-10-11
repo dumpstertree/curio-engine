@@ -129,7 +129,7 @@ fn main() {
         // local
         (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/69VQTiko"))),
         (AssetMappingUIDs::Court.uid(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
-        (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_bump.glb"))),
+        (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
     ]));
 
     let input_mapping_0 = InputMapping::new(

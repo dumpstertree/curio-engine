@@ -8,17 +8,19 @@ pub struct CardMaster {
     pub card_type: CardTypes,
     pub cost: i32,
     pub model_path: String,
+    pub description: String,
     // pub attributes: Vec<(fn(&GameState) -> AttributeTargets, AttributeClearFlag, CardAttributes)>,
     pub attributes: Vec<CardAttributeModifiers>,
     events: Vec<CardAttributeEvents>,
 }
 impl CardMaster {
-    pub fn new(title: &str, model_path: &str, card_type: CardTypes, cost: i32, attributes: Vec<CardAttributeModifiers>, events: Vec<CardAttributeEvents>) -> CardMaster {
+    pub fn new(title: &str, model_path: &str, card_type: CardTypes, cost: i32, description: String, attributes: Vec<CardAttributeModifiers>, events: Vec<CardAttributeEvents>) -> CardMaster {
         CardMaster {
             title: String::from(title),
             model_path: String::from(model_path),
             card_type,
             cost,
+            description,
             attributes,
             events,
         }

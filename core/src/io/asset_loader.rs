@@ -260,7 +260,6 @@ impl AssetLoader {
     }
     pub fn load_font_asset_from_path(path: &str) -> FontAsset {
         let file = File::read(path);
-        println!("len {}", file.len());
         let json: serde_json::Value = serde_json::from_slice(file.as_slice()).expect("file should be proper JSON");
         let my_struct: FontAsset = serde_json::from_str(&json.to_string()).unwrap();
         my_struct

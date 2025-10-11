@@ -1,4 +1,11 @@
-use built_in::component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_renderer_text::ComponentRendererText, component_transform::Transform};
+use built_in::component::{
+    component_camera::Camera,
+    component_light::ComponentLight,
+    component_renderer_animated::RendererAnimated,
+    component_renderer_static::Renderer,
+    component_renderer_text::{AligmentHorizontal, AligmentVertical, ComponentRendererText},
+    component_transform::Transform,
+};
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork, state_sun::StateSun, state_time::TimeState};
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -62,7 +69,12 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))),
             Renderer::default().set_asset(Some(asset_court)),
         ));
-        world.spawn((Transform::default(), ComponentRendererText::default()));
+        // let mut t = ComponentRendererText::default();
+        // t.set_font_size(0.05)
+        //     .set_contents("this is my special text")
+        //     .set_vertical_alignment(AligmentVertical::Center)
+        //     .set_horizontal_alignment(AligmentHorizontal::Center);
+        // world.spawn((Transform::default(), t));
         for id in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
             let mut rend = RendererAnimated::default();
             rend.set_asset(Some(asset_goblin.clone()))
@@ -136,12 +148,5 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         game_state.edit::<StateSun>(|x| {
             x.direction = cam_dir;
         });
-        for (_, (transform, renderer)) in world
-            .query::<(&mut Transform, &mut ComponentRendererText)>()
-            .iter()
-        {
-            transform.position = cam_pos + cam_dir;
-            transform.rotation = cam_rot * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
-        }
     }
 }
