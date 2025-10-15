@@ -1,6 +1,5 @@
 use crate::state::peer::state_peer_input_mode::InputModes;
-use crate::state::state_turn::StateTurn;
-use crate::{game_events::GameEvents, state::peer::state_peer_input_mode::StatePeerInputMode};
+use crate::state::peer::state_peer_input_mode::StatePeerInputMode;
 use built_in_state::state_input::InputState;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},

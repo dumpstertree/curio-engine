@@ -1,6 +1,5 @@
 use core::panic;
 
-use egui::epaint::color;
 use egui_wgpu::wgpu::util::DeviceExt;
 use egui_wgpu::wgpu::Buffer;
 use egui_wgpu::wgpu::BufferAddress;

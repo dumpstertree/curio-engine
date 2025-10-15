@@ -1,12 +1,8 @@
-use core::{
-    collections::{
+use core::collections::{
         color::Color,
-        light_uniform::{DrawCallLight, LightType},
+        light_uniform::LightType,
         vector3::Vector3,
-    },
-    io::model_asset::ModelAsset,
-};
-use std::sync::Arc;
+    };
 
 pub struct ComponentLight {
     pub asset: LightType,

@@ -1,19 +1,17 @@
-use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D, shadow_system::ShadowSystem};
+use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use built_in_state::{state_draw::DrawCallsState, state_lights::StateLights, state_sun::StateSun};
 use core::{
     collections::{
         draw_call::DrawCall,
-        game_state::{self, GameState},
+        game_state::GameState,
         light_uniform::LightSystem,
         matrix4x4::Matrix4x4,
-        mesh::{Mesh, Vertex},
-        quaternion::Quaternion,
-        vector3::Vector3,
+        mesh::Vertex,
     },
     io::texture_asset::TextureAsset,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
-use egui_wgpu::wgpu::{BindGroup, BindGroupEntry, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
+use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
 use std::sync::Arc;
 
 pub struct RenderFeatureDrawMesh {

@@ -6,7 +6,7 @@ use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
-    fmt::{Display, write},
+    fmt::Display,
     sync::Arc,
 };
 

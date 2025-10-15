@@ -1,7 +1,6 @@
 use crate::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    io::asset_loader::AssetLoader,
 };
 use hecs::World;
 use intertrait::CastFrom;

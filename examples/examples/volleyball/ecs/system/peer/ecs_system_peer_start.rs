@@ -3,7 +3,6 @@ use built_in::component::{
     component_light::ComponentLight,
     component_renderer_animated::RendererAnimated,
     component_renderer_static::Renderer,
-    component_renderer_text::{AligmentHorizontal, AligmentVertical, ComponentRendererText},
     component_transform::Transform,
 };
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork, state_sun::StateSun, state_time::TimeState};
@@ -12,7 +11,7 @@ use hecs::World;
 
 use core::{
     collections::{
-        color::{self, Color},
+        color::Color,
         event_queue::EventQueue,
         game_state::GameState,
         quaternion::Quaternion,
@@ -21,7 +20,6 @@ use core::{
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     io::asset_loader::AssetLoader,
-    random::Random,
 };
 
 use crate::{

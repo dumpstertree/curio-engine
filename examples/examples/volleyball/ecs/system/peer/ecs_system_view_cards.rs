@@ -9,13 +9,10 @@ use built_in::component::component_renderer_text::{ComponentRendererText, Render
 // use built_in::component::component_renderer::Renderer;
 use built_in::component::component_transform::Transform;
 use built_in_state::state_camera::CameraState;
-use built_in_state::state_input::InputState;
-use core::collections::input_button::InputButtonState;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector2::Vector2;
-use core::collections::vector3::{self, Vector3};
+use core::collections::vector3::Vector3;
 use core::io::asset_loader::AssetLoader;
-use core::io::model_asset::ModelAsset;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -23,8 +20,6 @@ use core::{
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
-use inline_tweak::{tweak, watch};
-use std::collections::HashMap;
 use std::sync::Arc;
 
 #[global_ecs_system]

@@ -1,15 +1,10 @@
-use crate::component::{component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
-use built_in_state::{state_draw::DrawCallsState, state_lights::StateLights, state_sun::StateSun, state_time::TimeState};
+use built_in_state::state_time::TimeState;
 use core::{
     collections::{
-        color::Color,
-        draw_call::DrawCall,
         event_queue::EventQueue,
-        game_state::{self, GameState},
-        light_uniform::DrawCallLight,
-        vector3::Vector3,
+        game_state::GameState,
     },
-    dumpster_engine::{GameInstance, NetworkModes},
+    dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;

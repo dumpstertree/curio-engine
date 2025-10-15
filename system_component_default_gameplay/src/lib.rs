@@ -1,7 +1,6 @@
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
-    io::asset_loader::AssetLoader,
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
 };
 use hecs::World;

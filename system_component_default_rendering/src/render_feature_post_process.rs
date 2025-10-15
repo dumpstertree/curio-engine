@@ -1,9 +1,9 @@
 use core::{collections::game_state::GameState, system_adapters::adapter_system_gpu::SystemGPU};
 use std::sync::Arc;
 
-use egui_wgpu::{Texture, wgpu::TextureView};
+use egui_wgpu::wgpu::TextureView;
 
-use crate::render_feature_post_processes::{render_feature_post_process_fog::RenderFeaturePostProcessFog, render_feature_post_process_kuwahara::RenderFeaturePostProcessKuwahara, render_feature_post_process_sobel_outline::RenderFeaturePostProcessOutline};
+use crate::render_feature_post_processes::render_feature_post_process_fog::RenderFeaturePostProcessFog;
 
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &egui_wgpu::wgpu::TextureView, output_view: &egui_wgpu::wgpu::TextureView, source: PostProcessSource);

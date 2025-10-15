@@ -1,11 +1,9 @@
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionPlayer;
-use crate::state::state_turn::StateTurn;
-use crate::{ecs::components::component_player::ComponentPlayer, game_events::GameEvents};
+use crate::ecs::components::component_player::ComponentPlayer;
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_transform::Transform;
-use built_in_state::state_input::InputState;
 use built_in_state::state_time::TimeState;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;

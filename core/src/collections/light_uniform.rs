@@ -1,7 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 use egui_wgpu::wgpu;
 use std::num::NonZeroU64;
-use std::sync::Arc;
 
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 

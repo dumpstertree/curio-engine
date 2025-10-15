@@ -1,10 +1,6 @@
 use super::super::collections::material::Material;
 use super::asset::Asset;
-use crate::collections::{
-    matrix4x4::Matrix4x4,
-    mesh::{Mesh, Vertex},
-};
-use rusty_spine::{AnimationStateData, Attachment, Skeleton, SkeletonData};
+use rusty_spine::{AnimationStateData, SkeletonData};
 use std::sync::Arc;
 
 // #[derive(Clone)]

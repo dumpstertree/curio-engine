@@ -1,7 +1,4 @@
 use cgmath::Matrix4;
-use egui_wgpu::wgpu::BufferAddress;
-use egui_wgpu::wgpu::VertexAttribute;
-use egui_wgpu::wgpu::VertexBufferLayout;
 use serde::Deserialize;
 use serde::Serialize;
 

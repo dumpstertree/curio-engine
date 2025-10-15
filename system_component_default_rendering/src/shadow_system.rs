@@ -1,9 +1,8 @@
 use ::core::collections::matrix4x4::Matrix4x4;
 use ::core::system_adapters::adapter_system_gpu::SystemGPU;
-use core::collections::{color::Color, draw_call::DrawCall, mesh::Vertex, quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
+use core::collections::{draw_call::DrawCall, mesh::Vertex, vector3::Vector3};
 use std::num::NonZeroU64;
 
-use bytemuck::bytes_of;
 use egui_wgpu::wgpu::{
     AddressMode, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Buffer, BufferBindingType, BufferUsages, CommandEncoder, CompareFunction, DepthBiasState, Extent3d, FilterMode, RenderPipeline, Sampler,
     SamplerBindingType, SamplerDescriptor, ShaderStages, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView, TextureViewDescriptor, TextureViewDimension,

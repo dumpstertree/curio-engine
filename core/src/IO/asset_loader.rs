@@ -105,7 +105,7 @@ impl AssetLoader {
     }
 
     // unwrap
-    pub fn unwrap_texture(data: &[u8]) -> (Result<TextureAsset, Box<dyn Error>>) {
+    pub fn unwrap_texture(data: &[u8]) -> Result<TextureAsset, Box<dyn Error>> {
         let image = image::load_from_memory(&data).unwrap();
         let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
         Ok(texture)
