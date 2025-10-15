@@ -40,6 +40,7 @@ pub mod collections {
     pub mod mesh;
     pub mod projection;
     pub mod quaternion;
+    pub mod tween;
     pub mod vector2;
     pub mod vector2_int;
     pub mod vector3;

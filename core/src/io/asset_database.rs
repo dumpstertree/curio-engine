@@ -60,7 +60,6 @@ impl AssetDatabaseListing {
                 if let Ok(bytes) = Self::fetch_remote_asset(remote_path) {
                     // write file to disk
                     File::write(&cache_path, &bytes);
-
                     // return
                     return bytes;
                 }
@@ -84,7 +83,12 @@ impl AssetDatabaseListing {
 
         // Send a HEAD request
         let client = reqwest::blocking::Client::new();
+
+        // if we failed to reach server just use local
         let resp = client.head(url).send().unwrap();
+        if !resp.status().is_success() {
+            return Ok(false);
+        }
 
         if let Some(last_modified) = resp.headers().get("last-modified") {
             let last_modified_str = last_modified.to_str()?;

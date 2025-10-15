@@ -13,6 +13,7 @@ use core::{
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
+use std::sync::Arc;
 
 #[global_ecs_system]
 pub struct ECSSystemTurnManuever {
@@ -55,7 +56,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                 x.index = x.index.clamp(bounds_min, bounds_max);
 
                 // generate the list of cards using
-                let mut list: Vec<CardInstance> = vec![];
+                let mut list: Vec<Arc<CardInstance>> = vec![];
                 for x in my_deck.hand_persistent.clone() {
                     list.push(x);
                 }
@@ -109,7 +110,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                     mod_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
                 }
 
-                event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, list0[index as usize].clone(), FilledCardResponse::new(mod_filled, evnt_filled)));
+                event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, list0[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
             } else {
                 let index = game_state.get_value2::<StatePeerSelectedCards>().index;
                 // generate the list of cards using
@@ -130,7 +131,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                     mod_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
                 }
 
-                event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, list0[index as usize].clone(), FilledCardResponse::new(mod_filled, evnt_filled)));
+                event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, list0[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
             }
         }
     }

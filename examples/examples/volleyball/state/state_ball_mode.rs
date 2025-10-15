@@ -16,7 +16,7 @@ impl IState for StateBallMode {
         StateOwnerships::Host
     }
 }
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub enum BallModes {
     #[default]
     Serve,

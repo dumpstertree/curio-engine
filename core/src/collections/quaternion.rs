@@ -98,6 +98,73 @@ impl Quaternion {
     }
 }
 // instance
+impl Quaternion {
+    /// Performs spherical linear interpolation between two quaternions.
+    ///
+    /// `t` should be between 0.0 and 1.0, where:
+    /// - 0.0 returns `self`
+    /// - 1.0 returns `end`
+    pub fn slerp(&self, end: Quaternion, t: f32) -> Quaternion {
+        // Clamp t to [0, 1]
+        let t = t.clamp(0.0, 1.0);
+
+        // Compute the cosine of the angle between the two quaternions
+        let mut cos_half_theta = self.w * end.w + self.x * end.x + self.y * end.y + self.z * end.z;
+
+        // If cos is negative, negate end to take the shorter path
+        let mut end = end;
+        if cos_half_theta < 0.0 {
+            end = Quaternion { x: -end.x, y: -end.y, z: -end.z, w: -end.w };
+            cos_half_theta = -cos_half_theta;
+        }
+
+        // If quaternions are very close, use linear interpolation to avoid divide-by-zero
+        const EPSILON: f32 = 1e-6;
+        if cos_half_theta > 1.0 - EPSILON {
+            // Lerp (linear interpolation)
+            let inv_t = 1.0 - t;
+            let result = Quaternion {
+                x: inv_t * self.x + t * end.x,
+                y: inv_t * self.y + t * end.y,
+                z: inv_t * self.z + t * end.z,
+                w: inv_t * self.w + t * end.w,
+            };
+            return result.normalized();
+        }
+
+        // Compute the actual angle between them
+        let half_theta = cos_half_theta.acos();
+        let sin_half_theta = (1.0 - cos_half_theta * cos_half_theta).sqrt();
+
+        // Compute interpolation factors
+        let ratio_a = ((1.0 - t) * half_theta).sin() / sin_half_theta;
+        let ratio_b = (t * half_theta).sin() / sin_half_theta;
+
+        // Perform the slerp
+        let result = Quaternion {
+            x: self.x * ratio_a + end.x * ratio_b,
+            y: self.y * ratio_a + end.y * ratio_b,
+            z: self.z * ratio_a + end.z * ratio_b,
+            w: self.w * ratio_a + end.w * ratio_b,
+        };
+
+        result.normalized()
+    }
+
+    /// Returns a normalized copy of the quaternion
+    pub fn normalized(&self) -> Quaternion {
+        let mag = (self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w).sqrt();
+        if mag == 0.0 {
+            return *self;
+        }
+        Quaternion {
+            x: self.x / mag,
+            y: self.y / mag,
+            z: self.z / mag,
+            w: self.w / mag,
+        }
+    }
+}
 
 impl Quaternion {
     /// Returns a new instance of Vector3 with the Quaternion converted to euler angles

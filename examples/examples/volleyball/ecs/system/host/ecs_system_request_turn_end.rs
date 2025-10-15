@@ -1,4 +1,10 @@
-use crate::{game_events::GameEvents, state::state_turn::StateTurn};
+use crate::{
+    game_events::GameEvents,
+    state::{
+        state_ball_mode::{BallModes, StateBallMode},
+        state_turn::StateTurn,
+    },
+};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -27,6 +33,12 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestTurnE
                 let is_active_player = game_state.get_value2::<StateTurn>().active_instance_id == *id;
                 if !is_active_player {
                     println!("Requested Turn End for non-active player");
+                    return;
+                }
+
+                let is_serving = game_state.get_value2::<StateBallMode>().mode == BallModes::Serve;
+                if is_serving {
+                    println!("Requested Turn End in Serve Mode");
                     return;
                 }
 

@@ -29,6 +29,18 @@ impl CardLibrary {
                 vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AtrributeTargetTypesPlayers::User)],
             )),
         );
+        hashmap.insert(
+            String::from("serve"),
+            Arc::new(CardMaster::new(
+                "serve",
+                "card_bump.glb",
+                CardTypes::Bump,
+                0,
+                String::from("Serve the ball to a random position on the opponents side."),
+                vec![],
+                vec![CardAttributeEvents::MoveBallForward(4)],
+            )),
+        );
 
         // basic
         hashmap.insert(

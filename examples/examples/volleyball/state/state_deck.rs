@@ -28,48 +28,72 @@ use rand::seq::SliceRandom;
 use crate::cards::card_instance::CardInstance; // brings in the shuffle() method
 
 pub enum CardLocation {
-    Deck,
-    Discard,
-    Hand,
+    Deck(i32),
+    Discard(i32),
+    Hand(i32),
 }
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Deck {
-    pub pile_draw: Vec<CardInstance>,
-    pub pile_discard: Vec<CardInstance>,
-    pub hand_consumable: Vec<CardInstance>,
-    pub hand_persistent: Vec<CardInstance>,
+    pub all_cards: Vec<Arc<CardInstance>>,
+    pub pile_draw: Vec<Arc<CardInstance>>,
+    pub pile_discard: Vec<Arc<CardInstance>>,
+    pub hand_consumable: Vec<Arc<CardInstance>>,
+    pub hand_persistent: Vec<Arc<CardInstance>>,
 }
 impl Deck {
-    // pub fn get_instance(&self, card_guid: i32) -> Arc<CardInstance> {}
+    pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
+        let inst = Arc::new(CardInstance::new(card_uid));
+        if is_persistent {
+            self.hand_persistent.push(inst.clone());
+        } else {
+            self.pile_draw.push(inst.clone());
+        }
+
+        self.all_cards.push(inst);
+    }
+    pub fn get_instance(&self, instance_id: i32) -> Arc<CardInstance> {
+        if let Some(pos) = self
+            .all_cards
+            .iter()
+            .position(|x| x.instance_id == instance_id)
+        {
+            // Remove the item from `active`
+            let item = self.all_cards.get(pos).unwrap();
+            // Push it into `inactive`
+            return item.clone();
+        }
+
+        panic!("")
+    }
     pub fn get_location(&self, card_instance: Arc<CardInstance>) -> CardLocation {
-        if self
+        if let Some(index) = self
             .pile_draw
             .iter()
-            .any(|x| x.card_id == card_instance.card_id)
+            .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return CardLocation::Deck;
+            return CardLocation::Deck((self.pile_draw.len() - 1 - index) as i32);
         }
-        if self
+        if let Some(index) = self
             .pile_discard
             .iter()
-            .any(|x| x.card_id == card_instance.card_id)
+            .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return CardLocation::Discard;
+            return CardLocation::Discard((self.pile_discard.len() - 1 - index) as i32);
         }
-        if self
-            .hand_consumable
-            .iter()
-            .any(|x| x.card_id == card_instance.card_id)
-        {
-            return CardLocation::Hand;
-        }
-        if self
+        if let Some(index) = self
             .hand_persistent
             .iter()
-            .any(|x| x.card_id == card_instance.card_id)
+            .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return CardLocation::Hand;
+            return CardLocation::Hand(index as i32);
+        }
+        if let Some(index) = self
+            .hand_consumable
+            .iter()
+            .position(|x| x.instance_id == card_instance.instance_id)
+        {
+            return CardLocation::Hand((self.hand_persistent.len() + index) as i32);
         }
 
         panic!();
@@ -105,6 +129,20 @@ impl Deck {
         println!("draw");
         self.hand_consumable.push(self.pile_draw[0].clone());
         self.pile_draw.remove(0);
+    }
+    pub fn discard(&mut self, card_instance: Arc<CardInstance>) {
+        if let Some(pos) = self
+            .hand_consumable
+            .iter()
+            .position(|x| x.card_id == card_instance.card_id)
+        {
+            // Remove the item from `active`
+            let item = self.hand_consumable.remove(pos);
+            // Push it into `inactive`
+            self.pile_discard.push(item);
+        }
+
+        println!("card not found in hand consumable");
     }
 }
 

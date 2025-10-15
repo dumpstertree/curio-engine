@@ -12,6 +12,7 @@ use crate::{
     game_events::GameEvents,
     state::{
         peer::state_peer_input_mode::{InputModes, StatePeerInputMode},
+        state_ball_mode::{BallModes, StateBallMode},
         state_turn::StateTurn,
     },
 };
@@ -26,6 +27,12 @@ impl ECSSystemEventless for ECSSystemTurnMove {
         game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get_value2::<StatePeerInputMode>().mode == InputModes::Move
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
+        // currently serving and cant move
+        let state_ball = game_state.get_value2::<StateBallMode>();
+        if state_ball.mode == BallModes::Serve {
+            return;
+        }
+
         // get states
         let state_input = game_state.get_value2::<InputState>();
 

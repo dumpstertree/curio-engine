@@ -4,12 +4,15 @@ use core::collections::{
 };
 use macro_events::global_events;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self};
+use std::{
+    fmt::{self},
+    sync::Arc,
+};
 
 use crate::{
     card_parser::AttributeClearFlag,
     cards::{card_instance::CardInstance, data_dep_filled::DataDepsFilled},
-    state::state_teams::Teams,
+    state::{state_ball_mode::BallModes, state_teams::Teams},
 };
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -30,11 +33,12 @@ pub enum GameEvents {
     PointScored(Teams),
     TurnBegin(i32),
     TurnEnd(i32),
-    PlayCard(i32, CardInstance, FilledCardResponse),
+    PlayCard(i32, Arc<CardInstance>, FilledCardResponse),
     ResetBoard(Teams),
     DrawCard(),
     DiscardCards(),
     MoveEntity(Vec<i32>, Vector2Int),
+    OnDidSetBallMode(BallModes),
     // to -> instance -> card events
     ApplyCardAttributeEventRefillEnergy(Vec<i32>),
     ApplyCardAttributeEventGainEnergy(Vec<i32>, i32),
@@ -58,8 +62,8 @@ pub enum GameEvents {
     RequestMoveZNeg(i32),
     RequestMoveXPos(i32),
     RequestMoveXNeg(i32),
-    RequestUseManeuverPersistent(i32, CardInstance, FilledCardResponse),
-    RequestUseManeuverConsumable(i32, CardInstance, FilledCardResponse),
+    RequestUseManeuverPersistent(i32, i32, FilledCardResponse),
+    RequestUseManeuverConsumable(i32, i32, FilledCardResponse),
 }
 
 impl IGameEvent for GameEvents {
@@ -74,6 +78,7 @@ impl IGameEvent for GameEvents {
             GameEvents::PlayCard(_, _, _) => EventScope::Instance,
             GameEvents::PointScored(_) => EventScope::Instance,
             GameEvents::ResetBoard(_) => EventScope::Instance,
+            GameEvents::OnDidSetBallMode(_) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventRefillEnergy(_) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventGainEnergy(_, _) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventMoveEntity(_, _) => EventScope::Instance,
@@ -114,7 +119,8 @@ impl fmt::Display for GameEvents {
             GameEvents::RequestMoveZPos(_) => write!(f, "RequestMoveZPos"),
             GameEvents::RequestMoveZNeg(_) => write!(f, "RequestMoveZNeg"),
             GameEvents::RequestMoveXPos(_) => write!(f, "RequestMoveXPos"),
-            GameEvents::RequestMoveXNeg(_) => write!(f, "RequestMoveXNeg"),
+            GameEvents::RequestMoveXNeg(_) => write!(f, "OnDidSetBallMode"),
+            GameEvents::OnDidSetBallMode(_) => write!(f, "RequestMoveXNeg"),
             GameEvents::RequestUseManeuverPersistent(_, _, _) => write!(f, "RequestUseManeuverPersistent"),
             GameEvents::RequestUseManeuverConsumable(_, _, _) => write!(f, "RequestUseManeuverConsumable"),
             GameEvents::DrawCard() => write!(f, "DrawCard"),

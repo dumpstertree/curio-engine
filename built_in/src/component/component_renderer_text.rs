@@ -11,6 +11,49 @@ use core::{
 };
 use std::{collections::HashMap, sync::Arc};
 
+use hecs::{Entity, World};
+
+use crate::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer};
+
+pub trait RendererCommon {
+    // hierachy
+    fn set_parent(&mut self, parent: Option<Entity>);
+    fn get_parent(&self) -> Option<Entity>;
+    // enabled
+    fn set_enabled(&mut self, enabled: bool);
+    fn get_enabled(&self) -> bool;
+    //
+    fn enabled_in_hierarchy(&self, world: &World) -> bool {
+        if !self.get_enabled() {
+            return false;
+        }
+
+        let mut parent_entity = self.get_parent();
+        while parent_entity.is_some() {
+            if let Ok(parent_renderer) = world.get::<&ComponentRendererText>(parent_entity.unwrap()) {
+                if !parent_renderer.get_enabled() {
+                    return false;
+                } else {
+                    parent_entity = parent_renderer.get_parent();
+                }
+            } else if let Ok(parent_renderer) = world.get::<&Renderer>(parent_entity.unwrap()) {
+                if !parent_renderer.get_enabled() {
+                    return false;
+                } else {
+                    parent_entity = parent_renderer.get_parent();
+                }
+            } else if let Ok(parent_renderer) = world.get::<&RendererAnimated>(parent_entity.unwrap()) {
+                if !parent_renderer.get_enabled() {
+                    return false;
+                } else {
+                    parent_entity = parent_renderer.get_parent();
+                }
+            }
+        }
+
+        return true;
+    }
+}
 pub struct ComponentRendererText {
     pub asset: Vec<(Arc<ModelAsset>, Vec<Matrix4x4>)>,
     font_asset: Option<FontAsset>,
@@ -20,6 +63,25 @@ pub struct ComponentRendererText {
     font_size: f32,
     bounds: Vector2,
     is_dirty: bool,
+    enabled: bool,
+    parent: Option<Entity>,
+}
+impl RendererCommon for ComponentRendererText {
+    fn set_parent(&mut self, parent: Option<Entity>) {
+        self.parent = parent;
+    }
+
+    fn get_parent(&self) -> Option<Entity> {
+        self.parent
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn get_enabled(&self) -> bool {
+        self.enabled
+    }
 }
 
 impl ComponentRendererText {
@@ -33,7 +95,13 @@ impl ComponentRendererText {
             font_size: 0.05,
             bounds: Vector2::new(1.0, 1.0),
             is_dirty: true,
+            enabled: true,
+            parent: None,
         }
+    }
+    pub fn set_enabled(&mut self, enabled: bool) -> &mut Self {
+        self.enabled = enabled;
+        self
     }
     pub fn set_font_asset(&mut self, font_asset: Option<FontAsset>) -> &mut Self {
         self.font_asset = font_asset;

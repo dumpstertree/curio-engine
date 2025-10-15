@@ -1,4 +1,9 @@
-use crate::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_renderer_text::ComponentRendererText, component_transform::Transform};
+use crate::component::{
+    component_renderer_animated::RendererAnimated,
+    component_renderer_static::Renderer,
+    component_renderer_text::{ComponentRendererText, RendererCommon},
+    component_transform::Transform,
+};
 use built_in_state::{state_draw::DrawCallsState, state_time::TimeState};
 use core::{
     collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4},
@@ -25,6 +30,9 @@ impl ECSSystemEventless for SystemRendererUpdateState {
         state.edit::<DrawCallsState>(|x| {
             // iterate over each renderer
             for (_, (renderer, transform)) in world.query::<(&Renderer, &Transform)>().iter() {
+                if !renderer.enabled_in_hierarchy(&world) {
+                    continue;
+                }
                 // guard - no mesh
                 let Some(asset) = &renderer.asset else {
                     continue;
@@ -37,10 +45,16 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 }
             }
             for (_, (renderer, _)) in world.query::<(&mut RendererAnimated, &Transform)>().iter() {
+                if !renderer.enabled_in_hierarchy(&world) {
+                    continue;
+                }
                 // update all mesh
                 renderer.update_mesh(time);
             }
             for (_, (renderer, transform)) in world.query::<(&mut RendererAnimated, &Transform)>().iter() {
+                if !renderer.enabled_in_hierarchy(&world) {
+                    continue;
+                }
                 // guard - no mesh
                 if renderer.asset.is_some() {
                     let Some(asset) = &renderer.asset else {
@@ -58,6 +72,9 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 .query::<(&mut ComponentRendererText, &Transform)>()
                 .iter()
             {
+                if !renderer.enabled_in_hierarchy(&world) {
+                    continue;
+                }
                 renderer.rebuild();
                 for asset_for_matricies in &renderer.asset {
                     for arc_mesh in &asset_for_matricies.0.mesh {

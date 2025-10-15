@@ -3,9 +3,9 @@ use crate::cards::card_instance::CardInstance;
 use crate::ecs::components::component_card::ComponentCard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
-use crate::state::state_deck::StateDeck;
+use crate::state::state_deck::{self, StateDeck};
 use built_in::component::component_renderer_static::Renderer;
-use built_in::component::component_renderer_text::ComponentRendererText;
+use built_in::component::component_renderer_text::{ComponentRendererText, RendererCommon};
 // use built_in::component::component_renderer::Renderer;
 use built_in::component::component_transform::Transform;
 use built_in_state::state_camera::CameraState;
@@ -52,23 +52,10 @@ impl ECSSystemEventless for ECSSystemViewCards {
         if self.cnt == 15 {
             let state_deck = game_state.get_value2::<StateDeck>();
             let my_deck = state_deck.deck.get(&game_state.instance_id).unwrap();
-            let mut i = 0;
-            for x in my_deck.hand_persistent.iter() {
-                let camera_state = game_state.get_value2::<CameraState>();
-                self.spawn_card(world, x, i, camera_state.cameras.rotation);
-                i += 1;
-            }
-            for x in my_deck.hand_consumable.iter() {
-                let camera_state = game_state.get_value2::<CameraState>();
+            let camera_state = game_state.get_value2::<CameraState>();
 
-                // world.spawn((
-                //     Renderer::default().set_asset(self.asset_card[&String::from("card_bump.glb")].clone()),
-                //     Transform::default().set_rotation(camera_state.cameras.rotation),
-                //     ComponentCard::default().set_index(i),
-                // ));
-                self.spawn_card(world, x, i, camera_state.cameras.rotation);
-
-                i += 1;
+            for card in &my_deck.all_cards {
+                self.spawn_card(world, card.clone(), camera_state.cameras.rotation);
             }
         }
         let y_selected = 0.25;
@@ -79,35 +66,71 @@ impl ECSSystemEventless for ECSSystemViewCards {
 
         let state_input_mode = game_state.get_value2::<StatePeerInputMode>();
         let is_manuever_mode = state_input_mode.mode == InputModes::Manuever;
-        for (_, (card, transform)) in world.query::<(&ComponentCard, &mut Transform)>().iter() {
+        for (_, (card, transform, renderer)) in world
+            .query::<(&ComponentCard, &mut Transform, &mut Renderer)>()
+            .iter()
+        {
+            let state_deck = game_state.get_value2::<StateDeck>();
+            let my_deck = state_deck.deck.get(&game_state.instance_id).unwrap();
             let camera_state = game_state.get_value2::<CameraState>();
             let state_selected = game_state.get_value2::<StatePeerSelectedCards>();
 
-            let mut z = z_unselected;
-            let mut y = y_unselected;
-            if is_manuever_mode && card.index == state_selected.index {
-                z = z_selected;
-                y = y_selected;
-            }
+            let Some(card_instance) = &card.card_instance else {
+                continue;
+            };
 
-            if !is_manuever_mode {
-                y = y + 0.5;
-            }
+            match my_deck.get_location(card_instance.clone()) {
+                state_deck::CardLocation::Deck(index) => {
+                    let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(0.5, 0.5, 1.0));
+                    let rot = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, -0.0));
+                    transform.position = Vector3::lerp(transform.position, pos, 0.2);
+                    transform.rotation = transform.rotation.slerp(rot, 0.2);
+                    transform.scale = Vector3::lerp(transform.scale, Vector3::one() * 0.25, 0.2);
+                    renderer.set_enabled(index == 0);
+                }
+                state_deck::CardLocation::Discard(index) => {
+                    let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(-0.5, 0.5, 1.0));
+                    let rot = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, -0.0));
 
-            let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::forward()) * z + Vector3::right() * ((card.index - state_selected.index) as f32 * spacing) + camera_state.cameras.rotation * Vector3::down() * y;
-            transform.position = Vector3::lerp(transform.position, pos, 0.2);
+                    transform.position = Vector3::lerp(transform.position, pos, 0.2);
+                    transform.rotation = transform.rotation.slerp(rot, 0.2);
+                    transform.scale = Vector3::lerp(transform.scale, Vector3::one() * 0.25, 0.2);
+                    renderer.set_enabled(index == 0);
+                }
+                state_deck::CardLocation::Hand(index) => {
+                    let mut z = z_unselected;
+                    let mut y = y_unselected;
+
+                    if is_manuever_mode && state_selected.index == index {
+                        z = z_selected;
+                        y = y_selected;
+                    }
+
+                    if !is_manuever_mode {
+                        y = y + 0.5;
+                    }
+
+                    let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::forward()) * z + Vector3::right() * ((index - state_selected.index) as f32 * spacing) + camera_state.cameras.rotation * Vector3::down() * y;
+                    let rot = camera_state.cameras.rotation;
+                    transform.position = Vector3::lerp(transform.position, pos, 0.2);
+                    transform.rotation = transform.rotation.slerp(rot, 0.2);
+                    transform.scale = Vector3::lerp(transform.scale, Vector3::one(), 0.2);
+                    renderer.set_enabled(true);
+                }
+            }
         }
     }
 }
 impl ECSSystemViewCards {
-    fn spawn_card(&self, world: &mut World, x: &CardInstance, i: i32, rotation: Quaternion) {
+    fn spawn_card(&self, world: &mut World, x: Arc<CardInstance>, rotation: Quaternion) {
         let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
-        let parent = world.spawn((Transform::default().set_rotation(rotation), Renderer::default().set_asset(Some(asset.clone())), ComponentCard::default().set_index(i)));
+        let parent = world.spawn((Transform::default().set_rotation(rotation), Renderer::default().set_asset(Some(asset.clone())), ComponentCard::default().set_instance(x.clone())));
         // create description
         let mut r = ComponentRendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&x.get_master().description);
+        r.set_parent(Some(parent));
         world.spawn((
             r,
             Transform::default()
@@ -120,6 +143,7 @@ impl ECSSystemViewCards {
         r.set_bounds(Vector2::new(0.5, 0.2));
         r.set_font_size(0.03);
         r.set_contents(&x.get_title());
+        r.set_parent(Some(parent));
         world.spawn((
             r,
             Transform::default()
@@ -132,6 +156,7 @@ impl ECSSystemViewCards {
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&format!("{}", x.get_manuever_type()));
+        r.set_parent(Some(parent));
         world.spawn((
             r,
             Transform::default()
@@ -144,6 +169,7 @@ impl ECSSystemViewCards {
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.03);
         r.set_contents(&x.get_cost().to_string());
+        r.set_parent(Some(parent));
         world.spawn((
             r,
             Transform::default()

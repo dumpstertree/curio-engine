@@ -57,24 +57,24 @@ impl ECSSystemEventless for ECSSystemGameStart {
 
                 let deck = x.deck.get_mut(instance).unwrap();
 
-                // add all cards
-                deck.hand_persistent = vec![CardInstance::new("rest")];
-                deck.pile_draw = vec![
-                    CardInstance::new("bump"),
-                    CardInstance::new("bump"),
-                    CardInstance::new("bump"),
-                    CardInstance::new("set+move"),
-                    CardInstance::new("set+move"),
-                    CardInstance::new("set+move"),
-                    CardInstance::new("spike"),
-                    CardInstance::new("spike"),
-                    CardInstance::new("spike"),
-                    CardInstance::new("extra_oomph"),
-                    CardInstance::new("hold_back"),
-                    CardInstance::new("curse"),
-                    CardInstance::new("blessing"),
-                    CardInstance::new("deep_breath"),
-                ];
+                // persistent
+                deck.add_card_to_deck("rest", true);
+                deck.add_card_to_deck("serve", true);
+                // consumable
+                deck.add_card_to_deck("bump", false);
+                deck.add_card_to_deck("bump", false);
+                deck.add_card_to_deck("bump", false);
+                deck.add_card_to_deck("set+move", false);
+                deck.add_card_to_deck("set+move", false);
+                deck.add_card_to_deck("set+move", false);
+                deck.add_card_to_deck("spike", false);
+                deck.add_card_to_deck("spike", false);
+                deck.add_card_to_deck("spike", false);
+                deck.add_card_to_deck("extra_oomph", false);
+                deck.add_card_to_deck("hold_back", false);
+                deck.add_card_to_deck("curse", false);
+                deck.add_card_to_deck("blessing", false);
+                deck.add_card_to_deck("deep_breath", false);
             });
         }
         for instance in game_state.get_value2::<StateNetwork>().peer_instance_ids() {

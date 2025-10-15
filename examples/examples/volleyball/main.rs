@@ -53,12 +53,16 @@ pub mod ecs {
         pub mod component_card;
         pub mod component_energy_token;
         pub mod component_player;
+        pub mod component_ui_ball_state;
+        pub mod component_ui_score;
+        pub mod component_ui_turn;
         pub mod component_view_player;
     }
     pub mod system {
         pub mod peer {
             mod ecs_system_peer_start;
             mod ecs_system_peer_update_input_mode;
+            mod ecs_system_peer_view_ball_state;
             mod ecs_system_render;
             mod ecs_system_turn_end;
             mod ecs_system_turn_manuever;
@@ -124,7 +128,7 @@ impl AssetMappingUIDs {
 fn main() {
     AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
         // remote
-        (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/439SQ2FW"))),
+        (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/2NX-hP9Y"))),
         (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine2.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/XTh-OVkc"))),
         // local
         (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/69VQTiko"))),

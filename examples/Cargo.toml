@@ -33,5 +33,5 @@ message-io = "0.19.0"
 macro_events = { path = "../macro_events" }
 macro_state = { path = "../macro_state" }
 macro_state_serialize = { path = "../macro_state_serialize" }
-serde = { version = "1.0.104", features = ["derive"] }
+serde = { version = "1.0.104", features = ["derive", "rc"] }
 rand = "0.9.1"

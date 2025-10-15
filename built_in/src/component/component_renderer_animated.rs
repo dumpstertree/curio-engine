@@ -5,8 +5,11 @@ use core::{
     },
     io::model_asset_animated::ModelAssetAnimated,
 };
+use hecs::Entity;
 use rusty_spine::{AnimationState, Skeleton};
 use std::sync::Arc;
+
+use crate::component::component_renderer_text::RendererCommon;
 
 // #[derive(Clone)]
 pub struct RendererAnimated {
@@ -17,6 +20,25 @@ pub struct RendererAnimated {
     pub asset: Option<Arc<ModelAssetAnimated>>,
     pub mesh: Vec<Arc<Mesh>>,
     last_animation: String,
+    parent: Option<Entity>,
+    enabled: bool,
+}
+impl RendererCommon for RendererAnimated {
+    fn set_parent(&mut self, parent: Option<Entity>) {
+        self.parent = parent;
+    }
+
+    fn get_parent(&self) -> Option<Entity> {
+        self.parent
+    }
+
+    fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+
+    fn get_enabled(&self) -> bool {
+        self.enabled
+    }
 }
 
 impl RendererAnimated {
@@ -29,6 +51,8 @@ impl RendererAnimated {
             fps: 24,
             last_update: -9999.0,
             last_animation: String::new(),
+            parent: None,
+            enabled: true,
         }
     }
 

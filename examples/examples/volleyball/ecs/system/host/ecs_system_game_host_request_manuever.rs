@@ -11,6 +11,7 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
+use std::sync::Arc;
 
 #[global_ecs_system]
 pub struct ECSSystemGameRequestManuever {}
@@ -47,6 +48,13 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                 // get the card instance
                 // let card_instance = &deck.hand_persistent[*card_instance as usize];
 
+                let state_deck = &game_state.get_value2::<StateDeck>();
+                let Some(deck) = state_deck.deck.get(id) else {
+                    return;
+                };
+
+                let card_instance = deck.get_instance(*card_instance);
+
                 // play
                 ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
             }
@@ -70,6 +78,12 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                 // get the card instance
                 // let card_instance = &deck.hand_consumable[*card_index as usize];
 
+                let state_deck = &game_state.get_value2::<StateDeck>();
+                let Some(deck) = state_deck.deck.get(id) else {
+                    return;
+                };
+
+                let card_instance = deck.get_instance(*card_instance);
                 // play
                 ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
             }
@@ -79,7 +93,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
     }
 }
 impl ECSSystemGameRequestManuever {
-    fn check_dependencies_match(card: &CardInstance, response: &FilledCardResponse) -> bool {
+    fn check_dependencies_match(card: &Arc<CardInstance>, response: &FilledCardResponse) -> bool {
         // get the full list of dependencies
         let deps_empty = card.get_attributes_events();
         let deps_filled = &response.event;
@@ -188,14 +202,14 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    fn try_play_card(game_state: &mut GameState, event_queue: &mut EventQueue, card_instance: &CardInstance, data: &FilledCardResponse, id: &i32) {
+    fn try_play_card(game_state: &mut GameState, event_queue: &mut EventQueue, card_instance: Arc<CardInstance>, data: &FilledCardResponse, id: &i32) {
         // let library = CardLibrary::new();
         // let card = &library.get_card(&card_instance.card_id);
 
         if !ECSSystemGameRequestManuever::check_energy(game_state, *id, card_instance.get_cost()) {
             return;
         }
-        if !ECSSystemGameRequestManuever::check_dependencies_match(card_instance, data) {
+        if !ECSSystemGameRequestManuever::check_dependencies_match(&card_instance, data) {
             return;
         }
 
@@ -212,9 +226,7 @@ impl ECSSystemGameRequestManuever {
                 return;
             };
 
-            // remove cards equal to card instance
-            deck.hand_consumable.retain(|x| x != card_instance);
-            deck.pile_discard.push(card_instance.clone());
+            deck.discard(card_instance.clone());
         });
 
         // play the card
