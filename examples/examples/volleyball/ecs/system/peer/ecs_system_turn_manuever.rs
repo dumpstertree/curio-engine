@@ -101,6 +101,17 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                     list0.push(x);
                 }
 
+                let is_met = list0[index as usize]
+                    .get_master()
+                    .requirements
+                    .iter()
+                    .all(|x| x.is_met(&game_state, game_state.instance_id));
+
+                if !is_met {
+                    println!("Requirements not met");
+                    return;
+                }
+
                 let mut evnt_filled = vec![];
                 for evnt in &list0[index as usize].get_attributes_events() {
                     evnt_filled.push(DependencyFiller::fill_events(game_state, &&evnt.get_data_dependencies_empty()));
@@ -120,6 +131,17 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                 }
                 for x in my_deck.hand_consumable.clone() {
                     list0.push(x);
+                }
+
+                let is_met = list0[index as usize]
+                    .get_master()
+                    .requirements
+                    .iter()
+                    .all(|x| x.is_met(&game_state, game_state.instance_id));
+
+                if !is_met {
+                    println!("Requirements not met");
+                    return;
                 }
 
                 let mut evnt_filled = vec![];

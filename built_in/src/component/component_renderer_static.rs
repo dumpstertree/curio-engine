@@ -1,4 +1,4 @@
-use core::io::model_asset::ModelAsset;
+use core::{collections::color::Color, io::model_asset::ModelAsset};
 use std::sync::Arc;
 
 use hecs::Entity;
@@ -10,11 +10,17 @@ pub struct Renderer {
     pub asset: Option<Arc<ModelAsset>>,
     parent: Option<Entity>,
     enabled: bool,
+    tint: Color,
 }
 
 impl Renderer {
     pub fn default() -> Renderer {
-        Renderer { asset: None, parent: None, enabled: true }
+        Renderer {
+            asset: None,
+            parent: None,
+            enabled: true,
+            tint: Color::white(),
+        }
     }
     pub fn set_asset(mut self, asset: Option<Arc<ModelAsset>>) -> Self {
         self.asset = asset;
@@ -36,5 +42,13 @@ impl RendererCommon for Renderer {
 
     fn get_enabled(&self) -> bool {
         self.enabled
+    }
+
+    fn set_tint(&mut self, tint: Color) {
+        self.tint = tint;
+    }
+
+    fn get_tint(&self) -> Color {
+        self.tint
     }
 }

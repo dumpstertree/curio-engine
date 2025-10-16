@@ -1,5 +1,6 @@
 use core::{
     collections::{
+        color::Color,
         matrix4x4::Matrix4x4,
         mesh::{Mesh, Vertex},
     },
@@ -22,6 +23,7 @@ pub struct RendererAnimated {
     last_animation: String,
     parent: Option<Entity>,
     enabled: bool,
+    tint: Color,
 }
 impl RendererCommon for RendererAnimated {
     fn set_parent(&mut self, parent: Option<Entity>) {
@@ -39,6 +41,14 @@ impl RendererCommon for RendererAnimated {
     fn get_enabled(&self) -> bool {
         self.enabled
     }
+
+    fn set_tint(&mut self, tint: Color) {
+        self.tint = tint;
+    }
+
+    fn get_tint(&self) -> Color {
+        self.tint
+    }
 }
 
 impl RendererAnimated {
@@ -53,6 +63,7 @@ impl RendererAnimated {
             last_animation: String::new(),
             parent: None,
             enabled: true,
+            tint: Color::white(),
         }
     }
 

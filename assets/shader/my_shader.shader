@@ -6,5 +6,8 @@
         }
     ],
     "colors" : [
+        {
+            "label" : "tint"
+        }
     ]
 } 

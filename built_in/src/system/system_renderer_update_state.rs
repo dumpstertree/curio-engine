@@ -41,7 +41,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 // add draw call
                 for _ in &asset.mesh {
                     x.draw_calls
-                        .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix()));
+                        .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix(), renderer.get_tint()));
                 }
             }
             for (_, (renderer, _)) in world.query::<(&mut RendererAnimated, &Transform)>().iter() {
@@ -64,7 +64,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     // add draw call
                     for m in &renderer.mesh {
                         x.draw_calls
-                            .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform.get_matrix()));
+                            .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform.get_matrix(), renderer.get_tint()));
                     }
                 }
             }
@@ -88,7 +88,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                         //         .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
                         // }
                         x.draw_calls
-                            .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies));
+                            .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint()));
                     }
                 }
             }

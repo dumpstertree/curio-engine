@@ -9,6 +9,7 @@ pub mod cards {
     pub mod attribute_target_type_tiles;
     pub mod card_attribute_events;
     pub mod card_attribute_modifier;
+    pub mod card_attribute_requirement;
     pub mod card_instance;
     pub mod card_library;
     pub mod card_master;

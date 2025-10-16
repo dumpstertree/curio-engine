@@ -4,9 +4,12 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Formatter;
 use std::fmt::Result;
+use std::ops::Mul;
 
 /// Represents an r,g,b,a color
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+///
+#[repr(C)]
+#[derive(Default, Debug, Copy, Clone, PartialEq, Serialize, Deserialize, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Color {
     r: f32,
     g: f32,
@@ -36,12 +39,7 @@ impl Color {
         let len = bytes.len() - start;
 
         match len {
-            6 => Color::new_0255(
-                Color::hex_pair_to_u8(bytes, start) as i32,
-                Color::hex_pair_to_u8(bytes, start + 2) as i32,
-                Color::hex_pair_to_u8(bytes, start + 4) as i32,
-                255,
-            ),
+            6 => Color::new_0255(Color::hex_pair_to_u8(bytes, start) as i32, Color::hex_pair_to_u8(bytes, start + 2) as i32, Color::hex_pair_to_u8(bytes, start + 4) as i32, 255),
             8 => Color::new_0255(
                 Color::hex_pair_to_u8(bytes, start) as i32,
                 Color::hex_pair_to_u8(bytes, start + 2) as i32,
@@ -53,57 +51,27 @@ impl Color {
     }
     /// creates an instance of Color with the values (0.0, 0.0, 0.0, 0.0)
     pub const fn clear() -> Color {
-        Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 0.0,
-        }
+        Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }
     }
     /// creates an instance of Color with the values (0.0, 0.0, 0.0, 1.0)
     pub const fn black() -> Color {
-        Color {
-            r: 0.0,
-            g: 0.0,
-            b: 0.0,
-            a: 1.0,
-        }
+        Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
     }
     /// creates an instance of Color with the values (1.0, 1.0, 1.0, 1.0)
     pub const fn white() -> Color {
-        Color {
-            r: 1.0,
-            g: 1.0,
-            b: 1.0,
-            a: 1.0,
-        }
+        Color { r: 1.0, g: 1.0, b: 1.0, a: 1.0 }
     }
     /// creates an instance of Color with the values (1.0, 0.0, 0.0, 1.0)
     pub const fn red() -> Color {
-        Color {
-            r: 1.0,
-            g: 0.0,
-            b: 0.0,
-            a: 1.0,
-        }
+        Color { r: 1.0, g: 0.0, b: 0.0, a: 1.0 }
     }
     /// creates an instance of Color with the values (0.0, 1.0, 0.0, 1.0)
     pub const fn green() -> Color {
-        Color {
-            r: 0.0,
-            g: 1.0,
-            b: 0.0,
-            a: 1.0,
-        }
+        Color { r: 0.0, g: 1.0, b: 0.0, a: 1.0 }
     }
     /// creates an instance of Color with the values (0.0, 0.0, 1.0, 1.0)
     pub const fn blue() -> Color {
-        Color {
-            r: 0.0,
-            g: 0.0,
-            b: 1.0,
-            a: 1.0,
-        }
+        Color { r: 0.0, g: 0.0, b: 1.0, a: 1.0 }
     }
 }
 
@@ -129,7 +97,21 @@ impl Color {
         }
     }
 }
-// instance
+
+// whole num mult
+impl Mul<f32> for Color {
+    type Output = Color;
+    fn mul(self, x: f32) -> Color {
+        Color::new_01(self.r * x, self.g * x, self.b * x, self.a * x)
+    }
+}
+// whole num mult
+impl Mul<Color> for Color {
+    type Output = Color;
+    fn mul(self, x: Color) -> Color {
+        Color::new_01(self.r * x.r, self.g * x.g, self.b * x.b, self.a * x.a)
+    }
+} // instance
 impl Color {
     pub fn as_r_01(&self) -> f32 {
         self.r

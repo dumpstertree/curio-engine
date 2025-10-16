@@ -1,5 +1,6 @@
 use core::{
     collections::{
+        color::Color,
         material::Material,
         matrix4x4::Matrix4x4,
         mesh::{Mesh, Vertex},
@@ -19,10 +20,31 @@ pub trait RendererCommon {
     // hierachy
     fn set_parent(&mut self, parent: Option<Entity>);
     fn get_parent(&self) -> Option<Entity>;
+    // tint
+    fn set_tint(&mut self, tint: Color);
+    fn get_tint(&self) -> Color;
     // enabled
     fn set_enabled(&mut self, enabled: bool);
     fn get_enabled(&self) -> bool;
     //
+    fn tint_in_hierachy(&self, world: &World) -> Color {
+        let mut tint = self.get_tint();
+        let mut parent_entity = self.get_parent();
+        while parent_entity.is_some() {
+            if let Ok(parent_renderer) = world.get::<&ComponentRendererText>(parent_entity.unwrap()) {
+                tint = tint * parent_renderer.get_tint();
+                parent_entity = parent_renderer.get_parent();
+            } else if let Ok(parent_renderer) = world.get::<&Renderer>(parent_entity.unwrap()) {
+                tint = tint * parent_renderer.get_tint();
+                parent_entity = parent_renderer.get_parent();
+            } else if let Ok(parent_renderer) = world.get::<&RendererAnimated>(parent_entity.unwrap()) {
+                tint = tint * parent_renderer.get_tint();
+                parent_entity = parent_renderer.get_parent();
+            }
+        }
+
+        return tint;
+    }
     fn enabled_in_hierarchy(&self, world: &World) -> bool {
         if !self.get_enabled() {
             return false;
@@ -65,6 +87,7 @@ pub struct ComponentRendererText {
     is_dirty: bool,
     enabled: bool,
     parent: Option<Entity>,
+    tint: Color,
 }
 impl RendererCommon for ComponentRendererText {
     fn set_parent(&mut self, parent: Option<Entity>) {
@@ -82,6 +105,14 @@ impl RendererCommon for ComponentRendererText {
     fn get_enabled(&self) -> bool {
         self.enabled
     }
+
+    fn set_tint(&mut self, tint: Color) {
+        self.tint = tint;
+    }
+
+    fn get_tint(&self) -> Color {
+        self.tint
+    }
 }
 
 impl ComponentRendererText {
@@ -97,6 +128,7 @@ impl ComponentRendererText {
             is_dirty: true,
             enabled: true,
             parent: None,
+            tint: Color::white(),
         }
     }
     pub fn set_enabled(&mut self, enabled: bool) -> &mut Self {

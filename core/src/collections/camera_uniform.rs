@@ -1,6 +1,6 @@
 use core::f32;
 
-use crate::collections::{projection::Projection, quaternion::Quaternion, vector3::Vector3};
+use crate::collections::{color::Color, projection::Projection, quaternion::Quaternion, vector3::Vector3};
 use cgmath::{prelude::*, Matrix4, Point3};
 
 #[repr(C)]

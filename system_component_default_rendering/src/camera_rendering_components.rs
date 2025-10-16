@@ -2,6 +2,7 @@ use core::{collections::camera_uniform::CameraUniform, system_adapters::adapter_
 use egui_wgpu::wgpu::{self, BindGroup, BindGroupLayout, Buffer};
 use std::num::NonZeroU64;
 
+/// Stores GPU-side bindings for camera data (projection, view, tint, etc.)
 pub struct CameraRenderingComponents {
     pub camera_bind_group_layout: BindGroupLayout,
     pub camera_bind_group: BindGroup,
@@ -13,7 +14,7 @@ impl CameraRenderingComponents {
     pub fn new(max_cameras: usize) -> CameraRenderingComponents {
         let device = SystemGPU::get_device();
 
-        // Per-WGPU requirement: uniform buffer dynamic offsets must be 256-byte aligned.
+        // Each camera takes 256 bytes (aligned requirement)
         let aligned_size: u64 = 256;
         let buffer_size = (max_cameras as u64) * aligned_size;
 
@@ -24,7 +25,7 @@ impl CameraRenderingComponents {
             mapped_at_creation: false,
         });
 
-        // Layout: uniform buffer with dynamic offset
+        // One uniform buffer per camera (dynamic offsets)
         let camera_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
@@ -32,7 +33,7 @@ impl CameraRenderingComponents {
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: true,
-                    // you can optionally set a min_binding_size here:
+                    // size of one camera entry
                     min_binding_size: NonZeroU64::new(aligned_size),
                 },
                 count: None,
@@ -40,8 +41,6 @@ impl CameraRenderingComponents {
             label: Some("camera_bind_group_layout"),
         });
 
-        // IMPORTANT: bind one element (aligned_size) as the binding `size`.
-        // This allows dynamic offsets to select which element inside the larger buffer will be used.
         let per_element_size = NonZeroU64::new(aligned_size).unwrap();
 
         let camera_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -51,7 +50,6 @@ impl CameraRenderingComponents {
                 resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
                     buffer: &camera_buffer,
                     offset: 0,
-                    // Bind only one element (not the whole buffer). This lets dynamic offsets work.
                     size: Some(per_element_size),
                 }),
             }],
@@ -66,14 +64,18 @@ impl CameraRenderingComponents {
         }
     }
 
+    /// Update a single camera’s GPU buffer (including tint)
     pub fn update(&self, i: usize, camera_uniform: &CameraUniform) {
         assert!(i < self.max_cameras);
         let queue = SystemGPU::get_queue();
         let aligned_size: u64 = 256;
         let offset = (i as u64) * aligned_size;
+
+        // Write the entire CameraUniform, which now includes tint (e.g. vec4<f32>)
         queue.write_buffer(&self.camera_buffer, offset, bytemuck::cast_slice(&[*camera_uniform]));
     }
 
+    /// Bind this camera’s data for a render pass
     pub fn bind(&self, pass: &mut wgpu::RenderPass, i: usize) {
         let aligned_size: u32 = 256;
         let offset = (i as u32) * aligned_size;

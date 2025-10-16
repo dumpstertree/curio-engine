@@ -2,9 +2,9 @@ use crate::{
     card_parser::AttributeClearFlag,
     cards::{
         attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_players::AtrributeTargetTypesPlayers, attribute_target_type_tiles::AttributeTargetTypesTiles, card_attribute_events::CardAttributeEvents,
-        card_attribute_modifier::CardAttributeModifiers, card_master::CardMaster,
+        card_attribute_modifier::CardAttributeModifiers, card_attribute_requirement::CardAttributeRequirement, card_master::CardMaster,
     },
-    state::state_deck::CardTypes,
+    state::{state_ball_mode::BallModes, state_deck::CardTypes},
 };
 use std::{
     collections::HashMap,
@@ -27,6 +27,7 @@ impl CardLibrary {
                 String::from("do a rest"),
                 vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
                 vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AtrributeTargetTypesPlayers::User)],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -39,6 +40,7 @@ impl CardLibrary {
                 String::from("Serve the ball to a random position on the opponents side."),
                 vec![],
                 vec![CardAttributeEvents::MoveBallForward(4)],
+                vec![CardAttributeRequirement::RequireBallMode(BallModes::Serve)],
             )),
         );
 
@@ -54,6 +56,7 @@ impl CardLibrary {
                 String::from("Draw a Card"),
                 vec![],
                 vec![CardAttributeEvents::DrawCards(1, AtrributeTargetTypesPlayers::User)],
+                vec![CardAttributeRequirement::BallRangeLessEqual(0)],
             )),
         );
         hashmap.insert(
@@ -66,6 +69,7 @@ impl CardLibrary {
                 String::from("Move +1"),
                 vec![],
                 vec![CardAttributeEvents::MoveEntity(AttribtuteTargetTypesEntities::User, AttributeTargetTypesTiles::RandomOnTeamUser)],
+                vec![CardAttributeRequirement::BallRangeLessEqual(0)],
             )),
         );
         hashmap.insert(
@@ -78,6 +82,7 @@ impl CardLibrary {
                 String::from("Forward +1"), //
                 vec![],
                 vec![CardAttributeEvents::MoveBallForward(1)],
+                vec![CardAttributeRequirement::BallRangeLessEqual(0)],
             )),
         );
         hashmap.insert(
@@ -90,6 +95,7 @@ impl CardLibrary {
                 String::from("Forward +2"), //
                 vec![],
                 vec![CardAttributeEvents::MoveBallForward(2)],
+                vec![CardAttributeRequirement::BallRangeLessEqual(0)],
             )),
         );
 
@@ -104,6 +110,7 @@ impl CardLibrary {
                 String::from("Target DISCARDs a card"),
                 vec![],
                 vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::RandomOpponent)],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -116,6 +123,7 @@ impl CardLibrary {
                 String::from("Target DRAWs 2 cards"),
                 vec![],
                 vec![CardAttributeEvents::DrawCards(2, AtrributeTargetTypesPlayers::User)],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -128,6 +136,7 @@ impl CardLibrary {
                 String::from("RANGE +1 on until end of turn"),
                 vec![],
                 vec![CardAttributeEvents::GainEnergy(2, AttribtuteTargetTypesEntities::User)],
+                vec![],
             )),
         );
 
@@ -141,6 +150,7 @@ impl CardLibrary {
                 String::from("RANGE -1 on until end of turn"),
                 vec![CardAttributeModifiers::EditRangeForEntities(AttributeClearFlag::Turn, AttribtuteTargetTypesEntities::User, -1)],
                 vec![],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -152,6 +162,7 @@ impl CardLibrary {
                 1,
                 String::from("RANGE +1 on until end of turn"),
                 vec![(CardAttributeModifiers::EditRangeForEntities(AttributeClearFlag::Turn, AttribtuteTargetTypesEntities::User, 1))],
+                vec![],
                 vec![],
             )),
         );

@@ -9,6 +9,8 @@ use built_in::component::component_renderer_text::{ComponentRendererText, Render
 // use built_in::component::component_renderer::Renderer;
 use built_in::component::component_transform::Transform;
 use built_in_state::state_camera::CameraState;
+use built_in_state::state_time::TimeState;
+use core::collections::color::Color;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector2::Vector2;
 use core::collections::vector3::Vector3;
@@ -74,6 +76,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                 continue;
             };
 
+            let state_time = game_state.get_value2::<TimeState>();
             match my_deck.get_location(card_instance.clone()) {
                 state_deck::CardLocation::Deck(index) => {
                     let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(0.5, 0.5, 1.0));
@@ -111,6 +114,17 @@ impl ECSSystemEventless for ECSSystemViewCards {
                     transform.rotation = transform.rotation.slerp(rot, 0.2);
                     transform.scale = Vector3::lerp(transform.scale, Vector3::one(), 0.2);
                     renderer.set_enabled(true);
+
+                    let is_met = card_instance
+                        .get_master()
+                        .requirements
+                        .iter()
+                        .all(|x| x.is_met(&game_state, game_state.instance_id));
+                    if is_met {
+                        renderer.set_tint(Color::white());
+                    } else {
+                        renderer.set_tint(Color::white() * 0.25);
+                    }
                 }
             }
         }

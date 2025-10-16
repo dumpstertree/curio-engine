@@ -3,6 +3,8 @@ struct Camera {
     view_pos: vec4<f32>,
     view_proj: mat4x4<f32>,
 }
+
+
 @group(1) @binding(0)
 var<uniform> camera: Camera;
 
@@ -34,6 +36,9 @@ struct VSOut {
 // ----------------- Shadow Uniform -----------------
 struct ShadowCamera {
     light_view_proj: mat4x4<f32>,
+}
+struct ColorUniform {
+    color: vec4<f32>,
 }
 @group(3) @binding(0)
 var<uniform> shadow_camera: ShadowCamera;
@@ -67,10 +72,14 @@ fn vs_main(model: VertexInput, instance: InstanceInput) -> VSOut {
     return out;
 }
 
-// ----------------- Textures -----------------
+// ----------------- Colors -----------------
 @group(0) @binding(0)
-var t_diffuse: texture_2d<f32>;
+var<uniform> tint_data:ColorUniform;
+
+// ----------------- Textures -----------------
 @group(0) @binding(1)
+var t_diffuse: texture_2d<f32>;
+@group(0) @binding(2)
 var s_diffuse: sampler;
 
 // ----------------- Shadow Map -----------------
@@ -113,7 +122,6 @@ fn compute_shadow_factor(shadow_pos: vec4<f32>) -> f32 {
 }
 
 // ----------------- Lighting -----------------
-
 fn compute_forward_lighting(
     N: vec3<f32>,
     V: vec3<f32>,
@@ -170,8 +178,8 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
     let V = normalize(camera.view_pos.xyz - in.world_pos);
 
     let shadow_factor = compute_shadow_factor(in.shadow_pos) * SHADOW_STRENGTH;
-    let light_color = compute_forward_lighting(N, V, in.world_pos, shadow_factor) ;
-    // return vec4<f32>(shadow_factor);
+    let light_color = compute_forward_lighting(N, V, in.world_pos, shadow_factor);
 
-    return vec4<f32>( albedo * light_color, 1.0);
+    let tinted_color = albedo * tint_data.color.rgb;
+    return vec4<f32>(tinted_color * light_color, tex_sample.a * tint_data.color.a);
 }
