@@ -15,6 +15,7 @@ pub enum CardAttributeRequirement {
     BallRangeLessEqual(i32),
     BallRangeGreaterEqual(i32),
     RequireBallMode(BallModes),
+    RequireNotBallMode(BallModes),
     RequireMaxEnergyLessEqual(i32),
     RequireMaxEnergyGreaterEqual(i32),
 }
@@ -45,6 +46,7 @@ impl CardAttributeRequirement {
                 distance >= *range
             }
             CardAttributeRequirement::RequireBallMode(ball_modes) => game_state.get_value2::<StateBallMode>().mode == *ball_modes,
+            CardAttributeRequirement::RequireNotBallMode(ball_modes) => game_state.get_value2::<StateBallMode>().mode != *ball_modes,
             CardAttributeRequirement::RequireMaxEnergyLessEqual(_) => todo!(),
             CardAttributeRequirement::RequireMaxEnergyGreaterEqual(_) => todo!(),
         }

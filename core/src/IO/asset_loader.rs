@@ -92,6 +92,7 @@ impl AssetLoader {
 
                     //create a material
                     let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+
                     let mut material = Material::new(shader_desc.clone());
                     material.set_texture_with_label(Some(spine_data.2), "diffuse");
 
@@ -153,13 +154,13 @@ impl AssetLoader {
         let mut all_meshes = Vec::with_capacity(gltf.meshes().len());
         let mut all_materials = Vec::with_capacity(gltf.materials().len());
 
-        let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
-
         // --- Materials ---
         if gltf.materials().count() == 0 {
+            let shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
             all_materials.push(Arc::new(Material::new(shader_desc.clone())));
         } else {
             for material in gltf.materials() {
+                println!("got material with name : {} ", material.name().unwrap());
                 let pbr = material.pbr_metallic_roughness();
 
                 let texture_asset = if let Some(tex_info) = pbr.base_color_texture() {
@@ -180,6 +181,15 @@ impl AssetLoader {
                 } else {
                     TextureAsset::default()
                 };
+
+                let shader_desc: ShaderDesc;
+                if material.name().unwrap().starts_with("lit:") {
+                    shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+                } else if material.name().unwrap().starts_with("unlit:") {
+                    shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
+                } else {
+                    shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+                }
 
                 let mut mat = Material::new(shader_desc.clone());
                 mat.set_texture_with_label(Some(texture_asset), "diffuse");

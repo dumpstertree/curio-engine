@@ -1,9 +1,11 @@
 use crate::AssetMappingUIDs;
 use crate::cards::card_instance::CardInstance;
 use crate::ecs::components::component_card::ComponentCard;
+use crate::game_board::GameBoard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::{self, StateDeck};
+use crate::state::state_teams::StateTeamAssignments;
 use built_in::component::component_renderer_static::Renderer;
 use built_in::component::component_renderer_text::{ComponentRendererText, RendererCommon};
 // use built_in::component::component_renderer::Renderer;
@@ -11,6 +13,7 @@ use built_in::component::component_transform::Transform;
 use built_in_state::state_camera::CameraState;
 use built_in_state::state_time::TimeState;
 use core::collections::color::Color;
+use core::collections::game_state;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector2::Vector2;
 use core::collections::vector3::Vector3;
@@ -52,7 +55,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
             let camera_state = game_state.get_value2::<CameraState>();
 
             for card in &my_deck.all_cards {
-                self.spawn_card(world, card.clone(), camera_state.cameras.rotation);
+                self.spawn_card(world, card.clone(), camera_state.cameras.rotation, game_state);
             }
         }
         let y_selected = 0.25;
@@ -76,7 +79,6 @@ impl ECSSystemEventless for ECSSystemViewCards {
                 continue;
             };
 
-            let state_time = game_state.get_value2::<TimeState>();
             match my_deck.get_location(card_instance.clone()) {
                 state_deck::CardLocation::Deck(index) => {
                     let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(0.5, 0.5, 1.0));
@@ -98,32 +100,66 @@ impl ECSSystemEventless for ECSSystemViewCards {
                 state_deck::CardLocation::Hand(index) => {
                     let mut z = z_unselected;
                     let mut y = y_unselected;
+                    let is_met = card_instance.has_statement(game_state, game_state.instance_id);
 
+                    let state_team = game_state
+                        .get_value2::<StateTeamAssignments>()
+                        .team_for(&game_state.instance_id)
+                        .unwrap();
                     if is_manuever_mode && state_selected.index == index {
                         z = z_selected;
                         y = y_selected;
                     }
 
                     if !is_manuever_mode {
-                        y = y + 0.5;
+                        if is_met {
+                            y = y + 0.4;
+                        } else {
+                            y = y + 0.5;
+                        }
                     }
 
-                    let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::forward()) * z + Vector3::right() * ((index - state_selected.index) as f32 * spacing) + camera_state.cameras.rotation * Vector3::down() * y;
+                    let dir = state_team.convert_dir(1, 0).0 as f32;
+                    let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::forward()) * z + Vector3::right() * dir * ((index - state_selected.index) as f32 * spacing) + camera_state.cameras.rotation * Vector3::down() * y;
                     let rot = camera_state.cameras.rotation;
+
                     transform.position = Vector3::lerp(transform.position, pos, 0.2);
                     transform.rotation = transform.rotation.slerp(rot, 0.2);
                     transform.scale = Vector3::lerp(transform.scale, Vector3::one(), 0.2);
                     renderer.set_enabled(true);
 
-                    let is_met = card_instance
-                        .get_master()
-                        .requirements
-                        .iter()
-                        .all(|x| x.is_met(&game_state, game_state.instance_id));
+                    let col_spell = Color::new_hex("#f7a5f3");
+                    let col_persistent = Color::new_hex("#f7c8a5");
+                    let col_bump = Color::new_hex("#4efff9");
+                    let col_set = Color::new_hex("#abff4e");
+                    let col_spike = Color::new_hex(
+                        "#ff4e85
+
+",
+                    );
+
+                    // let mut cur_tint = renderer.get_tint();
                     if is_met {
-                        renderer.set_tint(Color::white());
+                        match &card.card_instance.clone().unwrap().get_manuever_type() {
+                            state_deck::CardTypes::Serve => renderer.set_tint(col_persistent),
+                            state_deck::CardTypes::Rest => renderer.set_tint(col_persistent),
+                            state_deck::CardTypes::Bump => renderer.set_tint(col_bump),
+                            state_deck::CardTypes::Set => renderer.set_tint(col_set),
+                            state_deck::CardTypes::Spike => renderer.set_tint(col_spike),
+                            state_deck::CardTypes::Move => renderer.set_tint(Color::white()),
+                            state_deck::CardTypes::Spell => renderer.set_tint(col_spell),
+                        }
+                        // renderer.set_tint(cur_tint);
                     } else {
-                        renderer.set_tint(Color::white() * 0.25);
+                        match &card.card_instance.clone().unwrap().get_manuever_type() {
+                            state_deck::CardTypes::Serve => renderer.set_tint(col_persistent * 0.15),
+                            state_deck::CardTypes::Rest => renderer.set_tint(col_persistent * 0.15),
+                            state_deck::CardTypes::Bump => renderer.set_tint(col_bump * 0.15),
+                            state_deck::CardTypes::Set => renderer.set_tint(col_set * 0.15),
+                            state_deck::CardTypes::Spike => renderer.set_tint(col_spike * 0.15),
+                            state_deck::CardTypes::Move => renderer.set_tint(Color::white() * 0.15),
+                            state_deck::CardTypes::Spell => renderer.set_tint(col_persistent * 0.15),
+                        }
                     }
                 }
             }
@@ -131,7 +167,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
     }
 }
 impl ECSSystemViewCards {
-    fn spawn_card(&self, world: &mut World, x: Arc<CardInstance>, rotation: Quaternion) {
+    fn spawn_card(&self, world: &mut World, x: Arc<CardInstance>, rotation: Quaternion, game_state: &GameState) {
         let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
         let parent = world.spawn((Transform::default().set_rotation(rotation), Renderer::default().set_asset(Some(asset.clone())), ComponentCard::default().set_instance(x.clone())));
         // create description
@@ -177,7 +213,7 @@ impl ECSSystemViewCards {
         let mut r = ComponentRendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.03);
-        r.set_contents(&x.get_cost().to_string());
+        r.set_contents(&x.get_cost(&game_state, game_state.instance_id).to_string());
         r.set_parent(Some(parent));
         world.spawn((
             r,

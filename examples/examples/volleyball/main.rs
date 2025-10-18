@@ -42,6 +42,7 @@ pub mod event_recievers {
     mod event_reciever_apply_card_attribute_event_move_ball_forward;
     mod event_reciever_apply_card_attribute_event_move_ball_horizontal;
     mod event_reciever_apply_card_attribute_event_move_entities;
+    mod event_reciever_apply_card_attribute_event_set_ball_mode;
     mod event_reciever_apply_card_attribute_modifier_cost_for_entities;
     mod event_reciever_apply_card_attribute_modifier_energy_for_entities;
     mod event_reciever_apply_card_attribute_modifier_range_for_entities;
@@ -130,11 +131,12 @@ fn main() {
     AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
         // remote
         (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/2NX-hP9Y"))),
-        (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine2.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/XTh-OVkc"))),
+        // (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine2.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/XTh-OVkc"))),
         // local
         (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/69VQTiko"))),
         (AssetMappingUIDs::Court.uid(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
         (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
+        (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
     ]));
 
     let input_mapping_0 = InputMapping::new(
@@ -186,8 +188,8 @@ fn main() {
         //
 
         // create game states
-        // GameMode::new_local_splitscreen_2p_horizontal(input_mapping_0, input_mapping_1),
-        GameMode::new_local_single(input_mapping_0),
+        GameMode::new_local_splitscreen_2p_horizontal(input_mapping_0, input_mapping_1),
+        // GameMode::new_local_single(input_mapping_0),
     );
     println!("init game end");
 }

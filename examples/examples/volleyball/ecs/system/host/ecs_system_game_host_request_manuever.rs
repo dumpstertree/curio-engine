@@ -4,7 +4,10 @@ use crate::{
     state::{state_deck::StateDeck, state_energy::StateEnergy, state_turn::StateTurn},
 };
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{
+        event_queue::EventQueue,
+        game_state::{self, GameState},
+    },
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
 };
@@ -93,9 +96,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
     }
 }
 impl ECSSystemGameRequestManuever {
-    fn check_dependencies_match(card: &Arc<CardInstance>, response: &FilledCardResponse) -> bool {
+    fn check_dependencies_match(card: &Arc<CardInstance>, response: &FilledCardResponse, game_state: &GameState, id: &i32) -> bool {
         // get the full list of dependencies
-        let deps_empty = card.get_attributes_events();
+        let deps_empty = card.get_attributes_events(game_state, *id);
         let deps_filled = &response.event;
 
         // check that they have the same length
@@ -129,7 +132,7 @@ impl ECSSystemGameRequestManuever {
                 }
             }
         }
-        let deps_empty = card.get_attributes_modifiers();
+        let deps_empty = card.get_attributes_modifiers(game_state, *id);
         let deps_filled = &response.modifiers;
         let count = deps_empty.len();
 
@@ -206,17 +209,18 @@ impl ECSSystemGameRequestManuever {
         // let library = CardLibrary::new();
         // let card = &library.get_card(&card_instance.card_id);
 
-        if !ECSSystemGameRequestManuever::check_energy(game_state, *id, card_instance.get_cost()) {
+        let cost = card_instance.get_cost(&game_state, *id);
+        if !ECSSystemGameRequestManuever::check_energy(game_state, *id, cost) {
             return;
         }
-        if !ECSSystemGameRequestManuever::check_dependencies_match(&card_instance, data) {
+        if !ECSSystemGameRequestManuever::check_dependencies_match(&card_instance, data, &game_state, id) {
             return;
         }
 
         // spend
         game_state.edit::<StateEnergy>(|x| {
             x.all_players
-                .insert(*id, (x.all_players[id].0 - card_instance.get_cost(), x.all_players[id].1));
+                .insert(*id, (x.all_players[id].0 - cost, x.all_players[id].1));
         });
 
         // consume

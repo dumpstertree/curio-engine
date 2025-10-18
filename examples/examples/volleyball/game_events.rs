@@ -5,7 +5,7 @@ use core::collections::{
 use macro_events::global_events;
 use serde::{Deserialize, Serialize};
 use std::{
-    fmt::{self},
+    fmt::{self, write},
     sync::Arc,
 };
 
@@ -42,11 +42,11 @@ pub enum GameEvents {
     // to -> instance -> card events
     ApplyCardAttributeEventRefillEnergy(Vec<i32>),
     ApplyCardAttributeEventGainEnergy(Vec<i32>, i32),
-    ApplyCardAttributeEventMoveEntity(Vec<i32>, Vec<Vector2Int>),
     ApplyCardAttributeEventDrawCards(Vec<i32>, i32),
     ApplyCardAttributeEventDiscardCards(Vec<i32>),
-    ApplyCardAttributeEventMoveBallForward(i32, i32, i32),
-    ApplyCardAttributeEventMoveBallHorizontal(i32),
+    ApplyCardAttributeEventMoveEntity(Vec<i32>, Vec<Vector2Int>),
+    ApplyCardAttributeEventMoveBall(Vec<Vector2Int>, i32, i32),
+    ApplyCardAttributeEventSetBallMode(BallModes),
     // to -> instance -> card modifiers
     ApplyCardAttributeModifierCostForEntities(AttributeClearFlag, Vec<i32>, i32),
     ApplyCardAttributeModifierRangeForEntities(AttributeClearFlag, Vec<i32>, i32),
@@ -79,13 +79,13 @@ impl IGameEvent for GameEvents {
             GameEvents::PointScored(_) => EventScope::Instance,
             GameEvents::ResetBoard(_) => EventScope::Instance,
             GameEvents::OnDidSetBallMode(_) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventSetBallMode(_) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventRefillEnergy(_) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventGainEnergy(_, _) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventMoveEntity(_, _) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventDrawCards(_, _) => EventScope::Instance,
             GameEvents::ApplyCardAttributeEventDiscardCards(_) => EventScope::Instance,
-            GameEvents::ApplyCardAttributeEventMoveBallForward(_, _, _) => EventScope::Instance,
-            GameEvents::ApplyCardAttributeEventMoveBallHorizontal(_) => EventScope::Instance,
+            GameEvents::ApplyCardAttributeEventMoveBall(_, _, _) => EventScope::Instance,
             GameEvents::ApplyCardAttributeModifierEnergyForEntities(_, _, _) => EventScope::Instance,
             GameEvents::ApplyCardAttributeModifierCostForEntities(_, _, _) => EventScope::Instance,
             GameEvents::ApplyCardAttributeModifierRangeForEntities(_, _, _) => EventScope::Instance,
@@ -121,6 +121,7 @@ impl fmt::Display for GameEvents {
             GameEvents::RequestMoveXPos(_) => write!(f, "RequestMoveXPos"),
             GameEvents::RequestMoveXNeg(_) => write!(f, "OnDidSetBallMode"),
             GameEvents::OnDidSetBallMode(_) => write!(f, "RequestMoveXNeg"),
+            GameEvents::ApplyCardAttributeEventSetBallMode(_) => write!(f, "SetBallMode"),
             GameEvents::RequestUseManeuverPersistent(_, _, _) => write!(f, "RequestUseManeuverPersistent"),
             GameEvents::RequestUseManeuverConsumable(_, _, _) => write!(f, "RequestUseManeuverConsumable"),
             GameEvents::DrawCard() => write!(f, "DrawCard"),
@@ -134,8 +135,7 @@ impl fmt::Display for GameEvents {
             GameEvents::ApplyCardAttributeEventMoveEntity(_, _) => todo!(),
             GameEvents::ApplyCardAttributeEventDrawCards(_, _) => todo!(),
             GameEvents::ApplyCardAttributeEventDiscardCards(_) => todo!(),
-            GameEvents::ApplyCardAttributeEventMoveBallForward(_, _, _) => todo!(),
-            GameEvents::ApplyCardAttributeEventMoveBallHorizontal(_) => todo!(),
+            GameEvents::ApplyCardAttributeEventMoveBall(_, _, _) => todo!(),
             GameEvents::ClearCardAttributeModifiersForFlag(_) => todo!(),
             GameEvents::ClearCardAttributeModifiersAll() => todo!(),
         }

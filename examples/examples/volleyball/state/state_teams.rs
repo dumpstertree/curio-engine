@@ -4,6 +4,8 @@ use std::{collections::HashMap, fmt::Display};
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 
+use crate::game_board::GameBoard;
+
 #[global_state_serialize]
 pub struct StateTeamAssignments {
     pub team_assignments: HashMap<Teams, Vec<i32>>,
@@ -41,8 +43,8 @@ impl Teams {
     }
     pub fn on_side(&self, _: i32, z: i32) -> bool {
         match self {
-            Teams::Red => return z <= 1,
-            Teams::Blue => return z >= 2,
+            Teams::Red => return z <= GameBoard::get_bounds_max(&Teams::Red).y,
+            Teams::Blue => return z >= GameBoard::get_bounds_min(&Teams::Blue).y,
         }
     }
     pub fn next_team(&self) -> Self {

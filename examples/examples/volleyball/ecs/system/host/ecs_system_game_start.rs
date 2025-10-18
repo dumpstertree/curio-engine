@@ -63,12 +63,12 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 deck.add_card_to_deck("bump", false);
                 deck.add_card_to_deck("bump", false);
                 deck.add_card_to_deck("bump", false);
-                deck.add_card_to_deck("set+move", false);
-                deck.add_card_to_deck("set+move", false);
-                deck.add_card_to_deck("set+move", false);
                 deck.add_card_to_deck("spike", false);
                 deck.add_card_to_deck("spike", false);
-                deck.add_card_to_deck("spike", false);
+                deck.add_card_to_deck("set", false);
+                deck.add_card_to_deck("set", false);
+                deck.add_card_to_deck("set", false);
+                deck.add_card_to_deck("set", false);
                 deck.add_card_to_deck("extra_oomph", false);
                 deck.add_card_to_deck("hold_back", false);
                 deck.add_card_to_deck("curse", false);

@@ -101,23 +101,18 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                     list0.push(x);
                 }
 
-                let is_met = list0[index as usize]
-                    .get_master()
-                    .requirements
-                    .iter()
-                    .all(|x| x.is_met(&game_state, game_state.instance_id));
-
+                let is_met = list0[index as usize].has_statement(&game_state, game_state.instance_id);
                 if !is_met {
                     println!("Requirements not met");
                     return;
                 }
 
                 let mut evnt_filled = vec![];
-                for evnt in &list0[index as usize].get_attributes_events() {
+                for evnt in &list0[index as usize].get_attributes_events(game_state, game_state.instance_id) {
                     evnt_filled.push(DependencyFiller::fill_events(game_state, &&evnt.get_data_dependencies_empty()));
                 }
                 let mut mod_filled = vec![];
-                for evnt in &list0[index as usize].get_attributes_modifiers() {
+                for evnt in &list0[index as usize].get_attributes_modifiers(game_state, game_state.instance_id) {
                     mod_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
                 }
 
@@ -133,23 +128,22 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
                     list0.push(x);
                 }
 
-                let is_met = list0[index as usize]
-                    .get_master()
-                    .requirements
-                    .iter()
-                    .all(|x| x.is_met(&game_state, game_state.instance_id));
-
+                let is_met = list0[index as usize].has_statement(&game_state, game_state.instance_id);
+                if !is_met {
+                    println!("Requirements not met");
+                    return;
+                }
                 if !is_met {
                     println!("Requirements not met");
                     return;
                 }
 
                 let mut evnt_filled = vec![];
-                for evnt in &list0[index as usize].get_attributes_events() {
+                for evnt in &list0[index as usize].get_attributes_events(&game_state, game_state.instance_id) {
                     evnt_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
                 }
                 let mut mod_filled = vec![];
-                for evnt in &list0[index as usize].get_attributes_modifiers() {
+                for evnt in &list0[index as usize].get_attributes_modifiers(&game_state, game_state.instance_id) {
                     mod_filled.push(DependencyFiller::fill_events(game_state, &evnt.get_data_dependencies_empty()));
                 }
 

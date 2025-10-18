@@ -1,12 +1,15 @@
+use crate::AssetMappingUIDs;
+use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionPlayer;
-use crate::ecs::components::component_player::ComponentPlayer;
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_transform::Transform;
+use built_in_state::state_network::StateNetwork;
 use built_in_state::state_time::TimeState;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
+use core::io::asset_loader::AssetLoader;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -24,7 +27,24 @@ impl ECSSystemEventless for ECSSystemViewMovePlayers {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {}
+    fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+        let asset_goblin = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::Goblin.uid());
+
+        for id in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
+            println!("spawn player");
+            let mut rend = RendererAnimated::default();
+            rend.set_asset(Some(asset_goblin.clone()));
+            // players
+            world.spawn((
+                ComponentViewPlayer::default(),
+                ComponentPlayer::default().set_player_id(*id),
+                Transform::default()
+                    .set_position(Vector3::new(-5.0, -5.0, 10.0))
+                    .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
+                rend,
+            ));
+        }
+    }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
         let state_position_player = game_state.get_value2::<StatePositionPlayer>();
         let state_time = game_state.get_value2::<TimeState>();

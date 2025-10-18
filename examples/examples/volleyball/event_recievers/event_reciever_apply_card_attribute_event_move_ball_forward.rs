@@ -1,12 +1,7 @@
 use crate::{
     cards::card_modifier::CardModifier,
     game_events::GameEvents,
-    state::{
-        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
-        state_position_ball::StatePositionBall,
-        state_teams::StateTeamAssignments,
-        state_turn::StateTurn,
-    },
+    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_position_ball::StatePositionBall, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -31,7 +26,15 @@ impl ECSSystemEventless for EventReciever {
 impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::ApplyCardAttributeEventMoveBallForward(move_forward, entity_id, card_id) => {
+            GameEvents::ApplyCardAttributeEventMoveBall(move_forward, entity_id, card_id) => {
+                if move_forward.len() == 0 {
+                    println!("Does not support len of 0 tile");
+                    return;
+                }
+                if move_forward.len() > 1 {
+                    println!("Does not support more than 1 tile");
+                    return;
+                }
                 // get the stack for the current use case
                 let state_card_attribute_modifier_stack = game_state.get_value2::<StateCardAttributeModifierStack>();
                 let active_modifiers = CardModifier::flatten(&vec![
@@ -49,10 +52,13 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
                     .team_for(cur_turn)
                     .unwrap();
 
+                println!("check stack for id {}", *entity_id);
+
                 // edit ball position
                 game_state.edit::<StatePositionBall>(|x| {
+                    println!("range + {}", active_modifiers.range);
                     // convert based on team
-                    let diff = team.convert_dir(0, move_forward + active_modifiers.range);
+                    let diff = team.convert_dir(move_forward[0].x, move_forward[0].y + active_modifiers.range);
                     // move
                     x.column = x.column + diff.0;
                     x.row = x.row + diff.1;

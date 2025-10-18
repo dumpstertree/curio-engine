@@ -46,6 +46,8 @@ impl DependencyFiller {
                     AttributeTargetTypesTiles::RandomAny => filled.push(DependencyFiller::get_tiles_random_any(game_state)),
                     AttributeTargetTypesTiles::RandomOnTeamUser => filled.push(DependencyFiller::get_tiles_random_on_team_user(game_state)),
                     AttributeTargetTypesTiles::RandomOnTeamOpponent => filled.push(DependencyFiller::get_tiles_random_on_team_opponent(game_state)),
+                    AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => filled.push(DependencyFiller::get_tiles_random_in_range_local(game_state, min, max)),
+                    AttributeTargetTypesTiles::RandomInRangeGlobal(_, _) => todo!(),
                 },
             }
         }
@@ -246,5 +248,15 @@ impl DependencyFiller {
         let bounds_max = GameBoard::get_bounds_max(&cur_team);
 
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
+    }
+    pub fn get_tiles_random_in_range_local(_: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
+        DataDepsFilled::Tiles(
+            //
+            vec![Vector2Int::new(
+                //
+                Random::range_int(min.x, max.x), //
+                Random::range_int(min.y, max.y),
+            )],
+        )
     }
 }

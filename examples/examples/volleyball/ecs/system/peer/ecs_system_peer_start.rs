@@ -1,22 +1,10 @@
-use built_in::component::{
-    component_camera::Camera,
-    component_light::ComponentLight,
-    component_renderer_animated::RendererAnimated,
-    component_renderer_static::Renderer,
-    component_transform::Transform,
-};
+use built_in::component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork, state_sun::StateSun, state_time::TimeState};
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 use core::{
-    collections::{
-        color::Color,
-        event_queue::EventQueue,
-        game_state::GameState,
-        quaternion::Quaternion,
-        vector3::Vector3,
-    },
+    collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
     io::asset_loader::AssetLoader,
@@ -48,67 +36,20 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         });
         game_state.edit::<StateSun>(|x| {
             x.cast_shadows = true;
-            x.color = Color::green();
+            x.color = Color::white();
             x.direction = (Vector3::forward() + Vector3::down()).normalize_and_copy();
         });
 
-        // let mut l = ComponentLight::default();
-        // l.color = Color::red();
-        // world.spawn((Transform::default(), l));
-
         // let spine = AssetLoader::load_spine_from_path("path");
-        let asset_goblin = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::Goblin.uid());
         let asset_court = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Court.uid());
 
         // court
         world.spawn((
             Transform::default()
                 .set_position(Vector3::new(0.0, 0.0, 0.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))),
+                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, -90.0, 0.0))),
             Renderer::default().set_asset(Some(asset_court)),
         ));
-        // let mut t = ComponentRendererText::default();
-        // t.set_font_size(0.05)
-        //     .set_contents("this is my special text")
-        //     .set_vertical_alignment(AligmentVertical::Center)
-        //     .set_horizontal_alignment(AligmentHorizontal::Center);
-        // world.spawn((Transform::default(), t));
-        for id in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
-            let mut rend = RendererAnimated::default();
-            rend.set_asset(Some(asset_goblin.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin");
-            // players
-            world.spawn((
-                ComponentViewPlayer::default(),
-                ComponentPlayer::default().set_player_id(*id),
-                Transform::default()
-                    .set_position(Vector3::new(-5.0, -5.0, 10.0))
-                    .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
-                rend,
-            ));
-        }
-        {
-            let mut rend = RendererAnimated::default();
-            rend.set_asset(Some(asset_goblin.clone()))
-                .set_animation("walk", true)
-                .set_skin("goblin");
-            // players
-            world.spawn((ComponentBall::default(), Transform::default(), rend));
-        }
-
-        // lighting
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(0.0, 0.0, 0.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
-            ComponentLight::default(),
-        ));
-
-        game_state.edit::<StateSun>(|x| {
-            x.cast_shadows = true;
-            x.color = Color::white();
-        });
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let Some(team) = game_state
@@ -137,14 +78,5 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 ));
             }
         }
-
-        let cam_pos = game_state.get_value2::<CameraState>().cameras.position;
-
-        let cam_dir = game_state.get_value2::<CameraState>().cameras.rotation * Vector3::forward();
-        let cam_rot = game_state.get_value2::<CameraState>().cameras.rotation;
-        let t = game_state.get_value2::<TimeState>().scaled_time as f32;
-        game_state.edit::<StateSun>(|x| {
-            x.direction = cam_dir;
-        });
     }
 }

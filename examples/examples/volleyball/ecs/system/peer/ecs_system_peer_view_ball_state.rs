@@ -13,7 +13,12 @@ use hecs::World;
 
 use crate::{
     ecs::components::{component_ui_ball_state::ComponentUIBallState, component_ui_score::ComponentUIScoreState, component_ui_turn::ComponentUITurnState},
-    state::{state_ball_mode::StateBallMode, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    state::{
+        state_ball_mode::StateBallMode,
+        state_score::StateScore,
+        state_teams::{StateTeamAssignments, Teams},
+        state_turn::StateTurn,
+    },
 };
 
 #[global_ecs_system]
@@ -61,7 +66,10 @@ impl ECSSystemEventless for ECSSytem {
 
             transform.position = camera_state.cameras.position + camera_state.cameras.rotation * Vector3::new(0.0, 0.5, 1.0);
             transform.rotation = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
-            renderer.set_contents("0 - 0");
+            let state_scores = game_state.get_value2::<StateScore>();
+            let score_red = state_scores.all_scores.get(&Teams::Red).unwrap_or(&0);
+            let score_blue = state_scores.all_scores.get(&Teams::Blue).unwrap_or(&0);
+            renderer.set_contents(&format!("{} - {}", score_red, score_blue));
         }
 
         let state_turn = game_state.get_value2::<StateTurn>();

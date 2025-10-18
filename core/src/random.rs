@@ -5,10 +5,16 @@ use crate::collections::vector3::Vector3;
 pub struct Random {}
 impl Random {
     pub fn range_float(a_inclusive: f32, b_inclusive: f32) -> f32 {
+        if a_inclusive == b_inclusive {
+            return a_inclusive;
+        }
         let mut rng = rand::rng();
         rng.random_range(a_inclusive..b_inclusive)
     }
     pub fn range_int(a_inclusive: i32, b_inclusive: i32) -> i32 {
+        if a_inclusive == b_inclusive {
+            return a_inclusive;
+        }
         let mut rng = rand::rng();
         rng.random_range(a_inclusive..b_inclusive)
     }
