@@ -144,6 +144,7 @@ impl MCTSGameState for AIGameSimulation {
                                                 permuatations
                                             }
                                             AttribtuteTargetTypesEntities::RandomAny => {
+                                                println!("rand any");
                                                 let state_team = self.game_state.get_value2::<StateTeamAssignments>();
                                                 let random_team = state_team.team_assignments.get(&Teams::random()).unwrap();
                                                 let random_user_any = random_team
@@ -152,6 +153,7 @@ impl MCTSGameState for AIGameSimulation {
                                                 vec![DataDepsFilled::Entities(vec![*random_user_any])]
                                             }
                                             AttribtuteTargetTypesEntities::RandomOpponent => {
+                                                println!("rand op");
                                                 let state_team = self.game_state.get_value2::<StateTeamAssignments>();
 
                                                 let other_team = state_team.team_for(&uids[0]).unwrap().next_team();
@@ -218,6 +220,8 @@ impl MCTSGameState for AIGameSimulation {
                                             // crate::cards::attribute_target_type_tiles::AttributeTargetTypesTiles::RandomAny => todo!(),
                                             // crate::cards::attribute_target_type_tiles::AttributeTargetTypesTiles::RandomOnTeamUser => todo!(),
                                             crate::cards::attribute_target_type_tiles::AttributeTargetTypesTiles::RandomOnTeamOpponent => {
+                                                println!("rand on teamfz");
+
                                                 let mut permuatations = vec![];
 
                                                 let state_team = self.game_state.get_value2::<StateTeamAssignments>();
@@ -255,6 +259,8 @@ impl MCTSGameState for AIGameSimulation {
                                                 permuatations
                                             }
                                             AttribtuteTargetTypesEntities::RandomAny => {
+                                                println!("rand any");
+
                                                 let state_team = self.game_state.get_value2::<StateTeamAssignments>();
                                                 let random_team = state_team.team_assignments.get(&Teams::random()).unwrap();
                                                 let random_user_any = random_team
@@ -263,6 +269,8 @@ impl MCTSGameState for AIGameSimulation {
                                                 vec![DataDepsFilled::Entities(vec![*random_user_any])]
                                             }
                                             AttribtuteTargetTypesEntities::RandomOpponent => {
+                                                println!("rand");
+
                                                 let state_team = self.game_state.get_value2::<StateTeamAssignments>();
 
                                                 let other_team = state_team.team_for(&uids[0]).unwrap().next_team();
@@ -829,6 +837,7 @@ impl MCTS for MyMCTS {
 
 // ----------------- MAIN -----------------
 pub fn run_ai(game_state: &mut GameState) {
+    return;
     let local_game_state = GameState::new_single_instance(vec![
         (StateCardAttributeModifierStack::id(), Box::new(game_state.get_value2::<StateCardAttributeModifierStack>())),
         (StateTeamAssignments::id(), Box::new(game_state.get_value2::<StateTeamAssignments>())),
