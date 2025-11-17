@@ -18,7 +18,7 @@ impl Hash for RawInputSnapshot {
         self.button_default.hash(state);
         self.axis_default.hash(state);
 
-        let mut keys: Vec<&KeyCode> = self.button.keys().collect();
+        let mut keys: Vec<&ButtonCode> = self.button.keys().collect();
         keys.sort();
         keys.len().hash(state);
         for k in keys {
