@@ -4,12 +4,14 @@ use crate::collections::vector3::Vector3;
 use crate::collections::vector3_int::Vector3Int;
 use crate::collections::vector4::Vector4;
 use crate::collections::vector4_int::Vector4Int;
+use crate::extensions::extensions_f32::ExtensionsF32;
 use core::fmt;
 use fmt::Display;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Formatter;
 use std::fmt::Result;
+use std::hash::Hash;
 use std::ops::{Add, Div, Mul, Sub};
 
 /// A 2D Vector backed by f32
@@ -18,6 +20,14 @@ pub struct Vector2 {
     pub x: f32,
     pub y: f32,
 }
+// hash
+impl Hash for Vector2 {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.x.hash(state);
+        self.y.hash(state);
+    }
+}
+impl Eq for Vector2 {}
 // const constructors
 impl Vector2 {
     /// Creates a Vector2 with the provided values
@@ -111,40 +121,28 @@ impl Vector2 {
 impl Mul<f32> for Vector2 {
     type Output = Vector2;
     fn mul(self, x: f32) -> Vector2 {
-        Vector2 {
-            x: self.x * x,
-            y: self.y * x,
-        }
+        Vector2 { x: self.x * x, y: self.y * x }
     }
 }
 // whole num divide
 impl Div<f32> for Vector2 {
     type Output = Vector2;
     fn div(self, x: f32) -> Vector2 {
-        Vector2 {
-            x: self.x / x,
-            y: self.y / x,
-        }
+        Vector2 { x: self.x / x, y: self.y / x }
     }
 }
 // vector add
 impl Add<Vector2> for Vector2 {
     type Output = Vector2;
     fn add(self, x: Vector2) -> Vector2 {
-        Vector2 {
-            x: self.x + x.x,
-            y: self.y + x.y,
-        }
+        Vector2 { x: self.x + x.x, y: self.y + x.y }
     }
 }
 // vector subtract
 impl Sub<Vector2> for Vector2 {
     type Output = Vector2;
     fn sub(self, x: Vector2) -> Vector2 {
-        Vector2 {
-            x: self.x - x.x,
-            y: self.y - x.y,
-        }
+        Vector2 { x: self.x - x.x, y: self.y - x.y }
     }
 }
 // display

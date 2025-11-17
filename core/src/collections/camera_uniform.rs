@@ -1,6 +1,10 @@
 use core::f32;
+use std::hash::Hash;
 
-use crate::collections::{color::Color, projection::Projection, quaternion::Quaternion, vector3::Vector3};
+use crate::{
+    collections::{color::Color, projection::Projection, quaternion::Quaternion, vector3::Vector3},
+    extensions::extensions_f32::ExtensionsF32,
+};
 use cgmath::{prelude::*, Matrix4, Point3};
 
 #[repr(C)]
@@ -30,13 +34,23 @@ impl CameraUniform {
     }
 }
 
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct CameraSnapshot {
     pub position: Vector3,
     pub rotation: Quaternion,
     pub fovy: f32,
     pub znear: f32,
     pub zfar: f32,
+}
+impl Eq for CameraSnapshot {}
+impl Hash for CameraSnapshot {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.fovy.hash(state);
+        self.znear.hash(state);
+        self.zfar.hash(state);
+        self.position.hash(state);
+        self.rotation.hash(state);
+    }
 }
 impl Default for CameraSnapshot {
     fn default() -> Self {

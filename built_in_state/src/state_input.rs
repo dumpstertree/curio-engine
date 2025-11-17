@@ -5,6 +5,7 @@ use core::{
 
 use macro_state::global_state;
 
+#[derive(Hash, Eq)]
 #[global_state]
 pub struct InputState {
     pub mapped: Vec<PlayerInputSnapshot>,
@@ -13,10 +14,7 @@ pub struct InputState {
 
 impl InputState {
     pub fn default() -> InputState {
-        InputState {
-            mapped: Vec::new(),
-            raw: RawInputSnapshot::new(),
-        }
+        InputState { mapped: Vec::new(), raw: RawInputSnapshot::new() }
     }
 }
 impl IState for InputState {

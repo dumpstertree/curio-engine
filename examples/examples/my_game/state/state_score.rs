@@ -2,6 +2,7 @@ use core::{collections::game_state::StateOwnerships, system::system_game_state::
 
 use macro_state_serialize::global_state_serialize;
 
+#[derive(Hash, PartialEq, Eq)]
 #[global_state_serialize]
 pub struct StateScore {
     pub score: i32,

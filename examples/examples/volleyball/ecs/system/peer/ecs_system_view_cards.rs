@@ -1,10 +1,16 @@
 use crate::AssetMappingUIDs;
+use crate::ai_resolver::run_ai;
+use crate::cards::card_attribute_events::CardAttributeEvents;
 use crate::cards::card_instance::CardInstance;
+use crate::dependency_filler::DependencyFiller;
 use crate::ecs::components::component_card::ComponentCard;
 use crate::game_board::GameBoard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::{self, StateDeck};
+use crate::state::state_energy::StateEnergy;
+use crate::state::state_position_ball::StatePositionBall;
+use crate::state::state_position_player::StatePositionPlayer;
 use crate::state::state_teams::StateTeamAssignments;
 use built_in::component::component_renderer_static::Renderer;
 use built_in::component::component_renderer_text::{ComponentRendererText, RendererCommon};
@@ -16,6 +22,7 @@ use core::collections::color::Color;
 use core::collections::game_state;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector2::Vector2;
+use core::collections::vector2_int::Vector2Int;
 use core::collections::vector3::Vector3;
 use core::io::asset_loader::AssetLoader;
 use core::{
@@ -24,7 +31,9 @@ use core::{
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
+use goap_ai::{Action, Goal, Model, Planner, State};
 use hecs::World;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 #[global_ecs_system]
@@ -57,6 +66,13 @@ impl ECSSystemEventless for ECSSystemViewCards {
             for card in &my_deck.all_cards {
                 self.spawn_card(world, card.clone(), camera_state.cameras.rotation, game_state);
             }
+
+            self.run_ai(world, game_state);
+
+            // run the ai
+            println!("will running the ai");
+            run_ai(game_state);
+            println!("did running the ai");
         }
         let y_selected = 0.25;
         let y_unselected = 0.5;
@@ -132,11 +148,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                     let col_persistent = Color::new_hex("#f7c8a5");
                     let col_bump = Color::new_hex("#4efff9");
                     let col_set = Color::new_hex("#abff4e");
-                    let col_spike = Color::new_hex(
-                        "#ff4e85
-
-",
-                    );
+                    let col_spike = Color::new_hex("#ff4e85");
 
                     // let mut cur_tint = renderer.get_tint();
                     if is_met {
@@ -224,3 +236,88 @@ impl ECSSystemViewCards {
         ));
     }
 }
+impl ECSSystemViewCards {
+    fn run_ai(&self, world: &mut World, game_state: &mut GameState) {}
+}
+
+// #[derive(Clone)]
+// struct AIGameSimulation {
+//     // player
+//     player_energy: i32,
+//     player_deck: Vec<Arc<CardInstance>>,
+//     player_hand: Vec<Arc<CardInstance>>,
+//     player_discard: Vec<Arc<CardInstance>>,
+
+//     // ai
+//     ai_energy: i32,
+//     ai_deck: Vec<Arc<CardInstance>>,
+//     ai_hand: Vec<Arc<CardInstance>>,
+//     ai_discard: Vec<Arc<CardInstance>>,
+// }
+
+// impl mcts::GameState for AIGameSimulation {
+//     type Move = Move;
+//     type Player = ();
+//     type MoveList = Vec<Move>;
+
+//     fn current_player(&self) -> Self::Player {
+//         ()
+//     }
+//     fn available_moves(&self) -> Vec<Move> {
+//         // let x = self.0;
+//         // if x == 100 { vec![] } else { vec![Move::Add, Move::Sub] }
+//         vec![]
+//     }
+//     fn make_move(&mut self, mov: &Self::Move) {
+//         match *mov {
+//             Move::Move(_) => todo!(),
+//             Move::Play(_) => todo!(),
+//             Move::Rest => todo!(),
+//             Move::End => todo!(),
+//         }
+//     }
+// }
+// impl mcts::transposition_table::TranspositionHash for AIGameSimulation {
+//     fn hash(&self) -> u64 {
+//         // self.0 as u64
+//         0
+//     }
+// }
+
+// #[derive(Clone)]
+// enum Move {
+//     Move(Vector2Int),
+//     Play(Arc<CardInstance>),
+//     Rest,
+//     End,
+// }
+// struct AiGameEvaluator {}
+// impl mcts::Evaluator<MyMCTS> for AiGameEvaluator {
+//     type StateEvaluation = i64;
+
+//     fn evaluate_new_state(&self, state: &AIGameSimulation, moves: &Vec<Move>, _: Option<mcts::SearchHandle<MyMCTS>>) -> (Vec<()>, i64) {
+//         // (vec![(); moves.len()], state.0)
+//     }
+//     fn interpret_evaluation_for_player(&self, evaln: &i64, _player: &()) -> i64 {
+//         *evaln
+//     }
+//     fn evaluate_existing_state(&self, _: &AIGameSimulation, evaln: &i64, _: mcts::SearchHandle<MyMCTS>) -> i64 {
+//         *evaln
+//     }
+// }
+
+// #[derive(Default)]
+// struct MyMCTS;
+
+// impl mcts::MCTS for MyMCTS {
+//     type State = AIGameSimulation;
+//     type Eval = AiGameEvaluator;
+//     type NodeData = ();
+//     type ExtraThreadData = ();
+//     type TreePolicy = mcts::tree_policy::UCTPolicy;
+//     type TranspositionTable = mcts::transposition_table::ApproxTable<Self>;
+
+//     fn cycle_behaviour(&self) -> mcts::CycleBehaviour<Self> {
+//         mcts::CycleBehaviour::UseCurrentEvalWhenCycleDetected
+//     }
+// }

@@ -4,12 +4,14 @@ use crate::collections::vector2_int::Vector2Int;
 use crate::collections::vector3_int::Vector3Int;
 use crate::collections::vector4::Vector4;
 use crate::collections::vector4_int::Vector4Int;
+use crate::extensions::extensions_f32::ExtensionsF32;
 use core::fmt;
 use fmt::Display;
 use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Formatter;
 use std::fmt::Result;
+use std::hash::Hash;
 use std::ops::{Add, Div, Mul, Sub};
 
 /// A 3D Vector backed by f32
@@ -20,6 +22,15 @@ pub struct Vector3 {
     pub y: f32,
     pub z: f32,
 }
+// hash
+impl Hash for Vector3 {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.x.hash(state);
+        self.y.hash(state);
+        self.z.hash(state);
+    }
+}
+impl Eq for Vector3 {}
 // const constructors
 impl Vector3 {
     /// Creates a Vector3 with the provided values

@@ -3,6 +3,7 @@ use core::{collections::game_state::StateOwnerships, system::system_game_state::
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 
+#[derive(Hash, PartialEq, Eq)]
 #[global_state_serialize]
 pub struct StatePeerInputMode {
     pub mode: InputModes,
@@ -16,7 +17,7 @@ impl IState for StatePeerInputMode {
     }
 }
 
-#[derive(Default, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default, Clone, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub enum InputModes {
     #[default]
     Move,

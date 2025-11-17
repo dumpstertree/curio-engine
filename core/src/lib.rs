@@ -4,6 +4,8 @@ pub mod graphics {
     pub mod graphics_mapping;
 }
 pub mod extensions {
+    pub mod extensions_f32;
+    pub mod extensions_f64;
     pub mod extensions_i32;
 }
 pub mod input {

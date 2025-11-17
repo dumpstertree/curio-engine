@@ -1,8 +1,4 @@
-use crate::{
-    cards::card_modifier::CardModifier,
-    game_events::GameEvents,
-    state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
-};
+use crate::{ai_resolver::CardEvents, cards::card_modifier::CardModifier, game_events::GameEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -13,8 +9,8 @@ use ecs_system::global_ecs_system;
 use hecs::World;
 
 #[global_ecs_system]
-pub struct EventRecieverApplyCardAttributeModifierEnergyForEntities {}
-impl ECSSystemEventless for EventRecieverApplyCardAttributeModifierEnergyForEntities {
+pub struct EventReciever {}
+impl ECSSystemEventless for EventReciever {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
@@ -23,7 +19,7 @@ impl ECSSystemEventless for EventRecieverApplyCardAttributeModifierEnergyForEnti
     }
 }
 #[global_ecs_system_event_reciever(GameEvents)]
-impl ecs_event_reciever::EventReciever<GameEvents> for EventRecieverApplyCardAttributeModifierEnergyForEntities {
+impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ApplyCardAttributeModifierEnergyForEntities(clear_flag, entity_ids, count) => {
@@ -41,5 +37,26 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventRecieverApplyCardAtt
             }
             _ => {}
         }
+    }
+}
+impl EventReciever {
+    pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
+        match event {
+            CardEvents::ApplyModifierEnergyForEntities(clear_flag, entity_ids, count) => {
+                game_state.edit::<StateCardAttributeModifierStack>(|x| {
+                    x.add_to_stack(CardModifier {
+                        clear_flag: *clear_flag,
+                        applies_to_players: vec![],
+                        applies_to_entities: entity_ids.clone(),
+                        applies_to_cards: vec![],
+                        range: 0,
+                        cost: 0,
+                        energy: *count,
+                    });
+                });
+            }
+            _ => {}
+        }
+        vec![]
     }
 }

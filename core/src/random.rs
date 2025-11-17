@@ -18,9 +18,9 @@ impl Random {
         let mut rng = rand::rng();
         rng.random_range(a_inclusive..b_inclusive)
     }
-    pub fn random_bool() {
+    pub fn random_bool() -> bool {
         let mut rng = rand::rng();
-        rng.random_bool(0.5);
+        rng.random_bool(0.5)
     }
     pub fn direction(use_x: bool, use_y: bool, use_z: bool) -> Vector3 {
         let mut v = Vector3::new(0.0, 0.0, 0.0);

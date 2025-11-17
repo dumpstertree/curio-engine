@@ -2,6 +2,7 @@ use core::{gameplay::ecs::component::component_collider::ColliderSnapshot, syste
 
 use macro_state::global_state;
 
+#[derive(Hash)]
 #[global_state]
 pub struct StateCollider {
     pub colliders: Vec<ColliderSnapshot>,

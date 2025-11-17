@@ -8,6 +8,7 @@ use core::{
 };
 use macro_state::global_state;
 
+#[derive(Hash, Eq)]
 #[global_state]
 pub struct StateSun {
     pub cast_shadows: bool,

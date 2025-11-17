@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result};
 
 /// Data that has been filled and is ready to be passed into an attribute
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub enum DataDepsFilled {
     /// A list of Players. 0=all_ids
     Players(Vec<i32>),

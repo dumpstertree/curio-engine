@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    cards::card_modifier::CardModifier,
-    state::state_deck::AttributeTargets,
-};
+use crate::{cards::card_modifier::CardModifier, state::state_deck::AttributeTargets};
 use std::sync::Mutex;
 
 static ACTIVE_ATTS: Mutex<Vec<(AttributeTargets, AttributeClearFlag, CardModifier)>> = Mutex::new(vec![]);
@@ -85,7 +82,7 @@ static ACTIVE_ATTS: Mutex<Vec<(AttributeTargets, AttributeClearFlag, CardModifie
 //     }
 // }
 
-#[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Hash, Eq, Serialize, Deserialize)]
 pub enum AttributeClearFlag {
     Play,
     Turn,

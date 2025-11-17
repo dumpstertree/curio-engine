@@ -1,4 +1,5 @@
 use core::panic;
+use std::hash::Hash;
 
 use egui_wgpu::wgpu::util::DeviceExt;
 use egui_wgpu::wgpu::Buffer;
@@ -9,8 +10,10 @@ use mesh_tools::primitives::{generate_plane, generate_sphere};
 
 use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::vector3;
+use crate::extensions::extensions_f32::ExtensionsF32;
 use crate::random::Random;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
+#[derive(PartialEq, Hash)]
 pub struct Mesh {
     pub name: String,
     pub verticies: Vec<Vertex>,
@@ -316,7 +319,7 @@ impl Mesh {
 }
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, serde::Serialize, serde::Deserialize)]
+#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, serde::Serialize, serde::Deserialize, PartialEq)]
 
 pub struct Vertex {
     pub position: [f32; 3],
@@ -325,6 +328,25 @@ pub struct Vertex {
     pub uv0: [f32; 2],
     pub uv1: [f32; 2],
 }
+impl Hash for Vertex {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.position[0].hash(state);
+        self.position[1].hash(state);
+        self.position[2].hash(state);
+        self.normal[0].hash(state);
+        self.normal[1].hash(state);
+        self.normal[2].hash(state);
+        self.color[0].hash(state);
+        self.color[1].hash(state);
+        self.color[2].hash(state);
+        self.color[3].hash(state);
+        self.uv0[0].hash(state);
+        self.uv0[1].hash(state);
+        self.uv1[0].hash(state);
+        self.uv1[1].hash(state);
+    }
+}
+impl Eq for Vertex {}
 
 impl Vertex {
     pub fn new(position: [f32; 3], normal: [f32; 3], color: [f32; 4], uv0: [f32; 2], uv1: [f32; 2]) -> Vertex {

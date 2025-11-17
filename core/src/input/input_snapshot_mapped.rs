@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, hash::Hash};
 
 use crate::{
     collections::{input_button::InputButtonState, input_cursor::InputAxisState, vector2::Vector2},
@@ -6,13 +6,38 @@ use crate::{
 };
 
 // Result of testing raw input to mapped input
-#[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
 pub struct PlayerInputSnapshot {
     default_button: InputButtonState,
     defualt_axis: InputAxisState,
     map_button: HashMap<String, InputButtonState>,
     map_axis: HashMap<String, InputAxisState>,
     mapping: InputMapping,
+}
+impl Hash for PlayerInputSnapshot {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.default_button.hash(state);
+        self.defualt_axis.hash(state);
+        self.mapping.hash(state);
+
+        let mut keys: Vec<&String> = self.map_button.keys().collect();
+        keys.sort();
+        keys.len().hash(state);
+        for k in keys {
+            k.hash(state);
+            // unwrap is safe because k came from keys()
+            self.map_button.get(k).unwrap().hash(state);
+        }
+
+        // same for map_axis
+        let mut axis_keys: Vec<&String> = self.map_axis.keys().collect();
+        axis_keys.sort();
+        axis_keys.len().hash(state);
+        for k in axis_keys {
+            k.hash(state);
+            self.map_axis.get(k).unwrap().hash(state);
+        }
+    }
 }
 impl PlayerInputSnapshot {
     pub fn new(mapping: InputMapping) -> PlayerInputSnapshot {

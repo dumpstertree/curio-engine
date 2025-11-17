@@ -1,13 +1,21 @@
-use std::sync::Arc;
+use std::{hash::Hash, sync::Arc};
 
 use crate::collections::{color::Color, matrix4x4::Matrix4x4, mesh::Mesh, vector3::Vector3};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub struct Gizmo {
     pub matrix: Vec<Matrix4x4>,
     pub mesh: Arc<Mesh>,
     pub color: Color,
 }
+impl Hash for Gizmo {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.matrix.hash(state);
+        self.mesh.hash(state);
+        self.color.hash(state);
+    }
+}
+impl Eq for Gizmo {}
 
 impl Gizmo {
     pub fn plane(matrix: Matrix4x4, width: f32, height: f32, color: Color) -> Gizmo {

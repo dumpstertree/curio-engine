@@ -1,5 +1,6 @@
 use std::any::type_name;
-use std::hash::Hash;
+use std::hash::{Hash, Hasher};
+use std::vec;
 use std::{any::Any, borrow::Borrow, collections::HashMap};
 
 use egui::mutex::Mutex;
@@ -16,7 +17,7 @@ pub struct NetworkSynchEvent {
 use serde::{Deserialize, Serialize};
 
 // The "erased" event you actually store in Vec
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub struct StateSyncEvent {
     pub id: i32,
     pub payload: Vec<u8>, // serialized data
@@ -41,6 +42,14 @@ impl StateSyncEvent {
     // }
 }
 
+trait GameStateCommon {
+    fn get<T>()
+    where
+        T: Default;
+    fn edit<T>()
+    where
+        T: Default;
+}
 pub enum StateOwnerships {
     Instance,
     Host,
@@ -50,23 +59,51 @@ static mut REGISTERED_GLOBAL_STATES: Option<Mutex<HashMap<i32, CreateFN>>> = Non
 static mut REGISTERED_GLOBAL_STATES_SERIALIZE: Option<Mutex<HashMap<i32, SerializerFn>>> = None;
 static mut REGISTERED_GLOBAL_STATES_DESERIALIZE: Option<Mutex<HashMap<i32, DeserializerFn>>> = None;
 
-type CreateFN = fn() -> Box<dyn Any>;
+type CreateFN = fn() -> Box<dyn IState>;
 type SerializerFn = fn(&dyn Any) -> Vec<u8>;
-type DeserializerFn = fn(&[u8]) -> Box<dyn Any>;
+type DeserializerFn = fn(&[u8]) -> Box<dyn IState>;
 
+#[derive(Clone)]
 pub struct GameState {
+    has_network_capabilities: bool,
     pub instance_id: i32,
     pub all_instance_id: Vec<i32>,
     edited_state: Vec<StateSyncEvent>,
     fn_deserialize: HashMap<i32, DeserializerFn>,
     fn_serialize: HashMap<i32, SerializerFn>,
-    pub(crate) cache: AnyMap<i32>,
+    pub(crate) cache: StateMap<i32>,
     pub network_mode: NetworkModes,
 }
+// impl Eq for GameState {}
+// impl Hash for GameState {
+//     fn hash<H: Hasher>(&self, state: &mut H) {
+//         self.instance_id.hash(state);
+//         self.all_instance_id.hash(state);
+//         self.edited_state.hash(state);
+//         self.fn_deserialize.hash(state);
+//         self.fn_serialize.hash(state);
+//         self.cache.hash(state);
+//         self.network_mode.hash(state);
+//     }
+// }
+// impl Hash for GameState {
+//     fn hash<H: Hasher>(&self, state: &mut H) {
+//         // Assuming cache: HashMap<i32, StateValue>
+//         let mut keys: Vec<_> = self.cache.map.keys().collect();
+//         keys.sort(); // ensures deterministic order
+//         for key in keys {
+//             key.hash(state);
+//             if let Some(val) = self.cache.map.get(key) {
+//                 val.hash_dyn_u64().hash(state);
+//             }
+//         }
+//     }
+// }
+
 impl GameState {
     pub fn register_global_states<T>()
     where
-        T: Any + IState,
+        T: Any + IState + Default,
     {
         unsafe {
             if REGISTERED_GLOBAL_STATES.is_none() {
@@ -78,14 +115,14 @@ impl GameState {
                 return;
             };
             let mut guard = unwrapped.lock();
-            let create: fn() -> Box<dyn Any> = || return Box::new(T::default());
+            let create: fn() -> Box<dyn IState> = || return T::default_box();
             guard.insert(T::id(), create);
         }
         println!("register STATE {}", type_name::<T>());
     }
     pub fn register_global_states_serializable<T>()
     where
-        T: IState + Serialize + DeserializeOwned + 'static,
+        T: IState + Serialize + DeserializeOwned + Default + 'static,
     {
         unsafe {
             if REGISTERED_GLOBAL_STATES.is_none() {
@@ -97,7 +134,7 @@ impl GameState {
                 return;
             };
             let mut guard = unwrapped.lock();
-            let create: fn() -> Box<dyn Any> = || return Box::new(T::default());
+            let create: fn() -> Box<dyn IState> = || return Box::new(T::default());
             guard.insert(T::id(), create);
         }
         unsafe {
@@ -128,7 +165,7 @@ impl GameState {
             let mut guard = unwrapped.lock();
             let deserialize: DeserializerFn = |bytes| {
                 let obj: T = bincode::deserialize(bytes).unwrap();
-                Box::new(obj) as Box<dyn Any>
+                Box::new(obj) as Box<dyn IState>
             };
             guard.insert(T::id(), deserialize);
         }
@@ -155,8 +192,28 @@ impl GameState {
     pub fn change_network_mode(&mut self, mode: NetworkModes) {
         self.network_mode = mode;
     }
+    pub fn new_single_instance(states: Vec<(i32, Box<dyn IState>)>) -> GameState {
+        let mut fn_serialize = HashMap::<i32, SerializerFn>::default();
+        let mut fn_deserialize = HashMap::<i32, DeserializerFn>::default();
+
+        let mut cache = StateMap::new();
+        for state in states {
+            cache.insert_any(state.0, state.1);
+        }
+
+        GameState {
+            has_network_capabilities: false,
+            instance_id: -1,
+            all_instance_id: vec![],
+            edited_state: Vec::new(),
+            cache: cache,
+            network_mode: NetworkModes::LocalHost,
+            fn_deserialize: fn_deserialize,
+            fn_serialize: fn_serialize,
+        }
+    }
     pub fn new(network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> GameState {
-        let mut cache = AnyMap::<i32>::default();
+        let mut cache = StateMap::<i32>::default();
         let mut fn_serialize = HashMap::<i32, SerializerFn>::default();
         let mut fn_deserialize = HashMap::<i32, DeserializerFn>::default();
 
@@ -192,6 +249,7 @@ impl GameState {
             }
         }
         GameState {
+            has_network_capabilities: true,
             instance_id: instance_id,
             all_instance_id: all_instance_id,
             edited_state: Vec::new(),
@@ -233,46 +291,27 @@ impl GameState {
         T: IState,
         T: Clone,
     {
-        if !GameState::has_write_permision(&self.network_mode, &T::ownership()) {
-            println!("did not have write permissions for {}", type_name::<T>());
-            return;
-        }
-
         let id = T::id();
         let Some(mut val) = self.cache.get_mut::<T, i32>(&id) else {
-            // let mut v = self.get_value2::<T>();
-            // edit(&mut v);
-            // self.set_value2::<T>(v);
-
             // return;
             panic!("Requested unknown value of type {}", type_name::<T>());
         };
 
+        if self.has_network_capabilities && !GameState::has_write_permision(&self.network_mode, &T::ownership()) {
+            println!("did not have write permissions for {}", type_name::<T>());
+            return;
+        }
+
         edit(&mut val);
 
-        if GameState::has_push_permision(&self.network_mode, &T::ownership()) {
+        if self.has_network_capabilities && GameState::has_push_permision(&self.network_mode, &T::ownership()) {
             let id2 = T::id();
             let data = self.fn_serialize[&id2](&self.get_value2::<T>());
             self.edited_state
                 .push(StateSyncEvent { id: id2.clone(), payload: data });
-            // println!("push type: {}", type_name::<T>());
         }
     }
-    fn set_value2<T: 'static>(&mut self, val: T)
-    where
-        T: IState,
-        T: Clone,
-    {
-        if !GameState::has_write_permision(&self.network_mode, &T::ownership()) {
-            println!("did not have write permissions for {}", type_name::<T>());
-            return;
-        }
-        if GameState::has_push_permision(&self.network_mode, &T::ownership()) {
-            println!("type push type: {}", type_name::<T>());
-        }
-        let id = T::id();
-        self.cache.insert::<T>(id, val);
-    }
+
     pub fn get_value2<T: 'static>(&self) -> T
     where
         T: IState,
@@ -329,3 +368,137 @@ impl<K: Hash + Eq> AnyMap<K> {
             .ok_or(GetError::MismatchedType)
     }
 }
+
+use std::fmt::Debug;
+
+// ------------------------------------------------------
+// Struct: StateMap
+// ------------------------------------------------------
+
+#[derive(Default)]
+pub struct StateMap<K>
+where
+    K: Eq + Hash + Clone + Debug,
+{
+    map: HashMap<K, Box<dyn IState>>,
+}
+
+// ------------------------------------------------------
+// Implementation
+// ------------------------------------------------------
+impl<K> Clone for StateMap<K>
+where
+    K: Eq + Hash + Clone + Debug,
+{
+    fn clone(&self) -> Self {
+        let mut cloned = HashMap::new();
+        for (k, v) in &self.map {
+            cloned.insert(k.clone(), v.clone_box());
+        }
+        Self { map: cloned }
+    }
+}
+
+impl<K> StateMap<K>
+where
+    K: Eq + Hash + Clone + Debug,
+{
+    pub fn new() -> Self {
+        Self { map: HashMap::new() }
+    }
+
+    /// Insert a new IState into the map.
+    pub fn insert<T: IState + Default + Clone + 'static>(&mut self, key: K, value: T) {
+        self.map.insert(key, Box::new(value));
+    }
+    pub fn insert_any(&mut self, key: K, value: Box<dyn IState>) {
+        self.map.insert(key, value);
+    }
+
+    /// Get a reference to a stored type.
+    pub fn get<T: IState + 'static, Q: ?Sized + Eq + Hash>(&self, key: &Q) -> Option<&T>
+    where
+        K: std::borrow::Borrow<Q>,
+    {
+        self.map.get(key)?.as_ref().as_any()?.downcast_ref()
+    }
+
+    /// Get a mutable reference to a stored type.
+    pub fn get_mut<T: IState + 'static, Q: ?Sized + Eq + Hash>(&mut self, key: &Q) -> Option<&mut T>
+    where
+        K: std::borrow::Borrow<Q>,
+    {
+        self.map.get_mut(key)?.as_mut_any()?.downcast_mut::<T>()
+    }
+
+    /// Check if the map contains a given key.
+    pub fn contains_key<Q: ?Sized + Eq + Hash>(&self, key: &Q) -> bool
+    where
+        K: std::borrow::Borrow<Q>,
+    {
+        self.map.contains_key(key)
+    }
+
+    /// Remove a key and return the boxed IState.
+    pub fn remove<Q: ?Sized + Eq + Hash>(&mut self, key: &Q) -> Option<Box<dyn IState>>
+    where
+        K: std::borrow::Borrow<Q>,
+    {
+        self.map.remove(key)
+    }
+
+    /// Clears all entries.
+    pub fn clear(&mut self) {
+        self.map.clear();
+    }
+
+    /// Returns the number of entries.
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+
+    /// Returns true if empty.
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
+    /// Iterate over keys and their dyn values.
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &Box<dyn IState>)> {
+        self.map.iter()
+    }
+
+    /// Mutable iterator.
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut Box<dyn IState>)> {
+        self.map.iter_mut()
+    }
+}
+
+// ------------------------------------------------------
+// Helper trait for downcasting
+// ------------------------------------------------------
+pub trait AsAny {
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
+        None
+    }
+    fn as_mut_any(&mut self) -> Option<&mut dyn std::any::Any> {
+        None
+    }
+}
+
+impl<T: IState + 'static> AsAny for T {
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
+        Some(self)
+    }
+    fn as_mut_any(&mut self) -> Option<&mut dyn std::any::Any> {
+        Some(self)
+    }
+}
+
+// impl dyn IState {
+//     fn as_any(&self) -> Option<&dyn std::any::Any> {
+//         None
+//     }
+//     fn as_mut_any(&mut self) -> Option<&mut dyn std::any::Any> {
+//         None
+//     }
+// }

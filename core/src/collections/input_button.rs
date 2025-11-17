@@ -1,4 +1,4 @@
-#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
 
 pub struct InputButtonState {
     pub went_down: bool,

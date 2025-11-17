@@ -4,6 +4,7 @@ use std::fmt;
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 
+#[derive(Hash, PartialEq, Eq)]
 #[global_state_serialize]
 pub struct StateBallMode {
     pub mode: BallModes,
@@ -16,7 +17,7 @@ impl IState for StateBallMode {
         StateOwnerships::Host
     }
 }
-#[derive(PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
+#[derive(Hash, PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub enum BallModes {
     #[default]
     Serve,

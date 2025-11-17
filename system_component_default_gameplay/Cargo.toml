@@ -9,3 +9,4 @@ core = { path = "../core" }
 hecs = "0.10.5"
 linkme = "=0.2.10"
 intertrait = "0.2.2"
+bincode = "1"

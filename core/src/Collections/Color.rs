@@ -4,7 +4,10 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::fmt::Formatter;
 use std::fmt::Result;
+use std::hash::Hash;
 use std::ops::Mul;
+
+use crate::extensions::extensions_f32::ExtensionsF32;
 
 /// Represents an r,g,b,a color
 ///
@@ -15,6 +18,15 @@ pub struct Color {
     g: f32,
     b: f32,
     a: f32,
+}
+impl Eq for Color {}
+impl Hash for Color {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.r.hash(state);
+        self.g.hash(state);
+        self.b.hash(state);
+        self.a.hash(state);
+    }
 }
 // const
 impl Color {

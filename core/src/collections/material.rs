@@ -236,6 +236,7 @@ use crate::{
 //=========================================
 // Data Types
 //=========================================
+#[derive(PartialEq)]
 pub struct Material {
     pub shader: ShaderModule,
     shader_desc: ShaderDesc,
@@ -425,17 +426,17 @@ impl Material {
 //=========================================
 // Shader Descriptors
 //=========================================
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct ShaderDesc {
     shader_module_path: String,
     textures: Vec<ShaderTextureDesc>,
     colors: Vec<ShaderColorDesc>,
 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct ShaderTextureDesc {
     label: String,
 }
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct ShaderColorDesc {
     label: String,
 }

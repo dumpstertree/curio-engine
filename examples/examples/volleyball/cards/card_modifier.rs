@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::card_parser::AttributeClearFlag;
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Hash, PartialEq, Eq, Clone, Serialize, Deserialize)]
 pub struct CardModifier {
     pub clear_flag: AttributeClearFlag,
     pub applies_to_players: Vec<i32>,

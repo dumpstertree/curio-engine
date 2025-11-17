@@ -2,6 +2,7 @@ use core::{collections::color::Color, io::texture_asset::TextureAsset, system::s
 use macro_state::global_state;
 use std::sync::Arc;
 
+#[derive(Hash, Eq)]
 #[global_state]
 pub struct StateSkybox {
     pub skybox: SkyboxTypes,
@@ -13,7 +14,7 @@ impl IState for StateSkybox {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Hash, PartialEq, Eq)]
 pub enum SkyboxTypes {
     #[default]
     Defualt,

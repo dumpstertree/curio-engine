@@ -1,9 +1,9 @@
-use crate::{
-    game_events::GameEvents,
-    state::state_deck::StateDeck,
-};
+use crate::{ai_resolver::CardEvents, game_board, game_events::GameEvents, state::state_deck::StateDeck};
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{
+        event_queue::EventQueue,
+        game_state::{self, GameState},
+    },
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
 };
@@ -40,5 +40,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
             }
             _ => {}
         }
+    }
+}
+impl EventReciever {
+    pub fn recieve(event: CardEvents, game_state: GameState) -> Vec<CardEvents> {
+        vec![]
     }
 }

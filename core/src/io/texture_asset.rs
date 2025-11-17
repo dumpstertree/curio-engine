@@ -3,7 +3,7 @@ use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use super::asset::Asset;
 
 // data
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct TextureAsset {
     // width: i32,
     // height: i32,

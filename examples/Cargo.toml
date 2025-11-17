@@ -35,3 +35,6 @@ macro_state = { path = "../macro_state" }
 macro_state_serialize = { path = "../macro_state_serialize" }
 serde = { version = "1.0.104", features = ["derive", "rc"] }
 rand = "0.9.1"
+goap-ai = { path = "../../goap" }
+serde_yaml = "0.9"
+mcts = "0.3.0"

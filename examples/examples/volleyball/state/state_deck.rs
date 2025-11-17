@@ -4,12 +4,9 @@ use core::{
 };
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    fmt::Display,
-    sync::Arc,
-};
+use std::{collections::HashMap, fmt::Display, hash::Hash, sync::Arc};
 
+#[derive(PartialEq, Eq)]
 #[global_state_serialize]
 pub struct StateDeck {
     pub deck: HashMap<i32, Deck>,
@@ -20,6 +17,17 @@ impl IState for StateDeck {
     }
     fn ownership() -> StateOwnerships {
         StateOwnerships::Host
+    }
+}
+impl Hash for StateDeck {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let mut keys: Vec<&i32> = self.deck.keys().collect();
+        keys.sort();
+        keys.len().hash(state);
+        for k in keys {
+            k.hash(state);
+            self.deck.get(k).unwrap().hash(state);
+        }
     }
 }
 use rand::rng;
@@ -33,7 +41,7 @@ pub enum CardLocation {
     Hand(i32),
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Hash, PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub struct Deck {
     pub all_cards: Vec<Arc<CardInstance>>,
     pub pile_draw: Vec<Arc<CardInstance>>,

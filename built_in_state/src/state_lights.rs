@@ -1,10 +1,8 @@
-use core::{
-    collections::light_uniform::DrawCallLight,
-    system::system_game_state::IState,
-};
+use core::{collections::light_uniform::DrawCallLight, system::system_game_state::IState};
 
 use macro_state::global_state;
 
+#[derive(Hash, Eq)]
 #[global_state]
 pub struct StateLights {
     pub all_lights: Vec<DrawCallLight>,

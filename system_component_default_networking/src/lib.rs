@@ -5,11 +5,7 @@ use core::{
         game_state::{GameState, StateSyncEvent},
     },
     dumpster_engine::NetworkModes,
-    system::{
-        system_component::SystemComponent,
-        system_components::system_component_networking::SystemComponentNetworking,
-        system_game_state::{from_bytes, to_bytes},
-    },
+    system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
 };
 use message_io::node::NodeEvent;
 use message_io::{
@@ -310,3 +306,23 @@ use std::thread;
 //     GameState(Event),
 //     GameEvent,
 // }
+
+use std::mem;
+use std::slice;
+
+use serde::{Deserialize, Serialize};
+
+// Serialize any Clone type safely
+pub fn to_bytes<T>(value: &T) -> Vec<u8>
+where
+    T: Clone + Serialize,
+{
+    bincode::serialize(value).expect("failed to serialize to bytes")
+}
+
+pub fn from_bytes<T>(bytes: &[u8]) -> T
+where
+    T: Clone + for<'de> Deserialize<'de>,
+{
+    bincode::deserialize(bytes).expect("failed to deserialize from bytes")
+}

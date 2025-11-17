@@ -1,7 +1,4 @@
-use crate::{
-    game_events::GameEvents,
-    state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
-};
+use crate::{ai_resolver::CardEvents, game_events::GameEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -32,5 +29,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventRecieverApplyCardAtt
             }
             _ => {}
         }
+    }
+}
+impl EventRecieverApplyCardAttributeModifierRangeForEntities {
+    pub fn recieve(event: CardEvents, game_state: GameState) -> Vec<CardEvents> {
+        vec![]
     }
 }

@@ -1,4 +1,4 @@
-use crate::{cards::card_modifier::CardModifier, game_events::GameEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
+use crate::{ai_resolver::CardEvents, cards::card_modifier::CardModifier, game_events::GameEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -9,8 +9,8 @@ use ecs_system::global_ecs_system;
 use hecs::World;
 
 #[global_ecs_system]
-pub struct EventRecieverApplyCardAttributeModifierRangeForEntities {}
-impl ECSSystemEventless for EventRecieverApplyCardAttributeModifierRangeForEntities {
+pub struct EventReciever {}
+impl ECSSystemEventless for EventReciever {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true
     }
@@ -19,7 +19,7 @@ impl ECSSystemEventless for EventRecieverApplyCardAttributeModifierRangeForEntit
     }
 }
 #[global_ecs_system_event_reciever(GameEvents)]
-impl ecs_event_reciever::EventReciever<GameEvents> for EventRecieverApplyCardAttributeModifierRangeForEntities {
+impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ApplyCardAttributeModifierRangeForEntities(clear_flag, entity_ids, count) => {
@@ -37,5 +37,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventRecieverApplyCardAtt
             }
             _ => {}
         }
+    }
+}
+impl EventReciever {
+    pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
+        vec![]
     }
 }

@@ -2,6 +2,7 @@ use core::system::system_game_state::IState;
 
 use macro_state::global_state;
 
+#[derive(Hash, Eq)]
 #[global_state]
 pub struct StateScreen {
     width: i32,

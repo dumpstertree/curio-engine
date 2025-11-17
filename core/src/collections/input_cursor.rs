@@ -1,5 +1,5 @@
 use crate::collections::vector2::Vector2;
-#[derive(Clone, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Default, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
 pub struct InputAxisState {
     pub position: Vector2,
     pub delta: Vector2,
@@ -7,10 +7,7 @@ pub struct InputAxisState {
 
 impl InputAxisState {
     pub fn default() -> InputAxisState {
-        InputAxisState {
-            position: Vector2::zero(),
-            delta: Vector2::zero(),
-        }
+        InputAxisState { position: Vector2::zero(), delta: Vector2::zero() }
     }
 
     pub fn update(&mut self, axis: Vector2) {

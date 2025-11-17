@@ -1,18 +1,18 @@
 use bytemuck::{Pod, Zeroable};
 use egui_wgpu::wgpu;
-use std::num::NonZeroU64;
+use std::{hash::Hash, num::NonZeroU64};
 
-use crate::system_adapters::adapter_system_gpu::SystemGPU;
+use crate::{extensions::extensions_f32::ExtensionsF32, system_adapters::adapter_system_gpu::SystemGPU};
 
 // CPU-side light types for your ECS
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
 pub enum LightType {
     #[default]
     Point, // uses position + radius/falloff in params
     Directional, // uses direction vector
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, PartialEq)]
 pub struct DrawCallLight {
     pub light_type: LightType,
     pub position: [f32; 3],  // world-space (ignored for directional)
@@ -20,6 +20,23 @@ pub struct DrawCallLight {
     pub color: [f32; 3],
     pub intensity: f32,
     pub radius: f32, // for point lights (falloff)
+}
+impl Eq for DrawCallLight {}
+impl Hash for DrawCallLight {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.light_type.hash(state);
+        self.position[0].hash(state);
+        self.position[1].hash(state);
+        self.position[2].hash(state);
+        self.direction[0].hash(state);
+        self.direction[1].hash(state);
+        self.direction[2].hash(state);
+        self.color[0].hash(state);
+        self.color[1].hash(state);
+        self.color[2].hash(state);
+        self.intensity.hash(state);
+        self.radius.hash(state);
+    }
 }
 
 // GPU-safe layout (matches WGSL struct below).

@@ -1,27 +1,73 @@
+use std::any::TypeId;
+use std::hash::{DefaultHasher, Hash, Hasher};
+
 use crate::collections::game_state::StateOwnerships;
 
-pub trait IState: Clone + Default {
-    // fn default() -> T;
-    fn id() -> i32;
-    fn ownership() -> StateOwnerships {
+// pub trait AsAny: 'static {
+//     fn as_any(&self) -> &dyn std::any::Any;
+// }
+// impl<T: 'static> AsAny for T {
+//     fn as_any(&self) -> &dyn std::any::Any {
+//         self
+//     }
+// }
+use crate::collections::game_state::AsAny;
+
+pub trait IState: AsAny + IStateClone + IStateHash + Sync {
+    fn default_box() -> Box<dyn IState>
+    where
+        Self: Sized + Default + 'static,
+    {
+        Box::new(Self::default())
+    }
+
+    fn id() -> i32
+    where
+        Self: Sized + 'static,
+    {
+        let mut hasher = DefaultHasher::new();
+        TypeId::of::<Self>().hash(&mut hasher);
+        hasher.finish() as i32
+    }
+
+    fn ownership() -> StateOwnerships
+    where
+        Self: Sized + 'static,
+    {
         StateOwnerships::Instance
     }
-    // fn deserialize(bytes: Vec<u8>) -> T {
-    // let decoded: T = bincode::decode_from_slice(&bytes.as_slice(), bincode::config::standard()).unwrap();
-    // decoded
-    // }
-}
-use serde::{de::DeserializeOwned, Serialize};
-pub fn to_bytes<T>(value: &T) -> Vec<u8>
-where
-    T: Serialize + DeserializeOwned,
-{
-    bincode::serialize(value).unwrap()
 }
 
-pub fn from_bytes<T>(bytes: &[u8]) -> T
+// clone helper for trait objects
+pub trait IStateClone {
+    fn clone_box(&self) -> Box<dyn IState>;
+}
+impl<T> IStateClone for T
 where
-    T: Serialize + DeserializeOwned,
+    T: 'static + IState + Clone,
 {
-    bincode::deserialize(bytes).unwrap()
+    fn clone_box(&self) -> Box<dyn IState> {
+        Box::new(self.clone())
+    }
+}
+
+// -----------------------------
+// Object-safe hash -> returns u64
+// -----------------------------
+pub trait IStateHash {
+    /// Return a stable u64 fingerprint for this concrete state value.
+    /// Implemented by default via a DefaultHasher for types that impl `Hash`.
+    fn hash_dyn_u64(&self) -> u64;
+}
+
+impl<T> IStateHash for T
+where
+    T: 'static + IState + Hash,
+{
+    fn hash_dyn_u64(&self) -> u64 {
+        let mut h = DefaultHasher::new();
+        // Use the concrete Hash impl of the type
+        Hash::hash(self, &mut h);
+        h.finish()
+    }
 }

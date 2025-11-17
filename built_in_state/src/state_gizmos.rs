@@ -2,6 +2,7 @@ use core::{collections::gizmo::Gizmo, system::system_game_state::IState};
 
 use macro_state::global_state;
 
+#[derive(Hash)]
 #[global_state]
 pub struct GizmosState {
     pub draw_calls: Vec<Gizmo>,

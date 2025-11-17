@@ -1,14 +1,38 @@
+use std::hash::Hash;
+
 use cgmath::Matrix4;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::collections::{quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
+use crate::extensions::extensions_f32::ExtensionsF32;
 
 #[repr(C)]
-#[derive(Copy, Clone, Serialize, Deserialize, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Serialize, Deserialize, bytemuck::Pod, bytemuck::Zeroable, PartialEq)]
 pub struct Matrix4x4 {
     pub model: [[f32; 4]; 4],
 }
+impl Hash for Matrix4x4 {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.model[0][0].hash(state);
+        self.model[0][1].hash(state);
+        self.model[0][2].hash(state);
+        self.model[0][3].hash(state);
+        self.model[1][0].hash(state);
+        self.model[1][1].hash(state);
+        self.model[1][2].hash(state);
+        self.model[1][3].hash(state);
+        self.model[2][0].hash(state);
+        self.model[2][1].hash(state);
+        self.model[2][2].hash(state);
+        self.model[2][3].hash(state);
+        self.model[3][0].hash(state);
+        self.model[3][1].hash(state);
+        self.model[3][2].hash(state);
+        self.model[3][3].hash(state);
+    }
+}
+impl Eq for Matrix4x4 {}
 
 impl Matrix4x4 {
     pub fn zero() -> Matrix4x4 {

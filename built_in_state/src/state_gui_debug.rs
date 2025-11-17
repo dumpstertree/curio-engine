@@ -1,8 +1,10 @@
 use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     events::engine_commands::EngineCommands,
+    extensions::extensions_f32::ExtensionsF32,
     system::system_game_state::IState,
 };
+use std::hash::Hash;
 
 use macro_state::global_state;
 
@@ -17,6 +19,15 @@ pub struct GUIStateDebug {
     pub size: f32,
     contents: Vec<String>,
 }
+impl Hash for GUIStateDebug {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.color.hash(state);
+        self.size.hash(state);
+        self.contents.hash(state);
+    }
+}
+impl Eq for GUIStateDebug {}
+
 impl GUIStateDebug {
     pub fn append(&mut self, content: String) {
         self.contents.push(content);

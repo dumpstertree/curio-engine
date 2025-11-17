@@ -1,4 +1,5 @@
 use crate::collections::vector3::Vector3;
+use crate::extensions::extensions_f32::ExtensionsF32;
 use core::fmt;
 use fmt::Display;
 use serde::Deserialize;
@@ -6,6 +7,7 @@ use serde::Serialize;
 use std::f32::consts::PI;
 use std::fmt::Formatter;
 use std::fmt::Result;
+use std::hash::Hash;
 use std::ops::Mul;
 
 /// A representation of 3D rotation
@@ -16,6 +18,15 @@ pub struct Quaternion {
     pub y: f32,
     pub z: f32,
     pub w: f32,
+}
+impl Eq for Quaternion {}
+impl Hash for Quaternion {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.w.hash(state);
+        self.x.hash(state);
+        self.y.hash(state);
+        self.z.hash(state);
+    }
 }
 
 impl Quaternion {

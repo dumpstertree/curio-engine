@@ -1,11 +1,12 @@
-use core::{collections::game_state::StateOwnerships, system::system_game_state::IState};
-use std::{collections::HashMap, fmt::Display};
+use core::{collections::game_state::StateOwnerships, random::Random, system::system_game_state::IState};
+use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 
 use crate::game_board::GameBoard;
 
+#[derive(PartialEq, Eq)]
 #[global_state_serialize]
 pub struct StateTeamAssignments {
     pub team_assignments: HashMap<Teams, Vec<i32>>,
@@ -20,6 +21,17 @@ impl StateTeamAssignments {
         None
     }
 }
+impl Hash for StateTeamAssignments {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let mut axis_keys: Vec<&Teams> = self.team_assignments.keys().collect();
+        axis_keys.sort();
+        axis_keys.len().hash(state);
+        for k in axis_keys {
+            k.hash(state);
+            self.team_assignments.get(k).unwrap().hash(state);
+        }
+    }
+}
 impl IState for StateTeamAssignments {
     fn id() -> i32 {
         00988
@@ -29,12 +41,15 @@ impl IState for StateTeamAssignments {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+#[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub enum Teams {
     Red,
     Blue,
 }
 impl Teams {
+    pub fn random() -> Teams {
+        if Random::random_bool() { Teams::Red } else { Teams::Blue }
+    }
     pub fn convert_dir(&self, x_diff: i32, z_diff: i32) -> (i32, i32) {
         match self {
             Teams::Red => (x_diff, z_diff),

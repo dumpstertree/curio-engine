@@ -1,11 +1,9 @@
 use core::collections::camera_uniform::CameraSnapshot;
 
-use core::{
-    collections::vector3::Vector3,
-    system::system_game_state::IState,
-};
+use core::{collections::vector3::Vector3, system::system_game_state::IState};
 use macro_state::global_state;
 
+#[derive(Hash)]
 #[global_state]
 pub struct CameraState {
     pub resolution_width: i32,

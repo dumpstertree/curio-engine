@@ -12,7 +12,7 @@ use core::{collections::game_state::GameState, random::Random};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
-#[derive(PartialEq, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Default, Clone, Serialize, Deserialize, Hash, Eq)]
 pub struct CardInstance {
     pub card_id: String,
     pub instance_id: i32,

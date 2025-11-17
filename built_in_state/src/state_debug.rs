@@ -2,6 +2,7 @@ use core::system::system_game_state::IState;
 
 use macro_state::global_state;
 
+#[derive(Hash)]
 #[global_state]
 pub struct StateDebug {
     pub is_inspecting: bool,
@@ -9,10 +10,7 @@ pub struct StateDebug {
 }
 impl StateDebug {
     pub fn new<'a>() -> StateDebug {
-        StateDebug {
-            is_inspecting: false,
-            is_paused: false,
-        }
+        StateDebug { is_inspecting: false, is_paused: false }
     }
 }
 impl IState for StateDebug {

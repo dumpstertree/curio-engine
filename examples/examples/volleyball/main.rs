@@ -1,3 +1,4 @@
+pub mod ai_resolver;
 pub mod card_parser;
 pub mod dependency_filler;
 pub mod game_board;
@@ -35,19 +36,19 @@ pub mod state {
     }
 }
 pub mod event_recievers {
-    mod event_reciever_apply_card_attribute_event_cards_discard;
-    mod event_reciever_apply_card_attribute_event_cards_draw;
-    mod event_reciever_apply_card_attribute_event_cards_energy_edit;
-    mod event_reciever_apply_card_attribute_event_cards_energy_refill;
-    mod event_reciever_apply_card_attribute_event_move_ball_forward;
-    mod event_reciever_apply_card_attribute_event_move_ball_horizontal;
-    mod event_reciever_apply_card_attribute_event_move_entities;
-    mod event_reciever_apply_card_attribute_event_set_ball_mode;
-    mod event_reciever_apply_card_attribute_modifier_cost_for_entities;
-    mod event_reciever_apply_card_attribute_modifier_energy_for_entities;
-    mod event_reciever_apply_card_attribute_modifier_range_for_entities;
-    mod event_reciever_clear_card_attribute_modifiers_all;
-    mod event_reciever_clear_card_attribute_modifiers_for_flag;
+    pub(crate) mod event_reciever_apply_card_attribute_event_cards_discard;
+    pub(crate) mod event_reciever_apply_card_attribute_event_cards_draw;
+    pub(crate) mod event_reciever_apply_card_attribute_event_cards_energy_edit;
+    pub(crate) mod event_reciever_apply_card_attribute_event_cards_energy_refill;
+    pub(crate) mod event_reciever_apply_card_attribute_event_move_ball_forward;
+    pub(crate) mod event_reciever_apply_card_attribute_event_move_ball_horizontal;
+    pub(crate) mod event_reciever_apply_card_attribute_event_move_entities;
+    pub(crate) mod event_reciever_apply_card_attribute_event_set_ball_mode;
+    pub(crate) mod event_reciever_apply_card_attribute_modifier_cost_for_entities;
+    pub(crate) mod event_reciever_apply_card_attribute_modifier_energy_for_entities;
+    pub(crate) mod event_reciever_apply_card_attribute_modifier_range_for_entities;
+    pub(crate) mod event_reciever_clear_card_attribute_modifiers_all;
+    pub(crate) mod event_reciever_clear_card_attribute_modifiers_for_flag;
 }
 pub mod ecs {
     pub mod components {
@@ -133,7 +134,7 @@ fn main() {
         (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/2NX-hP9Y"))),
         // (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine2.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/XTh-OVkc"))),
         // local
-        (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/69VQTiko"))),
+        (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/AaJ0Oav9"))),
         (AssetMappingUIDs::Court.uid(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
         (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
         (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
