@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     collections::{input_button::InputButtonState, input_cursor::InputAxisState, vector2::Vector2},
-    input::{axis_code::AxisCode, key_code::KeyCode},
+    input::{axis_code::AxisCode, key_code::ButtonCode},
 };
 
 // A snapshot of the current state of the input regardless of mappings
@@ -10,7 +10,7 @@ use crate::{
 pub struct RawInputSnapshot {
     button_default: InputButtonState,
     axis_default: InputAxisState,
-    button: HashMap<KeyCode, InputButtonState>,
+    button: HashMap<ButtonCode, InputButtonState>,
     axis: HashMap<AxisCode, InputAxisState>,
 }
 impl RawInputSnapshot {
@@ -22,7 +22,7 @@ impl RawInputSnapshot {
             axis: HashMap::new(),
         }
     }
-    pub fn update(&mut self, raw_buttons: &HashMap<KeyCode, bool>, raw_axis: &HashMap<AxisCode, Vector2>) {
+    pub fn update(&mut self, raw_buttons: &HashMap<ButtonCode, bool>, raw_axis: &HashMap<AxisCode, Vector2>) {
         for map in raw_buttons {
             if !self.button.contains_key(map.0) {
                 self.button.insert(*map.0, InputButtonState::default());
@@ -37,7 +37,7 @@ impl RawInputSnapshot {
         }
     }
 
-    pub fn get_button(&self, uid: &KeyCode) -> &InputButtonState {
+    pub fn get_button(&self, uid: &ButtonCode) -> &InputButtonState {
         if let Some(result) = self.button.get(uid) {
             return result;
         }

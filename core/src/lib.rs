@@ -1,5 +1,10 @@
 pub mod dumpster_engine;
 
+pub mod engine {
+    pub mod curio;
+    pub mod curio_cabinet;
+    pub mod curio_common;
+}
 pub mod graphics {
     pub mod graphics_mapping;
 }

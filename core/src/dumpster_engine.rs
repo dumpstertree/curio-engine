@@ -2,8 +2,25 @@ use std::any::type_name;
 use std::fmt;
 use std::sync::Mutex;
 
+use crate::collections::key_state::KeyState;
+use crate::collections::vector3::Vector3;
+use crate::engine::curio_common::CurioCommon;
+use crate::input::axis_code::AxisCode;
+use crate::input::key_code::ButtonCode;
+use crate::io::texture_asset::TextureAsset;
+use std::sync::Arc;
+
+use egui::Options;
+use egui_wgpu::wgpu::{Adapter, Device, Instance, Queue, Surface, SurfaceConfiguration};
+
+use bytemuck::BoxBytes;
 use egui_wgpu::wgpu::naga::Type;
-use winit::event_loop::EventLoop;
+use pollster::FutureExt;
+use serde::de::value::Error;
+use winit::application::ApplicationHandler;
+use winit::event_loop::{ControlFlow, EventLoop, EventLoopClosed};
+use winit::platform::x11::WindowAttributesExtX11;
+use winit::window::{Window, WindowAttributes};
 
 use crate::collections::vector2::Vector2;
 use crate::events::engine_commands::EngineCommands;
@@ -19,10 +36,10 @@ use crate::system::system_game_state::IState;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::window::system_window::SystemWindow;
 
-static REGISTERED_GLOBAL_ECS_SYSTEMS: Mutex<Vec<fn() -> Box<dyn ECSSystemEventless>>> = Mutex::new(Vec::new());
-static REGISTERED_GLOBAL_STATES: Mutex<Vec<Type>> = Mutex::new(Vec::new());
+pub static REGISTERED_GLOBAL_ECS_SYSTEMS: Mutex<Vec<fn() -> Box<dyn ECSSystemEventless>>> = Mutex::new(Vec::new());
+pub static REGISTERED_GLOBAL_STATES: Mutex<Vec<Type>> = Mutex::new(Vec::new());
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum NetworkModes {
     LocalHost,
     LocalPeer,
@@ -121,55 +138,48 @@ impl DumpsterEngine {
         let callback: fn() -> Box<dyn ECSSystemEventless> = || return Box::new(T::default());
         guard.push(callback);
     }
-    pub fn run<TGameEvents>(
-        event_loop: EventLoop<EngineCommands>,
-        time: Box<dyn SystemComponentTime>,
-        input: Box<dyn system_component_input::SystemComponentInput>,
-        mut gameplay: Box<dyn SystemComponentGameplay>,
-        physics: Box<dyn SystemComponentPhysics>,
-        graphics: Box<dyn system_component_graphics::SystemComponentGraphics>,
-        networking: Box<dyn SystemComponentNetworking>,
-        window_layout: WindowLayout,
-        game_modes: GameMode,
-    ) where
-        TGameEvents: 'static + Clone,
-    {
-        // set window layout values
-        SystemGPU::set_resolution(window_layout.width, window_layout.height);
-        SystemGPU::set_fullscreen(window_layout.fullscreen);
-        SystemGPU::set_resizable(window_layout.resizeable);
-        SystemGPU::set_cursor_visible(window_layout.show_cursor);
+}
 
-        // create built in systems
-        let mut ecs_system_built_in: Vec<Box<dyn ECSSystemEventless>> = vec![];
+pub struct GPUInstance {
+    pub device: Arc<Device>,
+    pub queue: Arc<Queue>,
+    pub surface: Arc<Surface<'static>>,
+    pub adapter: Arc<Adapter>,
+    pub window: Arc<Window>,
+    pub config: Arc<SurfaceConfiguration>,
+} // now that the curio_engine is initialized use those values to populate the system
 
-        let mut ecs_system_built_in_constructors: Vec<fn() -> Box<dyn ECSSystemEventless>> = vec![];
-
-        let Ok(guard) = REGISTERED_GLOBAL_ECS_SYSTEMS.lock() else {
-            println!("failed to lock REGISTERED_ECS_SYSTEMS");
-            return;
-        };
-        for x in guard.iter() {
-            ecs_system_built_in.push(x());
-            ecs_system_built_in_constructors.push(x.clone());
+pub struct CurioMetadata {
+    pub name: String,
+    pub icon: String,
+    pub version: VersionNumber,
+}
+impl CurioMetadata {
+    pub fn new(name: &str, icon: &str, version: VersionNumber) -> CurioMetadata {
+        CurioMetadata {
+            name: String::from(name),
+            icon: String::from(icon),
+            version,
         }
-
-        gameplay.set_systems(ecs_system_built_in_constructors);
-
-        // create systems
-        let mut system_window = SystemWindow::new(vec![time, input, gameplay, physics, graphics, networking], game_modes);
-
-        // run the window
-        system_window.run(event_loop);
+    }
+}
+pub struct VersionNumber {
+    pub major: i32,
+    pub minor: i32,
+    pub patch: i32,
+}
+impl VersionNumber {
+    pub fn new(major: i32, minor: i32, patch: i32) -> VersionNumber {
+        VersionNumber { major, minor, patch }
     }
 }
 
 pub struct WindowLayout {
-    width: i32,
-    height: i32,
-    fullscreen: bool,
-    resizeable: bool,
-    show_cursor: bool,
+    pub width: i32,
+    pub height: i32,
+    pub fullscreen: bool,
+    pub resizeable: bool,
+    pub show_cursor: bool,
 }
 
 impl WindowLayout {

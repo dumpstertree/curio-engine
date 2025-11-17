@@ -1,4 +1,3 @@
-
 pub(crate) mod constants;
 pub(crate) mod game_events;
 pub mod ecs {
@@ -22,7 +21,7 @@ use core::{
     collections::vector2::Vector2,
     dumpster_engine::NetworkModes,
     graphics::graphics_mapping::GraphicsMapping,
-    input::{input_mapping::InputMapping, key_code::KeyCode},
+    input::{input_mapping::InputMapping, key_code::ButtonCode},
 };
 use std::env;
 
@@ -42,11 +41,21 @@ fn main() {
     }
 
     let input_mapping_0 = InputMapping::new(
-        vec![(String::from("move_forward"), KeyCode::KeyW), (String::from("move_back"), KeyCode::KeyS), (String::from("move_left"), KeyCode::KeyA), (String::from("move_right"), KeyCode::KeyD)],
+        vec![
+            (String::from("move_forward"), ButtonCode::KeyW),
+            (String::from("move_back"), ButtonCode::KeyS),
+            (String::from("move_left"), ButtonCode::KeyA),
+            (String::from("move_right"), ButtonCode::KeyD),
+        ],
         vec![],
     );
     let input_mapping_1 = InputMapping::new(
-        vec![(String::from("move_forward"), KeyCode::KeyI), (String::from("move_back"), KeyCode::KeyK), (String::from("move_left"), KeyCode::KeyJ), (String::from("move_right"), KeyCode::KeyL)],
+        vec![
+            (String::from("move_forward"), ButtonCode::KeyI),
+            (String::from("move_back"), ButtonCode::KeyK),
+            (String::from("move_left"), ButtonCode::KeyJ),
+            (String::from("move_right"), ButtonCode::KeyL),
+        ],
         vec![],
     );
     let graphics_mapping_0 = GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(0.5, 1.0));

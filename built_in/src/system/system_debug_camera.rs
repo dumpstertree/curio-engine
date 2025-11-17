@@ -7,7 +7,7 @@ use core::collections::event_queue::EventQueue;
 use core::collections::{game_state::GameState, quaternion::Quaternion, vector3::Vector3};
 use core::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
 use core::input::axis_code::AxisCode;
-use core::input::key_code::KeyCode;
+use core::input::key_code::ButtonCode;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
@@ -40,7 +40,11 @@ impl ECSSystemEventless for SystemDebugCamera {
         let state_screen = state.get_value2::<StateScreen>();
 
         // rotation
-        if state_input.raw.get_button(&KeyCode::MousePrimary).is_down {
+        if state_input
+            .raw
+            .get_button(&ButtonCode::MousePrimary)
+            .is_down
+        {
             //  calculate the new angles
             let x_angle = (-state_input.raw.get_axis(&AxisCode::Cursor).delta.x / state_screen.width() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
             let y_angle = (-state_input.raw.get_axis(&AxisCode::Cursor).delta.y / state_screen.height() as f32) * SPEED_ROT * state_time.unscaled_delta_time;
@@ -54,16 +58,16 @@ impl ECSSystemEventless for SystemDebugCamera {
 
         // position
         let mut dir = Vector3::zero();
-        if state_input.raw.get_button(&KeyCode::KeyW).is_down {
+        if state_input.raw.get_button(&ButtonCode::KeyW).is_down {
             dir = dir + rot * Vector3::forward();
         }
-        if state_input.raw.get_button(&KeyCode::KeyS).is_down {
+        if state_input.raw.get_button(&ButtonCode::KeyS).is_down {
             dir = dir + rot * Vector3::back();
         }
-        if state_input.raw.get_button(&KeyCode::KeyD).is_down {
+        if state_input.raw.get_button(&ButtonCode::KeyD).is_down {
             dir = dir + rot * Vector3::right();
         }
-        if state_input.raw.get_button(&KeyCode::KeyA).is_down {
+        if state_input.raw.get_button(&ButtonCode::KeyA).is_down {
             dir = dir + rot * Vector3::left();
         }
 

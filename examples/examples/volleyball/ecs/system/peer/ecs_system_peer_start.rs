@@ -25,7 +25,9 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn init(&mut self, _: &mut GameState, world: &mut World, _: &mut EventQueue) {}
+    fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+        println!("Instance: {}. Peer Init", game_state.instance_id);
+    }
     fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 

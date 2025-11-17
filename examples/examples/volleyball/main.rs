@@ -89,15 +89,14 @@ pub mod ecs {
 }
 use crate::game_events::GameEvents;
 use core::{
-    dumpster_engine::{DumpsterEngine, GameMode, WindowLayout},
-    input::{input_mapping::InputMapping, key_code::KeyCode},
+    dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
+    engine::{curio::Curio, curio_cabinet::CurioCabinet},
+    input::{input_mapping::InputMapping, key_code::ButtonCode},
     io::{
         asset_database::{AssetDatabase, AssetDatabaseListing},
         asset_loader::AssetLoader,
     },
-    system_adapters::adapter_system_gpu::SystemGPU,
 };
-use pollster::FutureExt;
 use system_component_default_gameplay::SystemComponentDefaultGameplay;
 use system_component_default_input::SystemComponentDefaultInput;
 use system_component_default_networking::SystemComponentDefaultNetworking;
@@ -130,66 +129,63 @@ impl AssetMappingUIDs {
 fn main() {
     AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
         // remote
-        (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/2NX-hP9Y"))),
-        // (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine2.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/XTh-OVkc"))),
+        (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/z-P4xIan"))),
+        (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu"))),
         // local
-        (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/69VQTiko"))),
         (AssetMappingUIDs::Court.uid(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
         (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
         (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
     ]));
-
-    let input_mapping_0 = InputMapping::new(
-        vec![
-            (String::from("card_mode"), KeyCode::ShiftLeft),
-            (String::from("move_forward"), KeyCode::KeyW),
-            (String::from("move_back"), KeyCode::KeyS),
-            (String::from("move_left"), KeyCode::KeyA),
-            (String::from("move_right"), KeyCode::KeyD),
-            (String::from("turn_end"), KeyCode::KeyP),
-            (String::from("card_left"), KeyCode::KeyA),
-            (String::from("card_right"), KeyCode::KeyD),
-            (String::from("card_submit"), KeyCode::ArrowUp),
-        ],
-        vec![],
+    // create instance
+    CurioCabinet::display_curio(
+        CurioMetadata::new(
+            "Volleyball", //
+            "icon.png",
+            VersionNumber::new(0, 1, 0),
+        ),
+        || {
+            Curio::imbue(
+                vec![
+                    // components
+                    SystemComponentDefaultTime::new(),
+                    SystemComponentDefaultInput::new(),
+                    SystemComponentDefaultPhysics::new(),
+                    SystemComponentDefaultGameplay::<GameEvents>::new(),
+                    SystemComponentDefaultGraphics::new(),
+                    SystemComponentDefaultNetworking::new(),
+                ],
+                GameMode::new_local_splitscreen_2p_horizontal(
+                    InputMapping::new(
+                        vec![
+                            (String::from("card_mode"), ButtonCode::ShiftLeft),
+                            (String::from("move_forward"), ButtonCode::KeyW),
+                            (String::from("move_back"), ButtonCode::KeyS),
+                            (String::from("move_left"), ButtonCode::KeyA),
+                            (String::from("move_right"), ButtonCode::KeyD),
+                            (String::from("turn_end"), ButtonCode::KeyP),
+                            (String::from("card_left"), ButtonCode::KeyA),
+                            (String::from("card_right"), ButtonCode::KeyD),
+                            (String::from("card_submit"), ButtonCode::ArrowUp),
+                        ],
+                        vec![],
+                    ),
+                    InputMapping::new(
+                        vec![
+                            (String::from("card_mode"), ButtonCode::ShiftLeft),
+                            (String::from("move_forward"), ButtonCode::KeyW),
+                            (String::from("move_back"), ButtonCode::KeyS),
+                            (String::from("move_left"), ButtonCode::KeyA),
+                            (String::from("move_right"), ButtonCode::KeyD),
+                            (String::from("turn_end"), ButtonCode::KeyP),
+                            (String::from("card_left"), ButtonCode::KeyA),
+                            (String::from("card_right"), ButtonCode::KeyD),
+                            (String::from("card_submit"), ButtonCode::ArrowUp),
+                        ],
+                        vec![],
+                    ),
+                ),
+            )
+        },
+        WindowLayout::fullscreen_1080(),
     );
-    let input_mapping_1 = InputMapping::new(
-        vec![
-            (String::from("card_mode"), KeyCode::ShiftLeft),
-            (String::from("move_forward"), KeyCode::KeyW),
-            (String::from("move_back"), KeyCode::KeyS),
-            (String::from("move_left"), KeyCode::KeyA),
-            (String::from("move_right"), KeyCode::KeyD),
-            (String::from("turn_end"), KeyCode::KeyP),
-            (String::from("card_left"), KeyCode::KeyA),
-            (String::from("card_right"), KeyCode::KeyD),
-            (String::from("card_submit"), KeyCode::ArrowUp),
-        ],
-        vec![],
-    );
-
-    println!("init game start");
-
-    DumpsterEngine::run::<GameEvents>(
-        //
-        // loop for engine
-        SystemGPU::init().block_on(),
-        //
-        // components
-        SystemComponentDefaultTime::new(),
-        SystemComponentDefaultInput::new(),
-        SystemComponentDefaultGameplay::<GameEvents>::new(),
-        SystemComponentDefaultPhysics::new(),
-        SystemComponentDefaultGraphics::new(),
-        SystemComponentDefaultNetworking::new(),
-        //
-        // window settings
-        WindowLayout::windowed_1080(),
-        //
-
-        // create game states
-        GameMode::new_local_splitscreen_2p_horizontal(input_mapping_0, input_mapping_1),
-        // GameMode::new_local_single(input_mapping_0),
-    );
-    println!("init game end");
 }

@@ -1,5 +1,6 @@
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
+    dumpster_engine::REGISTERED_GLOBAL_ECS_SYSTEMS,
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
 };
@@ -16,7 +17,7 @@ pub struct GameplayInstance {
 
 impl GameplayInstance {
     pub fn new(ecs_systems_constructors: &Vec<fn() -> Box<dyn ECSSystemEventless>>) -> GameplayInstance {
-        let world = World::new();
+        let world: World = World::new();
         // let game_state = GameState::new(network_mode.clone(), game_state_id, all_game_state_ids);
         let mut ecs_systems = vec![];
         for constructor in ecs_systems_constructors {
@@ -201,9 +202,20 @@ where
         5000
     }
     fn init(&mut self, _: &mut Vec<GameState>) {
-        println!("init gameplay");
+        let mut ecs_system_built_in_constructors: Vec<fn() -> Box<dyn ECSSystemEventless>> = vec![];
+
+        let Ok(guard) = REGISTERED_GLOBAL_ECS_SYSTEMS.lock() else {
+            println!("failed to lock REGISTERED_ECS_SYSTEMS");
+            return;
+        };
+        for x in guard.iter() {
+            ecs_system_built_in_constructors.push(x.clone());
+        }
+
+        self.set_systems(ecs_system_built_in_constructors);
     }
     fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
+        println!("set game mode {}", self.constructors.len());
         for _ in &game_mode.game_instances {
             self.game_instance
                 .push(GameplayInstance::new(&self.constructors));

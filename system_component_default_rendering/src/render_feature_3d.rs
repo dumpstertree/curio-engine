@@ -65,6 +65,11 @@ impl RenderFeature3DHelper {
             let cur_camera_snapshot = &state_camera.cameras;
             let cur_graphics_mapping = &graphics_mappings[i];
 
+            //
+            if state_camera.resolution_height == 0 || state_camera.resolution_height == 0 {
+                continue;
+            }
+
             // create viewport bounds
             let viewport = Viewport::new(Vector2::new(state_camera.resolution_width as f32, state_camera.resolution_height as f32), cur_graphics_mapping.viewport_min, cur_graphics_mapping.viewport_max);
 

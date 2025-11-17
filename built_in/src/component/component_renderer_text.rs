@@ -13,6 +13,7 @@ use core::{
 use std::{collections::HashMap, sync::Arc};
 
 use hecs::{Entity, World};
+use rusty_spine::c;
 
 use crate::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer};
 
@@ -132,35 +133,59 @@ impl ComponentRendererText {
         }
     }
     pub fn set_enabled(&mut self, enabled: bool) -> &mut Self {
+        if self.enabled == enabled {
+            return self;
+        }
         self.enabled = enabled;
         self
     }
     pub fn set_font_asset(&mut self, font_asset: Option<FontAsset>) -> &mut Self {
+        if self.font_asset == font_asset {
+            return self;
+        }
+
         self.font_asset = font_asset;
         self.is_dirty = true;
         self
     }
     pub fn set_contents(&mut self, contents: &str) -> &mut Self {
+        if self.contents == contents {
+            return self;
+        }
+
         self.contents = String::from(contents);
         self.is_dirty = true;
         self
     }
     pub fn set_horizontal_alignment(&mut self, align: AligmentHorizontal) -> &mut Self {
+        if self.align_horizontal == align {
+            return self;
+        }
         self.align_horizontal = align;
         self.is_dirty = true;
         self
     }
     pub fn set_vertical_alignment(&mut self, align: AligmentVertical) -> &mut Self {
+        if self.align_vertical == align {
+            return self;
+        }
         self.align_vertical = align;
         self.is_dirty = true;
         self
     }
     pub fn set_font_size(&mut self, font_size: f32) -> &mut Self {
+        if self.font_size == font_size {
+            return self;
+        }
         self.font_size = font_size;
         self.is_dirty = true;
         self
     }
     pub fn set_bounds(&mut self, bounds: Vector2) -> &mut Self {
+        if self.bounds == bounds {
+            return self;
+        }
+
         self.bounds = bounds;
         self.is_dirty = true;
         self
@@ -170,6 +195,7 @@ impl ComponentRendererText {
         if !self.is_dirty {
             return;
         }
+
         self.is_dirty = false;
         let font_asset: FontAsset = self
             .font_asset
@@ -348,14 +374,18 @@ impl ComponentRendererText {
             let asset = Arc::new(ModelAsset::new(mesh, material));
             self.asset.push((asset, x.1.clone()));
         }
+
+        println!("num of assets {}", self.asset.len());
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum AligmentHorizontal {
     Left,
     Center,
     Right,
 }
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum AligmentVertical {
     Top,
     Center,

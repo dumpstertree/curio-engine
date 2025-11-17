@@ -3,7 +3,7 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-    input::key_code::KeyCode,
+    input::key_code::ButtonCode,
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -28,7 +28,7 @@ impl ECSSystemEventless for SystemDebugToggle {
         let state_input = game_state.get_value2::<InputState>();
 
         // get input button
-        let debug_button = state_input.raw.get_button(&KeyCode::Backquote);
+        let debug_button = state_input.raw.get_button(&ButtonCode::Backquote);
         if debug_button.went_up {
             // flip the toggle
             game_state.edit::<StateDebug>(|x| {
