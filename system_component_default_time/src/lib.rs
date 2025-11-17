@@ -76,7 +76,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn refresh(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) -> &[EngineCommands] {
+    fn refresh(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
         // get state
         let state_time = game_state[0].get_value2::<TimeState>();
 
@@ -91,9 +91,9 @@ impl SystemComponent for SystemComponentDefaultTime {
             self.next_update = (1.0 / state_time.target_frame_rate) as f64;
 
             // do tick
-            return &[EngineCommands::Redraw, EngineCommands::Tick];
+            return vec![EngineCommands::Redraw, EngineCommands::Tick];
         }
         // defualt
-        return &[EngineCommands::Redraw];
+        return vec![EngineCommands::Redraw];
     }
 }

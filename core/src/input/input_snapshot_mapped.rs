@@ -2,7 +2,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use crate::{
     collections::{input_button::InputButtonState, input_cursor::InputAxisState, vector2::Vector2},
-    input::{axis_code::AxisCode, input_mapping::InputMapping, key_code::KeyCode},
+    input::{axis_code::AxisCode, input_mapping::InputMapping, key_code::ButtonCode},
 };
 
 // Result of testing raw input to mapped input
@@ -59,7 +59,7 @@ impl PlayerInputSnapshot {
         }
     }
     /// Update the button and axis states based changes in system input. This should ONLY be called from the System Component
-    pub fn update(&mut self, raw_buttons: &HashMap<KeyCode, bool>, raw_axis: &HashMap<AxisCode, Vector2>) {
+    pub fn update(&mut self, raw_buttons: &HashMap<ButtonCode, bool>, raw_axis: &HashMap<AxisCode, Vector2>) {
         for mapping in &self.mapping.mapping_button {
             let result = raw_buttons.get(&mapping.1);
             if let Some(result) = result {

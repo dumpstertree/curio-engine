@@ -103,6 +103,8 @@ impl SystemComponent for SystemComponentDefaultGraphics {
 
         self.graphics_mappings = graphics_mapping;
         self.is_dirty = true;
+
+        println!("setting game mode, {}", game_mode.game_instances.len());
     }
 }
 impl SystemComponentGraphics for SystemComponentDefaultGraphics {}
