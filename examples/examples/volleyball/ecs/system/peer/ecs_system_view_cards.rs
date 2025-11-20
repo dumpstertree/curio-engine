@@ -31,7 +31,6 @@ use core::{
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
-use goap_ai::{Action, Goal, Model, Planner, State};
 use hecs::World;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -66,13 +65,10 @@ impl ECSSystemEventless for ECSSystemViewCards {
             for card in &my_deck.all_cards {
                 self.spawn_card(world, card.clone(), camera_state.cameras.rotation, game_state);
             }
-
-            self.run_ai(world, game_state);
-
             // run the ai
-            println!("will running the ai");
-            run_ai(game_state);
-            println!("did running the ai");
+            // println!("will running the ai");
+            // run_ai(game_state, events);
+            // println!("did running the ai");
         }
         let y_selected = 0.25;
         let y_unselected = 0.5;

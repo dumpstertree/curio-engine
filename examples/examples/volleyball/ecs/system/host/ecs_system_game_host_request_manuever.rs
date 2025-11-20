@@ -32,7 +32,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event
+                println!("----------------------------use manuever!!!");
+
                 if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
+                    println!("mismatch player id");
                     return;
                 }
                 // make sure the card they sent is a valid index
@@ -53,6 +56,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
 
                 let state_deck = &game_state.get_value2::<StateDeck>();
                 let Some(deck) = state_deck.deck.get(id) else {
+                    println!("card not found in deck");
                     return;
                 };
 
@@ -60,10 +64,15 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
 
                 // play
                 ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
+                println!("---------------------------did use manuever!!!");
             }
             GameEvents::RequestUseManeuverConsumable(id, card_instance, data) => {
                 // make sure the correct player is sending an event
+
+                println!("----------------------------use manuever!!!");
+
                 if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
+                    println!("mismatch player id");
                     return;
                 }
                 // make sure the card they sent is a valid index
@@ -83,8 +92,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
 
                 let state_deck = &game_state.get_value2::<StateDeck>();
                 let Some(deck) = state_deck.deck.get(id) else {
+                    println!("card not found in deck");
                     return;
                 };
+                println!("-----------------------------------did use manuever!!!");
 
                 let card_instance = deck.get_instance(*card_instance);
                 // play
@@ -117,8 +128,8 @@ impl ECSSystemGameRequestManuever {
             let dep_filled = &deps_filled[i];
 
             // check that they have the same length
-            if dep_empty.len() != dep_filled.len() {
-                println!("Event Dependency '{}' length mismatch:, {}, {}", i, dep_empty.len(), dep_filled.len());
+            if dep_empty.len() != dep_filled.filled.len() {
+                println!("Event Dependency '{}' length mismatch:, {}, {}", i, dep_empty.len(), dep_filled.filled.len());
                 return false;
             }
             // get the count of one because they should be the same
@@ -127,7 +138,7 @@ impl ECSSystemGameRequestManuever {
             // iterate over the range
             for i in 0..count {
                 // check if the dependencies are aligned
-                if !dep_filled[i].is_aligned(&dep_empty[i]) {
+                if !dep_filled.filled[i].is_aligned(&dep_empty[i]) {
                     return false;
                 }
             }
@@ -149,8 +160,8 @@ impl ECSSystemGameRequestManuever {
             let dep_filled = &deps_filled[i];
 
             // check that they have the same length
-            if dep_empty.len() != dep_filled.len() {
-                println!("Modifier Dependency '{}' length mismatch:, {}, {}", i, dep_empty.len(), dep_filled.len());
+            if dep_empty.len() != dep_filled.filled.len() {
+                println!("Modifier Dependency '{}' length mismatch:, {}, {}", i, dep_empty.len(), dep_filled.filled.len());
                 return false;
             }
             // get the count of one because they should be the same
@@ -159,7 +170,7 @@ impl ECSSystemGameRequestManuever {
             // iterate over the range
             for i in 0..count {
                 // check if the dependencies are aligned
-                if !dep_filled[i].is_aligned(&dep_empty[i]) {
+                if !dep_filled.filled[i].is_aligned(&dep_empty[i]) {
                     return false;
                 }
             }

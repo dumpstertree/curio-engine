@@ -1,7 +1,7 @@
-#[derive(Clone, Copy)]
-pub enum AtrributeTargetTypesPlayers {
-    User,
-    Select,
-    Random,
-    Opponent,
-}
+// #[derive(Clone, Copy)]
+// pub enum AtrributeTargetTypesPlayers {
+//     User,
+//     Select,
+//     Random,
+//     Opponent,
+// }

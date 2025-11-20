@@ -374,8 +374,6 @@ impl ComponentRendererText {
             let asset = Arc::new(ModelAsset::new(mesh, material));
             self.asset.push((asset, x.1.clone()));
         }
-
-        println!("num of assets {}", self.asset.len());
     }
 }
 

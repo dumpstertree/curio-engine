@@ -177,24 +177,13 @@ impl SystemComponent for SystemComponentDefaultNetworking {
         println!("init networking");
     }
     fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
-        // for i in 0..game_state.len() {
-        //     let x = game_state.get_mut(i).unwrap();
-
-        //     if x.network_mode != NetworkModes::LocalHost {
-        //         continue;
-        //     }
-        //     let states = x.get_network_sync_events();
-        //     for j in 0..game_state.len() {
-        //         let y = game_state.get_mut(j).unwrap();
-        //         if i == j {
-        //             continue;
-        //         }
-        //         y.apply_network_sync_events(states.clone());
-        //     }
-        // }
+        //
         for i in 0..game_state.len() {
+            //
             let game_state_a = game_state.get_mut(i).unwrap();
             let events = game_state_a.drain_network_sync_events();
+
+            //
             let is_host = game_state_a.network_mode == NetworkModes::LocalHost || game_state_a.network_mode == NetworkModes::OnlineHost;
             if !is_host {
                 continue;
@@ -263,12 +252,6 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                 }
             }
         }
-
-        // match self.network_mode {
-        //     NetworkModes::Offline => self.tick_offline(game_state, event_queue),
-        //     NetworkModes::OnlineHost => self.tick_online_host(game_state, event_queue),
-        //     NetworkModes::OnlinePeer => self.tick_online_peer(game_state, event_queue),
-        // }
     }
     fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
         let mut v = vec![];
@@ -280,17 +263,6 @@ impl SystemComponent for SystemComponentDefaultNetworking {
         for gs in game_state.iter_mut() {
             gs.edit::<StateNetwork>(|x| x.set_peer_instance_ids(v.clone()));
         }
-        // let (handler, listener) = node::split::<Signal>();
-
-        // println!("set game mode");
-        // match game_mode.network_mode {
-        //     NetworkModes::Offline => self.init_offline(),
-        //     NetworkModes::OnlineHost => self.init_online_host(&handler, listener),
-        //     NetworkModes::OnlinePeer => self.init_online_peer(&handler, listener),
-        // }
-
-        // self.network_mode = game_mode.network_mode.clone();
-        // self.node_handler = handler;
     }
 }
 

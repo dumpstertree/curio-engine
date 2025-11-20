@@ -64,6 +64,27 @@ type SerializerFn = fn(&dyn Any) -> Vec<u8>;
 type DeserializerFn = fn(&[u8]) -> Box<dyn IState>;
 
 #[derive(Clone)]
+
+pub struct NetworkCapabilities {
+    /// level of privilege this instance has
+    pub privilege: NetworkModes,
+
+    /// events waiting to be drained and sent to other game states
+    pub ouput_sync_events: Vec<StateSyncEvent>,
+
+    //
+    pub fn_deserialize: HashMap<i32, DeserializerFn>,
+    pub fn_serialize: HashMap<i32, SerializerFn>,
+}
+impl NetworkCapabilities {
+    pub fn deserialize_sync_event() {}
+
+    pub fn serialize_sync_event() {}
+}
+impl NetworkCapabilities {
+    pub fn new() -> NetworkCapabilities {}
+}
+#[derive(Clone)]
 pub struct GameState {
     has_network_capabilities: bool,
     pub instance_id: i32,
@@ -73,32 +94,9 @@ pub struct GameState {
     fn_serialize: HashMap<i32, SerializerFn>,
     pub(crate) cache: StateMap<i32>,
     pub network_mode: NetworkModes,
+
+    pub network_capabilities: NetworkCapabilities,
 }
-// impl Eq for GameState {}
-// impl Hash for GameState {
-//     fn hash<H: Hasher>(&self, state: &mut H) {
-//         self.instance_id.hash(state);
-//         self.all_instance_id.hash(state);
-//         self.edited_state.hash(state);
-//         self.fn_deserialize.hash(state);
-//         self.fn_serialize.hash(state);
-//         self.cache.hash(state);
-//         self.network_mode.hash(state);
-//     }
-// }
-// impl Hash for GameState {
-//     fn hash<H: Hasher>(&self, state: &mut H) {
-//         // Assuming cache: HashMap<i32, StateValue>
-//         let mut keys: Vec<_> = self.cache.map.keys().collect();
-//         keys.sort(); // ensures deterministic order
-//         for key in keys {
-//             key.hash(state);
-//             if let Some(val) = self.cache.map.get(key) {
-//                 val.hash_dyn_u64().hash(state);
-//             }
-//         }
-//     }
-// }
 
 impl GameState {
     pub fn register_global_states<T>()
@@ -184,14 +182,20 @@ impl GameState {
             self.cache.insert_any(evnt.id, result);
         }
     }
+
+    /// Take all state sync events from this GameState
     pub fn drain_network_sync_events(&mut self) -> Vec<StateSyncEvent> {
         let x = self.edited_state.clone();
         self.edited_state.clear();
         return x;
     }
+
+    /// Update the NetworkMode which results in state change privillages
     pub fn change_network_mode(&mut self, mode: NetworkModes) {
         self.network_mode = mode;
     }
+
+    /// Create a new lightweight instance that works without networking
     pub fn new_single_instance(states: Vec<(i32, Box<dyn IState>)>) -> GameState {
         let mut fn_serialize = HashMap::<i32, SerializerFn>::default();
         let mut fn_deserialize = HashMap::<i32, DeserializerFn>::default();

@@ -68,12 +68,12 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 deck.add_card_to_deck("set", false);
                 deck.add_card_to_deck("set", false);
                 deck.add_card_to_deck("set", false);
-                deck.add_card_to_deck("set", false);
-                deck.add_card_to_deck("extra_oomph", false);
-                deck.add_card_to_deck("hold_back", false);
-                deck.add_card_to_deck("curse", false);
-                deck.add_card_to_deck("blessing", false);
-                deck.add_card_to_deck("deep_breath", false);
+                // deck.add_card_to_deck("set", false);
+                // deck.add_card_to_deck("extra_oomph", false);
+                // deck.add_card_to_deck("hold_back", false);
+                // deck.add_card_to_deck("curse", false);
+                // deck.add_card_to_deck("blessing", false);
+                // deck.add_card_to_deck("deep_breath", false);
             });
         }
         for instance in game_state.get_value2::<StateNetwork>().peer_instance_ids() {

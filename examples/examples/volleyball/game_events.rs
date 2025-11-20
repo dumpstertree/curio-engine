@@ -15,14 +15,24 @@ use crate::{
     state::{state_ball_mode::BallModes, state_teams::Teams},
 };
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct FilledCardResponse {
-    pub modifiers: Vec<Vec<DataDepsFilled>>,
-    pub event: Vec<Vec<DataDepsFilled>>,
+    pub modifiers: Vec<FilledAttribute>,
+    pub event: Vec<FilledAttribute>,
 }
 impl FilledCardResponse {
-    pub fn new(state: Vec<Vec<DataDepsFilled>>, event: Vec<Vec<DataDepsFilled>>) -> FilledCardResponse {
+    pub fn new(state: Vec<FilledAttribute>, event: Vec<FilledAttribute>) -> FilledCardResponse {
         FilledCardResponse { modifiers: state, event }
+    }
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct FilledAttribute {
+    pub filled: Vec<DataDepsFilled>,
+}
+impl FilledAttribute {
+    pub fn new(filled: Vec<DataDepsFilled>) -> FilledAttribute {
+        FilledAttribute { filled }
     }
 }
 
@@ -98,8 +108,8 @@ impl IGameEvent for GameEvents {
             GameEvents::RequestMoveXNeg(_) => EventScope::ConnectedHost,
             GameEvents::RequestUseManeuverPersistent(_, _, _) => EventScope::ConnectedHost,
             GameEvents::RequestUseManeuverConsumable(_, _, _) => EventScope::ConnectedHost,
-            GameEvents::DidTurnEnd(_) => EventScope::ConnectedPeers,
-            GameEvents::DidTurnBegin(_) => EventScope::ConnectedPeers,
+            GameEvents::DidTurnEnd(_) => EventScope::All,
+            GameEvents::DidTurnBegin(_) => EventScope::All,
         }
     }
 }

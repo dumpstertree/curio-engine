@@ -64,9 +64,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                     let modifiers = &modifiers[i];
                     let data = &data.modifiers[i];
                     match modifiers {
-                        CardAttributeModifiers::EditEnergyForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierEnergyForEntities(*attribute_clear_flag, data[0].as_entities(), *count)),
-                        CardAttributeModifiers::EditRangeForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierRangeForEntities(*attribute_clear_flag, data[0].as_entities(), *count)),
-                        CardAttributeModifiers::EditCostForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierCostForEntities(*attribute_clear_flag, data[0].as_entities(), *count)),
+                        CardAttributeModifiers::EditEnergyForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierEnergyForEntities(*attribute_clear_flag, data.filled[0].as_entities(), *count)),
+                        CardAttributeModifiers::EditRangeForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierRangeForEntities(*attribute_clear_flag, data.filled[0].as_entities(), *count)),
+                        CardAttributeModifiers::EditCostForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierCostForEntities(*attribute_clear_flag, data.filled[0].as_entities(), *count)),
                     }
                 }
 
@@ -75,13 +75,13 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                     let event = &events[i];
                     let data = &data.event[i];
                     match event {
-                        CardAttributeEvents::DrawCards(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDrawCards(data[0].as_players(), *count)),
-                        CardAttributeEvents::DiscardCards(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDiscardCards(data[0].as_cards())),
-                        CardAttributeEvents::MoveEntity(_, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveEntity(data[0].as_entities(), data[1].as_tiles())),
+                        CardAttributeEvents::DrawCards(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDrawCards(data.filled[0].as_entities(), *count)),
+                        CardAttributeEvents::DiscardCards(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDiscardCards(data.filled[0].as_cards())),
+                        CardAttributeEvents::MoveEntity(_, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveEntity(data.filled[0].as_entities(), data.filled[1].as_tiles())),
                         // CardAttributeEvents::MoveBall(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveBall(*count, state_turn.active_instance_id, card_instance.instance_id)),
-                        CardAttributeEvents::MoveBall(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveBall(data[0].as_tiles(), *id, card_instance.instance_id)),
-                        CardAttributeEvents::GainEnergy(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventGainEnergy(data[0].as_entities(), *count)),
-                        CardAttributeEvents::RefillEnergy(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventRefillEnergy(data[0].as_entities())),
+                        CardAttributeEvents::MoveBall(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveBall(data.filled[0].as_tiles(), *id, card_instance.instance_id)),
+                        CardAttributeEvents::GainEnergy(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventGainEnergy(data.filled[0].as_entities(), *count)),
+                        CardAttributeEvents::RefillEnergy(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventRefillEnergy(data.filled[0].as_entities())),
                         CardAttributeEvents::SetBallMode(ball_mode) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventSetBallMode(ball_mode.clone())),
                     }
                 }

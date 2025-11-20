@@ -63,6 +63,7 @@ pub mod ecs {
     }
     pub mod system {
         pub mod peer {
+            mod ecs_system_peer_did_turn_begin;
             mod ecs_system_peer_start;
             mod ecs_system_peer_update_input_mode;
             mod ecs_system_peer_view_ball_state;

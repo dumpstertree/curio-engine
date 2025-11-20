@@ -78,37 +78,47 @@ impl EventQueue {
     }
 
     pub fn drain_network_sync_events(&mut self) -> Vec<EventSyncEvent> {
-        let x = self.sync_events.clone();
-        if x.len() > 0 {
-            // println!("drain event count {} ", &x.len());
-        }
+        // clone into a new value to return back
+        let output = self.sync_events.clone();
+
+        // clear original value
         self.sync_events.clear();
-        x
+
+        // return new cloned value
+        output
     }
     pub fn apply_network_sync_events(&mut self, sync_events: Vec<EventSyncEvent>) {
-        if sync_events.len() > 0 {
-            // println!("apply event count {} ", &sync_events.len());
-        }
         unsafe {
+            // get the list of global deserializers
             let Some(unwrapped) = &REGISTERED_GLOBAL_EVENTS_DESERIALIZE else {
-                println!("failed to lock REGISTERED_GLOBAL_STATES_DESERIALIZE");
+                println!("Failed to find REGISTERED_GLOBAL_STATES_DESERIALIZE");
                 return;
             };
+
+            // lock the list to avoid other changing it
             let guard = unwrapped.lock();
 
+            // iterate fore ach event in the sync events
             for sync in sync_events {
-                if !guard.contains_key(&sync.id) {
-                    println!("nope");
-                    return;
-                }
-                let val = guard.get(&sync.id).unwrap();
-                let x = (val)(&sync.event);
-                let m = self
-                    .cache
-                    .get_mut::<Vec<Box<dyn Any>>, i32>(&sync.id)
-                    .unwrap();
+                // use the the globaly registered values to find a fn to unwrap the bits to the correct type
+                let Some(cast_bits_fn) = guard.get(&sync.id) else {
+                    println!("Failed to find conversion from bits to type");
+                    continue;
+                };
 
-                m.push(x);
+                // cast the bits from raw value to the correct type
+                let cast_bits = (cast_bits_fn)(&sync.event);
+
+                // get list of events for the id of
+                let Some(m) = self.cache.get_mut::<Vec<Box<dyn Any>>, i32>(&sync.id) else {
+                    self.cache
+                        .insert_any(sync.id, Box::new(vec![Box::new(cast_bits)]));
+                    println!("failed to find any for {}", sync.id);
+                    continue;
+                };
+
+                //
+                m.push(cast_bits);
             }
         }
     }
@@ -126,11 +136,11 @@ impl EventQueue {
         (hasher.finish() & 0xFFFF_FFFF) as i32 // Safe truncation
     }
 
-    pub fn enqueue_event<T: 'static>(&mut self, val: T)
+    pub fn enqueue_event<T: 'static>(&mut self, cast_bits_fn: T)
     where
         T: Clone + IGameEvent + Serialize + DeserializeOwned + Display,
     {
-        let scope = val.get_scope();
+        let scope = cast_bits_fn.get_scope();
         if scope != EventScope::Instance {
             unsafe {
                 let Some(unwrapped) = &REGISTERED_GLOBAL_EVENTS_SERIALIZE else {
@@ -143,12 +153,13 @@ impl EventQueue {
                 let e = EventSyncEvent {
                     target: scope.clone(),
                     id: EventQueue::type_id_to_i32::<T>(),
-                    event: ((z)(&val)),
+                    event: ((z)(&cast_bits_fn)),
                 };
 
                 self.sync_events.push(e);
 
                 if scope != EventScope::All {
+                    println!("bad scope");
                     return;
                 }
             }
@@ -156,13 +167,13 @@ impl EventQueue {
 
         let id = EventQueue::type_id_to_i32::<T>();
         if let Some(vec) = self.cache.get_mut::<Vec<Box<dyn Any>>, i32>(&id) {
-            // println!("add event append: {}", &val);
-            vec.push(Box::new(val));
+            // println!("add event append: {}", &cast_bits_fn);
+            vec.push(Box::new(cast_bits_fn));
         } else {
-            // println!("add event list:  {}", &val);
+            // println!("add event list:  {}", &cast_bits_fn);
 
             self.cache
-                .insert::<Vec<Box<dyn Any>>>(id, vec![Box::new(val)]);
+                .insert::<Vec<Box<dyn Any>>>(id, vec![Box::new(cast_bits_fn)]);
         }
     }
     pub fn drain_queued_events<T: 'static>(&mut self) -> Vec<T>
@@ -172,7 +183,6 @@ impl EventQueue {
         let id = EventQueue::type_id_to_i32::<T>();
         if let Some(x) = self.cache.get_mut::<Vec<Box<dyn Any>>, i32>(&id) {
             let z = EventQueue::extract_vec::<T>(x);
-
             // let mut vec: Vec<T> = vec![];
             // println!("count {}, other count {}", x.len(), z.len());
 
@@ -199,22 +209,4 @@ impl EventQueue {
             .filter_map(|item| item.downcast_ref::<T>().cloned())
             .collect()
     }
-
-    // pub fn get_queued_events<T: 'static>(&self) -> &[T]
-    // where
-    //     T: Clone,
-    // {
-    //     let id = EventQueue::type_id_to_i32::<T>();
-    //     if let Some(x) = self.cache.get::<Vec<Box<dyn Any>>, i32>(&id) {
-    //         x.as_slice()
-    //     } else {
-    //         &[]
-    //     }
-    // }
-    // pub fn clear_queued_events<T: 'static>(&mut self) {
-    //     let id = EventQueue::type_id_to_i32::<T>();
-    //     if let Some(x) = self.cache.get_mut::<Vec<Box<dyn ANy>>, i32>(&id) {
-    //         x.clear();
-    //     }
-    // }
 }

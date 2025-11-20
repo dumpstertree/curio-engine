@@ -3,7 +3,7 @@ use crate::{
     cards::{
         attribute_target_type_cards::AttributeTargetTypesCards,
         attribute_target_type_entities::AttribtuteTargetTypesEntities,
-        attribute_target_type_players::AtrributeTargetTypesPlayers,
+        // attribute_target_type_players::AtrributeTargetTypesPlayers,
         attribute_target_type_tiles::AttributeTargetTypesTiles,
         card_attribute_events::CardAttributeEvents,
         card_attribute_modifier::CardAttributeModifiers,
@@ -34,7 +34,7 @@ impl CardLibrary {
                     0, //
                     vec![],
                     vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
-                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AtrributeTargetTypesPlayers::User)],
+                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
                 )],
             )),
         );
@@ -171,7 +171,7 @@ impl CardLibrary {
                     1, //
                     vec![],
                     vec![],
-                    vec![CardAttributeEvents::DrawCards(2, AtrributeTargetTypesPlayers::User)],
+                    vec![CardAttributeEvents::DrawCards(2, AttribtuteTargetTypesEntities::User)],
                 )],
             )),
         );

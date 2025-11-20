@@ -160,7 +160,6 @@ impl AssetLoader {
             all_materials.push(Arc::new(Material::new(shader_desc.clone())));
         } else {
             for material in gltf.materials() {
-                println!("got material with name : {} ", material.name().unwrap());
                 let pbr = material.pbr_metallic_roughness();
 
                 let texture_asset = if let Some(tex_info) = pbr.base_color_texture() {
@@ -200,7 +199,6 @@ impl AssetLoader {
         // --- Meshes ---
         for mesh in gltf.meshes() {
             let mesh_name = mesh.name().unwrap_or("Unnamed");
-            println!("Adding mesh: {}", mesh_name);
 
             for (primitive_index, primitive) in mesh.primitives().enumerate() {
                 let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
