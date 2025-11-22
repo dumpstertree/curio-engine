@@ -1,5 +1,5 @@
 use crate::{card_parser::AttributeClearFlag, cards::card_modifier::CardModifier};
-use core::{collections::game_state::StateOwnerships, system::system_game_state::IState};
+use core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
 use macro_state_serialize::global_state_serialize;
 
 #[derive(PartialEq, Eq, Hash)]

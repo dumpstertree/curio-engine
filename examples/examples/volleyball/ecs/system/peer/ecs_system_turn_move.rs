@@ -24,17 +24,17 @@ impl ECSSystemEventless for ECSSystemTurnMove {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get_value2::<StatePeerInputMode>().mode == InputModes::Move
+        game_state.get::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
         // currently serving and cant move
-        let state_ball = game_state.get_value2::<StateBallMode>();
+        let state_ball = game_state.get::<StateBallMode>();
         if state_ball.mode == BallModes::Serve {
             return;
         }
 
         // get states
-        let state_input = game_state.get_value2::<InputState>();
+        let state_input = game_state.get::<InputState>();
 
         // get inputs from mapping
         let move_forward = state_input.mapped[0]

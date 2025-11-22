@@ -1,4 +1,3 @@
-use crate::collections::game_state::AnyMap;
 use egui::{mutex::Mutex, util::id_type_map::TypeId};
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
@@ -7,6 +6,8 @@ use std::{
     fmt::Display,
     hash::{Hash, Hasher},
 };
+
+use crate::collections::any_map::AnyMap;
 #[derive(Clone)]
 pub struct EventSyncEvent {
     pub target: EventScope,

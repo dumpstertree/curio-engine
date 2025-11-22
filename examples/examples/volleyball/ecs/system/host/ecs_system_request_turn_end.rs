@@ -30,13 +30,13 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestTurnE
         match event {
             GameEvents::RequestTurnEnd(id) => {
                 //  guard -> make sure the requested end of turn is for the active player
-                let is_active_player = game_state.get_value2::<StateTurn>().active_instance_id == *id;
+                let is_active_player = game_state.get::<StateTurn>().active_instance_id == *id;
                 if !is_active_player {
                     println!("Requested Turn End for non-active player");
                     return;
                 }
 
-                let is_serving = game_state.get_value2::<StateBallMode>().mode == BallModes::Serve;
+                let is_serving = game_state.get::<StateBallMode>().mode == BallModes::Serve;
                 if is_serving {
                     println!("Requested Turn End in Serve Mode");
                     return;

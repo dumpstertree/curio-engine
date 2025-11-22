@@ -39,7 +39,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {
                 // get the stack for the current use case
-                let state_card_attribute_modifier_stack = game_state.get_value2::<StateCardAttributeModifierStack>();
+                let state_card_attribute_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
                 let active_modifiers = CardModifier::flatten(&vec![
                     &state_card_attribute_modifier_stack
                         .get_flat_stack_for_entity(*id)

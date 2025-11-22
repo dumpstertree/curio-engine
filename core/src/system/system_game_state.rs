@@ -1,17 +1,7 @@
+use crate::collections::state_map::AsAny;
+use crate::collections::state_ownerships::StateOwnerships;
 use std::any::TypeId;
 use std::hash::{DefaultHasher, Hash, Hasher};
-
-use crate::collections::game_state::StateOwnerships;
-
-// pub trait AsAny: 'static {
-//     fn as_any(&self) -> &dyn std::any::Any;
-// }
-// impl<T: 'static> AsAny for T {
-//     fn as_any(&self) -> &dyn std::any::Any {
-//         self
-//     }
-// }
-use crate::collections::game_state::AsAny;
 
 pub trait IState: AsAny + IStateClone + IStateHash + Sync {
     fn default_box() -> Box<dyn IState>

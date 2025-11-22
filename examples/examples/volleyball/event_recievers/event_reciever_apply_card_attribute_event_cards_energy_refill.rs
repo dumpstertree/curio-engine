@@ -26,7 +26,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ApplyCardAttributeEventRefillEnergy(entity_ids) => {
-                let state_card_attribute_modifier_stack = game_state.get_value2::<StateCardAttributeModifierStack>();
+                let state_card_attribute_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
                 game_state.edit::<StateEnergy>(|y| {
                     for x in entity_ids {
                         let d = state_card_attribute_modifier_stack.get_flat_stack_for_entity(*x);

@@ -16,7 +16,7 @@ impl ECSSystemEventless for PostCameraECSSystem {
         true
     }
     fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        if state.get_value2::<StateDebug>().is_paused {
+        if state.get::<StateDebug>().is_paused {
             return;
         }
         for (_, (transform, _camera)) in world.query_mut::<(&mut Transform, &Camera)>() {

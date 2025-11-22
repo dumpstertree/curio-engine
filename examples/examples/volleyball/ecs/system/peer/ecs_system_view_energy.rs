@@ -34,7 +34,7 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
         if self.did_init == 15 {
             let asset = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::EnergyToken.uid());
             for team in game_state
-                .get_value2::<StateTeamAssignments>()
+                .get::<StateTeamAssignments>()
                 .team_assignments
             {
                 for player_id in team.1 {
@@ -48,9 +48,9 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
             }
         }
         self.did_init += 1;
-        let state_camera = game_state.get_value2::<CameraState>();
-        let state_energy = game_state.get_value2::<StateEnergy>();
-        let state_team = game_state.get_value2::<StateTeamAssignments>();
+        let state_camera = game_state.get::<CameraState>();
+        let state_energy = game_state.get::<StateEnergy>();
+        let state_team = game_state.get::<StateTeamAssignments>();
         for (_, (energy, transform, player, renderer)) in world
             .query::<(&ComponentEnergyToken, &mut Transform, &ComponentPlayer, &mut RendererAnimated)>()
             .iter()
@@ -70,7 +70,7 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
             };
 
             transform.scale = Vector3::one() * 0.05;
-            transform.rotation = game_state.get_value2::<CameraState>().cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
+            transform.rotation = game_state.get::<CameraState>().cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
 
             transform.position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * z + state_camera.cameras.rotation * Vector3::down() * y + state_camera.cameras.rotation * Vector3::right() * x;
             if energy.index < player_energy.0 {

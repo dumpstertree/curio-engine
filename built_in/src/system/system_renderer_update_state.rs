@@ -25,7 +25,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
     }
 
     fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        let time = state.get_value2::<TimeState>().scaled_time;
+        let time = state.get::<TimeState>().scaled_time;
         //edit draw call states
         state.edit::<DrawCallsState>(|x| {
             // iterate over each renderer

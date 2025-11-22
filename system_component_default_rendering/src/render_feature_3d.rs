@@ -59,7 +59,7 @@ impl RenderFeature3DHelper {
         for i in 0..graphics_mappings.len() {
             //
             let game_state = game_state.get_mut(i).unwrap();
-            let state_camera = game_state.get_value2::<CameraState>();
+            let state_camera = game_state.get::<CameraState>();
 
             // get camera data
             let cur_camera_snapshot = &state_camera.cameras;

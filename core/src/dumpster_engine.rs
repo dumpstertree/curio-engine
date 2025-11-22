@@ -39,13 +39,14 @@ use crate::window::system_window::SystemWindow;
 pub static REGISTERED_GLOBAL_ECS_SYSTEMS: Mutex<Vec<fn() -> Box<dyn ECSSystemEventless>>> = Mutex::new(Vec::new());
 pub static REGISTERED_GLOBAL_STATES: Mutex<Vec<Type>> = Mutex::new(Vec::new());
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 pub enum NetworkModes {
-    LocalHost,
-    LocalPeer,
-    OnlineHost,
-    OnlinePeer,
+    LocalHost = 4,
+    OnlineHost = 3,
+    LocalPeer = 2,
+    OnlinePeer = 1,
 }
+
 impl fmt::Display for NetworkModes {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {

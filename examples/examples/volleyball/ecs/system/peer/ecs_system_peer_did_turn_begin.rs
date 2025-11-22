@@ -38,7 +38,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         println!("run on local enable");
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
-        if self.do_move && game_state.get_value2::<TimeState>().unscaled_time - self.lastmove > 1.0 {
+        if self.do_move && game_state.get::<TimeState>().unscaled_time - self.lastmove > 1.0 {
             println!("start new move");
             let e = run_ai(game_state);
 
@@ -49,10 +49,10 @@ impl ECSSystemEventless for ECSSystemPeerStart {
 
             println!("send event");
             events.enqueue_event(e);
-            self.lastmove = game_state.get_value2::<TimeState>().unscaled_time;
+            self.lastmove = game_state.get::<TimeState>().unscaled_time;
 
             self.do_move = false;
-            game_state.get_value2::<TimeState>().unscaled_time;
+            game_state.get::<TimeState>().unscaled_time;
         }
     }
 }
@@ -63,7 +63,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemPeerStart {
             GameEvents::DidTurnBegin(id) => {
                 println!("did begine!!!!");
                 self.do_move = true;
-                self.lastmove = game_state.get_value2::<TimeState>().unscaled_time;
+                self.lastmove = game_state.get::<TimeState>().unscaled_time;
             }
             _ => {}
         }

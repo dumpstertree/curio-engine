@@ -17,7 +17,7 @@ impl SystemDebugGuiScreen {
 }
 impl ECSSystemEventless for SystemDebugGuiScreen {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateDebug>().is_inspecting
+        game_state.get::<StateDebug>().is_inspecting
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // get gpu data

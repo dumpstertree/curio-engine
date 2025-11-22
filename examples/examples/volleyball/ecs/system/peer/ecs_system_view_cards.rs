@@ -58,9 +58,9 @@ impl ECSSystemEventless for ECSSystemViewCards {
             return;
         }
         if self.cnt == 15 {
-            let state_deck = game_state.get_value2::<StateDeck>();
+            let state_deck = game_state.get::<StateDeck>();
             let my_deck = state_deck.deck.get(&game_state.instance_id).unwrap();
-            let camera_state = game_state.get_value2::<CameraState>();
+            let camera_state = game_state.get::<CameraState>();
 
             for card in &my_deck.all_cards {
                 self.spawn_card(world, card.clone(), camera_state.cameras.rotation, game_state);
@@ -76,16 +76,16 @@ impl ECSSystemEventless for ECSSystemViewCards {
         let z_selected = 1.0;
         let z_unselected = 1.5;
 
-        let state_input_mode = game_state.get_value2::<StatePeerInputMode>();
+        let state_input_mode = game_state.get::<StatePeerInputMode>();
         let is_manuever_mode = state_input_mode.mode == InputModes::Manuever;
         for (_, (card, transform, renderer)) in world
             .query::<(&ComponentCard, &mut Transform, &mut Renderer)>()
             .iter()
         {
-            let state_deck = game_state.get_value2::<StateDeck>();
+            let state_deck = game_state.get::<StateDeck>();
             let my_deck = state_deck.deck.get(&game_state.instance_id).unwrap();
-            let camera_state = game_state.get_value2::<CameraState>();
-            let state_selected = game_state.get_value2::<StatePeerSelectedCards>();
+            let camera_state = game_state.get::<CameraState>();
+            let state_selected = game_state.get::<StatePeerSelectedCards>();
 
             let Some(card_instance) = &card.card_instance else {
                 continue;
@@ -115,7 +115,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                     let is_met = card_instance.has_statement(game_state, game_state.instance_id);
 
                     let state_team = game_state
-                        .get_value2::<StateTeamAssignments>()
+                        .get::<StateTeamAssignments>()
                         .team_for(&game_state.instance_id)
                         .unwrap();
                     if is_manuever_mode && state_selected.index == index {

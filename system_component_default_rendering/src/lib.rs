@@ -63,12 +63,12 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         self.shadow_system
             .ensure_screens(game_state.len(), Matrix4x4::default());
         for i in 0..game_state.len() {
-            let state_sun = game_state[i].get_value2::<StateSun>();
+            let state_sun = game_state[i].get::<StateSun>();
             if state_sun.cast_shadows {
                 self.shadow_system
                     .update_for_screen(i, &state_sun.direction);
                 self.shadow_system
-                    .render_for_screen(&mut encoder, i, &game_state[i].get_value2::<DrawCallsState>().draw_calls);
+                    .render_for_screen(&mut encoder, i, &game_state[i].get::<DrawCallsState>().draw_calls);
             }
         }
 

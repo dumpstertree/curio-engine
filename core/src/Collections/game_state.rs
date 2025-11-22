@@ -23,25 +23,6 @@ pub struct StateSyncEvent {
     pub payload: Vec<u8>, // serialized data
 }
 
-impl StateSyncEvent {
-    // fn new<T: Serialize + 'static>(value: &T) -> Self {
-    //     let payload = bincode::serialize(value).unwrap();
-    //     Self {
-    //         type_id: TypeId::of::<T>(),
-    //         type_name: std::any::type_name::<T>(),
-    //         payload,
-    //     }
-    // }
-
-    // fn deserialize<T: for<'de> Deserialize<'de> + 'static>(&self) -> Option<T> {
-    //     if self.type_id == TypeId::of::<T>() {
-    //         Some(bincode::deserialize(&self.payload).unwrap())
-    //     } else {
-    //         None
-    //     }
-    // }
-}
-
 trait GameStateCommon {
     fn get<T>()
     where
@@ -74,31 +55,6 @@ pub struct GameState {
     pub(crate) cache: StateMap<i32>,
     pub network_mode: NetworkModes,
 }
-// impl Eq for GameState {}
-// impl Hash for GameState {
-//     fn hash<H: Hasher>(&self, state: &mut H) {
-//         self.instance_id.hash(state);
-//         self.all_instance_id.hash(state);
-//         self.edited_state.hash(state);
-//         self.fn_deserialize.hash(state);
-//         self.fn_serialize.hash(state);
-//         self.cache.hash(state);
-//         self.network_mode.hash(state);
-//     }
-// }
-// impl Hash for GameState {
-//     fn hash<H: Hasher>(&self, state: &mut H) {
-//         // Assuming cache: HashMap<i32, StateValue>
-//         let mut keys: Vec<_> = self.cache.map.keys().collect();
-//         keys.sort(); // ensures deterministic order
-//         for key in keys {
-//             key.hash(state);
-//             if let Some(val) = self.cache.map.get(key) {
-//                 val.hash_dyn_u64().hash(state);
-//             }
-//         }
-//     }
-// }
 
 impl GameState {
     pub fn register_global_states<T>()

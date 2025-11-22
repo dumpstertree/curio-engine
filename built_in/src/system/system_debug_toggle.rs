@@ -25,7 +25,7 @@ impl ECSSystemEventless for SystemDebugToggle {
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // get state
-        let state_input = game_state.get_value2::<InputState>();
+        let state_input = game_state.get::<InputState>();
 
         // get input button
         let debug_button = state_input.raw.get_button(&ButtonCode::Backquote);

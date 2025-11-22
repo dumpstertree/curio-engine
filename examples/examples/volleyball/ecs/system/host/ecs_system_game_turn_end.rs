@@ -37,12 +37,12 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
                 // end this turn
                 println!("Instance: {}. End Turn {}", game_state.instance_id, id);
 
-                let Some(team) = game_state.get_value2::<StateTeamAssignments>().team_for(id) else {
+                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(id) else {
                     println!("unknown team");
                     return;
                 };
 
-                let state_position_ball = game_state.get_value2::<StatePositionBall>();
+                let state_position_ball = game_state.get::<StatePositionBall>();
                 let ball_is_on_side = team.on_side(state_position_ball.column, state_position_ball.row);
                 if ball_is_on_side {
                     println!("Point scored for {}!", team.next_team());
@@ -63,7 +63,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
                     println!("Couldnt find curreent player index!");
                     return;
                 }
-                let state_network = game_state.get_value2::<StateNetwork>();
+                let state_network = game_state.get::<StateNetwork>();
                 let peer_ids = state_network.peer_instance_ids();
                 let wrapped_index = (index + 1).repeat(0, peer_ids.len() as i32);
                 let new_id = peer_ids[wrapped_index as usize];

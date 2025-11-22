@@ -48,7 +48,7 @@ impl GameplayInstance {
         for ecs_system in self.ecs_systems.iter_mut() {
             // do a network mode check
             let run_on_network_modes = ecs_system.0.run_on_instance(game_state);
-            let this_network_mode = &game_state.network_mode;
+            let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
 
             // ignore if doesnt run on this instance
             if !run_on_network_modes.contains(this_network_mode) {
@@ -97,7 +97,7 @@ impl GameplayInstance {
                 if ecs_system.1 {
                     // do a network mode check
                     let run_on_network_modes = ecs_system.0.run_on_instance(game_state);
-                    let this_network_mode = &game_state.network_mode;
+                    let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
 
                     // ignore if doesnt run on this instance
                     if !run_on_network_modes.contains(this_network_mode) {
@@ -127,7 +127,7 @@ impl GameplayInstance {
             }
             // do a network mode check
             let run_on_network_modes = ecs_system.0.run_on_instance(game_state);
-            let this_network_mode = &game_state.network_mode;
+            let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
 
             // ignore if doesnt run on this instance
             if !run_on_network_modes.contains(this_network_mode) {

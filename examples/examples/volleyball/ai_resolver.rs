@@ -241,7 +241,7 @@ impl AIGameSimulation {
         match empty {
             AttributeTargetTypesTiles::RandomOnTeamUser => {
                 // get state
-                let state_team = game_state.get_value2::<StateTeamAssignments>();
+                let state_team = game_state.get::<StateTeamAssignments>();
 
                 // get the team for this user
                 let Some(my_team) = state_team.team_for(&uid) else {
@@ -259,7 +259,7 @@ impl AIGameSimulation {
             }
             AttributeTargetTypesTiles::RandomOnTeamOpponent => {
                 // get state
-                let state_team = game_state.get_value2::<StateTeamAssignments>();
+                let state_team = game_state.get::<StateTeamAssignments>();
 
                 // get the team for this user
                 let Some(my_team) = state_team.team_for(&uid) else {
@@ -278,7 +278,7 @@ impl AIGameSimulation {
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)]));
             }
             AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => {
-                let state_position_ball = game_state.get_value2::<StatePositionBall>();
+                let state_position_ball = game_state.get::<StatePositionBall>();
 
                 let random_x = Random::range_int(min.x, max.x);
                 let random_z = Random::range_int(min.y, max.y);
@@ -311,7 +311,7 @@ impl AIGameSimulation {
             }
             AttribtuteTargetTypesEntities::Select => {
                 // get state
-                let state_team = game_state.get_value2::<StateTeamAssignments>();
+                let state_team = game_state.get::<StateTeamAssignments>();
 
                 // iterate over each team + uids
                 for team_ids in state_team.team_assignments {
@@ -324,7 +324,7 @@ impl AIGameSimulation {
             }
             AttribtuteTargetTypesEntities::RandomAny => {
                 // get state
-                let state_team = game_state.get_value2::<StateTeamAssignments>();
+                let state_team = game_state.get::<StateTeamAssignments>();
 
                 // get the uids of a random team
                 let Some(random_team) = state_team.team_assignments.get(&Teams::random()) else {
@@ -346,7 +346,7 @@ impl AIGameSimulation {
             }
             AttribtuteTargetTypesEntities::RandomOpponent => {
                 // get state
-                let state_team = game_state.get_value2::<StateTeamAssignments>();
+                let state_team = game_state.get::<StateTeamAssignments>();
 
                 // get the team for this user
                 let Some(my_team) = state_team.team_for(&uid) else {
@@ -385,7 +385,7 @@ impl AIGameSimulation {
         let mut all_manuevers = Vec::new();
 
         // get state
-        let state_deck = game_state.get_value2::<StateDeck>();
+        let state_deck = game_state.get::<StateDeck>();
 
         // get deck from state
         let Some(deck) = state_deck.deck.get(uid) else {
@@ -551,8 +551,8 @@ impl MCTSGameState for AIGameSimulation {
 
     fn current_player(&self) -> Teams {
         // get state
-        let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
-        let state_turn = self.game_state.get_value2::<StateTurn>();
+        let state_teams = self.game_state.get::<StateTeamAssignments>();
+        let state_turn = self.game_state.get::<StateTurn>();
 
         // get team
         let Some(team) = state_teams.team_for(&state_turn.active_instance_id) else {
@@ -570,9 +570,9 @@ impl MCTSGameState for AIGameSimulation {
         }
 
         // get state
-        let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
-        let state_energy = self.game_state.get_value2::<StateEnergy>();
-        let state_ball_mode = self.game_state.get_value2::<StateBallMode>();
+        let state_teams = self.game_state.get::<StateTeamAssignments>();
+        let state_energy = self.game_state.get::<StateEnergy>();
+        let state_ball_mode = self.game_state.get::<StateBallMode>();
 
         // get uis for player
         let uid = match self.current_player {
@@ -628,7 +628,7 @@ impl MCTSGameState for AIGameSimulation {
             (SimulationTeams::Red, Move::Play(card, data)) => {
                 // println!("Red: Play");
 
-                let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
+                let state_teams = self.game_state.get::<StateTeamAssignments>();
                 let Some(uids) = state_teams.team_assignments.get(&Teams::Red) else {
                     return;
                 };
@@ -652,7 +652,7 @@ impl MCTSGameState for AIGameSimulation {
             (SimulationTeams::Blue, Move::Play(card, data)) => {
                 // println!("Blue: Play");
 
-                let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
+                let state_teams = self.game_state.get::<StateTeamAssignments>();
                 let Some(uids) = state_teams.team_assignments.get(&Teams::Blue) else {
                     return;
                 };
@@ -675,7 +675,7 @@ impl MCTSGameState for AIGameSimulation {
             }
             (SimulationTeams::Red, Move::EndTurn) => {
                 //
-                let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
+                let state_teams = self.game_state.get::<StateTeamAssignments>();
                 let Some(red_uids) = state_teams.team_assignments.get(&Teams::Red) else {
                     return;
                 };
@@ -701,7 +701,7 @@ impl MCTSGameState for AIGameSimulation {
             }
             (SimulationTeams::Blue, Move::EndTurn) => {
                 //
-                let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
+                let state_teams = self.game_state.get::<StateTeamAssignments>();
                 let Some(red_uids) = state_teams.team_assignments.get(&Teams::Red) else {
                     return;
                 };
@@ -728,7 +728,7 @@ impl MCTSGameState for AIGameSimulation {
             (SimulationTeams::Red, Move::Move(delta)) => {
                 // println!("Red: Move");
 
-                let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
+                let state_teams = self.game_state.get::<StateTeamAssignments>();
                 let Some(uids) = state_teams.team_assignments.get(&Teams::Red) else {
                     return;
                 };
@@ -750,7 +750,7 @@ impl MCTSGameState for AIGameSimulation {
             (SimulationTeams::Blue, Move::Move(delta)) => {
                 // println!("Blue: Move");
 
-                let state_teams = self.game_state.get_value2::<StateTeamAssignments>();
+                let state_teams = self.game_state.get::<StateTeamAssignments>();
                 let Some(uids) = state_teams.team_assignments.get(&Teams::Blue) else {
                     return;
                 };
@@ -798,23 +798,19 @@ impl TranspositionHash for AIGameSimulation {
         self.current_player.hash(&mut hasher);
 
         // Hash nested data
-        self.game_state.get_value2::<StateTurn>().hash(&mut hasher);
+        self.game_state.get::<StateTurn>().hash(&mut hasher);
 
         self.game_state
-            .get_value2::<StateTeamAssignments>()
+            .get::<StateTeamAssignments>()
             .hash(&mut hasher);
         self.game_state
-            .get_value2::<StatePositionPlayer>()
+            .get::<StatePositionPlayer>()
             .hash(&mut hasher);
+        self.game_state.get::<StatePositionBall>().hash(&mut hasher);
+        self.game_state.get::<StateEnergy>().hash(&mut hasher);
+        self.game_state.get::<StateDeck>().hash(&mut hasher);
         self.game_state
-            .get_value2::<StatePositionBall>()
-            .hash(&mut hasher);
-        self.game_state
-            .get_value2::<StateEnergy>()
-            .hash(&mut hasher);
-        self.game_state.get_value2::<StateDeck>().hash(&mut hasher);
-        self.game_state
-            .get_value2::<StateCardAttributeModifierStack>()
+            .get::<StateCardAttributeModifierStack>()
             .hash(&mut hasher);
 
         hasher.finish()
@@ -833,11 +829,11 @@ impl Evaluator<MyMCTS> for AiGameEvaluator {
         // - prefer more energy left
         let score: i64 = match state.current_player {
             SimulationTeams::Red => {
-                if state.game_state.get_value2::<StatePositionBall>().row < 2 {
+                if state.game_state.get::<StatePositionBall>().row < 2 {
                     -99
                 } else {
-                    let state_teams = state.game_state.get_value2::<StateTeamAssignments>();
-                    let state_energy = state.game_state.get_value2::<StateEnergy>();
+                    let state_teams = state.game_state.get::<StateTeamAssignments>();
+                    let state_energy = state.game_state.get::<StateEnergy>();
 
                     let Some(uids) = state_teams.team_assignments.get(&Teams::Red) else {
                         //
@@ -854,11 +850,11 @@ impl Evaluator<MyMCTS> for AiGameEvaluator {
                 }
             }
             SimulationTeams::Blue => {
-                if state.game_state.get_value2::<StatePositionBall>().row >= 2 {
+                if state.game_state.get::<StatePositionBall>().row >= 2 {
                     -99
                 } else {
-                    let state_teams = state.game_state.get_value2::<StateTeamAssignments>();
-                    let state_energy = state.game_state.get_value2::<StateEnergy>();
+                    let state_teams = state.game_state.get::<StateTeamAssignments>();
+                    let state_energy = state.game_state.get::<StateEnergy>();
 
                     let Some(uids) = state_teams.team_assignments.get(&Teams::Blue) else {
                         //
@@ -910,14 +906,14 @@ impl MCTS for MyMCTS {
 pub fn run_ai(game_state: &mut GameState) -> GameEvents {
     // for _ in 0..5 {
     let local_game_state = GameState::new_single_instance(vec![
-        (StateCardAttributeModifierStack::id(), Box::new(game_state.get_value2::<StateCardAttributeModifierStack>())),
-        (StateTeamAssignments::id(), Box::new(game_state.get_value2::<StateTeamAssignments>())),
-        (StatePositionPlayer::id(), Box::new(game_state.get_value2::<StatePositionPlayer>())), //
-        (StatePositionBall::id(), Box::new(game_state.get_value2::<StatePositionBall>())),
-        (StateBallMode::id(), Box::new(game_state.get_value2::<StateBallMode>())),
-        (StateEnergy::id(), Box::new(game_state.get_value2::<StateEnergy>())),
-        (StateDeck::id(), Box::new(game_state.get_value2::<StateDeck>())),
-        (StateTurn::id(), Box::new(game_state.get_value2::<StateTurn>())),
+        (StateCardAttributeModifierStack::id(), Box::new(game_state.get::<StateCardAttributeModifierStack>())),
+        (StateTeamAssignments::id(), Box::new(game_state.get::<StateTeamAssignments>())),
+        (StatePositionPlayer::id(), Box::new(game_state.get::<StatePositionPlayer>())), //
+        (StatePositionBall::id(), Box::new(game_state.get::<StatePositionBall>())),
+        (StateBallMode::id(), Box::new(game_state.get::<StateBallMode>())),
+        (StateEnergy::id(), Box::new(game_state.get::<StateEnergy>())),
+        (StateDeck::id(), Box::new(game_state.get::<StateDeck>())),
+        (StateTurn::id(), Box::new(game_state.get::<StateTurn>())),
     ]);
     // create simulation state
     let sim = AIGameSimulation {
@@ -942,7 +938,7 @@ pub fn run_ai(game_state: &mut GameState) -> GameEvents {
     if let Some(best_move) = manager.best_move() {
         println!("MCTS Best Move: {:?}", best_move);
 
-        let uid = game_state.get_value2::<StateTurn>().active_instance_id;
+        let uid = game_state.get::<StateTurn>().active_instance_id;
         match best_move {
             Move::Play(card_instance, data_deps_filleds) => {
                 return GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id.clone(), data_deps_filleds);

@@ -25,11 +25,11 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get_value2::<StatePeerInputMode>().mode == InputModes::Manuever
+        game_state.get::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get::<StatePeerInputMode>().mode == InputModes::Manuever
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
-        let state_input = game_state.get_value2::<InputState>();
-        let state_deck = game_state.get_value2::<StateDeck>();
+        let state_input = game_state.get::<InputState>();
+        let state_deck = game_state.get::<StateDeck>();
 
         let input_card_left = state_input.mapped[0]
             .get_button_or_default("card_left")
@@ -88,10 +88,10 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
 
             //
             let persistent_len = my_deck.hand_persistent.len() as i32;
-            let index = game_state.get_value2::<StatePeerSelectedCards>().index;
+            let index = game_state.get::<StatePeerSelectedCards>().index;
             let is_persistent = index < persistent_len;
             if is_persistent {
-                let index = game_state.get_value2::<StatePeerSelectedCards>().index;
+                let index = game_state.get::<StatePeerSelectedCards>().index;
                 // generate the list of cards using
                 let mut list0 = vec![];
                 for x in my_deck.hand_persistent.clone() {
@@ -118,7 +118,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
 
                 event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, list0[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
             } else {
-                let index = game_state.get_value2::<StatePeerSelectedCards>().index;
+                let index = game_state.get::<StatePeerSelectedCards>().index;
                 // generate the list of cards using
                 let mut list0 = vec![];
                 for x in my_deck.hand_persistent.clone() {

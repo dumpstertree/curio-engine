@@ -16,11 +16,11 @@ impl SystemDebugGuiCollisions {
 }
 impl ECSSystemEventless for SystemDebugGuiCollisions {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateDebug>().is_inspecting
+        game_state.get::<StateDebug>().is_inspecting
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // get state
-        let state_collision = game_state.get_value2::<StateCollision>();
+        let state_collision = game_state.get::<StateCollision>();
         // edit state
         game_state.edit::<GUIStateDebug>(|x| {
             x.append(format!("Collision Count: {}", state_collision.collisions.len()));

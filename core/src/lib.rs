@@ -31,6 +31,7 @@ pub mod io {
     pub mod texture_asset;
 }
 pub mod collections {
+    pub mod any_map;
     pub mod camera_uniform;
     pub mod color;
     pub mod draw_call;
@@ -45,8 +46,12 @@ pub mod collections {
     pub mod material;
     pub mod matrix4x4;
     pub mod mesh;
+    pub mod network_capabilities;
     pub mod projection;
     pub mod quaternion;
+    pub mod state_map;
+    pub mod state_ownerships;
+    pub mod state_sync_event;
     pub mod tween;
     pub mod vector2;
     pub mod vector2_int;
@@ -71,6 +76,9 @@ pub mod gameplay {
             pub mod component_collider;
         }
     }
+}
+pub mod static_data {
+    pub mod global_states;
 }
 pub mod events {
     pub mod engine_commands;

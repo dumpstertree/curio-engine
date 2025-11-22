@@ -16,7 +16,7 @@ use hecs::World;
 pub struct ECSSystemGameRequestMove {}
 impl ECSSystemGameRequestMove {
     fn check_energy(game_state: &mut GameState, id: i32) -> bool {
-        let has_energy = game_state.get_value2::<StateEnergy>().all_players[&id].0 > 0;
+        let has_energy = game_state.get::<StateEnergy>().all_players[&id].0 > 0;
         if !has_energy {
             println!("Requested Move for not enough energy");
             return false;
@@ -25,7 +25,7 @@ impl ECSSystemGameRequestMove {
         return true;
     }
     fn check_player_id(game_state: &mut GameState, id: i32) -> bool {
-        let is_active_player = game_state.get_value2::<StateTurn>().active_instance_id == id;
+        let is_active_player = game_state.get::<StateTurn>().active_instance_id == id;
         if !is_active_player {
             println!("Requested Move for non-active player");
             return false;
@@ -34,7 +34,7 @@ impl ECSSystemGameRequestMove {
         return true;
     }
     fn check_bounds(game_state: &mut GameState, id: i32, x_diff: i32, z_diff: i32, bounds_min: Vector2Int, bounds_max: Vector2Int) -> bool {
-        let cur_pos = game_state.get_value2::<StatePositionPlayer>().positions[&id];
+        let cur_pos = game_state.get::<StatePositionPlayer>().positions[&id];
         let new_pos = (cur_pos.0 + x_diff, cur_pos.1 + z_diff);
         let in_bounds = new_pos.0 >= bounds_min.x && new_pos.0 <= bounds_max.x && new_pos.1 >= bounds_min.y && new_pos.1 <= bounds_max.y;
         if !in_bounds {
@@ -67,7 +67,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 }
 
                 let Some(team) = game_state
-                    .get_value2::<StateTeamAssignments>()
+                    .get::<StateTeamAssignments>()
                     .team_for(&id)
                 else {
                     return;
@@ -95,7 +95,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
                 let Some(team) = game_state
-                    .get_value2::<StateTeamAssignments>()
+                    .get::<StateTeamAssignments>()
                     .team_for(&id)
                 else {
                     return;
@@ -122,7 +122,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
                 let Some(team) = game_state
-                    .get_value2::<StateTeamAssignments>()
+                    .get::<StateTeamAssignments>()
                     .team_for(&id)
                 else {
                     return;
@@ -150,7 +150,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
                 let Some(team) = game_state
-                    .get_value2::<StateTeamAssignments>()
+                    .get::<StateTeamAssignments>()
                     .team_for(&id)
                 else {
                     return;

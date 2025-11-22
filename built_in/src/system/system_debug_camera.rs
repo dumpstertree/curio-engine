@@ -23,7 +23,7 @@ impl SystemDebugCamera {
 }
 impl ECSSystemEventless for SystemDebugCamera {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateDebug>().is_inspecting && game_state.get_value2::<StateDebug>().is_paused
+        game_state.get::<StateDebug>().is_inspecting && game_state.get::<StateDebug>().is_paused
     }
     fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {
         self.x = 0.0;
@@ -35,9 +35,9 @@ impl ECSSystemEventless for SystemDebugCamera {
         const SPEED_MOVE: f32 = 10.0;
 
         // get states
-        let state_time = state.get_value2::<TimeState>();
-        let state_input = state.get_value2::<InputState>();
-        let state_screen = state.get_value2::<StateScreen>();
+        let state_time = state.get::<TimeState>();
+        let state_input = state.get::<InputState>();
+        let state_screen = state.get::<StateScreen>();
 
         // rotation
         if state_input

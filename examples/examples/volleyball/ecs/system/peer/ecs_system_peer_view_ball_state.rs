@@ -36,7 +36,7 @@ impl ECSSystemEventless for ECSSytem {
         world.spawn((Transform::default(), ComponentRendererText::default(), ComponentUIScoreState::default()));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
-        let camera_state = game_state.get_value2::<CameraState>();
+        let camera_state = game_state.get::<CameraState>();
         for (_, (transform, renderer, _)) in world
             .query::<(&mut Transform, &mut ComponentRendererText, &ComponentUIBallState)>()
             .iter()
@@ -47,7 +47,7 @@ impl ECSSystemEventless for ECSSytem {
 
             transform.position = camera_state.cameras.position + camera_state.cameras.rotation * Vector3::new(0.0, 0.4, 1.0);
             transform.rotation = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
-            match game_state.get_value2::<StateBallMode>().mode {
+            match game_state.get::<StateBallMode>().mode {
                 crate::state::state_ball_mode::BallModes::Serve => renderer.set_contents("SERVE"),
                 crate::state::state_ball_mode::BallModes::Bump => renderer.set_contents("BUMP"),
                 crate::state::state_ball_mode::BallModes::Set => renderer.set_contents("SET"),
@@ -66,15 +66,15 @@ impl ECSSystemEventless for ECSSytem {
 
             transform.position = camera_state.cameras.position + camera_state.cameras.rotation * Vector3::new(0.0, 0.5, 1.0);
             transform.rotation = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
-            let state_scores = game_state.get_value2::<StateScore>();
+            let state_scores = game_state.get::<StateScore>();
             let score_red = state_scores.all_scores.get(&Teams::Red).unwrap_or(&0);
             let score_blue = state_scores.all_scores.get(&Teams::Blue).unwrap_or(&0);
             renderer.set_contents(&format!("{} - {}", score_red, score_blue));
         }
 
-        let state_turn = game_state.get_value2::<StateTurn>();
+        let state_turn = game_state.get::<StateTurn>();
 
-        let state_team = game_state.get_value2::<StateTeamAssignments>();
+        let state_team = game_state.get::<StateTeamAssignments>();
         for (_, (transform, renderer, _)) in world
             .query::<(&mut Transform, &mut ComponentRendererText, &ComponentUITurnState)>()
             .iter()

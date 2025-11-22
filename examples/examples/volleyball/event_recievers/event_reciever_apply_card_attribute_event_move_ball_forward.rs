@@ -37,7 +37,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
                     return;
                 }
                 // get the stack for the current use case
-                let state_card_attribute_modifier_stack = game_state.get_value2::<StateCardAttributeModifierStack>();
+                let state_card_attribute_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
                 let active_modifiers = CardModifier::flatten(&vec![
                     &state_card_attribute_modifier_stack
                         .get_flat_stack_for_entity(*entity_id)
@@ -47,9 +47,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
                         .clone(),
                 ]);
                 state_card_attribute_modifier_stack.get_flat_stack_for_card(0);
-                let cur_turn = &game_state.get_value2::<StateTurn>().active_instance_id; // get the team for this player
+                let cur_turn = &game_state.get::<StateTurn>().active_instance_id; // get the team for this player
                 let team = &game_state
-                    .get_value2::<StateTeamAssignments>()
+                    .get::<StateTeamAssignments>()
                     .team_for(cur_turn)
                     .unwrap();
 
@@ -85,7 +85,7 @@ impl EventReciever {
                     return vec![];
                 }
                 // get the stack for the current use case
-                let state_card_attribute_modifier_stack = game_state.get_value2::<StateCardAttributeModifierStack>();
+                let state_card_attribute_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
                 let active_modifiers = CardModifier::flatten(&vec![
                     &state_card_attribute_modifier_stack
                         .get_flat_stack_for_entity(*entity_id)
@@ -95,9 +95,9 @@ impl EventReciever {
                         .clone(),
                 ]);
                 state_card_attribute_modifier_stack.get_flat_stack_for_card(0);
-                let cur_turn = &game_state.get_value2::<StateTurn>().active_instance_id; // get the team for this player
+                let cur_turn = &game_state.get::<StateTurn>().active_instance_id; // get the team for this player
                 let team = &game_state
-                    .get_value2::<StateTeamAssignments>()
+                    .get::<StateTeamAssignments>()
                     .team_for(cur_turn)
                     .unwrap();
 

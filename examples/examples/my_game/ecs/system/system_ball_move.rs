@@ -22,7 +22,7 @@ impl ECSSystemEventless for SystemBallMove {
         true
     }
     fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        let state_time = state.get_value2::<TimeState>();
+        let state_time = state.get::<TimeState>();
 
         for (_, (ball, _, collider)) in world
             .query::<(&mut ComponentBall, &mut Transform, &ComponentColliderBox)>()
@@ -70,7 +70,7 @@ impl ECSSystemEventless for SystemBallMove {
             transform.position = transform.position + ball.direction * ball.speed * state_time.scaled_delta_time;
 
             // update score
-            println!("has score : {}", state.get_value2::<StateScore>().score);
+            println!("has score : {}", state.get::<StateScore>().score);
         }
     }
 }

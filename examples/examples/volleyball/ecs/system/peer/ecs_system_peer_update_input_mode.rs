@@ -20,7 +20,7 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
     }
     fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
-        let state_input = game_state.get_value2::<InputState>();
+        let state_input = game_state.get::<InputState>();
 
         game_state.edit::<StatePeerInputMode>(|x| {
             if state_input.mapped[0]

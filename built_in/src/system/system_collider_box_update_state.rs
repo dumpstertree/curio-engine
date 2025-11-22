@@ -24,7 +24,7 @@ impl ECSSystemEventless for SystemColliderSphereUpdateState {
     }
     fn will_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         //
-        let state = state.get_value2::<StateCollision>();
+        let state = state.get::<StateCollision>();
         for (_, collider) in world.query::<&mut ComponentColliderBox>().iter() {
             let mut collision = Vec::<CollisionSnapshot>::new();
 

@@ -31,7 +31,8 @@ pub fn global_state(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-            core::collections::game_state::GameState::register_global_states::<#name>();
+            // core::collections::game_state::GameState::register_global_states::<#name>();
+           core::static_data::global_states::register_global_state::<#name>();
         }
     };
 

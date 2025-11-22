@@ -63,7 +63,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
                 });
 
                 self.do_move = true;
-                game_state.get_value2::<TimeState>().unscaled_time;
+                game_state.get::<TimeState>().unscaled_time;
 
                 println!("send did turn begin");
                 events.enqueue_event(GameEvents::DidTurnBegin(*id));

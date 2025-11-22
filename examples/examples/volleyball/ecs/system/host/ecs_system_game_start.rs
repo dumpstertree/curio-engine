@@ -37,7 +37,7 @@ impl ECSSystemEventless for ECSSystemGameStart {
         });
 
         let mut assignment = Teams::Red;
-        for instance in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
+        for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
             game_state.edit::<StateTeamAssignments>(|x| {
                 if !x.team_assignments.contains_key(&assignment) {
                     x.team_assignments.insert(assignment.clone(), vec![]);
@@ -50,7 +50,7 @@ impl ECSSystemEventless for ECSSystemGameStart {
             });
             assignment = assignment.next_team();
         }
-        for instance in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
+        for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
             game_state.edit::<StateDeck>(|x| {
                 x.deck.insert(*instance, Deck::default());
 
@@ -76,13 +76,13 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 // deck.add_card_to_deck("deep_breath", false);
             });
         }
-        for instance in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
+        for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
             // setup player positions
             game_state.edit::<StatePositionPlayer>(|x| {
                 x.positions.insert(*instance, (0, 0));
             });
         }
-        for instance in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
+        for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
             // setup player positions
             game_state.edit::<StateEnergy>(|x| {
                 x.all_players.insert(*instance, (0, 0));

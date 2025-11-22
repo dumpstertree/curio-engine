@@ -24,9 +24,9 @@ impl CardAttributeRequirement {
     pub fn is_met(&self, game_state: &GameState, user_id: i32) -> bool {
         match self {
             CardAttributeRequirement::BallRangeLessEqual(range) => {
-                let ball_loc = game_state.get_value2::<StatePositionBall>();
+                let ball_loc = game_state.get::<StatePositionBall>();
                 // get player loc
-                let play_locs = game_state.get_value2::<StatePositionPlayer>();
+                let play_locs = game_state.get::<StatePositionPlayer>();
                 let Some(play_loc) = play_locs.positions.get(&user_id) else {
                     return false;
                 };
@@ -35,9 +35,9 @@ impl CardAttributeRequirement {
                 distance <= *range
             }
             CardAttributeRequirement::BallRangeGreaterEqual(range) => {
-                let ball_loc = game_state.get_value2::<StatePositionBall>();
+                let ball_loc = game_state.get::<StatePositionBall>();
                 // get player loc
-                let play_locs = game_state.get_value2::<StatePositionPlayer>();
+                let play_locs = game_state.get::<StatePositionPlayer>();
                 let Some(play_loc) = play_locs.positions.get(&user_id) else {
                     return false;
                 };
@@ -45,8 +45,8 @@ impl CardAttributeRequirement {
                 let distance = (ball_loc.column - play_loc.0).abs() + (ball_loc.row - play_loc.1).abs();
                 distance >= *range
             }
-            CardAttributeRequirement::RequireBallMode(ball_modes) => game_state.get_value2::<StateBallMode>().mode == *ball_modes,
-            CardAttributeRequirement::RequireNotBallMode(ball_modes) => game_state.get_value2::<StateBallMode>().mode != *ball_modes,
+            CardAttributeRequirement::RequireBallMode(ball_modes) => game_state.get::<StateBallMode>().mode == *ball_modes,
+            CardAttributeRequirement::RequireNotBallMode(ball_modes) => game_state.get::<StateBallMode>().mode != *ball_modes,
             CardAttributeRequirement::RequireMaxEnergyLessEqual(_) => todo!(),
             CardAttributeRequirement::RequireMaxEnergyGreaterEqual(_) => todo!(),
         }

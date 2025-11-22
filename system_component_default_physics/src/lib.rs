@@ -54,7 +54,7 @@ impl SystemComponent for SystemComponentDefaultPhysics {
             self.buffer_collider_box_cnt = 0;
 
             //
-            let state_collider = game_state.get_value2::<StateCollider>();
+            let state_collider = game_state.get::<StateCollider>();
             for collider in state_collider.colliders {
                 // let isometry = Isometry3::identity();
                 // let mut shape: &dyn Shape;
@@ -74,7 +74,7 @@ impl SystemComponent for SystemComponentDefaultPhysics {
                 }
             }
 
-            let mut s = game_state.get_value2::<StateCollision>();
+            let mut s = game_state.get::<StateCollision>();
             s.collisions.clear();
 
             for x in 0..self.buffer_collider_box_cnt {

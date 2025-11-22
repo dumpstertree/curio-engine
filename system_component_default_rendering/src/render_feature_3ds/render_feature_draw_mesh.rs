@@ -18,7 +18,7 @@ impl RenderFeatureDrawMesh {
     }
 
     fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
-        let state_draws = game_state.get_value2::<DrawCallsState>();
+        let state_draws = game_state.get::<DrawCallsState>();
         let draw_calls = &state_draws.draw_calls;
 
         for draw_call in draw_calls {
@@ -160,7 +160,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
-        self.light_system[camera_index].update(&game_state.get_value2::<StateSun>().get_draw_call(), &game_state.get_value2::<StateLights>().all_lights);
+        self.light_system[camera_index].update(&game_state.get::<StateSun>().get_draw_call(), &game_state.get::<StateLights>().all_lights);
 
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();

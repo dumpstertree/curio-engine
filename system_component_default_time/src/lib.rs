@@ -41,11 +41,11 @@ impl SystemComponent for SystemComponentDefaultTime {
 
     fn tick(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) {
         for game_state in game_state {
-            let state_debug = game_state.get_value2::<StateDebug>();
+            let state_debug = game_state.get::<StateDebug>();
 
             let cur_time = self.instant.elapsed().as_secs_f64();
 
-            let fps = 1.0 / (cur_time - game_state.get_value2::<TimeState>().unscaled_time);
+            let fps = 1.0 / (cur_time - game_state.get::<TimeState>().unscaled_time);
             self.fps_average.push(fps);
 
             while self.fps_average.len() > 5 {
@@ -78,7 +78,7 @@ impl SystemComponent for SystemComponentDefaultTime {
 
     fn refresh(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
         // get state
-        let state_time = game_state[0].get_value2::<TimeState>();
+        let state_time = game_state[0].get::<TimeState>();
 
         // calculate if we tick this frame
         let cur_time = self.instant.elapsed().as_secs_f64();

@@ -19,8 +19,8 @@ impl ECSSystemEventless for SystemPaddleMove {
         true
     }
     fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        let state_input = state.get_value2::<InputState>();
-        let state_time = state.get_value2::<TimeState>();
+        let state_input = state.get::<InputState>();
+        let state_time = state.get::<TimeState>();
 
         for (_, (input_index, paddle, transform)) in world
             .query::<(&mut InputIndex, &mut ComponentPaddle, &mut Transform)>()

@@ -1,9 +1,6 @@
 use built_in_state::state_network::StateNetwork;
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::{GameState, StateSyncEvent},
-    },
+    collections::{event_queue::EventQueue, game_state::GameState, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
     dumpster_engine::NetworkModes,
     system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
 };
@@ -17,6 +14,7 @@ use message_io::{
     node::NodeHandler,
 };
 use std::{
+    collections::{HashMap, HashSet},
     sync::{Arc, Mutex},
     vec,
 };
@@ -145,7 +143,7 @@ impl SystemComponentDefaultNetworking {
         };
 
         let endpoints = guard.as_slice();
-        let events = game_state.drain_network_sync_events();
+        let events = game_state.try_drain_network_sync_events();
         // println!("sending {} messages to {} peers", events.len(), endpoints.len());
 
         for event in &events {
@@ -164,7 +162,7 @@ impl SystemComponentDefaultNetworking {
             return;
         };
 
-        game_state.apply_network_sync_events(guard.to_vec());
+        game_state.try_apply_network_sync_events(&guard.to_vec());
 
         guard.clear();
     }
@@ -177,33 +175,75 @@ impl SystemComponent for SystemComponentDefaultNetworking {
         println!("init networking");
     }
     fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
-        //
-        for i in 0..game_state.len() {
-            //
-            let game_state_a = game_state.get_mut(i).unwrap();
-            let events = game_state_a.drain_network_sync_events();
+        // save all pending changes and apply them at the end
+        let mut pending_changes: HashMap<usize, Vec<StateSyncEvent>> = HashMap::new();
 
-            //
-            let is_host = game_state_a.network_mode == NetworkModes::LocalHost || game_state_a.network_mode == NetworkModes::OnlineHost;
-            if !is_host {
+        // iterate over each gamestate creating list of pending changes
+        for i in 0..game_state.len() {
+            // get the gamestate we are using
+            let Some(game_state_a) = game_state.get_mut(i) else {
+                println!("Failed to get GameState at index: {}", i);
                 continue;
-            }
-            for event in events {
-                for j in 0..event_queue.len() {
-                    let game_state_b = game_state.get_mut(j).unwrap();
-                    let is_peer = game_state_b.network_mode == NetworkModes::LocalPeer || game_state_b.network_mode == NetworkModes::OnlinePeer;
-                    if !is_peer {
-                        continue;
-                    }
+            };
+
+            // get the network capabilities of the gamestate. This is not required and can be silently passed
+            let Some(game_state_a_network_capabalities) = game_state_a.network_capabilities.clone() else {
+                continue;
+            };
+
+            // drain all network sync events
+            let drained_sync_events = game_state_a.try_drain_network_sync_events();
+            // iterate over each sync event
+            for sync_event in &drained_sync_events {
+                // if this state change is instance only we can skip it
+                if sync_event.ownership == StateOwnerships::Instance {
+                    continue;
+                }
+                // iterate over all gamestates again
+                for j in 0..game_state.len() {
+                    // if i and j are equal that means we are syncing with ourself and can skip
                     if i == j {
                         continue;
                     }
+                    // get the second GameState we are using
+                    let Some(game_state_b) = game_state.get_mut(i) else {
+                        println!("Failed to get GameState at index: {}", i);
+                        continue;
+                    };
 
-                    game_state_b.apply_network_sync_events(vec![event.clone()]);
+                    // get the network capabilities of the GameState. This is not required and can be silently passed
+                    let Some(game_state_b_network_capabalities) = game_state_b.network_capabilities.clone() else {
+                        continue;
+                    };
+
+                    // compare privilege levels and make sure the ones trying to override are higher
+                    if game_state_a_network_capabalities.privilege >= game_state_b_network_capabalities.privilege {
+                        // get the list of pending changes and add this sync event. if the list is not yet created we insert it
+                        if let Some(list_pending_changes) = pending_changes.get_mut(&j) {
+                            list_pending_changes.push(sync_event.clone());
+                        } else {
+                            pending_changes.insert(j, vec![sync_event.clone()]);
+                        }
+                    }
                 }
             }
         }
+        // iterate over each gamestate applying all pending changes
+        for i in 0..game_state.len() {
+            // get the gamestate we are using
+            let Some(game_state_a) = game_state.get_mut(i) else {
+                println!("Failed to get GameState at index: {}", i);
+                continue;
+            };
 
+            // get the pending changes. there can be none so this can silently continue
+            let Some(pending_changes) = pending_changes.get(&i) else {
+                continue;
+            };
+
+            // apply all the sync events
+            game_state_a.try_apply_network_sync_events(&pending_changes);
+        }
         for i in 0..event_queue.len() {
             let event_queue_a = event_queue.get_mut(i).unwrap();
             let events = event_queue_a.drain_network_sync_events();
@@ -227,7 +267,10 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                                 continue;
                             }
 
-                            if game_state[j].network_mode != NetworkModes::LocalHost && game_state[j].network_mode != NetworkModes::OnlineHost {
+                            let Some(network_capabilities) = &game_state[j].network_capabilities else {
+                                return;
+                            };
+                            if network_capabilities.privilege != NetworkModes::LocalHost && network_capabilities.privilege != NetworkModes::OnlineHost {
                                 continue;
                             }
 
@@ -240,8 +283,10 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             if i == j {
                                 continue;
                             }
-
-                            if game_state[j].network_mode != NetworkModes::LocalPeer && game_state[j].network_mode != NetworkModes::OnlinePeer {
+                            let Some(network_capabilities) = &game_state[j].network_capabilities else {
+                                return;
+                            };
+                            if network_capabilities.privilege != NetworkModes::LocalPeer && network_capabilities.privilege != NetworkModes::OnlinePeer {
                                 continue;
                             }
 
@@ -256,7 +301,10 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
         let mut v = vec![];
         for x in game_state.iter() {
-            if x.network_mode == NetworkModes::LocalPeer || x.network_mode == NetworkModes::OnlinePeer {
+            let Some(network_capabilities) = &x.network_capabilities else {
+                continue;
+            };
+            if network_capabilities.privilege == NetworkModes::LocalPeer || network_capabilities.privilege == NetworkModes::OnlinePeer {
                 v.push(x.instance_id);
             }
         }

@@ -32,8 +32,8 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
         world.spawn((Transform::default(), r, ComponentBall::default()));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
-        let state_position_ball = game_state.get_value2::<StatePositionBall>();
-        let state_time = game_state.get_value2::<TimeState>();
+        let state_position_ball = game_state.get::<StatePositionBall>();
+        let state_time = game_state.get::<TimeState>();
 
         for (_, (transform, _, renderer)) in world
             .query::<(&mut Transform, &ComponentBall, &mut Renderer)>()

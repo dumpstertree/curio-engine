@@ -30,7 +30,7 @@ impl ECSSystemEventless for ECSSystemViewMovePlayers {
     fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let asset_goblin = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::Goblin.uid());
 
-        for id in game_state.get_value2::<StateNetwork>().peer_instance_ids() {
+        for id in game_state.get::<StateNetwork>().peer_instance_ids() {
             println!("spawn player");
             let mut rend = RendererAnimated::default();
             rend.set_asset(Some(asset_goblin.clone()));
@@ -46,8 +46,8 @@ impl ECSSystemEventless for ECSSystemViewMovePlayers {
         }
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
-        let state_position_player = game_state.get_value2::<StatePositionPlayer>();
-        let state_time = game_state.get_value2::<TimeState>();
+        let state_position_player = game_state.get::<StatePositionPlayer>();
+        let state_time = game_state.get::<TimeState>();
 
         for (_, (transform, player, _, renderer)) in world
             .query::<(&mut Transform, &ComponentPlayer, &ComponentViewPlayer, &mut RendererAnimated)>()

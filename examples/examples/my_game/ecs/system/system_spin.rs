@@ -17,7 +17,7 @@ impl ECSSystemEventless for SystemSpin {
         true
     }
     fn tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        let t = state.get_value2::<TimeState>();
+        let t = state.get::<TimeState>();
         for (_, (spin, transform)) in world.query::<(&Spin, &mut Transform)>().iter() {
             transform.rotation = Quaternion::from_angle_axis(spin.axis, spin.speed * t.scaled_delta_time) * transform.rotation;
         }

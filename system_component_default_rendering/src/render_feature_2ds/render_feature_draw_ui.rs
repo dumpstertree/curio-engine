@@ -22,12 +22,12 @@ impl RenderFeatureDrawUI {
         let queue = SystemGPU::get_queue();
         let device = SystemGPU::get_device();
         let config = SystemGPU::get_config();
-        let state_gui_debug = &game_state.get_value2::<GUIStateDebug>();
+        let state_gui_debug = &game_state.get::<GUIStateDebug>();
 
         // start gui
         egui_renderer.begin_frame(&window);
 
-        if game_state.get_value2::<StateDebug>().is_inspecting {
+        if game_state.get::<StateDebug>().is_inspecting {
             //
             let gui_window = &state_gui_debug.finalize(game_state);
 

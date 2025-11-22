@@ -16,11 +16,11 @@ impl SystemDebugGuiTime {
 
 impl ECSSystemEventless for SystemDebugGuiTime {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateDebug>().is_inspecting
+        game_state.get::<StateDebug>().is_inspecting
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
         // get state
-        let state_time = game_state.get_value2::<TimeState>();
+        let state_time = game_state.get::<TimeState>();
 
         game_state.edit::<GUIStateDebug>(|x| {
             x.append(format!("FPS: {} / Target FPS: {}", state_time.average_fps, state_time.target_frame_rate));

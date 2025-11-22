@@ -55,7 +55,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let Some(team) = game_state
-            .get_value2::<StateTeamAssignments>()
+            .get::<StateTeamAssignments>()
             .team_for(&game_state.instance_id)
         else {
             println!("no team");

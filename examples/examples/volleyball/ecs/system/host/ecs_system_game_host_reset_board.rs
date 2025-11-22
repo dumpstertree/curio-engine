@@ -38,7 +38,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                 game_state.edit::<StateBallMode>(|x| x.mode = BallModes::Serve);
 
                 // position -> player
-                let state_team_assignments = game_state.get_value2::<StateTeamAssignments>();
+                let state_team_assignments = game_state.get::<StateTeamAssignments>();
                 game_state.edit::<StatePositionPlayer>(|x| {
                     for y in x.positions.iter_mut() {
                         let Some(team) = state_team_assignments.team_for(y.0) else {
@@ -68,8 +68,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                     }
                 });
 
-                let state_teams = game_state.get_value2::<StateTeamAssignments>();
-                let state_position_player = game_state.get_value2::<StatePositionPlayer>();
+                let state_teams = game_state.get::<StateTeamAssignments>();
+                let state_position_player = game_state.get::<StatePositionPlayer>();
                 //
                 let Some(team_members) = state_teams.team_assignments.get(team) else {
                     return;

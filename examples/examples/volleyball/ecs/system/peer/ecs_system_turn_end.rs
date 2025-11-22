@@ -16,14 +16,14 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get_value2::<StateTurn>().active_instance_id == game_state.instance_id
+        game_state.get::<StateTurn>().active_instance_id == game_state.instance_id
     }
     fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {
         println!("enabled turn end");
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
         // get input
-        let state_input = game_state.get_value2::<InputState>();
+        let state_input = game_state.get::<InputState>();
 
         // guard - input for next turn
         let input_next = state_input.mapped[0]

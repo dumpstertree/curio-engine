@@ -85,22 +85,22 @@ impl DependencyFiller {
 // get -> entity
 impl DependencyFiller {
     fn get_entity_user(game_state: &GameState) -> DataDepsFilled {
-        let cur_player_id = game_state.get_value2::<StateTurn>().active_instance_id;
+        let cur_player_id = game_state.get::<StateTurn>().active_instance_id;
         DataDepsFilled::Entities(vec![cur_player_id])
     }
     fn get_entity_select(game_state: &GameState) -> DataDepsFilled {
         todo!()
     }
     fn get_entity_random(game_state: &GameState) -> DataDepsFilled {
-        let state_peers = game_state.get_value2::<StateNetwork>();
+        let state_peers = game_state.get::<StateNetwork>();
         let peer_instance_ids = state_peers.peer_instance_ids();
         let random_index = Random::range_int(0, peer_instance_ids.len().try_into().unwrap());
         let selected = peer_instance_ids.get(random_index as usize).unwrap();
         DataDepsFilled::Entities(vec![*selected])
     }
     fn get_entity_opponent(game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get_value2::<StateTurn>();
-        let state_team_assignment = game_state.get_value2::<StateTeamAssignments>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_team_assignment = game_state.get::<StateTeamAssignments>();
         let opponent_team = state_team_assignment
             .team_for(&state_turn.active_instance_id)
             .unwrap()
@@ -119,8 +119,8 @@ impl DependencyFiller {
         todo!()
     }
     fn get_card_user_random(game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get_value2::<StateTurn>();
-        let state_deck = game_state.get_value2::<StateDeck>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_deck = game_state.get::<StateDeck>();
 
         let playere_id = &state_turn.active_instance_id;
         let Some(deck) = state_deck.deck.get(playere_id) else {
@@ -141,8 +141,8 @@ impl DependencyFiller {
         todo!()
     }
     fn get_card_user_all(game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get_value2::<StateTurn>();
-        let state_deck = game_state.get_value2::<StateDeck>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_deck = game_state.get::<StateDeck>();
 
         let Some(deck) = state_deck.deck.get(&state_turn.active_instance_id) else {
             panic!("");
@@ -156,9 +156,9 @@ impl DependencyFiller {
         DataDepsFilled::Cards(result)
     }
     fn get_card_opponent_all(game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get_value2::<StateTurn>();
-        let state_deck = game_state.get_value2::<StateDeck>();
-        let state_team_assignment = game_state.get_value2::<StateTeamAssignments>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_deck = game_state.get::<StateDeck>();
+        let state_team_assignment = game_state.get::<StateTeamAssignments>();
         let opponent_team = state_team_assignment
             .team_for(&state_turn.active_instance_id)
             .unwrap()
@@ -181,9 +181,9 @@ impl DependencyFiller {
         DataDepsFilled::Cards(result)
     }
     fn get_card_opponent_random(game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get_value2::<StateTurn>();
-        let state_deck = game_state.get_value2::<StateDeck>();
-        let state_team_assignment = game_state.get_value2::<StateTeamAssignments>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_deck = game_state.get::<StateDeck>();
+        let state_team_assignment = game_state.get::<StateTeamAssignments>();
         let opponent_team = state_team_assignment
             .team_for(&state_turn.active_instance_id)
             .unwrap()
@@ -219,8 +219,8 @@ impl DependencyFiller {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(0, 4), Random::range_int(0, 4))])
     }
     pub fn get_tiles_random_on_team_user(game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get_value2::<StateTurn>();
-        let state_team_assignment = game_state.get_value2::<StateTeamAssignments>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_team_assignment = game_state.get::<StateTeamAssignments>();
 
         let Some(cur_team) = state_team_assignment.team_for(&state_turn.active_instance_id) else {
             panic!("");
@@ -232,8 +232,8 @@ impl DependencyFiller {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
     }
     pub fn get_tiles_random_on_team_opponent(game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get_value2::<StateTurn>();
-        let state_team_assignment = game_state.get_value2::<StateTeamAssignments>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_team_assignment = game_state.get::<StateTeamAssignments>();
 
         let Some(cur_team) = state_team_assignment.team_for(&state_turn.active_instance_id) else {
             panic!("");
