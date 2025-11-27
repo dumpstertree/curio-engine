@@ -32,9 +32,27 @@ pub enum EngineCommands {
     SetPeer(),
 }
 
-impl IGameEvent for EngineCommands {
-    fn get_scope(&self) -> EventScope {
+impl EngineCommands {
+    fn ownership(&self) -> EventScope {
         EventScope::Instance
+    }
+
+    fn id(&self) -> i32 {
+        match self {
+            EngineCommands::Redraw => 0,
+            EngineCommands::Tick => 1,
+            EngineCommands::Exit => 2,
+            EngineCommands::Resize(vector3) => 3,
+            EngineCommands::Fullscreen(_) => 4,
+            EngineCommands::Resizable(_) => 5,
+            EngineCommands::Cursor(_) => 6,
+            EngineCommands::SetDebugMode(_) => 7,
+            EngineCommands::SetPauseMode(_) => 8,
+            EngineCommands::SetNumInputs(_) => 9,
+            EngineCommands::SetNumScreens(_) => 10,
+            EngineCommands::SetHost() => 11,
+            EngineCommands::SetPeer() => 12,
+        }
     }
 }
 

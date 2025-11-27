@@ -78,6 +78,9 @@ pub mod gameplay {
     }
 }
 pub mod static_data {
+    pub mod global_ecs;
+    pub mod global_event_recievers;
+    pub mod global_events;
     pub mod global_states;
 }
 pub mod events {

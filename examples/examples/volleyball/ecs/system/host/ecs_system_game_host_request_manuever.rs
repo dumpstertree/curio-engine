@@ -9,7 +9,10 @@ use core::{
         game_state::{self, GameState},
     },
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
+    gameplay::ecs::traits::{
+        ecs_event_reciever::{self, InstanceLimiter},
+        ecs_system::ECSSystemEventless,
+    },
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
@@ -17,6 +20,7 @@ use hecs::World;
 use std::sync::Arc;
 
 #[global_ecs_system]
+#[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameRequestManuever {}
 impl ECSSystemEventless for ECSSystemGameRequestManuever {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
@@ -26,13 +30,20 @@ impl ECSSystemEventless for ECSSystemGameRequestManuever {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-#[global_ecs_system_event_reciever(GameEvents)]
+impl InstanceLimiter for ECSSystemGameRequestManuever {
+    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    }
+}
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event
-                println!("----------------------------use manuever!!!");
+                println!("----------------------------use manuever!!! for {} with id {}", game_state.name, id);
 
                 if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
                     println!("mismatch player id");
@@ -64,7 +75,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
 
                 // play
                 ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
-                println!("---------------------------did use manuever!!!");
+                println!("-----------------------------------did use manuever!!! for {} with id {}", game_state.name, id);
             }
             GameEvents::RequestUseManeuverConsumable(id, card_instance, data) => {
                 // make sure the correct player is sending an event
@@ -95,7 +106,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                     println!("card not found in deck");
                     return;
                 };
-                println!("-----------------------------------did use manuever!!!");
+                println!("-----------------------------------did use manuever!!! for {}", game_state.name);
 
                 let card_instance = deck.get_instance(*card_instance);
                 // play

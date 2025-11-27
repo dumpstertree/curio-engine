@@ -450,6 +450,15 @@ impl<T: IState + 'static> AsAny for T {
     }
 }
 
+impl<T: IGameEvent + 'static> AsAny for T {
+    fn as_any(&self) -> Option<&dyn std::any::Any> {
+        Some(self)
+    }
+    fn as_mut_any(&mut self) -> Option<&mut dyn std::any::Any> {
+        Some(self)
+    }
+}
+
 // impl dyn IState {
 //     fn as_any(&self) -> Option<&dyn std::any::Any> {
 //         None

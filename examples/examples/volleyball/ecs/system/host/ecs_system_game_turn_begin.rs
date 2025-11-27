@@ -7,16 +7,28 @@ use built_in_state::state_time::TimeState;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
+    gameplay::ecs::traits::{
+        ecs_event_reciever::{self, InstanceLimiter},
+        ecs_system::ECSSystemEventless,
+    },
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 #[global_ecs_system]
+#[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameTurnBegin {
     do_move: bool,
     lastmove: f64,
+}
+impl InstanceLimiter for ECSSystemGameTurnBegin {
+    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    }
 }
 impl ECSSystemEventless for ECSSystemGameTurnBegin {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
@@ -45,7 +57,6 @@ impl ECSSystemEventless for ECSSystemGameTurnBegin {
     //     // events.enqueue_event(GameEvents::TurnEnd(game_state.get_value2::<StateTurn>().active_instance_id));
     // }
 }
-#[global_ecs_system_event_reciever(GameEvents)]
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue, event: &GameEvents) {
         match event {

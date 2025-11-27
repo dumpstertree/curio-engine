@@ -45,7 +45,8 @@ pub fn global_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(item as DeriveInput);
     let name = &input.ident;
 
-    // Append derives to the enum
+    // Append derives to the struct
+    input.attrs.push(parse_quote!(#[derive(Default)]));
     input.attrs.push(parse_quote!(#[derive(Clone)]));
     input.attrs.push(parse_quote!(#[derive(serde::Serialize)]));
     input
@@ -61,8 +62,7 @@ pub fn global_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
         // #[used] // ensure function isn’t discarded
         #[allow(non_snake_case)]
         fn #register_fn() {
-            println!("FOUND MACRO for {}", stringify!(#name));
-            core::collections::event_queue::EventQueue::register_global_events::<#name>( );
+           core::static_data::global_events::register_global_events::<#name>();
         }
     };
 

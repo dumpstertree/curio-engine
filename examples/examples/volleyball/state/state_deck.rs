@@ -50,6 +50,8 @@ pub struct Deck {
 impl Deck {
     pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
         let inst = Arc::new(CardInstance::new(card_uid));
+
+        println!("add card {} with id {}", inst.card_id, inst.instance_id);
         if is_persistent {
             self.hand_persistent.push(inst.clone());
         } else {
@@ -70,7 +72,12 @@ impl Deck {
             return item.clone();
         }
 
-        panic!("")
+        println!("INSTANCE ID {}", instance_id);
+        for x in &self.all_cards {
+            println!("{}", x.instance_id);
+        }
+
+        panic!(" No card for {}", instance_id);
     }
     pub fn get_location(&self, card_instance: Arc<CardInstance>) -> CardLocation {
         if let Some(index) = self

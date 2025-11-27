@@ -1,5 +1,9 @@
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
+    collections::{
+        event_queue::EventQueue,
+        game_state::{self, GameState},
+        vector2_int::{self, Vector2Int},
+    },
     random::Random,
     system::system_game_state::IState,
 };
@@ -14,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     clone,
     collections::VecDeque,
+    fmt::Display,
     hash::{DefaultHasher, Hash, Hasher},
     panic,
     sync::Arc,
@@ -26,10 +31,14 @@ use crate::{
         attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles, card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_instance::CardInstance, card_modifier::CardModifier,
         data_dep_empty::DataDepsEmpty, data_dep_filled::DataDepsFilled,
     },
-    event_recievers::{event_reciever_apply_card_attribute_event_move_ball_forward, event_reciever_apply_card_attribute_modifier_cost_for_entities, event_reciever_apply_card_attribute_modifier_energy_for_entities, event_reciever_apply_card_attribute_modifier_range_for_entities},
-    game_board::GameBoard,
+    event_recievers::{
+        event_reciever_apply_card_attribute_event_move_ball_forward, event_reciever_apply_card_attribute_event_set_ball_mode, event_reciever_apply_card_attribute_modifier_cost_for_entities, event_reciever_apply_card_attribute_modifier_energy_for_entities,
+        event_reciever_apply_card_attribute_modifier_range_for_entities,
+    },
+    game_board::{self, GameBoard},
     game_events::{FilledAttribute, FilledCardResponse, GameEvents},
     state::{
+        self,
         host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
         state_ball_mode::{self, BallModes, StateBallMode},
         state_deck::StateDeck,
@@ -47,6 +56,15 @@ enum Move {
     Play(Arc<CardInstance>, FilledCardResponse),
     Move(Vector2Int),
     EndTurn,
+}
+impl Display for Move {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Move::Play(card_instance, filled_card_response) => f.write_str(&format!("play card {}", card_instance.card_id)),
+            Move::Move(vector2_int) => f.write_str("move"),
+            Move::EndTurn => f.write_str("end turn"),
+        }
+    }
 }
 
 // ----------------- Player Enum -----------------
@@ -462,9 +480,19 @@ impl AIGameSimulation {
 
         // iterate over each card in hand
         for card in &deck.hand_persistent {
-            if card.card_id == "serve" {
-                println!("card id: {}, evnt atts{}", card.card_id, card.get_attributes_events(game_state, uid.clone())[1].get_data_dependencies_empty()[0]);
+            if card.card_id == "rest" {
+                println!(
+                    "card id: {}, evnt atts{}, mod atts{}",
+                    card.card_id,
+                    card.get_attributes_events(game_state, game_state.instance_id)
+                        .len(),
+                    card.get_attributes_modifiers(game_state, game_state.instance_id)
+                        .len()
+                );
+
+                panic!("");
             }
+
             // the data that stores all the different permutations
             let mut all_data = DataDepsFilledForModifiers::new();
 
@@ -602,28 +630,51 @@ impl MCTSGameState for AIGameSimulation {
             panic!("Failed to find energy for uid: {}", uid);
         };
 
-        // if we have enough energy to move add all the directions
-        let has_energy_for_move = energy_for_uid.0 > 0;
-        let has_mode_for_move = state_ball_mode.mode != BallModes::Serve;
-        if has_energy_for_move && has_mode_for_move {
-            // movement
-            output.push(Move::Move(Vector2Int::new(0, 1)));
-            output.push(Move::Move(Vector2Int::new(0, -1)));
-            output.push(Move::Move(Vector2Int::new(1, 0)));
-            output.push(Move::Move(Vector2Int::new(-1, 0)));
+        if self.game_state.get::<StateBallMode>().mode != BallModes::Serve {
+            // if we have enough energy to move add all the directions
+            let has_energy_for_move = energy_for_uid.0 > 0;
+            let has_mode_for_move = state_ball_mode.mode != BallModes::Serve;
+            if has_energy_for_move && has_mode_for_move {
+                let state_pos = self.game_state.get::<StatePositionPlayer>();
+                let team = state_teams.team_for(&uid).unwrap();
+                let pos = state_pos.positions.get(&uid);
+                let pos = pos.unwrap();
+
+                // movement
+                let min = GameBoard::get_bounds_min(&team);
+                let max = GameBoard::get_bounds_max(&team);
+
+                let offset = team.convert_dir(0, 1);
+                if pos.1 + offset.1 < max.y && pos.1 + offset.1 >= min.y && pos.0 + offset.0 < max.x && pos.0 + offset.0 >= min.x {
+                    output.push(Move::Move(Vector2Int::new(0, 1)));
+                }
+                let offset = team.convert_dir(0, -1);
+                if pos.1 + offset.1 < max.y && pos.1 + offset.1 >= min.y && pos.0 + offset.0 < max.x && pos.0 + offset.0 >= min.x {
+                    output.push(Move::Move(Vector2Int::new(0, -1)));
+                }
+                let offset = team.convert_dir(1, 0);
+                if pos.1 + offset.1 < max.y && pos.1 + offset.1 >= min.y && pos.0 + offset.0 < max.x && pos.0 + offset.0 >= min.x {
+                    output.push(Move::Move(Vector2Int::new(1, 0)));
+                }
+                let offset = team.convert_dir(-1, 0);
+                if pos.1 + offset.1 < max.y && pos.1 + offset.1 >= min.y && pos.0 + offset.0 < max.x && pos.0 + offset.0 >= min.x {
+                    output.push(Move::Move(Vector2Int::new(-1, 0)));
+                }
+            }
+
+            // end
+            output.push(Move::EndTurn);
         }
 
         // append get all manuevers available for this uid
         output.extend(Self::get_available_manuevers(&self.game_state, &uid));
-
-        // end
-        // output.push(Move::EndTurn);
 
         // return
         output
     }
 
     fn make_move(&mut self, mov: &Self::Move) {
+        // println!("{}", mov);
         match (self.current_player, mov) {
             (SimulationTeams::Red, Move::Play(card, data)) => {
                 // println!("Red: Play");
@@ -683,12 +734,12 @@ impl MCTSGameState for AIGameSimulation {
                     return;
                 };
 
-                // edit -> energy
-                self.game_state.edit::<StateEnergy>(|x| {
-                    // reset energy
-                    let energy = x.all_players[&red_uids[0]];
-                    x.all_players.insert(red_uids[0], (energy.1, energy.1));
-                });
+                // // edit -> energy
+                // self.game_state.edit::<StateEnergy>(|x| {
+                //     // reset energy
+                //     let energy = x.all_players[&red_uids[0]];
+                //     x.all_players.insert(red_uids[0], (energy.1, energy.1));
+                // });
 
                 // next turn
                 self.turn += 1;
@@ -769,6 +820,19 @@ impl MCTSGameState for AIGameSimulation {
                     x.all_players.insert(uid, (cur.0 - 1, cur.1));
                 });
             }
+        }
+
+        let uid = self.game_state.get::<StateTurn>().active_instance_id;
+        let energy = self
+            .game_state
+            .get::<StateEnergy>()
+            .all_players
+            .get(&uid)
+            .unwrap()
+            .0;
+        // println!("turn num {}, with energy {} ", self.turn, energy);
+        if energy <= 0 {
+            self.terminal = true;
         }
 
         // // end condition
@@ -932,7 +996,7 @@ pub fn run_ai(game_state: &mut GameState) -> GameEvents {
     // Run playouts — choose iterations & threads appropriate for your runtime.
     // manager.playout_n_parallel(2000, 4);
 
-    manager.playout_n(2000);
+    manager.playout_n(100);
 
     // Retrieve best move from manager
     if let Some(best_move) = manager.best_move() {
@@ -944,6 +1008,13 @@ pub fn run_ai(game_state: &mut GameState) -> GameEvents {
                 return GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id.clone(), data_deps_filleds);
             }
             Move::Move(vector2_int) => {
+                let t = game_state
+                    .get::<StateTeamAssignments>()
+                    .team_for(&uid)
+                    .unwrap();
+
+                let converted = t.convert_dir(vector2_int.x, vector2_int.y);
+                let vector2_int = Vector2Int::new(converted.0, converted.1);
                 if vector2_int == Vector2Int::new(-1, 0) {
                     return GameEvents::RequestMoveXNeg(uid);
                 } else if vector2_int == Vector2Int::new(1, 0) {
@@ -1014,6 +1085,7 @@ pub enum CardEvents {
     ApplyEventMoveEntity,
     ApplyEventDrawCards,
     ApplyEventDiscardCards,
+    ApplyEventSetBallMode(BallModes),
     /// i32:EntityID, i32:CardID, Vec<i32>:TargetTileIDs
     ApplyEventMoveBall(i32, i32, DataDepsFilled),
 }
@@ -1030,8 +1102,9 @@ impl CardEventRunner {
             event_reciever_apply_card_attribute_modifier_energy_for_entities::EventReciever::recieve,
             event_reciever_apply_card_attribute_modifier_cost_for_entities::EventReciever::recieve,
             event_reciever_apply_card_attribute_modifier_range_for_entities::EventReciever::recieve,
-            event_reciever_apply_card_attribute_event_move_ball_forward::EventReciever::recieve,
             // events
+            event_reciever_apply_card_attribute_event_move_ball_forward::EventReciever::recieve,
+            event_reciever_apply_card_attribute_event_set_ball_mode::EventReciever::recieve,
         ];
 
         // create the instance
@@ -1064,6 +1137,10 @@ impl CardEventRunner {
     }
     fn enqueue_event(&mut self, event: &CardAttributeEvents, data: &FilledAttribute) {
         match event {
+            CardAttributeEvents::SetBallMode(mode) => {
+                self.runner
+                    .enqueue(&CardEvents::ApplyEventSetBallMode(mode.clone()));
+            }
             CardAttributeEvents::MoveBall(_) => {
                 self.runner
                     .enqueue(&CardEvents::ApplyEventMoveBall(0, 0, data.filled[0].clone()));

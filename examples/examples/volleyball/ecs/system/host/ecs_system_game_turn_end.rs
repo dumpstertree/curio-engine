@@ -7,7 +7,10 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     extensions::extensions_i32::ExtensionsI32,
-    gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
+    gameplay::ecs::traits::{
+        ecs_event_reciever::{self, InstanceLimiter},
+        ecs_system::ECSSystemEventless,
+    },
 };
 
 use crate::{
@@ -17,6 +20,7 @@ use crate::{
 };
 
 #[global_ecs_system]
+#[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameEndTurn {}
 impl ECSSystemEventless for ECSSystemGameEndTurn {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
@@ -29,7 +33,14 @@ impl ECSSystemEventless for ECSSystemGameEndTurn {
     //     vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     // }
 }
-#[global_ecs_system_event_reciever(GameEvents)]
+impl InstanceLimiter for ECSSystemGameEndTurn {
+    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    }
+}
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {

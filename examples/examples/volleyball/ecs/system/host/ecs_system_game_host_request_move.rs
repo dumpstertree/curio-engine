@@ -6,13 +6,17 @@ use crate::{
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
+    gameplay::ecs::traits::{
+        ecs_event_reciever::{self, InstanceLimiter},
+        ecs_system::ECSSystemEventless,
+    },
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
 
 #[global_ecs_system]
+#[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameRequestMove {}
 impl ECSSystemGameRequestMove {
     fn check_energy(game_state: &mut GameState, id: i32) -> bool {
@@ -54,7 +58,14 @@ impl ECSSystemEventless for ECSSystemGameRequestMove {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-#[global_ecs_system_event_reciever(GameEvents)]
+impl InstanceLimiter for ECSSystemGameRequestMove {
+    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    }
+}
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
         match event {
@@ -66,10 +77,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
 
-                let Some(team) = game_state
-                    .get::<StateTeamAssignments>()
-                    .team_for(&id)
-                else {
+                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
 
@@ -94,10 +102,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
                     return;
                 }
-                let Some(team) = game_state
-                    .get::<StateTeamAssignments>()
-                    .team_for(&id)
-                else {
+                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
                 let dir = team.convert_dir(0, -1);
@@ -121,10 +126,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
                     return;
                 }
-                let Some(team) = game_state
-                    .get::<StateTeamAssignments>()
-                    .team_for(&id)
-                else {
+                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
 
@@ -149,10 +151,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
                     return;
                 }
-                let Some(team) = game_state
-                    .get::<StateTeamAssignments>()
-                    .team_for(&id)
-                else {
+                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
 

@@ -34,8 +34,8 @@ impl Curio {
 
         // populate all states and events
         for i in 0..game_mode.game_instances.len() {
-            states.push(GameState::new(game_mode.game_instances[i].network_mode, ids[i], ids.clone()));
-            events.push(EventQueue::new());
+            states.push(GameState::new(&format!("game_state__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode, ids[i], ids.clone()));
+            events.push(EventQueue::new(&format!("event_queue__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode));
         }
 
         // order components - this is only done on creation

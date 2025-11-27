@@ -11,6 +11,7 @@ use crate::system::system_game_state::IState;
 
 #[derive(Clone)]
 pub struct GameState {
+    pub name: String,
     pub instance_id: i32,
     pub all_instance_id: Vec<i32>,
     pub cache: StateMap<i32>,
@@ -35,7 +36,7 @@ impl GameState {
         }
     }
 
-    /// Drain any sync events that are marked to be sent to another GameState
+    /// Drainname any sync events that are marked to be sent to another GameState
     pub fn try_drain_network_sync_events(&mut self) -> Vec<StateSyncEvent> {
         // if we have network capabilites
         self.network_capabilities
@@ -52,6 +53,7 @@ impl GameState {
         }
 
         GameState {
+            name: String::from(""),
             network_capabilities: None,
             instance_id: -1,
             all_instance_id: vec![-1],
@@ -60,7 +62,7 @@ impl GameState {
     }
 
     /// Create a new instance with network capabilities
-    pub fn new(network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> GameState {
+    pub fn new(name: &str, network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> GameState {
         // create the cache we are going to use
         let mut cache = StateMap::default();
 
@@ -70,6 +72,7 @@ impl GameState {
         }
 
         GameState {
+            name: String::from(name),
             network_capabilities: Some(NetworkCapabilities::new(network_mode)),
             instance_id: instance_id,
             all_instance_id: all_instance_id,

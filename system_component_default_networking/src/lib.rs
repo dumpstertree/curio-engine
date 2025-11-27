@@ -244,53 +244,75 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             // apply all the sync events
             game_state_a.try_apply_network_sync_events(&pending_changes);
         }
+
+        // send events
         for i in 0..event_queue.len() {
+            //get queuue
             let event_queue_a = event_queue.get_mut(i).unwrap();
-            let events = event_queue_a.drain_network_sync_events();
+            let events = event_queue_a.try_drain_network_sync_events();
 
             for event in events {
-                match event.target {
+                match event.ownership {
                     core::collections::event_queue::EventScope::All => {
                         for j in 0..event_queue.len() {
-                            let event_queue_b = event_queue.get_mut(j).unwrap();
+                            // if equal this means that the two queues are the same and we should skipp
                             if i == j {
                                 continue;
                             }
 
-                            event_queue_b.apply_network_sync_events(vec![event.clone()]);
+                            // get the reciever
+                            let event_queue_b = event_queue.get_mut(j).unwrap();
+
+                            // apply to the reciever
+                            event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
                     core::collections::event_queue::EventScope::ConnectedHost => {
                         for j in 0..event_queue.len() {
-                            let event_queue_b = event_queue.get_mut(j).unwrap();
+                            // if equal this means that the two queues are the same and we should skipp
                             if i == j {
                                 continue;
                             }
 
+                            // get reciever
+                            let event_queue_b = event_queue.get_mut(j).unwrap();
+
+                            // get network cabailities for reciever
                             let Some(network_capabilities) = &game_state[j].network_capabilities else {
-                                return;
+                                continue;
                             };
+
+                            // make sure these have the correct privilage
                             if network_capabilities.privilege != NetworkModes::LocalHost && network_capabilities.privilege != NetworkModes::OnlineHost {
                                 continue;
                             }
 
-                            event_queue_b.apply_network_sync_events(vec![event.clone()]);
+                            // enqueue
+                            event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
                     core::collections::event_queue::EventScope::ConnectedPeers => {
                         for j in 0..event_queue.len() {
+                            // if equal this means that the two queues are the same and we should skipp
+                            // if i == j {
+                            //     continue;
+                            // }
+
+                            // get the reciever
                             let event_queue_b = event_queue.get_mut(j).unwrap();
-                            if i == j {
-                                continue;
-                            }
+
+                            // get network cabailities for reciever
                             let Some(network_capabilities) = &game_state[j].network_capabilities else {
-                                return;
+                                continue;
                             };
+
+                            // make sure these have the correct privilage
                             if network_capabilities.privilege != NetworkModes::LocalPeer && network_capabilities.privilege != NetworkModes::OnlinePeer {
                                 continue;
                             }
 
-                            event_queue_b.apply_network_sync_events(vec![event.clone()]);
+                            // enqueue
+                            event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
                     _ => {}

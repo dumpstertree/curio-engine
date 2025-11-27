@@ -1,59 +1,37 @@
-use std::any::type_name;
-use std::fmt;
-use std::sync::Mutex;
-
-use crate::collections::key_state::KeyState;
-use crate::collections::vector3::Vector3;
-use crate::engine::curio_common::CurioCommon;
-use crate::input::axis_code::AxisCode;
-use crate::input::key_code::ButtonCode;
-use crate::io::texture_asset::TextureAsset;
+use egui_wgpu::wgpu::{Adapter, Device, Queue, Surface, SurfaceConfiguration};
+use std::fmt::{self, Display};
 use std::sync::Arc;
-
-use egui::Options;
-use egui_wgpu::wgpu::{Adapter, Device, Instance, Queue, Surface, SurfaceConfiguration};
-
-use bytemuck::BoxBytes;
-use egui_wgpu::wgpu::naga::Type;
-use pollster::FutureExt;
-use serde::de::value::Error;
-use winit::application::ApplicationHandler;
-use winit::event_loop::{ControlFlow, EventLoop, EventLoopClosed};
-use winit::platform::x11::WindowAttributesExtX11;
-use winit::window::{Window, WindowAttributes};
+use winit::window::Window;
 
 use crate::collections::vector2::Vector2;
-use crate::events::engine_commands::EngineCommands;
-use crate::gameplay::ecs::traits::ecs_system::ECSSystemEventless;
 use crate::graphics::graphics_mapping::GraphicsMapping;
 use crate::input::input_mapping::InputMapping;
-use crate::system::system_components::system_component_gameplay::SystemComponentGameplay;
-use crate::system::system_components::system_component_networking::SystemComponentNetworking;
-use crate::system::system_components::system_component_physics::SystemComponentPhysics;
-use crate::system::system_components::system_component_time::SystemComponentTime;
-use crate::system::system_components::{system_component_graphics, system_component_input};
-use crate::system::system_game_state::IState;
-use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::window::system_window::SystemWindow;
 
-pub static REGISTERED_GLOBAL_ECS_SYSTEMS: Mutex<Vec<fn() -> Box<dyn ECSSystemEventless>>> = Mutex::new(Vec::new());
-pub static REGISTERED_GLOBAL_STATES: Mutex<Vec<Type>> = Mutex::new(Vec::new());
-
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug)]
 pub enum NetworkModes {
     LocalHost = 4,
     OnlineHost = 3,
     LocalPeer = 2,
     OnlinePeer = 1,
 }
-
-impl fmt::Display for NetworkModes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl NetworkModes {
+    pub fn all() -> Vec<NetworkModes> {
+        vec![NetworkModes::OnlinePeer, NetworkModes::LocalPeer, NetworkModes::OnlineHost, NetworkModes::LocalHost]
+    }
+    pub fn all_peer() -> Vec<NetworkModes> {
+        vec![NetworkModes::OnlinePeer, NetworkModes::LocalPeer]
+    }
+    pub fn all_host() -> Vec<NetworkModes> {
+        vec![NetworkModes::OnlineHost, NetworkModes::LocalHost]
+    }
+}
+impl Display for NetworkModes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            NetworkModes::LocalHost => write!(f, "LocalHost"),
-            NetworkModes::LocalPeer => write!(f, "LocalPeer"),
-            NetworkModes::OnlineHost => write!(f, "OnlineHost"),
-            NetworkModes::OnlinePeer => write!(f, "OnlinePeer"),
+            NetworkModes::LocalHost => f.write_str("local host"),
+            NetworkModes::OnlineHost => f.write_str("online host"),
+            NetworkModes::LocalPeer => f.write_str("local peer"),
+            NetworkModes::OnlinePeer => f.write_str("online peer"),
         }
     }
 }
@@ -74,70 +52,45 @@ impl GameMode {
     pub fn new_local_single(input: InputMapping) -> GameMode {
         GameMode {
             game_instances: vec![
-                GameInstance::new(GraphicsMapping::new(Vector2::zero(), Vector2::one()), vec![input], NetworkModes::LocalPeer),
-                GameInstance::new(GraphicsMapping::new(Vector2::new(0.9, 0.9), Vector2::new(1.0, 1.0)), vec![], NetworkModes::LocalHost),
+                GameInstance::new("peer_player_a", GraphicsMapping::new(Vector2::zero(), Vector2::one()), vec![input], NetworkModes::LocalPeer),
+                GameInstance::new("host_logic", GraphicsMapping::new(Vector2::new(0.9, 0.9), Vector2::new(1.0, 1.0)), vec![], NetworkModes::LocalHost),
             ],
         }
     }
     pub fn new_local_splitscreen_2p_vertical(input_p1: InputMapping, input_p2: InputMapping) -> GameMode {
         GameMode {
             game_instances: vec![
-                GameInstance::new(GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(0.5, 1.0)), vec![input_p1], NetworkModes::LocalHost),
-                GameInstance::new(GraphicsMapping::new(Vector2::new(0.5, 0.0), Vector2::new(1.0, 1.0)), vec![input_p2], NetworkModes::LocalPeer),
+                GameInstance::new("peer_player_a", GraphicsMapping::new(Vector2::new(0.5, 0.0), Vector2::new(1.0, 1.0)), vec![input_p1], NetworkModes::LocalPeer),
+                GameInstance::new("peer_player_b", GraphicsMapping::new(Vector2::new(0.5, 0.0), Vector2::new(1.0, 1.0)), vec![input_p2], NetworkModes::LocalPeer),
+                GameInstance::new("host_logic", GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(0.5, 1.0)), vec![], NetworkModes::LocalHost),
             ],
         }
     }
     pub fn new_local_splitscreen_2p_horizontal(input_p1: InputMapping, input_p2: InputMapping) -> GameMode {
         GameMode {
             game_instances: vec![
-                GameInstance::new(GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(1.0, 0.5)), vec![input_p1], NetworkModes::LocalPeer),
-                GameInstance::new(GraphicsMapping::new(Vector2::new(0.0, 0.5), Vector2::new(1.0, 1.0)), vec![input_p2], NetworkModes::LocalPeer),
-                GameInstance::new(GraphicsMapping::new(Vector2::new(0.9, 0.9), Vector2::new(1.0, 1.0)), vec![], NetworkModes::LocalHost),
+                GameInstance::new("peer_player_a", GraphicsMapping::new(Vector2::new(0.0, 0.0), Vector2::new(1.0, 0.5)), vec![input_p1], NetworkModes::LocalPeer),
+                GameInstance::new("peer_player_a", GraphicsMapping::new(Vector2::new(0.0, 0.5), Vector2::new(1.0, 1.0)), vec![input_p2], NetworkModes::LocalPeer),
+                GameInstance::new("host_logic", GraphicsMapping::new(Vector2::new(0.9, 0.9), Vector2::new(1.0, 1.0)), vec![], NetworkModes::LocalHost),
             ],
         }
     }
 }
 
 pub struct GameInstance {
+    pub name: String,
     pub graphics_mappings: GraphicsMapping,
     pub input_mappings: Vec<InputMapping>,
     pub network_mode: NetworkModes,
 }
 impl GameInstance {
-    pub fn new(graphics_mappings: GraphicsMapping, input_mappings: Vec<InputMapping>, network_mode: NetworkModes) -> GameInstance {
-        GameInstance { graphics_mappings, input_mappings, network_mode }
-    }
-}
-pub struct DumpsterEngine {}
-impl DumpsterEngine {
-    pub fn register_global_state<T>()
-    where
-        T: 'static + IState,
-    {
-        let type_id = type_name::<T>();
-        println!("register {}", type_id);
-
-        let Ok(guard) = REGISTERED_GLOBAL_STATES.lock() else {
-            println!("failed to lock REGISTERED_STATE");
-            return;
-        };
-
-        // guard.push(T);
-    }
-    pub fn register_global_ecs_system<T>()
-    where
-        T: 'static + ECSSystemEventless + Default + Clone,
-    {
-        let type_id = type_name::<T>();
-        println!("register {}", type_id);
-
-        let Ok(mut guard) = REGISTERED_GLOBAL_ECS_SYSTEMS.lock() else {
-            println!("failed to lock REGISTERED_ECS_SYSTEMS");
-            return;
-        };
-
-        let callback: fn() -> Box<dyn ECSSystemEventless> = || return Box::new(T::default());
-        guard.push(callback);
+    pub fn new(name: &str, graphics_mappings: GraphicsMapping, input_mappings: Vec<InputMapping>, network_mode: NetworkModes) -> GameInstance {
+        GameInstance {
+            name: String::from(name),
+            graphics_mappings,
+            input_mappings,
+            network_mode,
+        }
     }
 }
 

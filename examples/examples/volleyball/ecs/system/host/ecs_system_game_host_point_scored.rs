@@ -1,5 +1,5 @@
 use crate::{game_events::GameEvents, state::state_score::StateScore};
-use core::gameplay::ecs::traits::ecs_event_reciever;
+use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -10,6 +10,7 @@ use ecs_system::global_ecs_system;
 use hecs::World;
 
 #[global_ecs_system]
+#[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGamePointScored {}
 impl ECSSystemEventless for ECSSystemGamePointScored {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
@@ -20,7 +21,14 @@ impl ECSSystemEventless for ECSSystemGamePointScored {
     }
 }
 
-#[global_ecs_system_event_reciever(GameEvents)]
+impl InstanceLimiter for ECSSystemGamePointScored {
+    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    }
+}
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {

@@ -6,6 +6,7 @@ use macro_events::global_events;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, write},
+    hash::Hash,
     sync::Arc,
 };
 
@@ -38,6 +39,9 @@ impl FilledAttribute {
 
 #[global_events]
 pub enum GameEvents {
+    // an invalid default state
+    #[default]
+    Invalid,
     // to -> instance
     Begin,
     PointScored(Teams),
@@ -77,8 +81,15 @@ pub enum GameEvents {
 }
 
 impl IGameEvent for GameEvents {
-    fn get_scope(&self) -> EventScope {
+    fn id() -> i32
+    where
+        Self: Sized + 'static,
+    {
+        0
+    }
+    fn ownership(&self) -> EventScope {
         match &self {
+            GameEvents::Invalid => EventScope::Instance,
             GameEvents::DrawCard() => EventScope::Instance,
             GameEvents::DiscardCards() => EventScope::Instance,
             GameEvents::MoveEntity(_, _) => EventScope::Instance,
@@ -112,11 +123,49 @@ impl IGameEvent for GameEvents {
             GameEvents::DidTurnBegin(_) => EventScope::All,
         }
     }
+
+    // fn id(&self) -> i32 {
+    //     match self {
+    //         GameEvents::Invalid => 1,
+    //         GameEvents::Begin => 2,
+    //         GameEvents::PointScored(teams) => 3,
+    //         GameEvents::TurnBegin(_) => 4,
+    //         GameEvents::TurnEnd(_) => 5,
+    //         GameEvents::PlayCard(_, card_instance, filled_card_response) => 6,
+    //         GameEvents::ResetBoard(teams) => 7,
+    //         GameEvents::DrawCard() => 8,
+    //         GameEvents::DiscardCards() => 9,
+    //         GameEvents::MoveEntity(items, vector2_int) => 10,
+    //         GameEvents::OnDidSetBallMode(ball_modes) => 11,
+    //         GameEvents::ApplyCardAttributeEventRefillEnergy(items) => 12,
+    //         GameEvents::ApplyCardAttributeEventGainEnergy(items, _) => 13,
+    //         GameEvents::ApplyCardAttributeEventDrawCards(items, _) => 14,
+    //         GameEvents::ApplyCardAttributeEventDiscardCards(items) => 15,
+    //         GameEvents::ApplyCardAttributeEventMoveEntity(items, vector2_ints) => 16,
+    //         GameEvents::ApplyCardAttributeEventMoveBall(vector2_ints, _, _) => 17,
+    //         GameEvents::ApplyCardAttributeEventSetBallMode(ball_modes) => 18,
+    //         GameEvents::ApplyCardAttributeModifierCostForEntities(attribute_clear_flag, items, _) => 19,
+    //         GameEvents::ApplyCardAttributeModifierRangeForEntities(attribute_clear_flag, items, _) => 20,
+    //         GameEvents::ApplyCardAttributeModifierEnergyForEntities(attribute_clear_flag, items, _) => 21,
+    //         GameEvents::ClearCardAttributeModifiersForFlag(attribute_clear_flag) => 22,
+    //         GameEvents::ClearCardAttributeModifiersAll() => 23,
+    //         GameEvents::DidTurnEnd(_) => 24,
+    //         GameEvents::DidTurnBegin(_) => 25,
+    //         GameEvents::RequestTurnEnd(_) => 26,
+    //         GameEvents::RequestMoveZPos(_) => 27,
+    //         GameEvents::RequestMoveZNeg(_) => 28,
+    //         GameEvents::RequestMoveXPos(_) => 29,
+    //         GameEvents::RequestMoveXNeg(_) => 30,
+    //         GameEvents::RequestUseManeuverPersistent(_, _, filled_card_response) => 31,
+    //         GameEvents::RequestUseManeuverConsumable(_, _, filled_card_response) => 32,
+    //     }
+    // }
 }
 
 impl fmt::Display for GameEvents {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            GameEvents::Invalid => write!(f, "Invalid"),
             GameEvents::Begin => write!(f, "Begin"),
             GameEvents::TurnBegin(_) => write!(f, "TurnBegin"),
             GameEvents::TurnEnd(_) => write!(f, "TurnEnd"),
@@ -137,17 +186,17 @@ impl fmt::Display for GameEvents {
             GameEvents::DrawCard() => write!(f, "DrawCard"),
             GameEvents::DiscardCards() => write!(f, "DiscardCards"),
             GameEvents::MoveEntity(_, _) => write!(f, "MoveEntity"),
-            GameEvents::ApplyCardAttributeModifierEnergyForEntities(_, _, _) => todo!(),
-            GameEvents::ApplyCardAttributeModifierCostForEntities(_, _, _) => todo!(),
-            GameEvents::ApplyCardAttributeModifierRangeForEntities(_, _, _) => todo!(),
-            GameEvents::ApplyCardAttributeEventRefillEnergy(_) => todo!(),
-            GameEvents::ApplyCardAttributeEventGainEnergy(_, _) => todo!(),
-            GameEvents::ApplyCardAttributeEventMoveEntity(_, _) => todo!(),
-            GameEvents::ApplyCardAttributeEventDrawCards(_, _) => todo!(),
-            GameEvents::ApplyCardAttributeEventDiscardCards(_) => todo!(),
-            GameEvents::ApplyCardAttributeEventMoveBall(_, _, _) => todo!(),
-            GameEvents::ClearCardAttributeModifiersForFlag(_) => todo!(),
-            GameEvents::ClearCardAttributeModifiersAll() => todo!(),
+            GameEvents::ApplyCardAttributeModifierEnergyForEntities(_, _, _) => write!(f, "ApplyCardAttributeModifierEnergyForEntities"),
+            GameEvents::ApplyCardAttributeModifierCostForEntities(_, _, _) => write!(f, "ApplyCardAttributeModifierCostForEntities"),
+            GameEvents::ApplyCardAttributeModifierRangeForEntities(_, _, _) => write!(f, "ApplyCardAttributeModifierRangeForEntities"),
+            GameEvents::ApplyCardAttributeEventRefillEnergy(_) => write!(f, "ApplyCardAttributeEventRefillEnergy"),
+            GameEvents::ApplyCardAttributeEventGainEnergy(_, _) => write!(f, "ApplyCardAttributeEventGainEnergy"),
+            GameEvents::ApplyCardAttributeEventMoveEntity(_, _) => write!(f, "ApplyCardAttributeEventMoveEntity"),
+            GameEvents::ApplyCardAttributeEventDrawCards(_, _) => write!(f, "ApplyCardAttributeEventDrawCards"),
+            GameEvents::ApplyCardAttributeEventDiscardCards(_) => write!(f, "ApplyCardAttributeEventDiscardCards"),
+            GameEvents::ApplyCardAttributeEventMoveBall(_, _, _) => write!(f, "ApplyCardAttributeEventMoveBall"),
+            GameEvents::ClearCardAttributeModifiersForFlag(_) => write!(f, "ClearCardAttributeModifiersForFlag"),
+            GameEvents::ClearCardAttributeModifiersAll() => write!(f, "ClearCardAttributeModifiersAll"),
         }
     }
 }

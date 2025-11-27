@@ -16,7 +16,10 @@ use crate::{
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{ecs_event_reciever, ecs_system::ECSSystemEventless},
+    gameplay::ecs::traits::{
+        ecs_event_reciever::{self, InstanceLimiter},
+        ecs_system::ECSSystemEventless,
+    },
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
@@ -24,6 +27,7 @@ use hecs::World;
 use std::{panic, vec};
 
 #[global_ecs_system]
+#[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameRequestManuever {}
 impl ECSSystemEventless for ECSSystemGameRequestManuever {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
@@ -33,7 +37,14 @@ impl ECSSystemEventless for ECSSystemGameRequestManuever {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-#[global_ecs_system_event_reciever(GameEvents)]
+impl InstanceLimiter for ECSSystemGameRequestManuever {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_host()
+    }
+}
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {

@@ -24,20 +24,20 @@ impl CardLibrary {
     fn init() -> HashMap<String, Arc<CardMaster>> {
         let mut hashmap: HashMap<String, Arc<CardMaster>> = HashMap::new();
         // rest
-        hashmap.insert(
-            String::from("rest"),
-            Arc::new(CardMaster::new(
-                "rest",
-                "do a rest",
-                CardTypes::Rest,
-                vec![CardStatement::new(
-                    0, //
-                    vec![],
-                    vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
-                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
-                )],
-            )),
-        );
+        // hashmap.insert(
+        //     String::from("rest"),
+        //     Arc::new(CardMaster::new(
+        //         "rest",
+        //         "do a rest",
+        //         CardTypes::Rest,
+        //         vec![CardStatement::new(
+        //             0, //
+        //             vec![],
+        //             vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
+        //             vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
+        //         )],
+        //     )),
+        // );
         hashmap.insert(
             String::from("serve"),
             Arc::new(CardMaster::new(

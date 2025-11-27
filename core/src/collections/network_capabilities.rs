@@ -12,7 +12,6 @@ use crate::system::system_game_state::IState;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
-
 pub struct NetworkCapabilities {
     /// level of privilege this instance has
     pub privilege: NetworkModes,
