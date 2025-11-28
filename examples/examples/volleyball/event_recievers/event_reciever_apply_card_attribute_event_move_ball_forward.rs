@@ -38,12 +38,12 @@ impl InstanceLimiter for EventReciever {
 impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::ApplyCardAttributeEventMoveBall(move_forward, entity_id, card_id) => {
-                if move_forward.len() == 0 {
+            GameEvents::ApplyCardAttributeEventMoveBall(tiles, entity_id, card_id) => {
+                if tiles.len() == 0 {
                     println!("Does not support len of 0 tile");
                     return;
                 }
-                if move_forward.len() > 1 {
+                if tiles.len() > 1 {
                     println!("Does not support more than 1 tile");
                     return;
                 }
@@ -70,12 +70,14 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
                 game_state.edit::<StatePositionBall>(|x| {
                     println!("range + {}", active_modifiers.range);
                     // convert based on team
-                    let diff = team.convert_dir(move_forward[0].x, move_forward[0].y + active_modifiers.range);
-                    // move
-                    x.column = x.column + diff.0;
-                    x.row = x.row + diff.1;
+                    // let diff = team.convert_dir(move_forward[0].x, move_forward[0].y + active_modifiers.range);
+                    // // move
+                    // x.column = x.column + diff.0;
+                    // x.row = x.row + diff.1;
 
-                    println!("Ball moved for team ({}): ({},{}) -> ({},{})", team, x.column - diff.0, x.row - diff.1, x.column, x.row);
+                    x.column = tiles[0].x;
+                    x.row = tiles[0].y;
+                    // println!("Ball moved for team ({}): ({},{}) -> ({},{})", team, x.column - diff.0, x.row - diff.1, x.column, x.row);
                 })
             }
             _ => {}
@@ -86,12 +88,12 @@ impl EventReciever {
     pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
         match event {
             CardEvents::ApplyEventMoveBall(entity_id, card_id, move_forward) => {
-                let move_forward = move_forward.as_tiles();
-                if move_forward.len() == 0 {
+                let tiles = move_forward.as_tiles();
+                if tiles.len() == 0 {
                     println!("Does not support len of 0 tile");
                     return vec![];
                 }
-                if move_forward.len() > 1 {
+                if tiles.len() > 1 {
                     println!("Does not support more than 1 tile");
                     return vec![];
                 }
@@ -118,10 +120,13 @@ impl EventReciever {
                 game_state.edit::<StatePositionBall>(|x| {
                     // println!("range + {}", active_modifiers.range);
                     // convert based on team
-                    let diff = team.convert_dir(move_forward[0].x, move_forward[0].y + active_modifiers.range);
-                    // move
-                    x.column = x.column + diff.0;
-                    x.row = x.row + diff.1;
+                    // let diff = team.convert_dir(tiles[0].x, tiles[0].y + active_modifiers.range);
+                    // // move
+                    // x.column = x.column + diff.0;
+                    // x.row = x.row + diff.1;
+
+                    x.column = tiles[0].x;
+                    x.row = tiles[0].y;
 
                     // println!("Ball moved for team ({}): ({},{}) -> ({},{})", team, x.column - diff.0, x.row - diff.1, x.column, x.row);
                 })

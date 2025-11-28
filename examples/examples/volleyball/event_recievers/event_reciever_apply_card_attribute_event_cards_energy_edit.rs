@@ -1,4 +1,4 @@
-use crate::{game_events::GameEvents, state::state_energy::StateEnergy};
+use crate::{ai_resolver::CardEvents, game_events::GameEvents, state::state_energy::StateEnergy};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -46,5 +46,25 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
             }
             _ => {}
         }
+    }
+}
+impl EventReciever {
+    pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
+        match event {
+            CardEvents::ApplyEventGainEnergy(entities, count) => {
+                game_state.edit::<StateEnergy>(|y| {
+                    for x in entities.as_entities() {
+                        let Some(entity) = y.all_players.get_mut(&x) else {
+                            continue;
+                        };
+
+                        entity.0 = entity.0 + count;
+                    }
+                });
+            }
+            _ => {}
+        }
+
+        vec![]
     }
 }

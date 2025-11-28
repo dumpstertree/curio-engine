@@ -8,15 +8,26 @@ impl Random {
         if a_inclusive == b_inclusive {
             return a_inclusive;
         }
+
         let mut rng = rand::rng();
-        rng.random_range(a_inclusive..b_inclusive)
+
+        if a_inclusive < b_inclusive {
+            rng.random_range(a_inclusive..b_inclusive)
+        } else {
+            rng.random_range(b_inclusive..a_inclusive)
+        }
     }
     pub fn range_int(a_inclusive: i32, b_inclusive: i32) -> i32 {
         if a_inclusive == b_inclusive {
             return a_inclusive;
         }
+
         let mut rng = rand::rng();
-        rng.random_range(a_inclusive..b_inclusive)
+        if a_inclusive < b_inclusive {
+            rng.random_range(a_inclusive..b_inclusive)
+        } else {
+            rng.random_range(b_inclusive..a_inclusive)
+        }
     }
     pub fn random_bool() -> bool {
         let mut rng = rand::rng();

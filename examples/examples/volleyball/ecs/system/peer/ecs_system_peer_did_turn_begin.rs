@@ -44,6 +44,13 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             let e = run_ai(game_state);
             events.enqueue_event(e);
             self.lastmove = game_state.get::<TimeState>().unscaled_time;
+            println!(
+                "did ai
+                        
+                        
+                        
+                        "
+            );
         }
     }
 }

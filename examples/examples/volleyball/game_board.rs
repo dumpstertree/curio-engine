@@ -6,8 +6,8 @@ pub struct GameBoard {}
 impl GameBoard {
     pub fn get_serving_tile(for_team: &Teams) -> (i32, i32) {
         match for_team {
-            Teams::Red => (0, 0),
-            Teams::Blue => (3, 3),
+            Teams::Red => (1, 0),
+            Teams::Blue => (2, 3),
         }
     }
     //  pub fn get_serving_tile(for_team: &Teams) -> (i32, i32) {
@@ -31,12 +31,12 @@ impl GameBoard {
     pub fn get_bounds_min(for_team: &Teams) -> Vector2Int {
         match for_team {
             Teams::Red => Vector2Int::new(0, 0),
-            Teams::Blue => Vector2Int::new(0, 1),
+            Teams::Blue => Vector2Int::new(0, 2),
         }
     }
     pub fn get_bounds_max(for_team: &Teams) -> Vector2Int {
         match for_team {
-            Teams::Red => Vector2Int::new(3, 2),
+            Teams::Red => Vector2Int::new(3, 1),
             Teams::Blue => Vector2Int::new(3, 3),
         }
     }

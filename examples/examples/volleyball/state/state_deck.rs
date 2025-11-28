@@ -77,7 +77,7 @@ impl Deck {
             println!("{}", x.instance_id);
         }
 
-        panic!(" No card for {}", instance_id);
+        panic!(" No card for {}", instance_id); // this is for some reason pulling from the other player
     }
     pub fn get_location(&self, card_instance: Arc<CardInstance>) -> CardLocation {
         if let Some(index) = self

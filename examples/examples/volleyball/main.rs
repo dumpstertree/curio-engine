@@ -35,6 +35,10 @@ pub mod state {
         pub mod state_card_attribute_modifier_stack;
     }
 }
+pub mod ai {
+    pub mod evalation;
+    pub mod simulation;
+}
 pub mod event_recievers {
     pub(crate) mod event_reciever_apply_card_attribute_event_cards_discard;
     pub(crate) mod event_reciever_apply_card_attribute_event_cards_draw;

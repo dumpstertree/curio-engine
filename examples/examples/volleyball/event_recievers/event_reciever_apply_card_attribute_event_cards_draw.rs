@@ -1,4 +1,4 @@
-use crate::{game_events::GameEvents, state::state_deck::StateDeck};
+use crate::{ai_resolver::CardEvents, game_events::GameEvents, state::state_deck::StateDeck};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -45,5 +45,24 @@ impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
             }
             _ => {}
         }
+    }
+}
+impl EventReciever {
+    pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
+        match event {
+            CardEvents::ApplyEventDrawCards(entities, count) => {
+                game_state.edit::<StateDeck>(|y| {
+                    for x in entities.as_entities() {
+                        let Some(deck) = y.deck.get_mut(&x) else { return };
+                        for _ in 0..*count {
+                            deck.draw();
+                        }
+                    }
+                });
+            }
+            _ => {}
+        }
+
+        vec![]
     }
 }
