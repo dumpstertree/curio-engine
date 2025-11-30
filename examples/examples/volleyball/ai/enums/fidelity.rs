@@ -1,6 +1,6 @@
 pub enum Fidelity {
-    Low = 500,
-    Medium = 1000,
-    High = 3000,
-    Extreme = 10000,
+    Low = 5000,
+    Medium = 10000,
+    High = 30000,
+    Extreme = 100000,
 }

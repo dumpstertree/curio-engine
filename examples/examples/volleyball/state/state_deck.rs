@@ -48,18 +48,18 @@ pub struct Deck {
     pub hand_persistent: Vec<Arc<CardInstance>>,
 }
 impl Deck {
-    pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
-        let inst = Arc::new(CardInstance::new(card_uid));
+    // pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
+    //     let inst = Arc::new(CardInstance::new(card_uid));
 
-        println!("add card {} with id {}", inst.card_id, inst.instance_id);
-        if is_persistent {
-            self.hand_persistent.push(inst.clone());
-        } else {
-            self.pile_draw.push(inst.clone());
-        }
+    //     println!("add card {} with id {}", inst.card_id, inst.instance_id);
+    //     if is_persistent {
+    //         self.hand_persistent.push(inst.clone());
+    //     } else {
+    //         self.pile_draw.push(inst.clone());
+    //     }
 
-        self.all_cards.push(inst);
-    }
+    //     self.all_cards.push(inst);
+    // }
     pub fn get_instance(&self, instance_id: i32) -> Arc<CardInstance> {
         if let Some(pos) = self
             .all_cards
@@ -111,54 +111,81 @@ impl Deck {
 
         panic!();
     }
+}
+impl Deck {
+    /// Move a card into deck. (unchanged semantics, but explicit)
+    pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
+        let inst = Arc::new(CardInstance::new(card_uid));
+        println!("add card {} with id {}", inst.card_id, inst.instance_id);
+
+        if is_persistent {
+            self.hand_persistent.push(inst.clone());
+        } else {
+            self.pile_draw.push(inst.clone());
+        }
+
+        self.all_cards.push(inst);
+    }
+
+    /// Reshuffle: move hand -> discard, discard -> draw, then shuffle draw.
     pub fn reshuffle(&mut self) {
-        // println!("shuffle");
-        for x in &self.hand_consumable {
-            self.pile_discard.push(x.clone());
-        }
-        self.hand_consumable.clear();
-        for x in &self.pile_discard {
-            self.pile_draw.push(x.clone());
-        }
-        self.pile_discard.clear();
+        // Move consumable hand to discard without cloning
+        self.pile_discard.extend(self.hand_consumable.drain(..));
+
+        // Move discard into draw by appending (no clones, no extra allocations)
+        self.pile_draw.append(&mut self.pile_discard);
 
         // shuffle
         let mut rng = rng();
         self.pile_draw.shuffle(&mut rng);
     }
-    pub fn draw(&mut self) {
-        if self.pile_draw.len() == 0 {
-            // println!("Shuffled discard into draw");
-            for x in &self.pile_discard {
-                self.pile_draw.push(x.clone());
-            }
-            self.pile_discard.clear();
-        }
 
-        if self.pile_draw.len() == 0 {
-            println!("No cards in draw or discard");
+    /// Draw one card into hand_consumable (respect hand size)
+    pub fn draw(&mut self) {
+        if self.hand_consumable.len() >= 7 {
             return;
         }
-        // println!("draw");
-        self.hand_consumable.push(self.pile_draw[0].clone());
-        self.pile_draw.remove(0);
+
+        if self.pile_draw.is_empty() {
+            // Move discard into draw (no clones)
+            if !self.pile_discard.is_empty() {
+                self.pile_draw.append(&mut self.pile_discard);
+                // optional: shuffle after moving
+                let mut rng = rng();
+                self.pile_draw.shuffle(&mut rng);
+            }
+        }
+
+        if self.pile_draw.is_empty() {
+            // no cards to draw
+            return;
+        }
+
+        // pop from front in an efficient way: use remove(0) is O(n) but keep for semantics,
+        // or pop from end and treat draw as a stack (preferable):
+        // let card = self.pile_draw.pop().unwrap();
+        // self.hand_consumable.push(card);
+
+        // if you need to keep your draw order where index 0 is top, then:
+        let card = self.pile_draw.remove(0);
+        self.hand_consumable.push(card);
     }
+
+    /// Discard a card (move from hand_consumable to pile_discard)
     pub fn discard(&mut self, card_instance: Arc<CardInstance>) {
         if let Some(pos) = self
             .hand_consumable
             .iter()
-            .position(|x| x.card_id == card_instance.card_id)
+            .position(|c| c.instance_id == card_instance.instance_id)
         {
-            // Remove the item from `active`
-            let item = self.hand_consumable.remove(pos);
-            // Push it into `inactive`
-            self.pile_discard.push(item);
+            let card = self.hand_consumable.remove(pos);
+            self.pile_discard.push(card);
+        } else {
+            // not found — helpful debug / detect caller errors
+            eprintln!("discard: card {} not found in hand_consumable (hand len {})", card_instance.instance_id, self.hand_consumable.len());
         }
-
-        println!("card not found in hand consumable");
     }
 }
-
 pub struct AttributeTargets {
     pub entities: Vec<i32>,
     pub cards: Vec<i32>,

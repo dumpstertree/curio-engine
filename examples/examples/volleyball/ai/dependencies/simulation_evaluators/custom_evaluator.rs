@@ -24,7 +24,7 @@ impl SimulationEvaluator<SimulationManuevers, (Teams, i32)> for CustomEvaluator 
 
         // if we are exhuasted thats worst case scenerio because it encourages procrastinating
         if state_terminated.is_exhuasted && on_my_side {
-            return -999;
+            // return -999;
         }
         // if we are terminated on our side that means we werent able to return the ball
         if state_terminated.is_terminated && on_my_side {

@@ -49,7 +49,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
         let is_turn = game_state.get::<StateTurn>().active_instance_id == game_state.instance_id;
-        if is_turn && game_state.get::<TimeState>().unscaled_time - self.lastmove > 1.0 {
+        if is_turn && game_state.get::<TimeState>().unscaled_time - self.lastmove > 2.0 {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
                 GameState::new_single_instance(vec![
                     // copy these states
@@ -67,7 +67,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             });
 
             let uid = game_state.get::<StateTurn>().active_instance_id;
-            let move2 = simulator.simulate(game_state, Fidelity::Medium, Threading::Multi);
+            let move2 = simulator.simulate(game_state, Fidelity::Extreme, Threading::Multi);
 
             match move2 {
                 SimulationManuevers::EndTurn => events.enqueue_event(GameEvents::RequestTurnEnd(uid)),

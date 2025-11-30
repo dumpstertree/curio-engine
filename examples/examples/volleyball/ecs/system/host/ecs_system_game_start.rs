@@ -59,25 +59,24 @@ impl ECSSystemEventless for ECSSystemGameStart {
 
                 println!("ADD FOR STATE {}", id);
                 // persistent
-                // deck.add_card_to_deck("rest", true);
+                deck.add_card_to_deck("rest", true);
                 deck.add_card_to_deck("serve", true);
-                // consumablegame_state
+
+                // manuevers
                 deck.add_card_to_deck("bump", false);
-                // deck.add_card_to_deck("bump", false);
+                deck.add_card_to_deck("bump", false);
                 deck.add_card_to_deck("bump", false);
                 deck.add_card_to_deck("spike", false);
-                // deck.add_card_to_deck("spike", false);
+                deck.add_card_to_deck("spike", false);
                 deck.add_card_to_deck("set", false);
                 deck.add_card_to_deck("set", false);
-                // deck.add_card_to_deck("set", false);
+                deck.add_card_to_deck("set", false);
 
-                println!("");
-
-                // deck.add_card_to_deck("set", false);
-                deck.add_card_to_deck("extra_oomph", false);
-                deck.add_card_to_deck("hold_back", false);
+                // spells
                 // deck.add_card_to_deck("curse", false);
-                deck.add_card_to_deck("blessing", false);
+                // deck.add_card_to_deck("extra_oomph", false);
+                // deck.add_card_to_deck("hold_back", false);
+                // deck.add_card_to_deck("blessing", false);
                 deck.add_card_to_deck("deep_breath", false);
             });
         }

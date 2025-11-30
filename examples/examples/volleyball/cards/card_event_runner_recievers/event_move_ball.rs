@@ -22,8 +22,12 @@ impl EventReciever {
 
                 // edit ball position
                 game_state.edit::<StatePositionBall>(|x| {
-                    x.column = tile_ids[0].x;
-                    x.row = tile_ids[0].y;
+                    let pos_x = tile_ids[0].x.clamp(0, 3);
+                    let pos_y = tile_ids[0].y.clamp(0, 3);
+                    // x.column = tile_ids[0].x;
+                    // x.row = tile_ids[0].y;
+                    x.column = pos_x;
+                    x.row = pos_y;
                 })
             }
             _ => {}

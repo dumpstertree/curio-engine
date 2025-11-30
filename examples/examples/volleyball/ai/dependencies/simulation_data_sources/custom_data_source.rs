@@ -143,12 +143,14 @@ impl CustomDataSource {
                         DataDepsEmpty::Tiles(target_type) => {
                             filled.push(CardAttributeFillerAI::fill_dependency_tiles(game_state, uid, target_type));
                         }
-
                         // dependency is a entity - fill the dependency based on type
                         DataDepsEmpty::Entities(target_type) => {
                             filled.push(CardAttributeFillerAI::fill_dependency_entities(game_state, uid, target_type));
                         }
-                        _ => {}
+                        // dependency is a card - fill the dependency based on type
+                        DataDepsEmpty::Cards(target_type) => {
+                            filled.push(CardAttributeFillerAI::fill_dependency_cards(game_state, uid, target_type));
+                        }
                     }
                 }
 
@@ -165,12 +167,14 @@ impl CustomDataSource {
                         DataDepsEmpty::Tiles(target_type) => {
                             filled.push(CardAttributeFillerAI::fill_dependency_tiles(game_state, uid, target_type));
                         }
-
                         // dependency is a entity - fill the dependency based on type
                         DataDepsEmpty::Entities(target_type) => {
                             filled.push(CardAttributeFillerAI::fill_dependency_entities(game_state, uid, target_type));
                         }
-                        _ => {}
+                        // dependency is a card - fill the dependency based on type
+                        DataDepsEmpty::Cards(target_type) => {
+                            filled.push(CardAttributeFillerAI::fill_dependency_cards(game_state, uid, target_type));
+                        }
                     }
                 }
 

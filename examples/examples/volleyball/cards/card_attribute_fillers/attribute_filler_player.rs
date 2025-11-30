@@ -11,7 +11,7 @@ use crate::{
         card_dependencies::{data_dep_empty::DataDepsEmpty, data_dep_filled::DataDepsFilled},
     },
     game_board::GameBoard,
-    state::{state_deck::StateDeck, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_deck::StateDeck, state_position_ball::StatePositionBall, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 
 pub struct CardAttributeFillerPlayer {}
@@ -213,14 +213,29 @@ impl CardAttributeFillerPlayer {
 
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
     }
-    pub fn get_tiles_random_in_range_local(_: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
-        DataDepsFilled::Tiles(
-            //
-            vec![Vector2Int::new(
-                //
-                Random::range_int(min.x, max.x), //
-                Random::range_int(min.y, max.y),
-            )],
-        )
+    pub fn get_tiles_random_in_range_local(game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
+        let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_teams = game_state.get::<StateTeamAssignments>();
+        let state_position_ball = game_state.get::<StatePositionBall>();
+
+        // get the modifiers for stack
+        let modifier_stack = state_modifiers.get_flat_stack_for_entity(state_turn.active_instance_id);
+        let team = state_teams
+            .team_for(&state_turn.active_instance_id)
+            .unwrap();
+
+        // get the min and max taking into account any modifiers
+        let min = team.convert_dir(min.x, min.y + modifier_stack.range);
+        let max = team.convert_dir(max.x, max.y + modifier_stack.range);
+
+        // get between min and max in range
+        let random_x = Random::range_int(min.0, max.0);
+        let random_z = Random::range_int(min.1, max.1);
+
+        let col = state_position_ball.column + random_x;
+        let row = state_position_ball.row + random_z;
+
+        DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)])
     }
 }

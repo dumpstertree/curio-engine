@@ -30,7 +30,11 @@ impl CardLibrary {
                     0, //
                     vec![],
                     vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
-                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
+                    vec![
+                        CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser),
+                        CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User),
+                        CardAttributeEvents::RefillEnergy(AttribtuteTargetTypesEntities::User),
+                    ],
                 )],
             )),
         );

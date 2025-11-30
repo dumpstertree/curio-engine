@@ -5,12 +5,13 @@ use core::{
 
 use crate::{
     cards::{
-        card_attributes_targets::{attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
+        card_attributes_targets::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
         card_dependencies::{builder::data_dep_filled_all_permutations::DataDepsFilledAllPermutations, data_dep_filled::DataDepsFilled},
     },
     game_board::GameBoard,
     state::{
         host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
+        state_deck::StateDeck,
         state_position_ball::StatePositionBall,
         state_teams::{StateTeamAssignments, Teams},
         state_turn::StateTurn,
@@ -77,11 +78,15 @@ impl CardAttributeFillerAI {
                 // get the min and max taking into account any modifiers
                 let min = team.convert_dir(min.x, min.y + modifier_stack.range);
                 let max = team.convert_dir(max.x, max.y + modifier_stack.range);
+
+                // get between min and max in range
                 let random_x = Random::range_int(min.0, max.0);
                 let random_z = Random::range_int(min.1, max.1);
 
                 let col = state_position_ball.column + random_x;
                 let row = state_position_ball.row + random_z;
+
+                println!("move x: {}, y: {}", col, row);
 
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
             }
@@ -175,6 +180,37 @@ impl CardAttributeFillerAI {
         }
 
         // return the now filled permutations
+        permuatations
+    }
+    pub fn fill_dependency_cards(game_state: &GameState, uid: &i32, empty: AttributeTargetTypesCards) -> DataDepsFilledAllPermutations {
+        // create the list of permutations
+        let mut permuatations = DataDepsFilledAllPermutations::new();
+
+        match empty {
+            AttributeTargetTypesCards::SelectUser => todo!(),
+            AttributeTargetTypesCards::SelectOpponent => todo!(),
+            AttributeTargetTypesCards::RandomUser => todo!(),
+            AttributeTargetTypesCards::RandomOpponent => todo!(),
+            AttributeTargetTypesCards::AllUser => {
+                let state_deck = game_state.get::<StateDeck>();
+
+                // if we cant find a deck break
+                let Some(deck) = state_deck.deck.get(uid) else {
+                    return permuatations;
+                };
+
+                // iterate through each consumable card in hand and record its uids
+                let mut card_uids = Vec::new();
+                for x in &deck.hand_consumable {
+                    card_uids.push(x.instance_id);
+                }
+
+                // add all cards in hand
+                permuatations.add_permutation(DataDepsFilled::Cards(card_uids));
+            }
+            AttributeTargetTypesCards::AllOpponent => todo!(),
+        }
+
         permuatations
     }
 }

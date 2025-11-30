@@ -9,10 +9,13 @@ use core::{
 };
 
 use crate::{
+    game_board::GameBoard,
     game_events::GameEvents,
     state::{
         peer::state_peer_input_mode::{InputModes, StatePeerInputMode},
         state_ball_mode::{BallModes, StateBallMode},
+        state_position_player::{self, StatePositionPlayer},
+        state_teams::StateTeamAssignments,
         state_turn::StateTurn,
     },
 };
@@ -33,6 +36,13 @@ impl ECSSystemEventless for ECSSystemTurnMove {
             return;
         }
 
+        let state_team = game_state.get::<StateTeamAssignments>();
+        let team = state_team.team_for(&game_state.instance_id).unwrap();
+        let state_position_player = game_state.get::<StatePositionPlayer>();
+        let pos = state_position_player
+            .positions
+            .get(&game_state.instance_id)
+            .unwrap();
         // get states
         let state_input = game_state.get::<InputState>();
 
@@ -52,19 +62,19 @@ impl ECSSystemEventless for ECSSystemTurnMove {
 
         // if any movement detected
         if move_forward || move_back || move_left || move_right {
-            if move_forward {
+            if move_forward && GameBoard::can_move(&team, pos, crate::game_board::Directions::Forward) {
                 event_queue.enqueue_event(GameEvents::RequestMoveZPos(game_state.instance_id));
             }
 
-            if move_back {
+            if move_back && GameBoard::can_move(&team, pos, crate::game_board::Directions::Back) {
                 event_queue.enqueue_event(GameEvents::RequestMoveZNeg(game_state.instance_id));
             }
 
-            if move_left {
+            if move_left && GameBoard::can_move(&team, pos, crate::game_board::Directions::Left) {
                 event_queue.enqueue_event(GameEvents::RequestMoveXNeg(game_state.instance_id));
             }
 
-            if move_right {
+            if move_right && GameBoard::can_move(&team, pos, crate::game_board::Directions::Right) {
                 event_queue.enqueue_event(GameEvents::RequestMoveXPos(game_state.instance_id));
             }
         }
