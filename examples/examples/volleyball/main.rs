@@ -1,10 +1,16 @@
 pub mod ai_resolver;
-pub mod card_parser;
-pub mod dependency_filler;
 pub mod game_board;
 pub mod game_events;
 pub mod cards {
-
+    pub mod card_attribute_fillers {
+        pub mod attribute_filler_ai;
+        pub mod attribute_filler_player;
+    }
+    pub mod enums {
+        pub mod attribute_clear_flag;
+        pub mod card_events;
+        pub mod simulation_manuevers;
+    }
     pub mod card_attributes_targets {
         pub mod attribute_target_type_cards;
         pub mod attribute_target_type_entities;
@@ -12,6 +18,20 @@ pub mod cards {
         pub mod attribute_target_type_tiles;
     }
     pub mod card_event_runner;
+    pub mod card_event_runner_recievers {
+        pub(crate) mod clear_modifier_all;
+        pub(crate) mod clear_modifier_for_flag;
+        pub(crate) mod event_card_discard;
+        pub(crate) mod event_card_draw;
+        pub(crate) mod event_change_ball_mode;
+        pub(crate) mod event_energy_edit;
+        pub(crate) mod event_energy_fill;
+        pub(crate) mod event_move_ball;
+        pub(crate) mod event_move_entities;
+        pub(crate) mod modifier_cost_for_entities;
+        pub(crate) mod modifier_energy_for_entities;
+        pub(crate) mod modifier_range_for_entities;
+    }
     pub mod card_attributes {
         pub mod card_attribute_events;
         pub mod card_attribute_modifier;
@@ -21,12 +41,21 @@ pub mod cards {
     pub mod card_library;
     pub mod card_master;
     pub mod card_modifier;
+    pub mod card_statement;
     pub mod card_dependencies {
         pub mod data_dep_empty;
         pub mod data_dep_filled;
+        pub mod builder {
+            pub mod data_dep_filled_all_permutations;
+            pub mod data_dep_filled_for_modifiers;
+            pub mod filled_attribute_with_permutation;
+        }
     }
 }
 pub mod state {
+    pub mod other {
+        pub mod state_terminated;
+    }
     pub mod state_ball_mode;
     pub mod state_deck;
     pub mod state_energy;
@@ -48,42 +77,33 @@ pub mod ai {
     pub mod evalation;
     pub mod mcts;
     pub mod simulation;
-    pub mod target_filler;
     pub mod dependencies {
-        pub mod data_source;
-        pub mod evaluator;
-        pub mod evaluators {
+        pub mod simulation_evaluator;
+        pub mod simulation_evaluators {
             pub mod custom_evaluator;
         }
-        pub mod data_sources {
+        pub mod simulation_data_source;
+        pub mod simulation_data_sources {
             pub mod custom_data_source;
         }
-        pub mod delegate;
-        pub mod delegates {
+        pub mod simulation_delegate;
+        pub mod simulation_delegates {
             pub mod custom_delegate;
         }
-        pub mod hasher;
-        pub mod hashers {
+        pub mod simulation_hasher;
+        pub mod simulation_hashers {
             pub mod custom_hasher;
         }
     }
-    pub mod StateTerminated;
+    pub mod enums {
+        pub mod fidelity;
+        pub mod threading;
+    }
 }
-pub mod event_recievers {
-    pub(crate) mod event_reciever_apply_card_attribute_event_cards_discard;
-    pub(crate) mod event_reciever_apply_card_attribute_event_cards_draw;
-    pub(crate) mod event_reciever_apply_card_attribute_event_cards_energy_edit;
-    pub(crate) mod event_reciever_apply_card_attribute_event_cards_energy_refill;
-    pub(crate) mod event_reciever_apply_card_attribute_event_move_ball_forward;
-    pub(crate) mod event_reciever_apply_card_attribute_event_move_entities;
-    pub(crate) mod event_reciever_apply_card_attribute_event_set_ball_mode;
-    pub(crate) mod event_reciever_apply_card_attribute_modifier_cost_for_entities;
-    pub(crate) mod event_reciever_apply_card_attribute_modifier_energy_for_entities;
-    pub(crate) mod event_reciever_apply_card_attribute_modifier_range_for_entities;
-    pub(crate) mod event_reciever_clear_card_attribute_modifiers_all;
-    pub(crate) mod event_reciever_clear_card_attribute_modifiers_for_flag;
-}
+pub mod event_recievers {}
+
 pub mod ecs {
+
     pub mod components {
         pub mod component_ball;
         pub mod component_card;
@@ -95,6 +115,7 @@ pub mod ecs {
         pub mod component_view_player;
     }
     pub mod system {
+
         pub mod peer {
             mod ecs_system_peer_did_turn_begin;
             mod ecs_system_peer_start;

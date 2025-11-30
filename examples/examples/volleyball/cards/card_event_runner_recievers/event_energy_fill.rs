@@ -1,5 +1,5 @@
 use crate::{
-    ai_resolver::CardEvents,
+    cards::enums::card_events::CardEvents,
     state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_energy::StateEnergy},
 };
 use core::collections::game_state::GameState;
@@ -8,7 +8,7 @@ pub struct EventReciever {}
 impl EventReciever {
     pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
         match event {
-            CardEvents::ApplyEventRefillEnergy(wrapped_entities) => {
+            CardEvents::EventEnergyFill(wrapped_entities) => {
                 // get modifiers
                 let state_card_attribute_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
 

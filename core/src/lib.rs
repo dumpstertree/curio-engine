@@ -36,6 +36,7 @@ pub mod collections {
     pub mod color;
     pub mod draw_call;
     pub mod event_queue;
+    pub mod event_runner;
     pub mod f32;
     pub mod game_state;
     pub mod gizmo;

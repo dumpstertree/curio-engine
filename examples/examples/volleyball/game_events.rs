@@ -11,7 +11,6 @@ use std::{
 };
 
 use crate::{
-    card_parser::AttributeClearFlag,
     cards::{card_dependencies::data_dep_filled::DataDepsFilled, card_instance::CardInstance},
     state::{state_ball_mode::BallModes, state_teams::Teams},
 };

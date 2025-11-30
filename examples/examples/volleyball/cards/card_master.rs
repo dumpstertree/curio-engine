@@ -18,28 +18,10 @@ impl CardStatement {
 pub struct CardMaster {
     pub title: String,
     pub card_type: CardTypes,
-    // pub cost: i32,
-    // pub model_path: String,
     pub description: String,
-    // pub attributes: Vec<(fn(&GameState) -> AttributeTargets, AttributeClearFlag, CardAttributes)>,
-    // pub attributes: Vec<CardAttributeModifiers>,
-    // events: Vec<CardAttributeEvents>,
-    // pub requirements: Vec<CardAttributeRequirement>,
     pub statements: Vec<CardStatement>,
 }
 impl CardMaster {
-    // pub fn new(title: &str, model_path: &str, card_type: CardTypes, cost: i32, description: String, attributes: Vec<CardAttributeModifiers>, events: Vec<CardAttributeEvents>, requirements: Vec<CardAttributeRequirement>) -> CardMaster {
-    //     CardMaster {
-    //         title: String::from(title),
-    //         model_path: String::from(model_path),
-    //         card_type,
-    //         cost,
-    //         description,
-    //         attributes,
-    //         events,
-    //         requirements,
-    //     }
-    // }
     pub fn new(title: &str, description: &str, card_type: CardTypes, statements: Vec<CardStatement>) -> CardMaster {
         CardMaster {
             title: String::from(title),
@@ -48,7 +30,4 @@ impl CardMaster {
             statements,
         }
     }
-    // pub fn get_events(&self) -> Vec<CardAttributeEvents> {
-    //     self.events.clone()
-    // }
 }

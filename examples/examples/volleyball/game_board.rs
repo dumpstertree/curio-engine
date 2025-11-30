@@ -1,9 +1,7 @@
-use core::collections::{
-    vector2_int::{self, Vector2Int},
-    vector3::Vector3,
-};
+use core::collections::{vector2_int::Vector2Int, vector3::Vector3};
+use std::fmt::Display;
 
-use crate::{ai_resolver::Directions, state::state_teams::Teams};
+use crate::state::state_teams::Teams;
 
 pub struct GameBoard {}
 impl GameBoard {
@@ -106,5 +104,23 @@ impl GameBoard {
         let x = x.min(3);
         let z = z.min(3);
         Vector3::new(p[z as usize][x as usize].0, 0.0, p[z as usize][x as usize].1)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Directions {
+    Forward,
+    Back,
+    Left,
+    Right,
+}
+impl Display for Directions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Directions::Forward => f.write_str("Forward"),
+            Directions::Back => f.write_str("Back"),
+            Directions::Left => f.write_str("Left"),
+            Directions::Right => f.write_str("Right"),
+        }
     }
 }

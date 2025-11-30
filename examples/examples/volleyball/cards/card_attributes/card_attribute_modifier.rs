@@ -1,16 +1,13 @@
-use crate::{
-    card_parser::AttributeClearFlag,
-    cards::{card_attributes_targets::attribute_target_type_entities::AttribtuteTargetTypesEntities, card_dependencies::data_dep_empty::DataDepsEmpty},
-};
+use crate::cards::{card_attributes_targets::attribute_target_type_entities::AttribtuteTargetTypesEntities, card_dependencies::data_dep_empty::DataDepsEmpty, enums::attribute_clear_flag::ModifierClearFlag};
 
 #[derive(Clone)]
 pub enum CardAttributeModifiers {
     /// Edit available energy for an Entity or Group. 0=clear, 1=entity_ids, 2=count
-    EditEnergyForEntities(AttributeClearFlag, AttribtuteTargetTypesEntities, i32),
+    EditEnergyForEntities(ModifierClearFlag, AttribtuteTargetTypesEntities, i32),
     /// Edit available energy for an Entity or Group. 0=clear, 1=entity_ids, 2=count
-    EditRangeForEntities(AttributeClearFlag, AttribtuteTargetTypesEntities, i32),
+    EditRangeForEntities(ModifierClearFlag, AttribtuteTargetTypesEntities, i32),
     /// Edit available energy for an Entity or Group. 0=clear, 1=entity_ids, 2=count
-    EditCostForEntities(AttributeClearFlag, AttribtuteTargetTypesEntities, i32),
+    EditCostForEntities(ModifierClearFlag, AttribtuteTargetTypesEntities, i32),
 }
 impl CardAttributeModifiers {
     /// get the data dependencies that need to be passed in

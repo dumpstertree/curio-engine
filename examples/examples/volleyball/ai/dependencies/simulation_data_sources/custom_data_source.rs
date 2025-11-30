@@ -2,11 +2,19 @@ use core::collections::game_state::GameState;
 use std::sync::Arc;
 
 use crate::{
-    ai::{StateTerminated::StateTerminated, dependencies::data_source::SimulationDataSource, target_filler::AITargetFiller},
-    ai_resolver::{DataDepsFilledForModifiers, Directions, FilledAttributeWithPermutation, Move},
-    cards::{card_dependencies::data_dep_empty::DataDepsEmpty, card_instance::CardInstance},
-    game_board::GameBoard,
+    ai::dependencies::simulation_data_source::SimulationDataSource,
+    cards::{
+        card_attribute_fillers::attribute_filler_ai::CardAttributeFillerAI,
+        card_dependencies::{
+            builder::{data_dep_filled_for_modifiers::DataDepsFilledForModifiers, filled_attribute_with_permutation::FilledAttributeWithPermutation},
+            data_dep_empty::DataDepsEmpty,
+        },
+        card_instance::CardInstance,
+        enums::simulation_manuevers::SimulationManuevers,
+    },
+    game_board::{Directions, GameBoard},
     state::{
+        other::state_terminated::StateTerminated,
         state_ball_mode::{BallModes, StateBallMode},
         state_deck::StateDeck,
         state_energy::StateEnergy,
@@ -17,7 +25,7 @@ use crate::{
 };
 
 pub struct CustomDataSource {}
-impl SimulationDataSource<Move, (Teams, i32)> for CustomDataSource {
+impl SimulationDataSource<SimulationManuevers, (Teams, i32)> for CustomDataSource {
     fn get_cur_user(&self, game_state: &GameState) -> (Teams, i32) {
         // get state
         let state_teams = game_state.get::<StateTeamAssignments>();
@@ -31,7 +39,7 @@ impl SimulationDataSource<Move, (Teams, i32)> for CustomDataSource {
         // return
         (team, state_turn.active_instance_id)
     }
-    fn get_all_simulation_actions(&self, game_state: &GameState, user: &(Teams, i32)) -> Vec<Move> {
+    fn get_all_simulation_actions(&self, game_state: &GameState, user: &(Teams, i32)) -> Vec<SimulationManuevers> {
         // create the output
         let mut output = Vec::new();
 
@@ -63,7 +71,7 @@ impl SimulationDataSource<Move, (Teams, i32)> for CustomDataSource {
         // make sure the ball is not currently being served
         if game_state.get::<StateBallMode>().mode != BallModes::Serve {
             // add end turn make sure this is added before possible breaking from lack of energy
-            output.push(Move::EndTurn);
+            output.push(SimulationManuevers::EndTurn);
 
             // if we have enough energy to move add all the directions
             let has_energy_for_move = energy_for_uid.0 > 0;
@@ -74,16 +82,16 @@ impl SimulationDataSource<Move, (Teams, i32)> for CustomDataSource {
                 };
 
                 if GameBoard::can_move(&user.0, pos, Directions::Forward) {
-                    output.push(Move::Move(Directions::Forward));
+                    output.push(SimulationManuevers::MoveEntity(Directions::Forward));
                 }
                 if GameBoard::can_move(&user.0, pos, Directions::Back) {
-                    output.push(Move::Move(Directions::Back));
+                    output.push(SimulationManuevers::MoveEntity(Directions::Back));
                 }
                 if GameBoard::can_move(&user.0, pos, Directions::Left) {
-                    output.push(Move::Move(Directions::Left));
+                    output.push(SimulationManuevers::MoveEntity(Directions::Left));
                 }
                 if GameBoard::can_move(&user.0, pos, Directions::Right) {
-                    output.push(Move::Move(Directions::Right));
+                    output.push(SimulationManuevers::MoveEntity(Directions::Right));
                 }
             }
         }
@@ -94,7 +102,7 @@ impl SimulationDataSource<Move, (Teams, i32)> for CustomDataSource {
 }
 
 impl CustomDataSource {
-    fn get_available_manuevers_for_cards(game_state: &GameState, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<Move> {
+    fn get_available_manuevers_for_cards(game_state: &GameState, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<SimulationManuevers> {
         //
         let mut all_manuevers = Vec::new();
         let state_energy = game_state.get::<StateEnergy>();
@@ -133,12 +141,12 @@ impl CustomDataSource {
                     match empty {
                         // dependency is a tile - fill the dependency based on type
                         DataDepsEmpty::Tiles(target_type) => {
-                            filled.push(AITargetFiller::fill_dependency_tiles(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_tiles(game_state, uid, target_type));
                         }
 
                         // dependency is a entity - fill the dependency based on type
                         DataDepsEmpty::Entities(target_type) => {
-                            filled.push(AITargetFiller::fill_dependency_entities(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_entities(game_state, uid, target_type));
                         }
                         _ => {}
                     }
@@ -155,12 +163,12 @@ impl CustomDataSource {
                     match empty {
                         // dependency is a tile - fill the dependency based on type
                         DataDepsEmpty::Tiles(target_type) => {
-                            filled.push(AITargetFiller::fill_dependency_tiles(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_tiles(game_state, uid, target_type));
                         }
 
                         // dependency is a entity - fill the dependency based on type
                         DataDepsEmpty::Entities(target_type) => {
-                            filled.push(AITargetFiller::fill_dependency_entities(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_entities(game_state, uid, target_type));
                         }
                         _ => {}
                     }
@@ -175,14 +183,14 @@ impl CustomDataSource {
 
             // convert those permutations into a play
             for combo in combined_permutations {
-                all_manuevers.push(Move::Play(card.clone(), combo));
+                all_manuevers.push(SimulationManuevers::PlayCard(card.clone(), combo));
             }
         }
 
         // return
         all_manuevers
     }
-    fn get_available_manuevers(game_state: &GameState, uid: &i32) -> Vec<Move> {
+    fn get_available_manuevers(game_state: &GameState, uid: &i32) -> Vec<SimulationManuevers> {
         // create the return object containing all the moves
         let mut all_manuevers = Vec::new();
 

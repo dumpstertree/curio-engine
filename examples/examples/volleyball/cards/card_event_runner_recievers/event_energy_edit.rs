@@ -1,11 +1,11 @@
-use crate::{ai_resolver::CardEvents, state::state_energy::StateEnergy};
+use crate::{cards::enums::card_events::CardEvents, state::state_energy::StateEnergy};
 use core::collections::game_state::GameState;
 
 pub struct EventReciever {}
 impl EventReciever {
     pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
         match event {
-            CardEvents::ApplyEventEditEnergy(wrapped_entities, count) => {
+            CardEvents::EventEnergyEdit(wrapped_entities, count) => {
                 // edit the gamestate
                 game_state.edit::<StateEnergy>(|x| {
                     // get the ids from the wrapped data

@@ -1,15 +1,15 @@
 use core::collections::game_state::GameState;
 
 use crate::{
-    ai::{StateTerminated::StateTerminated, dependencies::evaluator::SimulationEvaluator},
-    ai_resolver::Move,
+    ai::dependencies::simulation_evaluator::SimulationEvaluator,
+    cards::enums::simulation_manuevers::SimulationManuevers,
     game_board::GameBoard,
-    state::{state_energy::StateEnergy, state_position_ball::StatePositionBall, state_teams::Teams},
+    state::{other::state_terminated::StateTerminated, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_teams::Teams},
 };
 
 pub struct CustomEvaluator {}
-impl SimulationEvaluator<Move, (Teams, i32)> for CustomEvaluator {
-    fn evaluate(&self, game_state: &GameState, user: (Teams, i32), previous_moves: &Vec<Move>) -> i64 {
+impl SimulationEvaluator<SimulationManuevers, (Teams, i32)> for CustomEvaluator {
+    fn evaluate(&self, game_state: &GameState, user: (Teams, i32), previous_moves: &Vec<SimulationManuevers>) -> i64 {
         // get states
         let state_position_ball = game_state.get::<StatePositionBall>();
         let state_energy = game_state.get::<StateEnergy>();

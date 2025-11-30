@@ -1,6 +1,9 @@
 use crate::{
-    ai::{StateTerminated::StateTerminated, dependencies::hasher::SimulationHasher},
-    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_position_player::StatePositionPlayer, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    ai::dependencies::simulation_hasher::SimulationHasher,
+    state::{
+        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_position_player::StatePositionPlayer, state_teams::StateTeamAssignments,
+        state_turn::StateTurn,
+    },
 };
 use core::collections::game_state::GameState;
 use std::hash::{DefaultHasher, Hash, Hasher};

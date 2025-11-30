@@ -3,7 +3,8 @@ use mcts::{MCTSManager, transposition_table::ApproxTable, tree_policy::UCTPolicy
 use std::sync::Arc;
 
 use crate::ai::{
-    dependencies::{data_source::SimulationDataSource, delegate::SimulationDelegate, evaluator::SimulationEvaluator, hasher::SimulationHasher},
+    dependencies::{simulation_data_source::SimulationDataSource, simulation_delegate::SimulationDelegate, simulation_evaluator::SimulationEvaluator, simulation_hasher::SimulationHasher},
+    enums::{fidelity::Fidelity, threading::Threading},
     evalation::Evaluator,
     mcts::MCTS,
     simulation::Simulation,
@@ -66,15 +67,4 @@ where
         // if we found a best move return it otherwise return the default value
         if let Some(best_move) = manager.best_move() { best_move } else { T::default() }
     }
-}
-
-pub enum Threading {
-    Single,
-    Multi,
-}
-pub enum Fidelity {
-    Low = 500,
-    Medium = 1000,
-    High = 3000,
-    Extreme = 10000,
 }

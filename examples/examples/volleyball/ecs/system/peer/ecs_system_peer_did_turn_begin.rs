@@ -1,11 +1,16 @@
 use crate::{
     ai::{
-        StateTerminated::StateTerminated,
-        ai_simulator::{AISimulator, Fidelity, Threading},
-        dependencies::{data_sources::custom_data_source::CustomDataSource, delegates::custom_delegate::CustomDelegate, evaluators::custom_evaluator::CustomEvaluator, hashers::custom_hasher::CustomHasher},
+        ai_simulator::AISimulator,
+        dependencies::{simulation_data_sources::custom_data_source::CustomDataSource, simulation_delegates::custom_delegate::CustomDelegate, simulation_evaluators::custom_evaluator::CustomEvaluator, simulation_hashers::custom_hasher::CustomHasher},
+        enums::{fidelity::Fidelity, threading::Threading},
     },
+    cards::enums::simulation_manuevers::SimulationManuevers,
+    game_board::Directions,
     game_events::GameEvents,
-    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_ball_mode::StateBallMode, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_position_player::StatePositionPlayer, state_turn::StateTurn},
+    state::{
+        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_ball_mode::StateBallMode, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_position_player::StatePositionPlayer,
+        state_turn::StateTurn,
+    },
 };
 use built_in_state::state_time::TimeState;
 use core::{
@@ -47,6 +52,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         if is_turn && game_state.get::<TimeState>().unscaled_time - self.lastmove > 1.0 {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
                 GameState::new_single_instance(vec![
+                    // copy these states
                     (StateCardAttributeModifierStack::id(), Box::new(game_state.get::<StateCardAttributeModifierStack>())),
                     (StateTeamAssignments::id(), Box::new(game_state.get::<StateTeamAssignments>())),
                     (StatePositionPlayer::id(), Box::new(game_state.get::<StatePositionPlayer>())), //
@@ -55,6 +61,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                     (StateEnergy::id(), Box::new(game_state.get::<StateEnergy>())),
                     (StateDeck::id(), Box::new(game_state.get::<StateDeck>())),
                     (StateTurn::id(), Box::new(game_state.get::<StateTurn>())),
+                    // add this state
                     (StateTerminated::id(), Box::new(StateTerminated { is_terminated: false, is_exhuasted: false })),
                 ])
             });
@@ -63,13 +70,13 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             let move2 = simulator.simulate(game_state, Fidelity::Medium, Threading::Multi);
 
             match move2 {
-                crate::ai_resolver::Move::EndTurn => events.enqueue_event(GameEvents::RequestTurnEnd(uid)),
-                crate::ai_resolver::Move::Play(card_instance, filled_card_response) => events.enqueue_event(GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id, filled_card_response)),
-                crate::ai_resolver::Move::Move(direction) => match direction {
-                    crate::ai_resolver::Directions::Forward => events.enqueue_event(GameEvents::RequestMoveZPos(uid)),
-                    crate::ai_resolver::Directions::Back => events.enqueue_event(GameEvents::RequestMoveZNeg(uid)),
-                    crate::ai_resolver::Directions::Left => events.enqueue_event(GameEvents::RequestMoveXNeg(uid)),
-                    crate::ai_resolver::Directions::Right => events.enqueue_event(GameEvents::RequestMoveXPos(uid)),
+                SimulationManuevers::EndTurn => events.enqueue_event(GameEvents::RequestTurnEnd(uid)),
+                SimulationManuevers::PlayCard(card_instance, filled_card_response) => events.enqueue_event(GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id, filled_card_response)),
+                SimulationManuevers::MoveEntity(direction) => match direction {
+                    Directions::Forward => events.enqueue_event(GameEvents::RequestMoveZPos(uid)),
+                    Directions::Back => events.enqueue_event(GameEvents::RequestMoveZNeg(uid)),
+                    Directions::Left => events.enqueue_event(GameEvents::RequestMoveXNeg(uid)),
+                    Directions::Right => events.enqueue_event(GameEvents::RequestMoveXPos(uid)),
                 },
                 _ => {}
             }

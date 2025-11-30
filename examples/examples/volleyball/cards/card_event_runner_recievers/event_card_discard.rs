@@ -1,11 +1,11 @@
-use crate::{ai_resolver::CardEvents, state::state_deck::StateDeck};
+use crate::{cards::enums::card_events::CardEvents, state::state_deck::StateDeck};
 use core::collections::game_state::GameState;
 
 pub struct EventReciever {}
 impl EventReciever {
     pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
         match event {
-            CardEvents::ApplyEventDiscardCards(wrapped_cards) => {
+            CardEvents::EventCardDiscard(wrapped_cards) => {
                 // unwrap the cards
                 let card_uids = wrapped_cards.as_cards();
 

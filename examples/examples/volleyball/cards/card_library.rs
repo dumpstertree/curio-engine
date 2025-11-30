@@ -1,9 +1,9 @@
 use crate::{
-    card_parser::AttributeClearFlag,
     cards::{
         card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_attribute_requirement::CardAttributeRequirement},
         card_attributes_targets::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
         card_master::{CardMaster, CardStatement},
+        enums::attribute_clear_flag::ModifierClearFlag,
     },
     state::{state_ball_mode::BallModes, state_deck::CardTypes},
 };
@@ -28,7 +28,7 @@ impl CardLibrary {
                 vec![CardStatement::new(
                     0, //
                     vec![],
-                    vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
+                    vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
                     vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
                 )],
             )),
@@ -194,7 +194,7 @@ impl CardLibrary {
                 vec![CardStatement::new(
                     1, //
                     vec![],
-                    vec![CardAttributeModifiers::EditRangeForEntities(AttributeClearFlag::Turn, AttribtuteTargetTypesEntities::User, -1)],
+                    vec![CardAttributeModifiers::EditRangeForEntities(ModifierClearFlag::Turn, AttribtuteTargetTypesEntities::User, -1)],
                     vec![],
                 )],
             )),
@@ -208,7 +208,7 @@ impl CardLibrary {
                 vec![CardStatement::new(
                     1, //
                     vec![],
-                    vec![(CardAttributeModifiers::EditRangeForEntities(AttributeClearFlag::Turn, AttribtuteTargetTypesEntities::User, 1))],
+                    vec![(CardAttributeModifiers::EditRangeForEntities(ModifierClearFlag::Turn, AttribtuteTargetTypesEntities::User, 1))],
                     vec![],
                 )],
             )),

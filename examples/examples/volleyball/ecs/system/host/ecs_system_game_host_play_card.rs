@@ -1,4 +1,7 @@
-use crate::{ai_resolver::CardEventRunner, card_parser::AttributeClearFlag, game_events::GameEvents};
+use crate::{
+    cards::{card_event_runner::CardEventRunner, enums::attribute_clear_flag::ModifierClearFlag},
+    game_events::GameEvents,
+};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -53,7 +56,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                 }
 
                 // enqueue the clear flag
-                event_runner.enqueue_clear_modifiers(&AttributeClearFlag::Play);
+                event_runner.enqueue_clear_modifiers(&ModifierClearFlag::Play);
 
                 // run all inside runner
                 event_runner.post_and_drain(game_state);

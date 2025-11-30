@@ -1,4 +1,4 @@
-use crate::{card_parser::AttributeClearFlag, cards::card_modifier::CardModifier};
+use crate::cards::{card_modifier::CardModifier, enums::attribute_clear_flag::ModifierClearFlag};
 use core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
 use macro_state_serialize::global_state_serialize;
 
@@ -39,7 +39,7 @@ impl StateCardAttributeModifierStack {
     pub fn add_to_stack(&mut self, modifier: CardModifier) {
         self.stack.push(modifier);
     }
-    pub fn clear_from_stack(&mut self, clear_flag: AttributeClearFlag) {
+    pub fn clear_from_stack(&mut self, clear_flag: ModifierClearFlag) {
         self.stack.retain(|x| x.clear_flag != clear_flag);
     }
 }

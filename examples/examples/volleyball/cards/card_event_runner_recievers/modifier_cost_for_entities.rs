@@ -1,13 +1,12 @@
-use crate::{ai_resolver::CardEvents, cards::card_modifier::CardModifier, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
+use crate::{cards::card_modifier::CardModifier, cards::enums::card_events::CardEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
 use core::collections::game_state::GameState;
 
 pub struct EventReciever {}
 impl EventReciever {
     pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
         match event {
-            CardEvents::ApplyModifierEnergyForEntities(wrapped_entities, clear_flag, count) => {
+            CardEvents::ModifierCostForEntities(wrapped_entities, clear_flag, count) => {
                 let entity_uids = wrapped_entities.as_entities();
-
                 game_state.edit::<StateCardAttributeModifierStack>(|x| {
                     x.add_to_stack(CardModifier {
                         clear_flag: *clear_flag,
@@ -15,8 +14,8 @@ impl EventReciever {
                         applies_to_entities: entity_uids.clone(),
                         applies_to_cards: vec![],
                         range: 0,
-                        cost: 0,
-                        energy: *count,
+                        cost: *count,
+                        energy: 0,
                     });
                 });
             }

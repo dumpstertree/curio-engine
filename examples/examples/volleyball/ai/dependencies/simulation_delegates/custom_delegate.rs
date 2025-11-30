@@ -2,24 +2,26 @@ use core::collections::game_state::GameState;
 use std::sync::Arc;
 
 use crate::{
-    ai::{StateTerminated::StateTerminated, dependencies::delegate::SimulationDelegate},
-    ai_resolver::{CardEventRunner, Directions, Move},
-    card_parser::AttributeClearFlag,
-    cards::card_instance::CardInstance,
-    game_board::GameBoard,
+    ai::dependencies::simulation_delegate::SimulationDelegate,
+    cards::{
+        card_event_runner::CardEventRunner,
+        card_instance::CardInstance,
+        enums::{attribute_clear_flag::ModifierClearFlag, simulation_manuevers::SimulationManuevers},
+    },
+    game_board::{Directions, GameBoard},
     game_events::FilledCardResponse,
-    state::{state_energy::StateEnergy, state_position_player::StatePositionPlayer, state_teams::Teams},
+    state::{other::state_terminated::StateTerminated, state_energy::StateEnergy, state_position_player::StatePositionPlayer, state_teams::Teams},
 };
 pub struct CustomDelegate {}
-impl SimulationDelegate<Move, (Teams, i32)> for CustomDelegate {
+impl SimulationDelegate<SimulationManuevers, (Teams, i32)> for CustomDelegate {
     // simulates the current move into the gamestate
-    fn simulate(&self, game_state: &mut GameState, user: &(Teams, i32), manuever: &Move) {
+    fn simulate(&self, game_state: &mut GameState, user: &(Teams, i32), manuever: &SimulationManuevers) {
         // each manuever type is handled differently. call the corresponding fn for each manuever
         match manuever {
-            Move::Play(card, data) => Self::make_manuever_card(game_state, &data, &card, &user),
-            Move::Move(vector2_int) => Self::make_manuever_move(game_state, &vector2_int, &user),
-            Move::EndTurn => Self::make_manuever_end(game_state),
-            Move::Invalid => {}
+            SimulationManuevers::PlayCard(card, data) => Self::make_manuever_card(game_state, &data, &card, &user),
+            SimulationManuevers::MoveEntity(vector2_int) => Self::make_manuever_move(game_state, &vector2_int, &user),
+            SimulationManuevers::EndTurn => Self::make_manuever_end(game_state),
+            SimulationManuevers::Invalid => {}
         }
 
         // get state
@@ -64,7 +66,7 @@ impl CustomDelegate {
         }
 
         // enqueue the clear flag for
-        event_runner.enqueue_clear_modifiers(&AttributeClearFlag::Play);
+        event_runner.enqueue_clear_modifiers(&ModifierClearFlag::Play);
 
         // run all inside runner
         event_runner.post_and_drain(game_state);

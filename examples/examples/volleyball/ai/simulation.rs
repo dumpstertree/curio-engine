@@ -2,7 +2,7 @@ use core::collections::game_state::GameState;
 use mcts::{self, GameState as MCTSGameState, transposition_table::TranspositionHash};
 use std::sync::Arc;
 
-use crate::ai::dependencies::{data_source::SimulationDataSource, delegate::SimulationDelegate, hasher::SimulationHasher};
+use crate::ai::dependencies::{simulation_data_source::SimulationDataSource, simulation_delegate::SimulationDelegate, simulation_hasher::SimulationHasher};
 
 #[derive(Clone)]
 pub struct Simulation<T, U>

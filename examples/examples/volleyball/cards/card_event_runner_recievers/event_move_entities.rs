@@ -1,11 +1,11 @@
-use crate::{ai_resolver::CardEvents, state::state_position_player::StatePositionPlayer};
+use crate::{cards::enums::card_events::CardEvents, state::state_position_player::StatePositionPlayer};
 use core::collections::game_state::GameState;
 
 pub struct EventReciever {}
 impl EventReciever {
     pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
         match event {
-            CardEvents::ApplyEventMoveEntity(entities, tiles) => {
+            CardEvents::EventMoveEntities(entities, tiles) => {
                 // unwrap
                 let tile_ids = tiles.as_tiles();
                 let entity_ids = entities.as_entities();

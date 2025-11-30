@@ -1,4 +1,4 @@
-use crate::{ai_resolver::CardEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
+use crate::{cards::enums::card_events::CardEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
 use core::collections::game_state::GameState;
 
 pub struct EventReciever {}

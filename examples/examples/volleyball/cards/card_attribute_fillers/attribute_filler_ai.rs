@@ -3,25 +3,21 @@ use core::{
     random::Random,
 };
 
-use message_io::adapters::framed_tcp;
-
 use crate::{
-    ai_resolver::DataDepsFilledAllPermutations,
     cards::{
         card_attributes_targets::{attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
-        card_dependencies::data_dep_filled::DataDepsFilled,
+        card_dependencies::{builder::data_dep_filled_all_permutations::DataDepsFilledAllPermutations, data_dep_filled::DataDepsFilled},
     },
     game_board::GameBoard,
     state::{
-        self,
         host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
         state_position_ball::StatePositionBall,
         state_teams::{StateTeamAssignments, Teams},
         state_turn::StateTurn,
     },
 };
-pub struct AITargetFiller {}
-impl AITargetFiller {
+pub struct CardAttributeFillerAI {}
+impl CardAttributeFillerAI {
     pub fn fill_dependency_tiles(game_state: &GameState, uid: &i32, empty: AttributeTargetTypesTiles) -> DataDepsFilledAllPermutations {
         // create the list of permutations
         let mut permuatations = DataDepsFilledAllPermutations::new();
