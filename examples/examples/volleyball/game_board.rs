@@ -1,6 +1,9 @@
-use core::collections::{vector2_int::Vector2Int, vector3::Vector3};
+use core::collections::{
+    vector2_int::{self, Vector2Int},
+    vector3::Vector3,
+};
 
-use crate::state::state_teams::Teams;
+use crate::{ai_resolver::Directions, state::state_teams::Teams};
 
 pub struct GameBoard {}
 impl GameBoard {
@@ -28,6 +31,47 @@ impl GameBoard {
     //         Teams::Blue => Vector2Int::new(3, 4),
     //     }
     // }
+    pub fn do_move(team: &Teams, tile: &(i32, i32), direction: &Directions) -> (i32, i32) {
+        // get the standard offset based on the direction
+        let offset = match direction {
+            Directions::Forward => (0, 1),
+            Directions::Back => (0, -1),
+            Directions::Left => (-1, 0),
+            Directions::Right => (1, 0),
+        };
+
+        // conver the direction based on the team that is moving
+        let converted_offset = team.convert_dir(offset.0, offset.1);
+
+        // get the new tile based on the original tile and the converted offset
+        (tile.0 + converted_offset.0, tile.1 + converted_offset.1)
+    }
+    pub fn can_move(team: &Teams, tile: &(i32, i32), direction: Directions) -> bool {
+        // get the standard offset based on the direction
+        let offset = match direction {
+            Directions::Forward => (0, 1),
+            Directions::Back => (0, -1),
+            Directions::Left => (-1, 0),
+            Directions::Right => (1, 0),
+        };
+
+        // conver the direction based on the team that is moving
+        let converted_offset = team.convert_dir(offset.0, offset.1);
+
+        // get the new tile based on the original tile and the converted offset
+        let new_tile = (tile.0 + converted_offset.0, tile.1, converted_offset.1);
+
+        // get the bounds for the given team
+        let min = Self::get_bounds_min(team);
+        let max = Self::get_bounds_max(team);
+
+        // make sure its in bounds
+        let in_x = new_tile.0 + converted_offset.0 <= max.x && new_tile.0 + converted_offset.0 >= min.x;
+        let in_z = new_tile.1 + converted_offset.1 <= max.y && new_tile.1 + converted_offset.1 >= min.y;
+
+        // return if we are in both x and z
+        return in_x && in_z;
+    }
     pub fn get_bounds_min(for_team: &Teams) -> Vector2Int {
         match for_team {
             Teams::Red => Vector2Int::new(0, 0),

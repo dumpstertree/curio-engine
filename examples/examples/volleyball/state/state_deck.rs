@@ -72,10 +72,10 @@ impl Deck {
             return item.clone();
         }
 
-        println!("INSTANCE ID {}", instance_id);
-        for x in &self.all_cards {
-            println!("{}", x.instance_id);
-        }
+        // println!("INSTANCE ID {}", instance_id);
+        // for x in &self.all_cards {
+        //     println!("{}", x.instance_id);
+        // }
 
         panic!(" No card for {}", instance_id); // this is for some reason pulling from the other player
     }
@@ -112,7 +112,7 @@ impl Deck {
         panic!();
     }
     pub fn reshuffle(&mut self) {
-        println!("shuffle");
+        // println!("shuffle");
         for x in &self.hand_consumable {
             self.pile_discard.push(x.clone());
         }
@@ -128,7 +128,7 @@ impl Deck {
     }
     pub fn draw(&mut self) {
         if self.pile_draw.len() == 0 {
-            println!("Shuffled discard into draw");
+            // println!("Shuffled discard into draw");
             for x in &self.pile_discard {
                 self.pile_draw.push(x.clone());
             }
@@ -139,7 +139,7 @@ impl Deck {
             println!("No cards in draw or discard");
             return;
         }
-        println!("draw");
+        // println!("draw");
         self.hand_consumable.push(self.pile_draw[0].clone());
         self.pile_draw.remove(0);
     }

@@ -36,8 +36,29 @@ pub mod state {
     }
 }
 pub mod ai {
+    pub mod ai_simulator;
     pub mod evalation;
+    pub mod mcts;
     pub mod simulation;
+    pub mod dependencies {
+        pub mod data_source;
+        pub mod evaluator;
+        pub mod evaluators {
+            pub mod custom_evaluator;
+        }
+        pub mod data_sources {
+            pub mod custom_data_source;
+        }
+        pub mod delegate;
+        pub mod delegates {
+            pub mod custom_delegate;
+        }
+        pub mod hasher;
+        pub mod hashers {
+            pub mod custom_hasher;
+        }
+    }
+    pub mod StateTerminated;
 }
 pub mod event_recievers {
     pub(crate) mod event_reciever_apply_card_attribute_event_cards_discard;
