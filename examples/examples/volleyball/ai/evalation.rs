@@ -2,11 +2,7 @@ use std::{marker::PhantomData, sync::Arc};
 
 use mcts::SearchHandle;
 
-use crate::ai::{
-    dependencies::{data_source::SimulationDataSource, evaluator::SimulationEvaluator},
-    mcts::MCTS,
-    simulation::Simulation,
-};
+use crate::ai::{dependencies::evaluator::SimulationEvaluator, mcts::MCTS, simulation::Simulation};
 
 /// A dependecy for MCTS.
 /// Used to evaluate the score for a given simulation.

@@ -1,18 +1,13 @@
 use crate::{
     card_parser::AttributeClearFlag,
     cards::{
-        attribute_target_type_cards::AttributeTargetTypesCards,
-        attribute_target_type_entities::AttribtuteTargetTypesEntities,
-        // attribute_target_type_players::AtrributeTargetTypesPlayers,
-        attribute_target_type_tiles::AttributeTargetTypesTiles,
-        card_attribute_events::CardAttributeEvents,
-        card_attribute_modifier::CardAttributeModifiers,
-        card_attribute_requirement::CardAttributeRequirement,
+        card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_attribute_requirement::CardAttributeRequirement},
+        card_attributes_targets::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
         card_master::{CardMaster, CardStatement},
     },
     state::{state_ball_mode::BallModes, state_deck::CardTypes},
 };
-use core::collections::{vector2::Vector2, vector2_int::Vector2Int};
+use core::collections::vector2_int::Vector2Int;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -24,20 +19,20 @@ impl CardLibrary {
     fn init() -> HashMap<String, Arc<CardMaster>> {
         let mut hashmap: HashMap<String, Arc<CardMaster>> = HashMap::new();
         // rest
-        // hashmap.insert(
-        //     String::from("rest"),
-        //     Arc::new(CardMaster::new(
-        //         "rest",
-        //         "do a rest",
-        //         CardTypes::Rest,
-        //         vec![CardStatement::new(
-        //             0, //
-        //             vec![],
-        //             vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
-        //             vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
-        //         )],
-        //     )),
-        // );
+        hashmap.insert(
+            String::from("rest"),
+            Arc::new(CardMaster::new(
+                "rest",
+                "do a rest",
+                CardTypes::Rest,
+                vec![CardStatement::new(
+                    0, //
+                    vec![],
+                    vec![CardAttributeModifiers::EditEnergyForEntities(AttributeClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
+                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
+                )],
+            )),
+        );
         hashmap.insert(
             String::from("serve"),
             Arc::new(CardMaster::new(

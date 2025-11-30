@@ -74,8 +74,8 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 println!("");
 
                 // deck.add_card_to_deck("set", false);
-                // deck.add_card_to_deck("extra_oomph", false);
-                // deck.add_card_to_deck("hold_back", false);
+                deck.add_card_to_deck("extra_oomph", false);
+                deck.add_card_to_deck("hold_back", false);
                 // deck.add_card_to_deck("curse", false);
                 deck.add_card_to_deck("blessing", false);
                 deck.add_card_to_deck("deep_breath", false);

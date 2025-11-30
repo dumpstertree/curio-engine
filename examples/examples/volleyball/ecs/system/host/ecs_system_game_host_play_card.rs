@@ -1,20 +1,6 @@
-use crate::{
-    card_parser::AttributeClearFlag,
-    cards::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_modifier::CardModifier, data_dep_filled::DataDepsFilled},
-    game_events::GameEvents,
-    state::{
-        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
-        state_ball_mode::{BallModes, StateBallMode},
-        state_deck::{CardTypes, StateDeck},
-        state_energy::StateEnergy,
-        state_position_ball::StatePositionBall,
-        state_position_player::StatePositionPlayer,
-        state_teams::StateTeamAssignments,
-        state_turn::StateTurn,
-    },
-};
+use crate::{ai_resolver::CardEventRunner, card_parser::AttributeClearFlag, game_events::GameEvents};
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
+    collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::{
         ecs_event_reciever::{self, InstanceLimiter},
@@ -24,7 +10,7 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
-use std::{panic, vec};
+use std::vec;
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -46,58 +32,31 @@ impl InstanceLimiter for ECSSystemGameRequestManuever {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {
-                // get the stack for the current use case
-                let state_card_attribute_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
-                let active_modifiers = CardModifier::flatten(&vec![
-                    &state_card_attribute_modifier_stack
-                        .get_flat_stack_for_entity(*id)
-                        .clone(),
-                    &state_card_attribute_modifier_stack
-                        .get_flat_stack_for_card(card_instance.instance_id)
-                        .clone(),
-                ]);
+                // creates an event runner to all the events on
+                let mut event_runner = CardEventRunner::new();
 
-                // reduce energy by cost
-                let card_cost = card_instance.get_cost(game_state, *id);
-                game_state.edit::<StateEnergy>(|x| {
-                    let Some(energy) = x.all_players.get_mut(id) else {
-                        return;
-                    };
+                // get the attributes out of this card
+                let atts_mods = card_instance.get_attributes_modifiers(&game_state, *id);
+                let atts_evnt = card_instance.get_attributes_events(&game_state, *id);
 
-                    energy.0 = energy.0 - card_cost + &active_modifiers.cost;
-                });
-
-                let modifiers = card_instance.get_attributes_modifiers(game_state, *id);
-                for i in 0..modifiers.len() {
-                    let modifiers = &modifiers[i];
-                    let data = &data.modifiers[i];
-                    match modifiers {
-                        CardAttributeModifiers::EditEnergyForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierEnergyForEntities(*attribute_clear_flag, data.filled[0].as_entities(), *count)),
-                        CardAttributeModifiers::EditRangeForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierRangeForEntities(*attribute_clear_flag, data.filled[0].as_entities(), *count)),
-                        CardAttributeModifiers::EditCostForEntities(attribute_clear_flag, _, count) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeModifierCostForEntities(*attribute_clear_flag, data.filled[0].as_entities(), *count)),
-                    }
+                // iterate over each mod and add it and its data to the runner
+                for i in 0..atts_mods.len() {
+                    event_runner.enqueue_modifier(&atts_mods[i], &data.modifiers[i]);
                 }
 
-                let events = card_instance.get_attributes_events(game_state, *id);
-                for i in 0..events.len() {
-                    let event = &events[i];
-                    let data = &data.event[i];
-                    match event {
-                        CardAttributeEvents::DrawCards(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDrawCards(data.filled[0].as_entities(), *count)),
-                        CardAttributeEvents::DiscardCards(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventDiscardCards(data.filled[0].as_cards())),
-                        CardAttributeEvents::MoveEntity(_, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveEntity(data.filled[0].as_entities(), data.filled[1].as_tiles())),
-                        // CardAttributeEvents::MoveBall(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveBall(*count, state_turn.active_instance_id, card_instance.instance_id)),
-                        CardAttributeEvents::MoveBall(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventMoveBall(data.filled[0].as_tiles(), *id, card_instance.instance_id)),
-                        CardAttributeEvents::GainEnergy(count, _) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventGainEnergy(data.filled[0].as_entities(), *count)),
-                        CardAttributeEvents::RefillEnergy(_) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventRefillEnergy(data.filled[0].as_entities())),
-                        CardAttributeEvents::SetBallMode(ball_mode) => event_queue.enqueue_event(GameEvents::ApplyCardAttributeEventSetBallMode(ball_mode.clone())),
-                    }
+                // iterate over each event and add it and its data to the runner
+                for i in 0..atts_evnt.len() {
+                    event_runner.enqueue_event(&atts_evnt[i], &data.event[i]);
                 }
 
-                event_queue.enqueue_event(GameEvents::ClearCardAttributeModifiersForFlag(AttributeClearFlag::Play));
+                // enqueue the clear flag
+                event_runner.enqueue_clear_modifiers(&AttributeClearFlag::Play);
+
+                // run all inside runner
+                event_runner.post_and_drain(game_state);
             }
 
             _ => {}

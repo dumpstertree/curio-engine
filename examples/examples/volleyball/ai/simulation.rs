@@ -63,7 +63,9 @@ where
 
     fn available_moves(&self) -> Vec<T> {
         let user = self.data_source.get_cur_user(&self.game_state);
-        return self.data_source.all(&self.game_state, &user);
+        return self
+            .data_source
+            .get_all_simulation_actions(&self.game_state, &user);
     }
 
     fn make_move(&mut self, mov: &T) {

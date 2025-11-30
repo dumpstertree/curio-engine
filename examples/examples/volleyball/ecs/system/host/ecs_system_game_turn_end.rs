@@ -14,6 +14,7 @@ use core::{
 };
 
 use crate::{
+    ai_resolver::CardEventRunner,
     card_parser::AttributeClearFlag,
     game_events::GameEvents,
     state::{state_position_ball::StatePositionBall, state_teams::StateTeamAssignments},
@@ -81,8 +82,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
 
                 println!("next turn?");
 
-                // clear stack
-                event_queue.enqueue_event(GameEvents::ClearCardAttributeModifiersForFlag(AttributeClearFlag::Turn));
+                //clear any attributes that end at turn
+                let mut runner = CardEventRunner::new();
+                runner.enqueue_clear_modifiers(&AttributeClearFlag::Turn);
+                runner.post_and_drain(game_state);
 
                 // begin the next player
                 event_queue.enqueue_event(GameEvents::TurnBegin(new_id));

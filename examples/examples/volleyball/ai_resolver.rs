@@ -34,12 +34,14 @@ use crate::{
     },
     card_parser::AttributeClearFlag,
     cards::{
-        attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles, card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_instance::CardInstance, card_modifier::CardModifier,
-        data_dep_empty::DataDepsEmpty, data_dep_filled::DataDepsFilled,
+        card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers},
+        card_dependencies::data_dep_filled::DataDepsFilled,
+        card_instance::CardInstance,
     },
     event_recievers::{
-        event_reciever_apply_card_attribute_event_cards_draw, event_reciever_apply_card_attribute_event_cards_energy_edit, event_reciever_apply_card_attribute_event_move_ball_forward, event_reciever_apply_card_attribute_event_set_ball_mode,
-        event_reciever_apply_card_attribute_modifier_cost_for_entities, event_reciever_apply_card_attribute_modifier_energy_for_entities, event_reciever_apply_card_attribute_modifier_range_for_entities,
+        event_reciever_apply_card_attribute_event_cards_discard, event_reciever_apply_card_attribute_event_cards_draw, event_reciever_apply_card_attribute_event_cards_energy_edit, event_reciever_apply_card_attribute_event_cards_energy_refill,
+        event_reciever_apply_card_attribute_event_move_ball_forward, event_reciever_apply_card_attribute_event_move_entities, event_reciever_apply_card_attribute_event_set_ball_mode, event_reciever_apply_card_attribute_modifier_cost_for_entities,
+        event_reciever_apply_card_attribute_modifier_energy_for_entities, event_reciever_apply_card_attribute_modifier_range_for_entities, event_reciever_clear_card_attribute_modifiers_all, event_reciever_clear_card_attribute_modifiers_for_flag,
     },
     game_board::{self, GameBoard},
     game_events::{FilledAttribute, FilledCardResponse, GameEvents},
@@ -123,6 +125,7 @@ impl DataDepsFilledForModifiers {
 }
 impl DataDepsFilledForModifiers {
     pub fn get_data_stack_permutations(&self) -> Vec<FilledCardResponse> {
+        // this is incomplete
         let mut output_mods = Vec::new();
         for x in &self.modifiers_atts {
             let mut filled_att = Vec::new();
@@ -182,20 +185,25 @@ where
 #[derive(Clone)]
 pub enum CardEvents {
     // modifier
-    ApplyModifierEnergyForEntities(AttributeClearFlag, Vec<i32>, i32),
-    ApplyModifierCostForEntities(AttributeClearFlag, Vec<i32>, i32),
-    ApplyModifierRangeForEntities(AttributeClearFlag, Vec<i32>, i32),
+    ApplyModifierEnergyForEntities(DataDepsFilled, AttributeClearFlag, i32),
+    ApplyModifierCostForEntities(DataDepsFilled, AttributeClearFlag, i32),
+    ApplyModifierRangeForEntities(DataDepsFilled, AttributeClearFlag, i32),
     // events
-    ApplyEventRefillEnergy,
-    ApplyEventGainEnergy(DataDepsFilled, i32),
-    ApplyEventMoveEntity,
+    ApplyEventRefillEnergy(DataDepsFilled),
+    ApplyEventEditEnergy(DataDepsFilled, i32),
+    ApplyEventMoveEntity(DataDepsFilled, DataDepsFilled),
     ApplyEventDrawCards(DataDepsFilled, i32),
-    ApplyEventDiscardCards(Vec<i32>, i32),
+    ApplyEventDiscardCards(DataDepsFilled),
     ApplyEventSetBallMode(BallModes),
     /// i32:EntityID, i32:CardID, Vec<i32>:TargetTileIDs
-    ApplyEventMoveBall(i32, i32, DataDepsFilled),
+    ApplyEventMoveBall(DataDepsFilled),
+
+    // clear
+    ClearModifiersForFlag(AttributeClearFlag),
+    ClearModifiersAll(),
 }
 #[derive(Clone)]
+/// Runs events specific to cards. This is broken out so it can be used with any gamestate seamlessly
 pub struct CardEventRunner {
     runner: EventRunner<CardEvents, GameState>,
 }
@@ -204,68 +212,85 @@ impl CardEventRunner {
     pub fn new() -> CardEventRunner {
         // create the list of all the recievers
         let recievers: Vec<fn(&CardEvents, &mut GameState) -> Vec<CardEvents>> = vec![
-            // modifiers
-            event_reciever_apply_card_attribute_modifier_energy_for_entities::EventReciever::recieve,
-            event_reciever_apply_card_attribute_modifier_cost_for_entities::EventReciever::recieve,
-            event_reciever_apply_card_attribute_modifier_range_for_entities::EventReciever::recieve,
-            // events
-            event_reciever_apply_card_attribute_event_move_ball_forward::EventReciever::recieve,
-            event_reciever_apply_card_attribute_event_set_ball_mode::EventReciever::recieve,
+            event_reciever_apply_card_attribute_event_cards_discard::EventReciever::recieve,
             event_reciever_apply_card_attribute_event_cards_draw::EventReciever::recieve,
             event_reciever_apply_card_attribute_event_cards_energy_edit::EventReciever::recieve,
+            event_reciever_apply_card_attribute_event_cards_energy_refill::EventReciever::recieve,
+            event_reciever_apply_card_attribute_event_move_ball_forward::EventReciever::recieve,
+            event_reciever_apply_card_attribute_event_move_entities::EventReciever::recieve,
+            event_reciever_apply_card_attribute_event_set_ball_mode::EventReciever::recieve,
+            event_reciever_apply_card_attribute_modifier_cost_for_entities::EventReciever::recieve,
+            event_reciever_apply_card_attribute_modifier_energy_for_entities::EventReciever::recieve,
+            event_reciever_apply_card_attribute_modifier_range_for_entities::EventReciever::recieve,
+            event_reciever_clear_card_attribute_modifiers_all::EventReciever::recieve,
+            event_reciever_clear_card_attribute_modifiers_for_flag::EventReciever::recieve,
         ];
 
         // create the instance
         CardEventRunner { runner: EventRunner::new(recievers) }
     }
-    pub fn enqueue_modifier(&mut self, event: &CardAttributeModifiers) {
+    pub fn enqueue_modifier(&mut self, event: &CardAttributeModifiers, data: &FilledAttribute) {
         match event {
+            CardAttributeModifiers::EditCostForEntities(attribute_clear_flag, _, count) => self
+                .runner
+                .enqueue(&CardEvents::ApplyModifierCostForEntities(
+                    data.filled[0].clone(),
+                    attribute_clear_flag.clone(), //
+                    *count,
+                )),
             CardAttributeModifiers::EditEnergyForEntities(attribute_clear_flag, _, count) => self
                 .runner
                 .enqueue(&CardEvents::ApplyModifierEnergyForEntities(
+                    data.filled[0].clone(),
                     attribute_clear_flag.clone(), //
-                    vec![],
                     *count,
                 )),
             CardAttributeModifiers::EditRangeForEntities(attribute_clear_flag, _, count) => self
                 .runner
                 .enqueue(&CardEvents::ApplyModifierRangeForEntities(
+                    data.filled[0].clone(),
                     attribute_clear_flag.clone(), //
-                    vec![],
-                    *count,
-                )),
-            CardAttributeModifiers::EditCostForEntities(attribute_clear_flag, _, count) => self
-                .runner
-                .enqueue(&CardEvents::ApplyModifierCostForEntities(
-                    attribute_clear_flag.clone(), //
-                    vec![],
                     *count,
                 )),
         }
     }
     pub fn enqueue_event(&mut self, event: &CardAttributeEvents, data: &FilledAttribute) {
         match event {
-            // CardAttributeEvents::DiscardCards(_) => {
-            //     self.runner.enqueue(&CardEvents::ApplyEventDiscardCards());
-            // }
+            CardAttributeEvents::DiscardCards(_) => {
+                self.runner
+                    .enqueue(&CardEvents::ApplyEventDiscardCards(data.filled[0].clone()));
+            }
             CardAttributeEvents::DrawCards(count, _targeting) => {
                 self.runner
                     .enqueue(&CardEvents::ApplyEventDrawCards(data.filled[0].clone(), *count));
             }
             CardAttributeEvents::GainEnergy(count, _targeting) => {
                 self.runner
-                    .enqueue(&CardEvents::ApplyEventGainEnergy(data.filled[0].clone(), *count));
+                    .enqueue(&CardEvents::ApplyEventEditEnergy(data.filled[0].clone(), *count));
             }
-            CardAttributeEvents::SetBallMode(mode) => {
+            CardAttributeEvents::RefillEnergy(_) => {
                 self.runner
-                    .enqueue(&CardEvents::ApplyEventSetBallMode(mode.clone()));
+                    .enqueue(&&CardEvents::ApplyEventRefillEnergy(data.filled[0].clone()));
             }
             CardAttributeEvents::MoveBall(_) => {
                 self.runner
                     .enqueue(&CardEvents::ApplyEventMoveBall(0, 0, data.filled[0].clone()));
             }
+            CardAttributeEvents::MoveEntity(_, _) => {
+                self.runner
+                    .enqueue(&CardEvents::ApplyEventMoveEntity(data.filled[0].clone(), data.filled[1].clone()));
+            }
+            CardAttributeEvents::SetBallMode(mode) => {
+                self.runner
+                    .enqueue(&CardEvents::ApplyEventSetBallMode(mode.clone()));
+            }
+
             _ => {}
         }
+    }
+    pub fn enqueue_clear_modifiers(&mut self, flag: &AttributeClearFlag) {
+        self.runner
+            .enqueue(&CardEvents::ClearModifiersForFlag(*flag));
     }
     pub fn post_and_drain(&mut self, game_state: &mut GameState) {
         self.runner.post_and_drain(game_state);

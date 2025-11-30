@@ -1,5 +1,8 @@
 use crate::{
-    cards::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles, data_dep_empty::DataDepsEmpty},
+    cards::{
+        card_attributes_targets::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
+        card_dependencies::data_dep_empty::DataDepsEmpty,
+    },
     state::state_ball_mode::BallModes,
 };
 

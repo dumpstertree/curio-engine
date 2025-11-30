@@ -6,5 +6,5 @@ where
     U: Clone + Sync + Send + 'static,
 {
     fn get_cur_user(&self, game_state: &GameState) -> U;
-    fn all(&self, game_state: &GameState, user: &U) -> Vec<T>;
+    fn get_all_simulation_actions(&self, game_state: &GameState, user: &U) -> Vec<T>;
 }

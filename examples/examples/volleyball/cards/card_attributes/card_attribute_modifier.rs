@@ -1,6 +1,6 @@
 use crate::{
     card_parser::AttributeClearFlag,
-    cards::{attribute_target_type_entities::AttribtuteTargetTypesEntities, data_dep_empty::DataDepsEmpty},
+    cards::{card_attributes_targets::attribute_target_type_entities::AttribtuteTargetTypesEntities, card_dependencies::data_dep_empty::DataDepsEmpty},
 };
 
 #[derive(Clone)]

@@ -1,13 +1,9 @@
-use core::collections::game_state::{self, GameState};
+use core::collections::game_state::GameState;
 
-use crate::{
-    card_parser::AttributeClearFlag,
-    cards::{attribute_target_type_entities::AttribtuteTargetTypesEntities, data_dep_empty::DataDepsEmpty},
-    state::{
-        state_ball_mode::{BallModes, StateBallMode},
-        state_position_ball::StatePositionBall,
-        state_position_player::StatePositionPlayer,
-    },
+use crate::state::{
+    state_ball_mode::{BallModes, StateBallMode},
+    state_position_ball::StatePositionBall,
+    state_position_player::StatePositionPlayer,
 };
 
 #[derive(Clone)]

@@ -1,7 +1,8 @@
-use crate::cards::data_dep_empty::DataDepsEmpty;
 use core::collections::vector2_int::Vector2Int;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result};
+
+use crate::cards::card_dependencies::data_dep_empty::DataDepsEmpty;
 
 /// Data that has been filled and is ready to be passed into an attribute
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -30,18 +31,8 @@ impl DataDepsFilled {
                 DataDepsEmpty::Tiles(_) => return true,
                 _ => return false,
             },
-            // DataDepsFilled::Players(_) => match empty {
-            //     DataDepsEmpty::Players(_) => return true,
-            //     _ => return false,
-            // },
         };
     }
-    // pub fn as_players(&self) -> Vec<i32> {
-    //     match self {
-    //         DataDepsFilled::Players(items) => items.clone(),
-    //         _ => panic!("Tried to unwrap as 'Players' but was type {}", self),
-    //     }
-    // }
     pub fn as_entities(&self) -> Vec<i32> {
         match self {
             DataDepsFilled::Entities(items) => items.clone(),
@@ -67,7 +58,6 @@ impl Display for DataDepsFilled {
         match self {
             DataDepsFilled::Cards(_) => return write!(f, "Cards"),
             DataDepsFilled::Tiles(_) => return write!(f, "Tiles"),
-            // DataDepsFilled::Players(_) => return write!(f, "Players"),
             DataDepsFilled::Entities(_) => return write!(f, "Entities"),
         }
     }

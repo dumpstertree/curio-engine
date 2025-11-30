@@ -1,55 +1,38 @@
 use crate::{
-    game_events::GameEvents,
+    ai_resolver::CardEvents,
     state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_energy::StateEnergy},
 };
-use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{
-        ecs_event_reciever::{self, InstanceLimiter},
-        ecs_system::ECSSystemEventless,
-    },
-};
-use ecs_event::global_ecs_system_event_reciever;
-use ecs_system::global_ecs_system;
-use hecs::World;
+use core::collections::game_state::GameState;
 
-#[global_ecs_system]
-#[global_ecs_system_event_reciever(GameEvents)]
 pub struct EventReciever {}
-impl ECSSystemEventless for EventReciever {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    }
-}
-impl InstanceLimiter for EventReciever {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    }
-}
-impl ecs_event_reciever::EventReciever<GameEvents> for EventReciever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
+impl EventReciever {
+    pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
         match event {
-            GameEvents::ApplyCardAttributeEventRefillEnergy(entity_ids) => {
+            CardEvents::ApplyEventRefillEnergy(wrapped_entities) => {
+                // get modifiers
                 let state_card_attribute_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
-                game_state.edit::<StateEnergy>(|y| {
-                    for x in entity_ids {
-                        let d = state_card_attribute_modifier_stack.get_flat_stack_for_entity(*x);
-                        let Some(entity) = y.all_players.get_mut(x) else {
+
+                // edit the energy
+                game_state.edit::<StateEnergy>(|x| {
+                    // unwrap entityes
+                    let entity_ids = wrapped_entities.as_entities();
+                    // iterate over each entity
+                    for entity_id in &entity_ids {
+                        // get the active modifiers
+                        let modifiers = state_card_attribute_modifier_stack.get_flat_stack_for_entity(*entity_id);
+                        // get the energy for the entity
+                        let Some(entity) = x.all_players.get_mut(entity_id) else {
+                            println!("Unable to find 'Energy' for UID {}", entity_id);
                             continue;
                         };
 
-                        entity.0 = entity.1 + d.energy;
+                        // set the energy to max energy + the max energy modifier
+                        entity.0 = entity.1 + modifiers.energy;
                     }
                 });
             }
             _ => {}
         }
+        vec![]
     }
 }

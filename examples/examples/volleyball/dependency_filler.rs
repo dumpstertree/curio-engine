@@ -6,7 +6,10 @@ use core::{
 use built_in_state::state_network::StateNetwork;
 
 use crate::{
-    cards::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles, data_dep_empty::DataDepsEmpty, data_dep_filled::DataDepsFilled},
+    cards::{
+        card_attributes_targets::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
+        card_dependencies::{data_dep_empty::DataDepsEmpty, data_dep_filled::DataDepsFilled},
+    },
     game_board::GameBoard,
     state::{state_deck::StateDeck, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
