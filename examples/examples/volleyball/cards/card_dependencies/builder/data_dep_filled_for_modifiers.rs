@@ -1,7 +1,4 @@
-use crate::{
-    cards::card_dependencies::builder::filled_attribute_with_permutation::FilledAttributeWithPermutation,
-    game_events::{FilledAttribute, FilledCardResponse},
-};
+use crate::cards::card_dependencies::{builder::filled_attribute_with_permutation::FilledAttributeWithPermutation, filled_card_attribute::FilledCardAttribute, filled_card_response::FilledCardResponse};
 
 use std::vec;
 
@@ -31,7 +28,7 @@ impl DataDepsFilledForModifiers {
             for att in &x.filled {
                 filled_att.push(att.permutations[0].clone());
             }
-            output_mods.push(FilledAttribute::new(filled_att));
+            output_mods.push(FilledCardAttribute::new(filled_att));
         }
         let mut output_events = Vec::new();
         for x in &self.modifiers_events {
@@ -39,7 +36,7 @@ impl DataDepsFilledForModifiers {
             for att in &x.filled {
                 filled_att.push(att.permutations[0].clone());
             }
-            output_events.push(FilledAttribute::new(filled_att));
+            output_events.push(FilledCardAttribute::new(filled_att));
         }
 
         vec![FilledCardResponse::new(output_mods, output_events)]

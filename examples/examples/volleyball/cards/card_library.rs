@@ -2,7 +2,8 @@ use crate::{
     cards::{
         card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_attribute_requirement::CardAttributeRequirement},
         card_attributes_targets::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
-        card_master::{CardMaster, CardStatement},
+        card_master::CardMaster,
+        card_statement::CardStatement,
         enums::attribute_clear_flag::ModifierClearFlag,
     },
     state::{state_ball_mode::BallModes, state_deck::CardTypes},

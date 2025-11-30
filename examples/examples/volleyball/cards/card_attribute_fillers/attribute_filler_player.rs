@@ -55,7 +55,7 @@ impl CardAttributeFillerPlayer {
         let cur_player_id = game_state.get::<StateTurn>().active_instance_id;
         DataDepsFilled::Entities(vec![cur_player_id])
     }
-    fn get_entity_select(game_state: &GameState) -> DataDepsFilled {
+    fn get_entity_select(_game_state: &GameState) -> DataDepsFilled {
         todo!()
     }
     fn get_entity_random(game_state: &GameState) -> DataDepsFilled {
@@ -82,7 +82,7 @@ impl CardAttributeFillerPlayer {
 }
 // get -> cards
 impl CardAttributeFillerPlayer {
-    fn get_card_user_selected(game_state: &GameState) -> DataDepsFilled {
+    fn get_card_user_selected(_game_state: &GameState) -> DataDepsFilled {
         todo!()
     }
     fn get_card_user_random(game_state: &GameState) -> DataDepsFilled {
@@ -104,7 +104,7 @@ impl CardAttributeFillerPlayer {
         let card = &deck.hand_consumable[index as usize];
         DataDepsFilled::Cards(vec![(card.instance_id)])
     }
-    fn get_card_opponent_selected(game_state: &GameState) -> DataDepsFilled {
+    fn get_card_opponent_selected(_game_state: &GameState) -> DataDepsFilled {
         todo!()
     }
     fn get_card_user_all(game_state: &GameState) -> DataDepsFilled {
@@ -179,10 +179,10 @@ impl CardAttributeFillerPlayer {
 }
 // get -> tiles
 impl CardAttributeFillerPlayer {
-    pub fn get_tiles_select(game_state: &GameState) -> DataDepsFilled {
+    pub fn get_tiles_select(_game_state: &GameState) -> DataDepsFilled {
         todo!()
     }
-    pub fn get_tiles_random_any(game_state: &GameState) -> DataDepsFilled {
+    pub fn get_tiles_random_any(_game_state: &GameState) -> DataDepsFilled {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(0, 4), Random::range_int(0, 4))])
     }
     pub fn get_tiles_random_on_team_user(game_state: &GameState) -> DataDepsFilled {

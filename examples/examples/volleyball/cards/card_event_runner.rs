@@ -1,15 +1,13 @@
 use core::collections::{event_runner::EventRunner, game_state::GameState};
 use std::vec;
 
-use crate::{
-    cards::{
-        card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers},
-        card_event_runner_recievers::{
-            clear_modifier_all, clear_modifier_for_flag, event_card_discard, event_card_draw, event_change_ball_mode, event_energy_edit, event_energy_fill, event_move_ball, event_move_entities, modifier_cost_for_entities, modifier_energy_for_entities, modifier_range_for_entities,
-        },
-        enums::{attribute_clear_flag::ModifierClearFlag, card_events::CardEvents},
+use crate::cards::{
+    card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers},
+    card_dependencies::filled_card_attribute::FilledCardAttribute,
+    card_event_runner_recievers::{
+        clear_modifier_all, clear_modifier_for_flag, event_card_discard, event_card_draw, event_change_ball_mode, event_energy_edit, event_energy_fill, event_move_ball, event_move_entities, modifier_cost_for_entities, modifier_energy_for_entities, modifier_range_for_entities,
     },
-    game_events::FilledAttribute,
+    enums::{attribute_clear_flag::ModifierClearFlag, card_events::CardEvents},
 };
 
 #[derive(Clone)]
@@ -38,7 +36,7 @@ impl CardEventRunner {
         // create the instance
         CardEventRunner { runner: EventRunner::new(recievers) }
     }
-    pub fn enqueue_modifier(&mut self, event: &CardAttributeModifiers, data: &FilledAttribute) {
+    pub fn enqueue_modifier(&mut self, event: &CardAttributeModifiers, data: &FilledCardAttribute) {
         match event {
             CardAttributeModifiers::EditCostForEntities(attribute_clear_flag, _, count) => self.runner.enqueue(&CardEvents::ModifierCostForEntities(
                 data.filled[0].clone(),
@@ -57,7 +55,7 @@ impl CardEventRunner {
             )),
         }
     }
-    pub fn enqueue_event(&mut self, event: &CardAttributeEvents, data: &FilledAttribute) {
+    pub fn enqueue_event(&mut self, event: &CardAttributeEvents, data: &FilledCardAttribute) {
         match event {
             CardAttributeEvents::DiscardCards(_) => {
                 self.runner
@@ -87,8 +85,6 @@ impl CardEventRunner {
                 self.runner
                     .enqueue(&CardEvents::EventChangeBallMode(mode.clone()));
             }
-
-            _ => {}
         }
     }
     pub fn enqueue_clear_modifiers(&mut self, flag: &ModifierClearFlag) {

@@ -4,12 +4,12 @@ use std::sync::Arc;
 use crate::{
     ai::dependencies::simulation_delegate::SimulationDelegate,
     cards::{
+        card_dependencies::filled_card_response::FilledCardResponse,
         card_event_runner::CardEventRunner,
         card_instance::CardInstance,
         enums::{attribute_clear_flag::ModifierClearFlag, simulation_manuevers::SimulationManuevers},
     },
     game_board::{Directions, GameBoard},
-    game_events::FilledCardResponse,
     state::{other::state_terminated::StateTerminated, state_energy::StateEnergy, state_position_player::StatePositionPlayer, state_teams::Teams},
 };
 pub struct CustomDelegate {}

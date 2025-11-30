@@ -1,6 +1,8 @@
 use crate::cards::card_attribute_fillers::attribute_filler_player::CardAttributeFillerPlayer;
+use crate::cards::card_dependencies::filled_card_attribute::FilledCardAttribute;
+use crate::cards::card_dependencies::filled_card_response::FilledCardResponse;
 use crate::cards::card_instance::CardInstance;
-use crate::game_events::{FilledAttribute, FilledCardResponse, GameEvents};
+use crate::game_events::GameEvents;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
@@ -109,11 +111,11 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
 
                 let mut evnt_filled = vec![];
                 for evnt in &list0[index as usize].get_attributes_events(game_state, game_state.instance_id) {
-                    evnt_filled.push(FilledAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &&evnt.get_data_dependencies_empty())));
+                    evnt_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &&evnt.get_data_dependencies_empty())));
                 }
                 let mut mod_filled = vec![];
                 for evnt in &list0[index as usize].get_attributes_modifiers(game_state, game_state.instance_id) {
-                    mod_filled.push(FilledAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &evnt.get_data_dependencies_empty())));
+                    mod_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &evnt.get_data_dependencies_empty())));
                 }
 
                 event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, list0[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
@@ -140,11 +142,11 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
 
                 let mut evnt_filled = vec![];
                 for evnt in &list0[index as usize].get_attributes_events(&game_state, game_state.instance_id) {
-                    evnt_filled.push(FilledAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &evnt.get_data_dependencies_empty())));
+                    evnt_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &evnt.get_data_dependencies_empty())));
                 }
                 let mut mod_filled = vec![];
                 for evnt in &list0[index as usize].get_attributes_modifiers(&game_state, game_state.instance_id) {
-                    mod_filled.push(FilledAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &evnt.get_data_dependencies_empty())));
+                    mod_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &evnt.get_data_dependencies_empty())));
                 }
 
                 event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, list0[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));

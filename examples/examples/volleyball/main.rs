@@ -1,7 +1,7 @@
-pub mod ai_resolver;
 pub mod game_board;
 pub mod game_events;
 pub mod cards {
+
     pub mod card_attribute_fillers {
         pub mod attribute_filler_ai;
         pub mod attribute_filler_player;
@@ -45,6 +45,8 @@ pub mod cards {
     pub mod card_dependencies {
         pub mod data_dep_empty;
         pub mod data_dep_filled;
+        pub mod filled_card_attribute;
+        pub mod filled_card_response;
         pub mod builder {
             pub mod data_dep_filled_all_permutations;
             pub mod data_dep_filled_for_modifiers;

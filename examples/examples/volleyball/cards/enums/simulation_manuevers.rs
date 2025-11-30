@@ -1,6 +1,9 @@
 use std::{fmt::Display, sync::Arc};
 
-use crate::{cards::card_instance::CardInstance, game_board::Directions, game_events::FilledCardResponse};
+use crate::{
+    cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
+    game_board::Directions,
+};
 
 #[derive(Clone, Debug, Default)]
 pub enum SimulationManuevers {

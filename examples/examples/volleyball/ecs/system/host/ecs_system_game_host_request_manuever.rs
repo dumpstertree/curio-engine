@@ -1,6 +1,6 @@
 use crate::{
-    cards::card_instance::CardInstance,
-    game_events::{FilledCardResponse, GameEvents},
+    cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
+    game_events::GameEvents,
     state::{state_deck::StateDeck, state_energy::StateEnergy, state_turn::StateTurn},
 };
 use core::{
