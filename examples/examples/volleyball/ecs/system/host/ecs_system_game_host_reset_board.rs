@@ -1,12 +1,15 @@
 use crate::game_board::GameBoard;
 use crate::game_events::GameEvents;
+use crate::state;
 use crate::state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack;
+use crate::state::host::state_enounter_mode::StateEncounter;
 use crate::state::state_ball_mode::{BallModes, StateBallMode};
-use crate::state::state_deck::StateDeck;
+use crate::state::state_controller::StateController;
+use crate::state::state_deck::{Deck, StateDeck};
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
-use crate::state::state_position_player::StatePositionPlayer;
-use crate::state::state_teams::StateTeamAssignments;
+use crate::state::state_position_player::StatePositionEntities;
+use crate::state::state_teams::{StateTeamAssignments, Teams};
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -16,6 +19,8 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
+use serde::de;
+use winit::dpi::Position;
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -40,68 +45,81 @@ impl InstanceLimiter for ECSSystemGameResetBoard {
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::ResetBoard(team) => {
+            GameEvents::ResetBoard(serving_team) => {
                 println!("Board Reset");
                 // setup ball mode
                 game_state.edit::<StateBallMode>(|x| x.mode = BallModes::Serve);
 
-                // position -> player
-                let state_team_assignments = game_state.get::<StateTeamAssignments>();
-                game_state.edit::<StatePositionPlayer>(|x| {
-                    for y in x.positions.iter_mut() {
-                        let Some(team) = state_team_assignments.team_for(y.0) else {
-                            continue;
-                        };
-
-                        let serving_tile = GameBoard::get_serving_tile(&team);
-                        y.1.0 = serving_tile.0;
-                        y.1.1 = serving_tile.1;
-                    }
-                });
-
-                // deck
-                game_state.edit::<StateDeck>(|x| {
-                    for y in x.deck.iter_mut() {
-                        y.1.reshuffle();
-                        for _ in 0..5 {
-                            y.1.draw();
-                        }
-                    }
-                });
-                // energy
-                game_state.edit::<StateEnergy>(|x| {
-                    for y in x.all_players.iter_mut() {
-                        y.1.0 = 5;
-                        y.1.1 = 5;
-                    }
-                });
-
-                let state_teams = game_state.get::<StateTeamAssignments>();
-                let state_position_player = game_state.get::<StatePositionPlayer>();
-                //
-                let Some(team_members) = state_teams.team_assignments.get(team) else {
-                    return;
-                };
-
-                let Some(first_member) = team_members.get(0) else {
-                    return;
-                };
-
-                let Some(first_member_pos) = state_position_player.positions.get(first_member) else {
-                    return;
-                };
-
-                // position -> ball
+                // set ball position
                 game_state.edit::<StatePositionBall>(|x| {
-                    x.column = first_member_pos.0;
-                    x.row = first_member_pos.1;
+                    x.column = GameBoard::get_serving_tile(&serving_team).0;
+                    x.row = GameBoard::get_serving_tile(&serving_team).1;
                 });
+
+                // reset attributes
                 game_state.edit::<StateCardAttributeModifierStack>(|x| {
                     x.clear_all();
                 });
 
-                // start the game
-                event_queue.enqueue_event(GameEvents::TurnBegin(*first_member));
+                // reset all red
+                let state_team = game_state.get::<StateTeamAssignments>();
+                if let Some(guids) = state_team.team_assignments.get(&Teams::Red) {
+                    for guid in guids {
+                        // reset energy
+                        game_state.edit::<StateEnergy>(|x| {
+                            if let Some(y) = x.all_players.get_mut(guid) {
+                                y.0 = y.1;
+                            }
+                        });
+                        // reset position
+                        game_state.edit::<StatePositionEntities>(|x| {
+                            if let Some(y) = x.positions.get_mut(guid) {
+                                y.0 = GameBoard::get_serving_tile(&Teams::Red).0;
+                                y.1 = GameBoard::get_serving_tile(&Teams::Red).1;
+                            }
+                        });
+                        // reset shuffle deck
+                        game_state.edit::<StateDeck>(|x| {
+                            if let Some(y) = x.deck.get_mut(guid) {
+                                y.reshuffle();
+                                for _ in 0..7 {
+                                    y.draw();
+                                }
+                            }
+                        });
+                    }
+                }
+                // reset all blue
+                if let Some(guids) = state_team.team_assignments.get(&Teams::Blue) {
+                    for guid in guids {
+                        // reset energy
+                        game_state.edit::<StateEnergy>(|x| {
+                            if let Some(y) = x.all_players.get_mut(guid) {
+                                y.0 = y.1;
+                            }
+                        });
+                        // reset position
+                        game_state.edit::<StatePositionEntities>(|x| {
+                            if let Some(y) = x.positions.get_mut(guid) {
+                                y.0 = GameBoard::get_serving_tile(&Teams::Blue).0;
+                                y.1 = GameBoard::get_serving_tile(&Teams::Blue).1;
+                            }
+                        });
+                        // reset shuffle deck
+                        game_state.edit::<StateDeck>(|x| {
+                            if let Some(y) = x.deck.get_mut(guid) {
+                                y.reshuffle();
+                                for _ in 0..7 {
+                                    y.draw();
+                                }
+                            }
+                        });
+                    }
+                }
+
+                let t = state_team.team_assignments.get(serving_team).unwrap();
+
+                event_queue.enqueue_event(GameEvents::TurnBegin(t[0])); // this should use team instead of id
             }
             _ => {}
         }

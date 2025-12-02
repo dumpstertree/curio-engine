@@ -1,7 +1,7 @@
 use crate::{
     game_board::GameBoard,
     game_events::GameEvents,
-    state::{state_energy::StateEnergy, state_position_player::StatePositionPlayer, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    state::{state_energy::StateEnergy, state_position_player::StatePositionEntities, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
@@ -38,7 +38,7 @@ impl ECSSystemGameRequestMove {
         return true;
     }
     fn check_bounds(game_state: &mut GameState, id: i32, x_diff: i32, z_diff: i32, bounds_min: Vector2Int, bounds_max: Vector2Int) -> bool {
-        let cur_pos = game_state.get::<StatePositionPlayer>().positions[&id];
+        let cur_pos = game_state.get::<StatePositionEntities>().positions[&id];
         let new_pos = (cur_pos.0 + x_diff, cur_pos.1 + z_diff);
         let in_bounds = new_pos.0 >= bounds_min.x && new_pos.0 <= bounds_max.x && new_pos.1 >= bounds_min.y && new_pos.1 <= bounds_max.y;
         if !in_bounds {
@@ -86,7 +86,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
 
-                game_state.edit::<StatePositionPlayer>(|x| {
+                game_state.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
@@ -110,7 +110,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
 
-                game_state.edit::<StatePositionPlayer>(|x| {
+                game_state.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
@@ -135,7 +135,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
 
-                game_state.edit::<StatePositionPlayer>(|x| {
+                game_state.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
@@ -160,7 +160,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 }
 
-                game_state.edit::<StatePositionPlayer>(|x| {
+                game_state.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });

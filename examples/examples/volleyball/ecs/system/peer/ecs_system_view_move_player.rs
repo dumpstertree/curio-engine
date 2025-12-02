@@ -2,7 +2,7 @@ use crate::AssetMappingUIDs;
 use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
-use crate::state::state_position_player::StatePositionPlayer;
+use crate::state::state_position_player::StatePositionEntities;
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_transform::Transform;
 use built_in_state::state_network::StateNetwork;
@@ -46,7 +46,7 @@ impl ECSSystemEventless for ECSSystemViewMovePlayers {
         }
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
-        let state_position_player = game_state.get::<StatePositionPlayer>();
+        let state_position_player = game_state.get::<StatePositionEntities>();
         let state_time = game_state.get::<TimeState>();
 
         for (_, (transform, player, _, renderer)) in world

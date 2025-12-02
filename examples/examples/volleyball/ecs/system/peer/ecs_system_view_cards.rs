@@ -7,7 +7,7 @@ use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::{self, StateDeck};
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
-use crate::state::state_position_player::StatePositionPlayer;
+use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::StateTeamAssignments;
 use built_in::component::component_renderer_static::Renderer;
 use built_in::component::component_renderer_text::{ComponentRendererText, RendererCommon};

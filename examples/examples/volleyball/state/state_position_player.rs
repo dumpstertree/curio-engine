@@ -4,10 +4,10 @@ use std::{collections::HashMap, hash::Hash};
 use macro_state_serialize::global_state_serialize;
 #[derive(PartialEq, Eq)]
 #[global_state_serialize]
-pub struct StatePositionPlayer {
+pub struct StatePositionEntities {
     pub positions: HashMap<i32, (i32, i32)>,
 }
-impl Hash for StatePositionPlayer {
+impl Hash for StatePositionEntities {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         let mut axis_keys: Vec<&i32> = self.positions.keys().collect();
         axis_keys.sort();
@@ -19,7 +19,7 @@ impl Hash for StatePositionPlayer {
     }
 }
 
-impl IState for StatePositionPlayer {
+impl IState for StatePositionEntities {
     fn id() -> i32 {
         0004
     }

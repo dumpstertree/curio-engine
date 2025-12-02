@@ -8,7 +8,7 @@ use crate::{
     game_board::Directions,
     game_events::GameEvents,
     state::{
-        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_ball_mode::StateBallMode, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_position_player::StatePositionPlayer,
+        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_ball_mode::StateBallMode, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_position_player::StatePositionEntities,
         state_turn::StateTurn,
     },
 };
@@ -55,7 +55,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                     // copy these states
                     (StateCardAttributeModifierStack::id(), Box::new(game_state.get::<StateCardAttributeModifierStack>())),
                     (StateTeamAssignments::id(), Box::new(game_state.get::<StateTeamAssignments>())),
-                    (StatePositionPlayer::id(), Box::new(game_state.get::<StatePositionPlayer>())), //
+                    (StatePositionEntities::id(), Box::new(game_state.get::<StatePositionEntities>())), //
                     (StatePositionBall::id(), Box::new(game_state.get::<StatePositionBall>())),
                     (StateBallMode::id(), Box::new(game_state.get::<StateBallMode>())),
                     (StateEnergy::id(), Box::new(game_state.get::<StateEnergy>())),

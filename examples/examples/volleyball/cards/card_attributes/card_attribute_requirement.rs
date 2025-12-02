@@ -3,7 +3,7 @@ use core::collections::game_state::GameState;
 use crate::state::{
     state_ball_mode::{BallModes, StateBallMode},
     state_position_ball::StatePositionBall,
-    state_position_player::StatePositionPlayer,
+    state_position_player::StatePositionEntities,
 };
 
 #[derive(Clone)]
@@ -22,7 +22,7 @@ impl CardAttributeRequirement {
             CardAttributeRequirement::BallRangeLessEqual(range) => {
                 let ball_loc = game_state.get::<StatePositionBall>();
                 // get player loc
-                let play_locs = game_state.get::<StatePositionPlayer>();
+                let play_locs = game_state.get::<StatePositionEntities>();
                 let Some(play_loc) = play_locs.positions.get(&user_id) else {
                     return false;
                 };
@@ -33,7 +33,7 @@ impl CardAttributeRequirement {
             CardAttributeRequirement::BallRangeGreaterEqual(range) => {
                 let ball_loc = game_state.get::<StatePositionBall>();
                 // get player loc
-                let play_locs = game_state.get::<StatePositionPlayer>();
+                let play_locs = game_state.get::<StatePositionEntities>();
                 let Some(play_loc) = play_locs.positions.get(&user_id) else {
                     return false;
                 };

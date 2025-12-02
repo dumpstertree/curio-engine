@@ -18,7 +18,7 @@ use crate::{
         state_ball_mode::{BallModes, StateBallMode},
         state_deck::StateDeck,
         state_energy::StateEnergy,
-        state_position_player::StatePositionPlayer,
+        state_position_player::StatePositionEntities,
         state_teams::{StateTeamAssignments, Teams},
         state_turn::StateTurn,
     },
@@ -58,7 +58,7 @@ impl SimulationDataSource<SimulationManuevers, (Teams, i32)> for CustomDataSourc
 
         // get state
         let state_energy = game_state.get::<StateEnergy>();
-        let state_pos = game_state.get::<StatePositionPlayer>();
+        let state_pos = game_state.get::<StatePositionEntities>();
 
         // get the amount of energy this uid has left
         let Some(energy_for_uid) = state_energy.all_players.get(&user.1) else {

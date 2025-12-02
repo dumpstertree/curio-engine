@@ -41,8 +41,9 @@ impl IState for StateTeamAssignments {
     }
 }
 
-#[derive(PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+#[derive(Default, PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
 pub enum Teams {
+    #[default]
     Red,
     Blue,
 }

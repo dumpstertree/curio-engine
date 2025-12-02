@@ -1,4 +1,4 @@
-use crate::{cards::enums::card_events::CardEvents, state::state_position_player::StatePositionPlayer};
+use crate::{cards::enums::card_events::CardEvents, state::state_position_player::StatePositionEntities};
 use core::collections::game_state::GameState;
 
 pub struct EventReciever {}
@@ -14,7 +14,7 @@ impl EventReciever {
                     panic!("only supports one tile");
                 }
 
-                game_state.edit::<StatePositionPlayer>(|y| {
+                game_state.edit::<StatePositionEntities>(|y| {
                     for x in &entity_ids {
                         let Some(position) = y.positions.get_mut(x) else { return };
                         position.0 = tile_ids[0].x;

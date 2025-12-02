@@ -10,6 +10,7 @@ use std::{
 
 use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
+    listeners::listener_start_encounter::Encounter,
     state::{state_ball_mode::BallModes, state_teams::Teams},
 };
 
@@ -29,6 +30,7 @@ pub enum GameEvents {
     DiscardCards(),
     MoveEntity(Vec<i32>, Vector2Int),
     OnDidSetBallMode(BallModes),
+    InitializeEncounter(Encounter),
     // to -> peer
     DidTurnEnd(i32),
     DidTurnBegin(i32),
@@ -71,6 +73,7 @@ impl IGameEvent for GameEvents {
             GameEvents::RequestUseManeuverConsumable(_, _, _) => EventScope::ConnectedHost,
             GameEvents::DidTurnEnd(_) => EventScope::All,
             GameEvents::DidTurnBegin(_) => EventScope::All,
+            GameEvents::InitializeEncounter(_) => EventScope::ConnectedHost,
         }
     }
 }
@@ -98,6 +101,7 @@ impl Display for GameEvents {
             GameEvents::DrawCard() => write!(f, "DrawCard"),
             GameEvents::DiscardCards() => write!(f, "DiscardCards"),
             GameEvents::MoveEntity(_, _) => write!(f, "MoveEntity"),
+            GameEvents::InitializeEncounter(_) => write!(f, "InitializeEncounter"),
         }
     }
 }

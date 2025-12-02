@@ -1,7 +1,7 @@
 pub mod game_board;
 pub mod game_events;
 pub mod cards {
-
+    pub mod deck_library;
     pub mod card_attribute_fillers {
         pub mod attribute_filler_ai;
         pub mod attribute_filler_player;
@@ -54,11 +54,15 @@ pub mod cards {
         }
     }
 }
+pub mod listeners {
+    pub mod listener_start_encounter;
+}
 pub mod state {
     pub mod other {
         pub mod state_terminated;
     }
     pub mod state_ball_mode;
+    pub mod state_controller;
     pub mod state_deck;
     pub mod state_energy;
     pub mod state_position_ball;
@@ -72,6 +76,7 @@ pub mod state {
     }
     pub mod host {
         pub mod state_card_attribute_modifier_stack;
+        pub mod state_enounter_mode;
     }
 }
 pub mod ai {
@@ -212,7 +217,7 @@ fn main() {
                     SystemComponentDefaultGraphics::new(),
                     SystemComponentDefaultNetworking::new(),
                 ],
-                GameMode::new_local_splitscreen_2p_horizontal(
+                GameMode::new_local_single(
                     InputMapping::new(
                         vec![
                             (String::from("card_mode"), ButtonCode::ShiftLeft),
@@ -227,20 +232,20 @@ fn main() {
                         ],
                         vec![],
                     ),
-                    InputMapping::new(
-                        vec![
-                            (String::from("card_mode"), ButtonCode::ShiftLeft),
-                            (String::from("move_forward"), ButtonCode::KeyW),
-                            (String::from("move_back"), ButtonCode::KeyS),
-                            (String::from("move_left"), ButtonCode::KeyA),
-                            (String::from("move_right"), ButtonCode::KeyD),
-                            (String::from("turn_end"), ButtonCode::KeyP),
-                            (String::from("card_left"), ButtonCode::KeyA),
-                            (String::from("card_right"), ButtonCode::KeyD),
-                            (String::from("card_submit"), ButtonCode::ArrowUp),
-                        ],
-                        vec![],
-                    ),
+                    // InputMapping::new(
+                    //     vec![
+                    //         (String::from("card_mode"), ButtonCode::ShiftLeft),
+                    //         (String::from("move_forward"), ButtonCode::KeyW),
+                    //         (String::from("move_back"), ButtonCode::KeyS),
+                    //         (String::from("move_left"), ButtonCode::KeyA),
+                    //         (String::from("move_right"), ButtonCode::KeyD),
+                    //         (String::from("turn_end"), ButtonCode::KeyP),
+                    //         (String::from("card_left"), ButtonCode::KeyA),
+                    //         (String::from("card_right"), ButtonCode::KeyD),
+                    //         (String::from("card_submit"), ButtonCode::ArrowUp),
+                    //     ],
+                    //     vec![],
+                    // ),
                 ),
             )
         },

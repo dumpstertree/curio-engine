@@ -13,7 +13,7 @@ use std::fmt::Result;
 use std::ops::{Add, Div, Mul, Sub};
 
 /// A 2D Vector backed by i32
-#[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Hash, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Vector2Int {
     pub x: i32,
     pub y: i32,

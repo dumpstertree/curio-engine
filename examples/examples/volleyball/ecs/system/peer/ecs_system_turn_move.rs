@@ -14,7 +14,7 @@ use crate::{
     state::{
         peer::state_peer_input_mode::{InputModes, StatePeerInputMode},
         state_ball_mode::{BallModes, StateBallMode},
-        state_position_player::{self, StatePositionPlayer},
+        state_position_player::{self, StatePositionEntities},
         state_teams::StateTeamAssignments,
         state_turn::StateTurn,
     },
@@ -38,7 +38,7 @@ impl ECSSystemEventless for ECSSystemTurnMove {
 
         let state_team = game_state.get::<StateTeamAssignments>();
         let team = state_team.team_for(&game_state.instance_id).unwrap();
-        let state_position_player = game_state.get::<StatePositionPlayer>();
+        let state_position_player = game_state.get::<StatePositionEntities>();
         let pos = state_position_player
             .positions
             .get(&game_state.instance_id)

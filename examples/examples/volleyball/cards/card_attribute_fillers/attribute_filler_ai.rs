@@ -86,8 +86,6 @@ impl CardAttributeFillerAI {
                 let col = state_position_ball.column + random_x;
                 let row = state_position_ball.row + random_z;
 
-                println!("move x: {}, y: {}", col, row);
-
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
             }
             AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => {

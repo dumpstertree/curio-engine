@@ -10,7 +10,7 @@ use crate::{
         enums::{attribute_clear_flag::ModifierClearFlag, simulation_manuevers::SimulationManuevers},
     },
     game_board::{Directions, GameBoard},
-    state::{other::state_terminated::StateTerminated, state_energy::StateEnergy, state_position_player::StatePositionPlayer, state_teams::Teams},
+    state::{other::state_terminated::StateTerminated, state_energy::StateEnergy, state_position_player::StatePositionEntities, state_teams::Teams},
 };
 pub struct CustomDelegate {}
 impl SimulationDelegate<SimulationManuevers, (Teams, i32)> for CustomDelegate {
@@ -76,7 +76,7 @@ impl CustomDelegate {
         const MOVE_COST: i32 = 1;
 
         // change the position
-        game_state.edit::<StatePositionPlayer>(|x| {
+        game_state.edit::<StatePositionEntities>(|x| {
             // get the position state
             let Some(position) = x.positions.get(&user.1) else {
                 println!("Could not find 'Position' for UID: {}", user.1);
