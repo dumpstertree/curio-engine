@@ -27,13 +27,13 @@ impl CardLibrary {
                 "do a rest",
                 CardTypes::Rest,
                 vec![CardStatement::new(
-                    0, //
+                    1, //
                     vec![],
                     vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
                     vec![
                         CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser),
                         CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User),
-                        CardAttributeEvents::RefillEnergy(AttribtuteTargetTypesEntities::User),
+                        // CardAttributeEvents::RefillEnergy(AttribtuteTargetTypesEntities::User),
                     ],
                 )],
             )),

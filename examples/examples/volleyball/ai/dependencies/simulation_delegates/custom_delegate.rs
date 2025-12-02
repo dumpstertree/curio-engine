@@ -35,19 +35,29 @@ impl SimulationDelegate<SimulationManuevers, (Teams, i32)> for CustomDelegate {
 
         // if we have 0 or less energy we are exhuasted which is a more specific typer of terminated
         let is_exhuasted = energy_cur_max.0 <= 0;
-        if !is_exhuasted {
-            return;
+        if is_exhuasted {
+            // edit gamestate for represent our exhausted state
+            game_state.edit::<StateTerminated>(|x| {
+                x.is_terminated = true;
+                x.is_exhuasted = true;
+            })
         }
-
-        // edit gamestate for represent our exhausted state
-        game_state.edit::<StateTerminated>(|x| {
-            x.is_terminated = true;
-            x.is_exhuasted = true;
-        })
     }
 }
 impl CustomDelegate {
     fn make_manuever_card(game_state: &mut GameState, data: &FilledCardResponse, card: &Arc<CardInstance>, user: &(Teams, i32)) {
+        let cost = card.get_cost(game_state, user.1);
+        // take for cost
+        game_state.edit::<StateEnergy>(|x| {
+            // get the energy state
+            let Some(energy_cur_max) = x.all_players.get_mut(&user.1) else {
+                println!("Could not find 'Energy' for UID: {}", user.1);
+                return;
+            };
+
+            energy_cur_max.0 = energy_cur_max.0 - cost;
+        });
+
         // creates an event runner to all the events on
         let mut event_runner = CardEventRunner::new();
 
@@ -91,14 +101,12 @@ impl CustomDelegate {
         // remove the energy needed to move
         game_state.edit::<StateEnergy>(|x| {
             // get the energy state
-            let Some(energy_cur_max) = x.all_players.get(&user.1) else {
+            let Some(energy_cur_max) = x.all_players.get_mut(&user.1) else {
                 println!("Could not find 'Energy' for UID: {}", user.1);
                 return;
             };
 
-            // insert the new energy into the data
-            x.all_players
-                .insert(user.1, (energy_cur_max.0 - MOVE_COST, energy_cur_max.1));
+            energy_cur_max.0 = energy_cur_max.0 - MOVE_COST;
         });
     }
     fn make_manuever_end(game_state: &mut GameState) {

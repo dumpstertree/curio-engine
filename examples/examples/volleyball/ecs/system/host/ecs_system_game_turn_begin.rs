@@ -1,6 +1,6 @@
 use crate::{
     game_events::GameEvents,
-    state::{self, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    state::{self, host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use built_in_state::state_time::TimeState;
 use core::{
@@ -17,10 +17,7 @@ use hecs::World;
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
-pub struct ECSSystemGameTurnBegin {
-    do_move: bool,
-    lastmove: f64,
-}
+pub struct ECSSystemGameTurnBegin {}
 impl InstanceLimiter for ECSSystemGameTurnBegin {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
@@ -36,25 +33,6 @@ impl ECSSystemEventless for ECSSystemGameTurnBegin {
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
-    // fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
-    //     if self.do_move && game_state.get_value2::<TimeState>().unscaled_time - self.lastmove > 1.0 {
-    //         println!("start new move");
-    //         let e = run_ai(game_state);
-
-    //         match &e {
-    //             GameEvents::RequestTurnEnd(_) => self.do_move = false,
-    //             _ => {}
-    //         }
-
-    //         println!("send event");
-    //         events.enqueue_event(e);
-    //         self.lastmove = game_state.get_value2::<TimeState>().unscaled_time;
-    //     }
-
-    //     // println!("end new move");
-    //     // println!("tick");
-    //     // events.enqueue_event(GameEvents::TurnEnd(game_state.get_value2::<StateTurn>().active_instance_id));
-    // }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue, event: &GameEvents) {
@@ -73,15 +51,16 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
                     .get(id)
                     .unwrap()
                 {
+                    let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
+                    let mod_stack = state_modifiers.get_flat_stack_for_entity(*guid);
+
                     // update energy
                     game_state.edit::<StateEnergy>(|x| {
                         let cur = x.all_players[guid];
-                        x.all_players.insert(*guid, (cur.1, cur.1));
+                        x.all_players
+                            .insert(*guid, (cur.1 + mod_stack.energy, cur.1 + mod_stack.energy));
                     });
                 }
-
-                self.do_move = true;
-                game_state.get::<TimeState>().unscaled_time;
 
                 println!("send did turn begin");
                 events.enqueue_event(GameEvents::DidTurnBegin(*id));

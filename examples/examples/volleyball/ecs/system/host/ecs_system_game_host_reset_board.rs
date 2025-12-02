@@ -68,7 +68,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                         // reset energy
                         game_state.edit::<StateEnergy>(|x| {
                             if let Some(y) = x.all_players.get_mut(guid) {
-                                y.0 = y.1;
+                                y.1 = 5;
                             }
                         });
                         // reset position
@@ -95,7 +95,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                         // reset energy
                         game_state.edit::<StateEnergy>(|x| {
                             if let Some(y) = x.all_players.get_mut(guid) {
-                                y.0 = y.1;
+                                y.1 = 5;
                             }
                         });
                         // reset position

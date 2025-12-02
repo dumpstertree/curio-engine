@@ -1,10 +1,12 @@
 use core::collections::game_state::GameState;
 
+use mcts::Moves;
+
 use crate::{
     ai::dependencies::simulation_evaluator::SimulationEvaluator,
     cards::enums::simulation_manuevers::SimulationManuevers,
     game_board::GameBoard,
-    state::{other::state_terminated::StateTerminated, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_teams::Teams},
+    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_teams::Teams},
 };
 
 pub struct CustomEvaluator {}
@@ -14,6 +16,8 @@ impl SimulationEvaluator<SimulationManuevers, (Teams, i32)> for CustomEvaluator 
         let state_position_ball = game_state.get::<StatePositionBall>();
         let state_energy = game_state.get::<StateEnergy>();
         let state_terminated = game_state.get::<StateTerminated>();
+        let state_modifier_stack = game_state.get::<StateCardAttributeModifierStack>();
+        let state_deck = game_state.get::<StateDeck>();
 
         // get bounds
         let min = GameBoard::get_bounds_min(&user.0);
@@ -22,10 +26,11 @@ impl SimulationEvaluator<SimulationManuevers, (Teams, i32)> for CustomEvaluator 
         // check if on my size
         let on_my_side = state_position_ball.row >= min.y && state_position_ball.row <= max.y;
 
+        // this was causing the enemy to always just end turn
         // if we are exhuasted thats worst case scenerio because it encourages procrastinating
-        if state_terminated.is_exhuasted && on_my_side {
-            // return -999;
-        }
+        // if state_terminated.is_exhuasted && on_my_side {
+        //     return -999;
+        // }
         // if we are terminated on our side that means we werent able to return the ball
         if state_terminated.is_terminated && on_my_side {
             return -99;
@@ -37,11 +42,28 @@ impl SimulationEvaluator<SimulationManuevers, (Teams, i32)> for CustomEvaluator 
             return 0;
         };
 
+        // get the deck for the user
+        let Some(deck) = state_deck.deck.get(&user.1) else {
+            println!("Unable to find deck data for UID : {}", user.1);
+            return 0;
+        };
+
+        // get any modifiers for this user
+        let mod_stack = state_modifier_stack.get_flat_stack_for_entity(user.1);
+
+        // println!("energy: {}", (energy_cur_max.1 as i64 + mod_stack.energy as i64));
         // calculate all the parts of the scoring fn
-        let score_max_energy = energy_cur_max.1 as i64; // more points the more max energy we still have
+        let score_max_energy = (energy_cur_max.1 as i64 + mod_stack.energy as i64) * 2; // more points the more max energy we still have
+        let score_cur_energy = (energy_cur_max.0 as i64) * 3; // more points the more max energy we still have
+        let score_deck = deck.hand_consumable.len() as i64; // less points the more moves it took us to get there
         let score_moves = -(previous_moves.len() as i64); // less points the more moves it took us to get there
 
+        // put in place incase we ever hit an infite loop
+        if score_cur_energy + score_max_energy + score_moves + score_deck > 1000 {
+            panic!("unstable score {:?} -> ", previous_moves)
+        }
+
         // create the final the score
-        score_max_energy + score_moves
+        score_max_energy + score_cur_energy + score_deck + score_moves
     }
 }

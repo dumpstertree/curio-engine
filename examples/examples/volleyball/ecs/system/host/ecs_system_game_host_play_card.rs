@@ -46,6 +46,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
                 let atts_mods = card_instance.get_attributes_modifiers(&game_state, *id);
                 let atts_evnt = card_instance.get_attributes_events(&game_state, *id);
 
+                println!("PLAYED CARD: {}", card_instance.card_id);
                 // iterate over each mod and add it and its data to the runner
                 for i in 0..atts_mods.len() {
                     event_runner.enqueue_modifier(&atts_mods[i], &data.modifiers[i]);
