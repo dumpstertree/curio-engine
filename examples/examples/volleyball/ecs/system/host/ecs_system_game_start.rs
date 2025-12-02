@@ -38,63 +38,6 @@ impl ECSSystemEventless for ECSSystemGameStart {
             x.resolution_height = 1080 / 1;
         });
 
-        // let mut assignment = Teams::Red;
-        // for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
-        //     game_state.edit::<StateTeamAssignments>(|x| {
-        //         if !x.team_assignments.contains_key(&assignment) {
-        //             x.team_assignments.insert(assignment.clone(), vec![]);
-        //         }
-
-        //         x.team_assignments
-        //             .get_mut(&assignment)
-        //             .unwrap()
-        //             .push(*instance);
-        //     });
-        //     assignment = assignment.next_team();
-        // }
-        // for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
-        //     let id = instance.clone();
-        //     game_state.edit::<StateDeck>(|x| {
-        //         x.deck.insert(*instance, Deck::default());
-
-        //         let deck = x.deck.get_mut(instance).unwrap();
-
-        //         println!("ADD FOR STATE {}", id);
-        //         // persistent
-        //         deck.add_card_to_deck("rest", true);
-        //         deck.add_card_to_deck("serve", true);
-
-        //         // manuevers
-        //         deck.add_card_to_deck("bump", false);
-        //         deck.add_card_to_deck("bump", false);
-        //         deck.add_card_to_deck("bump", false);
-        //         deck.add_card_to_deck("spike", false);
-        //         deck.add_card_to_deck("spike", false);
-        //         deck.add_card_to_deck("set", false);
-        //         deck.add_card_to_deck("set", false);
-        //         deck.add_card_to_deck("set", false);
-
-        //         // spells
-        //         // deck.add_card_to_deck("curse", false);
-        //         // deck.add_card_to_deck("extra_oomph", false);
-        //         // deck.add_card_to_deck("hold_back", false);
-        //         // deck.add_card_to_deck("blessing", false);
-        //         deck.add_card_to_deck("deep_breath", false);
-        //     });
-        // }
-        // for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
-        //     // setup player positions
-        //     game_state.edit::<StatePositionEntities>(|x| {
-        //         x.positions.insert(*instance, (0, 0));
-        //     });
-        // }
-        // for instance in game_state.get::<StateNetwork>().peer_instance_ids() {
-        //     // setup player positions
-        //     game_state.edit::<StateEnergy>(|x| {
-        //         x.all_players.insert(*instance, (0, 0));
-        //     });
-        // }
-
         event_queue.enqueue_event(GameEvents::InitializeEncounter(Encounter {
             server: Teams::Red,
             team_red: TeamController::Player,

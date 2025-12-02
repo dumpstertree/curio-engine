@@ -1,7 +1,12 @@
 use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
     game_events::GameEvents,
-    state::{state_deck::StateDeck, state_energy::StateEnergy, state_turn::StateTurn},
+    state::{
+        state_deck::StateDeck,
+        state_energy::StateEnergy,
+        state_teams::{self, StateTeamAssignments},
+        state_turn::StateTurn,
+    },
 };
 use core::{
     collections::{
@@ -199,7 +204,11 @@ impl ECSSystemGameRequestManuever {
         return true;
     }
     fn check_player_id(game_state: &mut GameState, id: i32) -> bool {
-        let is_active_player = game_state.get::<StateTurn>().active_instance_id == id;
+        let state_teams = game_state
+            .get::<StateTeamAssignments>()
+            .team_for(&id)
+            .unwrap();
+        let is_active_player = game_state.get::<StateTurn>().active_instance_id == state_teams;
         if !is_active_player {
             println!("Requested for non-active player");
             return false;

@@ -60,6 +60,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 game_state.edit::<StateController>(|x| {
                     x.all_players.clear();
                 });
+                game_state.edit::<StatePositionEntities>(|x| {
+                    x.positions.clear();
+                });
 
                 // insert new
                 match &encounter.team_blue {
@@ -78,6 +81,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(guid, (0, p.energy));
+                            });
+                            // initialize the energy max
+                            game_state.edit::<StatePositionEntities>(|x| {
+                                x.positions.insert(guid, (0, 0));
                             });
                             // initialze the controll state
                             game_state.edit::<StateController>(|x| {
@@ -103,6 +110,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(*guid, (0, 5));
+                            });
+                            // initialize the energy max
+                            game_state.edit::<StatePositionEntities>(|x| {
+                                x.positions.insert(*guid, (0, 0));
                             });
                             // initialze the controll state
                             game_state.edit::<StateController>(|x| {
@@ -130,6 +141,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             game_state.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(guid, (0, p.energy));
                             });
+                            // initialize the energy max
+                            game_state.edit::<StatePositionEntities>(|x| {
+                                x.positions.insert(guid, (0, 0));
+                            });
                             // initialze the controll state
                             game_state.edit::<StateController>(|x| {
                                 x.all_players.insert(guid, Controller::Ai);
@@ -152,6 +167,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             game_state.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(*guid, (0, 5));
                             });
+                            // initialize the energy max
+                            game_state.edit::<StatePositionEntities>(|x| {
+                                x.positions.insert(*guid, (0, 0));
+                            });
                             // initialze the controll state
                             game_state.edit::<StateController>(|x| {
                                 x.all_players.insert(*guid, Controller::Player);
@@ -160,6 +179,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                     }
                     TeamController::Invald => todo!(),
                 }
+
+                // send notification
+                event_queue.enqueue_event(GameEvents::DidInitializeEncounter(encounter.clone()));
 
                 // reset the board now that the encounter has been updated
                 event_queue.enqueue_event(GameEvents::ResetBoard(encounter.server.clone()));

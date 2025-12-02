@@ -58,7 +58,13 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             .get::<StateTeamAssignments>()
             .team_for(&game_state.instance_id)
         else {
-            println!("no team");
+            // fallback camera
+            world.spawn((
+                Transform::default()
+                    .set_position(Vector3::new(0.0, 6.0, -14.0))
+                    .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
+                Camera::default(),
+            ));
             return;
         };
 

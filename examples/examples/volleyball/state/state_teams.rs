@@ -41,13 +41,16 @@ impl IState for StateTeamAssignments {
     }
 }
 
-#[derive(Default, PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Serialize, Deserialize)]
+#[derive(Default, PartialOrd, Ord, PartialEq, Eq, Hash, Clone, Copy, Serialize, Deserialize)]
 pub enum Teams {
     #[default]
     Red,
     Blue,
 }
 impl Teams {
+    pub fn all() -> Vec<Teams> {
+        vec![Teams::Red, Teams::Blue]
+    }
     pub fn random() -> Teams {
         if Random::random_bool() { Teams::Red } else { Teams::Blue }
     }

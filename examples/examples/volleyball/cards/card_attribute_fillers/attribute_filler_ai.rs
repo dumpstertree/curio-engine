@@ -66,14 +66,11 @@ impl CardAttributeFillerAI {
             AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => {
                 let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
                 let state_turn = game_state.get::<StateTurn>();
-                let state_teams = game_state.get::<StateTeamAssignments>();
                 let state_position_ball = game_state.get::<StatePositionBall>();
 
                 // get the modifiers for stack
                 let modifier_stack = state_modifiers.get_flat_stack_for_entity(*uid);
-                let team = state_teams
-                    .team_for(&state_turn.active_instance_id)
-                    .unwrap();
+                let team = &state_turn.active_instance_id;
 
                 // get the min and max taking into account any modifiers
                 let min = team.convert_dir(min.x, min.y + modifier_stack.range);

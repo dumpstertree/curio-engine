@@ -1,7 +1,9 @@
 use crate::{
     game_events::GameEvents,
+    listeners::listener_start_encounter::TeamAssignment,
     state::{
         state_ball_mode::{BallModes, StateBallMode},
+        state_teams::StateTeamAssignments,
         state_turn::StateTurn,
     },
 };
@@ -40,8 +42,12 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestTurnE
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestTurnEnd(id) => {
+                let team = game_state
+                    .get::<StateTeamAssignments>()
+                    .team_for(id)
+                    .unwrap();
                 //  guard -> make sure the requested end of turn is for the active player
-                let is_active_player = game_state.get::<StateTurn>().active_instance_id == *id;
+                let is_active_player = game_state.get::<StateTurn>().active_instance_id == team;
                 if !is_active_player {
                     println!("Requested Turn End for non-active player");
                     return;
@@ -54,7 +60,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestTurnE
                 }
 
                 // end the players turn
-                event_queue.enqueue_event(GameEvents::TurnEnd(*id));
+                event_queue.enqueue_event(GameEvents::TurnEnd(team));
             }
             _ => {}
         }

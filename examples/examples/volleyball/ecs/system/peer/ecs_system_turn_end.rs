@@ -1,5 +1,5 @@
-use crate::game_events::GameEvents;
 use crate::state::state_turn::StateTurn;
+use crate::{game_events::GameEvents, state::state_teams::StateTeamAssignments};
 use built_in_state::state_input::InputState;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -16,7 +16,12 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get::<StateTurn>().active_instance_id == game_state.instance_id
+        true
+        // game_state.get::<StateTurn>().active_instance_id
+        //     == game_state
+        //         .get::<StateTeamAssignments>()
+        //         .team_for(&game_state.instance_id)
+        //         .unwrap()
     }
     fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {
         println!("enabled turn end");

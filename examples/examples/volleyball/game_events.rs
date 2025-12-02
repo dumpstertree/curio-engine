@@ -22,8 +22,8 @@ pub enum GameEvents {
     // to -> instance
     Begin,
     PointScored(Teams),
-    TurnBegin(i32),
-    TurnEnd(i32),
+    TurnBegin(Teams),
+    TurnEnd(Teams),
     PlayCard(i32, Arc<CardInstance>, FilledCardResponse),
     ResetBoard(Teams),
     DrawCard(),
@@ -31,9 +31,10 @@ pub enum GameEvents {
     MoveEntity(Vec<i32>, Vector2Int),
     OnDidSetBallMode(BallModes),
     InitializeEncounter(Encounter),
+    DidInitializeEncounter(Encounter),
     // to -> peer
-    DidTurnEnd(i32),
-    DidTurnBegin(i32),
+    DidTurnEnd(Teams),
+    DidTurnBegin(Teams),
     // to -> host
     RequestTurnEnd(i32),
     RequestMoveZPos(i32),
@@ -74,6 +75,7 @@ impl IGameEvent for GameEvents {
             GameEvents::DidTurnEnd(_) => EventScope::All,
             GameEvents::DidTurnBegin(_) => EventScope::All,
             GameEvents::InitializeEncounter(_) => EventScope::ConnectedHost,
+            GameEvents::DidInitializeEncounter(_) => EventScope::All,
         }
     }
 }
@@ -102,6 +104,7 @@ impl Display for GameEvents {
             GameEvents::DiscardCards() => write!(f, "DiscardCards"),
             GameEvents::MoveEntity(_, _) => write!(f, "MoveEntity"),
             GameEvents::InitializeEncounter(_) => write!(f, "InitializeEncounter"),
+            GameEvents::DidInitializeEncounter(_) => write!(f, "DidInitializeEncounter"),
         }
     }
 }

@@ -55,6 +55,7 @@ pub mod cards {
     }
 }
 pub mod listeners {
+    pub mod listener_render_encounter;
     pub mod listener_start_encounter;
 }
 pub mod state {

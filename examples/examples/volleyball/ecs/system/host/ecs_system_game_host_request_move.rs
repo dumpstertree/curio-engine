@@ -29,7 +29,11 @@ impl ECSSystemGameRequestMove {
         return true;
     }
     fn check_player_id(game_state: &mut GameState, id: i32) -> bool {
-        let is_active_player = game_state.get::<StateTurn>().active_instance_id == id;
+        let state_teams = game_state
+            .get::<StateTeamAssignments>()
+            .team_for(&id)
+            .unwrap();
+        let is_active_player = game_state.get::<StateTurn>().active_instance_id == state_teams;
         if !is_active_player {
             println!("Requested Move for non-active player");
             return false;

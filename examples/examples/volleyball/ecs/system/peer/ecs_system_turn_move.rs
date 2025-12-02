@@ -27,7 +27,14 @@ impl ECSSystemEventless for ECSSystemTurnMove {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get::<StateTurn>().active_instance_id == game_state.instance_id && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
+        game_state.get::<StatePeerInputMode>().mode == InputModes::Move
+        // let is_turn = game_state.get::<StateTurn>().active_instance_id
+        //     == game_state
+        //         .get::<StateTeamAssignments>()
+        //         .team_for(&game_state.instance_id)
+        //         .unwrap();
+
+        // is_turn && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
         // currently serving and cant move
@@ -37,7 +44,9 @@ impl ECSSystemEventless for ECSSystemTurnMove {
         }
 
         let state_team = game_state.get::<StateTeamAssignments>();
-        let team = state_team.team_for(&game_state.instance_id).unwrap();
+        let Some(team) = state_team.team_for(&game_state.instance_id) else {
+            return;
+        };
         let state_position_player = game_state.get::<StatePositionEntities>();
         let pos = state_position_player
             .positions

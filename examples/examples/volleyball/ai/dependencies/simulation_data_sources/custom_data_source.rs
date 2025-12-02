@@ -32,12 +32,16 @@ impl SimulationDataSource<SimulationManuevers, (Teams, i32)> for CustomDataSourc
         let state_turn = game_state.get::<StateTurn>();
 
         // get team
-        let Some(team) = state_teams.team_for(&state_turn.active_instance_id) else {
+
+        let Some(guids) = state_teams
+            .team_assignments
+            .get(&state_turn.active_instance_id)
+        else {
             panic!("Unable to find 'Team' for UID: {}", state_turn.active_instance_id);
         };
 
         // return
-        (team, state_turn.active_instance_id)
+        (state_turn.active_instance_id, guids[0])
     }
     fn get_all_simulation_actions(&self, game_state: &GameState, user: &(Teams, i32)) -> Vec<SimulationManuevers> {
         // create the output

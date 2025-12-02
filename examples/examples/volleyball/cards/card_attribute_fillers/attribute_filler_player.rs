@@ -17,30 +17,30 @@ use crate::{
 pub struct CardAttributeFillerPlayer {}
 
 impl CardAttributeFillerPlayer {
-    pub fn fill_events(game_state: &GameState, data_dep_empty: &Vec<DataDepsEmpty>) -> Vec<DataDepsFilled> {
+    pub fn fill_events(game_state: &GameState, id: &i32, data_dep_empty: &Vec<DataDepsEmpty>) -> Vec<DataDepsFilled> {
         let mut filled = vec![];
         for dep in data_dep_empty {
             match dep {
                 DataDepsEmpty::Entities(target_types_entities) => match target_types_entities {
-                    AttribtuteTargetTypesEntities::User => filled.push(CardAttributeFillerPlayer::get_entity_user(game_state)),
+                    AttribtuteTargetTypesEntities::User => filled.push(CardAttributeFillerPlayer::get_entity_user(id, game_state)),
                     AttribtuteTargetTypesEntities::Select => filled.push(CardAttributeFillerPlayer::get_entity_select(game_state)),
                     AttribtuteTargetTypesEntities::RandomAny => filled.push(CardAttributeFillerPlayer::get_entity_random(game_state)),
-                    AttribtuteTargetTypesEntities::RandomOpponent => filled.push(CardAttributeFillerPlayer::get_entity_opponent(game_state)),
+                    AttribtuteTargetTypesEntities::RandomOpponent => filled.push(CardAttributeFillerPlayer::get_entity_opponent(id, game_state)),
                 },
                 DataDepsEmpty::Cards(target_types_cards) => match target_types_cards {
                     AttributeTargetTypesCards::SelectUser => filled.push(CardAttributeFillerPlayer::get_card_user_selected(game_state)),
-                    AttributeTargetTypesCards::RandomUser => filled.push(CardAttributeFillerPlayer::get_card_user_random(game_state)),
+                    AttributeTargetTypesCards::RandomUser => filled.push(CardAttributeFillerPlayer::get_card_user_random(id, game_state)),
                     AttributeTargetTypesCards::SelectOpponent => filled.push(CardAttributeFillerPlayer::get_card_opponent_selected(game_state)),
-                    AttributeTargetTypesCards::RandomOpponent => filled.push(CardAttributeFillerPlayer::get_card_opponent_random(game_state)),
-                    AttributeTargetTypesCards::AllUser => filled.push(CardAttributeFillerPlayer::get_card_user_all(game_state)),
-                    AttributeTargetTypesCards::AllOpponent => filled.push(CardAttributeFillerPlayer::get_card_opponent_all(game_state)),
+                    AttributeTargetTypesCards::RandomOpponent => filled.push(CardAttributeFillerPlayer::get_card_opponent_random(id, game_state)),
+                    AttributeTargetTypesCards::AllUser => filled.push(CardAttributeFillerPlayer::get_card_user_all(id, game_state)),
+                    AttributeTargetTypesCards::AllOpponent => filled.push(CardAttributeFillerPlayer::get_card_opponent_all(id, game_state)),
                 },
                 DataDepsEmpty::Tiles(target_types_tiles) => match target_types_tiles {
                     AttributeTargetTypesTiles::Select => filled.push(CardAttributeFillerPlayer::get_tiles_select(game_state)),
                     AttributeTargetTypesTiles::RandomAny => filled.push(CardAttributeFillerPlayer::get_tiles_random_any(game_state)),
-                    AttributeTargetTypesTiles::RandomOnTeamUser => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_user(game_state)),
-                    AttributeTargetTypesTiles::RandomOnTeamOpponent => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_opponent(game_state)),
-                    AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_local(game_state, min, max)),
+                    AttributeTargetTypesTiles::RandomOnTeamUser => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_user(id, game_state)),
+                    AttributeTargetTypesTiles::RandomOnTeamOpponent => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_opponent(id, game_state)),
+                    AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_local(id, game_state, min, max)),
                     AttributeTargetTypesTiles::RandomInRangeGlobal(_, _) => todo!(),
                 },
             }
@@ -51,9 +51,9 @@ impl CardAttributeFillerPlayer {
 
 // get -> entity
 impl CardAttributeFillerPlayer {
-    fn get_entity_user(game_state: &GameState) -> DataDepsFilled {
+    fn get_entity_user(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let cur_player_id = game_state.get::<StateTurn>().active_instance_id;
-        DataDepsFilled::Entities(vec![cur_player_id])
+        DataDepsFilled::Entities(vec![*id])
     }
     fn get_entity_select(_game_state: &GameState) -> DataDepsFilled {
         todo!()
@@ -65,13 +65,10 @@ impl CardAttributeFillerPlayer {
         let selected = peer_instance_ids.get(random_index as usize).unwrap();
         DataDepsFilled::Entities(vec![*selected])
     }
-    fn get_entity_opponent(game_state: &GameState) -> DataDepsFilled {
+    fn get_entity_opponent(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let state_turn = game_state.get::<StateTurn>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
-        let opponent_team = state_team_assignment
-            .team_for(&state_turn.active_instance_id)
-            .unwrap()
-            .next_team();
+        let opponent_team = state_team_assignment.team_for(&id).unwrap().next_team();
         let opponent_ids = state_team_assignment
             .team_assignments
             .get(&opponent_team)
@@ -85,12 +82,11 @@ impl CardAttributeFillerPlayer {
     fn get_card_user_selected(_game_state: &GameState) -> DataDepsFilled {
         todo!()
     }
-    fn get_card_user_random(game_state: &GameState) -> DataDepsFilled {
+    fn get_card_user_random(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
 
-        let playere_id = &state_turn.active_instance_id;
-        let Some(deck) = state_deck.deck.get(playere_id) else {
+        let Some(deck) = state_deck.deck.get(id) else {
             panic!("");
         };
 
@@ -107,11 +103,11 @@ impl CardAttributeFillerPlayer {
     fn get_card_opponent_selected(_game_state: &GameState) -> DataDepsFilled {
         todo!()
     }
-    fn get_card_user_all(game_state: &GameState) -> DataDepsFilled {
+    fn get_card_user_all(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
 
-        let Some(deck) = state_deck.deck.get(&state_turn.active_instance_id) else {
+        let Some(deck) = state_deck.deck.get(id) else {
             panic!("");
         };
 
@@ -122,14 +118,11 @@ impl CardAttributeFillerPlayer {
 
         DataDepsFilled::Cards(result)
     }
-    fn get_card_opponent_all(game_state: &GameState) -> DataDepsFilled {
+    fn get_card_opponent_all(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
-        let opponent_team = state_team_assignment
-            .team_for(&state_turn.active_instance_id)
-            .unwrap()
-            .next_team();
+        let opponent_team = state_team_assignment.team_for(id).unwrap().next_team();
         let opponent_ids = state_team_assignment
             .team_assignments
             .get(&opponent_team)
@@ -147,14 +140,11 @@ impl CardAttributeFillerPlayer {
 
         DataDepsFilled::Cards(result)
     }
-    fn get_card_opponent_random(game_state: &GameState) -> DataDepsFilled {
+    fn get_card_opponent_random(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
-        let opponent_team = state_team_assignment
-            .team_for(&state_turn.active_instance_id)
-            .unwrap()
-            .next_team();
+        let opponent_team = state_team_assignment.team_for(id).unwrap().next_team();
         let opponent_ids = state_team_assignment
             .team_assignments
             .get(&opponent_team)
@@ -185,11 +175,11 @@ impl CardAttributeFillerPlayer {
     pub fn get_tiles_random_any(_game_state: &GameState) -> DataDepsFilled {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(0, 4), Random::range_int(0, 4))])
     }
-    pub fn get_tiles_random_on_team_user(game_state: &GameState) -> DataDepsFilled {
+    pub fn get_tiles_random_on_team_user(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let state_turn = game_state.get::<StateTurn>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
 
-        let Some(cur_team) = state_team_assignment.team_for(&state_turn.active_instance_id) else {
+        let Some(cur_team) = state_team_assignment.team_for(id) else {
             panic!("");
         };
 
@@ -198,11 +188,11 @@ impl CardAttributeFillerPlayer {
 
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
     }
-    pub fn get_tiles_random_on_team_opponent(game_state: &GameState) -> DataDepsFilled {
+    pub fn get_tiles_random_on_team_opponent(id: &i32, game_state: &GameState) -> DataDepsFilled {
         let state_turn = game_state.get::<StateTurn>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
 
-        let Some(cur_team) = state_team_assignment.team_for(&state_turn.active_instance_id) else {
+        let Some(cur_team) = state_team_assignment.team_for(id) else {
             panic!("");
         };
 
@@ -213,17 +203,15 @@ impl CardAttributeFillerPlayer {
 
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
     }
-    pub fn get_tiles_random_in_range_local(game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
+    pub fn get_tiles_random_in_range_local(id: &i32, game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
         let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
         let state_turn = game_state.get::<StateTurn>();
         let state_teams = game_state.get::<StateTeamAssignments>();
         let state_position_ball = game_state.get::<StatePositionBall>();
 
         // get the modifiers for stack
-        let modifier_stack = state_modifiers.get_flat_stack_for_entity(state_turn.active_instance_id);
-        let team = state_teams
-            .team_for(&state_turn.active_instance_id)
-            .unwrap();
+        let modifier_stack = state_modifiers.get_flat_stack_for_entity(*id);
+        let team = state_teams.team_for(id).unwrap();
 
         // get the min and max taking into account any modifiers
         let min = team.convert_dir(min.x, min.y + modifier_stack.range);

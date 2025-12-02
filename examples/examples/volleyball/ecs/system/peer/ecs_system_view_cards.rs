@@ -4,11 +4,11 @@ use crate::ecs::components::component_card::ComponentCard;
 use crate::game_board::GameBoard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
-use crate::state::state_deck::{self, StateDeck};
+use crate::state::state_deck::{self, Deck, StateDeck};
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
-use crate::state::state_teams::StateTeamAssignments;
+use crate::state::state_teams::{StateTeamAssignments, Teams};
 use built_in::component::component_renderer_static::Renderer;
 use built_in::component::component_renderer_text::{ComponentRendererText, RendererCommon};
 // use built_in::component::component_renderer::Renderer;
@@ -56,7 +56,20 @@ impl ECSSystemEventless for ECSSystemViewCards {
         }
         if self.cnt == 15 {
             let state_deck = game_state.get::<StateDeck>();
-            let my_deck = state_deck.deck.get(&game_state.instance_id).unwrap();
+            let state_teams = game_state.get::<StateTeamAssignments>();
+
+            let my_deck: &Deck;
+            if let Some(deck) = state_deck.deck.get(&game_state.instance_id) {
+                my_deck = deck
+            } else if let Some(deck) = state_deck
+                .deck
+                .get(&state_teams.team_assignments.get(&Teams::Red).unwrap()[0])
+            {
+                // my_deck = deck;
+                return;
+            } else {
+                return;
+            }
             let camera_state = game_state.get::<CameraState>();
 
             for card in &my_deck.all_cards {

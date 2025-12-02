@@ -18,6 +18,7 @@ use std::vec;
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameRequestManuever {}
+
 impl ECSSystemEventless for ECSSystemGameRequestManuever {
     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
         true

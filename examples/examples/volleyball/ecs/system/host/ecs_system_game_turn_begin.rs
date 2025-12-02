@@ -1,6 +1,6 @@
 use crate::{
     game_events::GameEvents,
-    state::{state_energy::StateEnergy, state_turn::StateTurn},
+    state::{self, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use built_in_state::state_time::TimeState;
 use core::{
@@ -66,11 +66,19 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
                 game_state.edit::<StateTurn>(|x| {
                     x.active_instance_id = *id;
                 });
-                // update energy
-                game_state.edit::<StateEnergy>(|x| {
-                    let cur = x.all_players[id];
-                    x.all_players.insert(*id, (cur.1, cur.1));
-                });
+
+                for guid in game_state
+                    .get::<StateTeamAssignments>()
+                    .team_assignments
+                    .get(id)
+                    .unwrap()
+                {
+                    // update energy
+                    game_state.edit::<StateEnergy>(|x| {
+                        let cur = x.all_players[guid];
+                        x.all_players.insert(*guid, (cur.1, cur.1));
+                    });
+                }
 
                 self.do_move = true;
                 game_state.get::<TimeState>().unscaled_time;

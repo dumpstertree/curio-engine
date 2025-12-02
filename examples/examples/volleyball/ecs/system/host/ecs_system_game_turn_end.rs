@@ -44,42 +44,17 @@ impl InstanceLimiter for ECSSystemGameEndTurn {
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::TurnEnd(id) => {
+            GameEvents::TurnEnd(team) => {
                 // end this turn
-                println!("Instance: {}. End Turn {}", game_state.instance_id, id);
-
-                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(id) else {
-                    println!("unknown team");
-                    return;
-                };
+                println!("Instance: {}. End Turn {}", game_state.instance_id, team);
 
                 let state_position_ball = game_state.get::<StatePositionBall>();
                 let ball_is_on_side = team.on_side(state_position_ball.column, state_position_ball.row);
                 if ball_is_on_side {
                     println!("Point scored for {}!", team.next_team());
-                    event_queue.enqueue_event(GameEvents::PointScored(team));
+                    event_queue.enqueue_event(GameEvents::PointScored(*team));
                     return;
                 }
-
-                // todo iterate to the next player
-                let mut index = -1;
-                for x in 0..game_state.all_instance_id.len() as i32 {
-                    let other_id = game_state.all_instance_id[x as usize];
-                    if *id == other_id {
-                        index = x;
-                    }
-                }
-
-                if index == -1 {
-                    println!("Couldnt find curreent player index!");
-                    return;
-                }
-                let state_network = game_state.get::<StateNetwork>();
-                let peer_ids = state_network.peer_instance_ids();
-                let wrapped_index = (index + 1).repeat(0, peer_ids.len() as i32);
-                let new_id = peer_ids[wrapped_index as usize];
-
-                println!("next turn?");
 
                 //clear any attributes that end at turn
                 let mut runner = CardEventRunner::new();
@@ -87,7 +62,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
                 runner.post_and_drain(game_state);
 
                 // begin the next player
-                event_queue.enqueue_event(GameEvents::TurnBegin(new_id));
+                event_queue.enqueue_event(GameEvents::TurnBegin(team.next_team()));
             }
             _ => {}
         }

@@ -86,11 +86,7 @@ impl ECSSystemEventless for ECSSytem {
             transform.position = camera_state.cameras.position + camera_state.cameras.rotation * Vector3::new(0.5, 0.5, 1.0);
             transform.rotation = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
 
-            let Some(team) = state_team.team_for(&state_turn.active_instance_id) else {
-                continue;
-            };
-
-            match team {
+            match &state_turn.active_instance_id {
                 crate::state::state_teams::Teams::Red => renderer.set_contents("Red Team"),
                 crate::state::state_teams::Teams::Blue => renderer.set_contents("Blue Team"),
             };

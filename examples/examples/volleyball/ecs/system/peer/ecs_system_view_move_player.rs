@@ -21,29 +21,11 @@ use hecs::World;
 #[global_ecs_system]
 pub struct ECSSystemViewMovePlayers {}
 impl ECSSystemEventless for ECSSystemViewMovePlayers {
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        NetworkModes::all_peer()
     }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut GameState, _: &mut World) -> bool {
         true
-    }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        let asset_goblin = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::Goblin.uid());
-
-        for id in game_state.get::<StateNetwork>().peer_instance_ids() {
-            println!("spawn player");
-            let mut rend = RendererAnimated::default();
-            rend.set_asset(Some(asset_goblin.clone()));
-            // players
-            world.spawn((
-                ComponentViewPlayer::default(),
-                ComponentPlayer::default().set_player_id(*id),
-                Transform::default()
-                    .set_position(Vector3::new(-5.0, -5.0, 10.0))
-                    .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
-                rend,
-            ));
-        }
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
         let state_position_player = game_state.get::<StatePositionEntities>();
@@ -56,7 +38,6 @@ impl ECSSystemEventless for ECSSystemViewMovePlayers {
             let Some(loc) = state_position_player.positions.get(&player.player_id) else {
                 continue;
             };
-
             // get pos
             let cur_pos = transform.position;
             let tar_pos = GameBoard::get_world_position(loc.0, loc.1);

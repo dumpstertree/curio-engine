@@ -117,9 +117,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                     }
                 }
 
-                let t = state_team.team_assignments.get(serving_team).unwrap();
-
-                event_queue.enqueue_event(GameEvents::TurnBegin(t[0])); // this should use team instead of id
+                event_queue.enqueue_event(GameEvents::TurnBegin(*serving_team));
             }
             _ => {}
         }

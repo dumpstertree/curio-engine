@@ -7,9 +7,10 @@ use crate::{
     cards::enums::simulation_manuevers::SimulationManuevers,
     game_board::Directions,
     game_events::GameEvents,
+    listeners::listener_start_encounter::{Controller, TeamAssignment},
     state::{
-        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_ball_mode::StateBallMode, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall, state_position_player::StatePositionEntities,
-        state_turn::StateTurn,
+        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_ball_mode::StateBallMode, state_controller::StateController, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall,
+        state_position_player::StatePositionEntities, state_turn::StateTurn,
     },
 };
 use built_in_state::state_time::TimeState;
@@ -48,8 +49,20 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
     fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
-        let is_turn = game_state.get::<StateTurn>().active_instance_id == game_state.instance_id;
-        if is_turn && game_state.get::<TimeState>().unscaled_time - self.lastmove > 2.0 {
+        let state_team = game_state.get::<StateTeamAssignments>();
+        let active_team = game_state.get::<StateTurn>().active_instance_id;
+        let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
+            return;
+        };
+
+        let any_ai = game_state
+            .get::<StateController>()
+            .all_players
+            .iter()
+            .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
+
+        // let is_turn = d == game_state.instance_id;
+        if any_ai && game_state.get::<TimeState>().unscaled_time - self.lastmove > 1.0 {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
                 GameState::new_single_instance(vec![
                     // copy these states
@@ -66,8 +79,8 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 ])
             });
 
-            let uid = game_state.get::<StateTurn>().active_instance_id;
-            let move2 = simulator.simulate(game_state, Fidelity::Extreme, Threading::Multi);
+            let uid = current_guids[0];
+            let move2 = simulator.simulate(game_state, Fidelity::Medium, Threading::Multi);
 
             match move2 {
                 SimulationManuevers::EndTurn => events.enqueue_event(GameEvents::RequestTurnEnd(uid)),
@@ -105,13 +118,7 @@ impl InstanceLimiter for ECSSystemPeerStart {
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemPeerStart {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::DidTurnBegin(id) => {
-                if *id == game_state.instance_id {
-                    println!("did begine!!!!");
-                    self.do_move = true;
-                    self.lastmove = 0.0;
-                }
-            }
+            GameEvents::DidTurnBegin(id) => {}
             _ => {}
         }
     }
