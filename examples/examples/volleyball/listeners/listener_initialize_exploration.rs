@@ -78,7 +78,8 @@ impl EncounterLibrary {
             team_blue: TeamController::Ai(vec![Participant {
                 deck_id: "wild".to_string(),
                 starting_location: Vector2Int::zero(),
-                energy: 1,
+                energy: 3,
+                health: 2,
             }]),
         }
     }
@@ -89,7 +90,8 @@ impl EncounterLibrary {
             team_blue: TeamController::Ai(vec![Participant {
                 deck_id: "wild".to_string(),
                 starting_location: Vector2Int::zero(),
-                energy: 1,
+                energy: 3,
+                health: 2,
             }]),
         }
     }
@@ -100,7 +102,8 @@ impl EncounterLibrary {
             team_blue: TeamController::Ai(vec![Participant {
                 deck_id: "wild".to_string(),
                 starting_location: Vector2Int::zero(),
-                energy: 1,
+                energy: 3,
+                health: 2,
             }]),
         }
     }

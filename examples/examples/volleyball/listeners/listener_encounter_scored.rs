@@ -28,23 +28,23 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
                 game_state.edit::<StateScore>(|x| {
                     // if there is already a score we use that
                     let mut cur_score = 0;
-                    if x.all_scores.contains_key(team) {
-                        cur_score = x.all_scores[team];
+                    if x.all_scores.contains_key(&team.next_team()) {
+                        cur_score = x.all_scores[&team.next_team()];
                     }
 
                     // incriment by 1 point
-                    x.all_scores.insert(team.clone(), cur_score + 1);
+                    x.all_scores.insert(team.next_team().clone(), cur_score - 1);
                 });
 
                 // get the score state
                 let state_score = game_state.get::<StateScore>();
 
                 // get the scores
-                let score_red = state_score.all_scores.get(&Teams::Red).unwrap_or(&0);
-                let score_blue = state_score.all_scores.get(&Teams::Blue).unwrap_or(&0);
+                let score_red = state_score.all_scores.get(&Teams::Red).unwrap_or(&99);
+                let score_blue = state_score.all_scores.get(&Teams::Blue).unwrap_or(&99);
 
                 // if either score is above the end threshold its over
-                let encounter_ended = score_red >= &1 || score_blue >= &1;
+                let encounter_ended = score_red <= &0 || score_blue <= &0;
                 if encounter_ended {
                     if score_red > score_blue {
                         // if we have a higher score we win

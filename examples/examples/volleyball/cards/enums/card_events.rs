@@ -10,6 +10,7 @@ pub enum CardEvents {
     ModifierCostForEntities(DataDepsFilled, ModifierClearFlag, i32),
     ModifierRangeForEntities(DataDepsFilled, ModifierClearFlag, i32),
     // events
+    EventHeatDrain(DataDepsFilled),
     EventEnergyFill(DataDepsFilled),
     EventEnergyEdit(DataDepsFilled, i32),
     EventMoveEntities(DataDepsFilled, DataDepsFilled),

@@ -8,6 +8,8 @@ use crate::{
 
 #[derive(Clone)]
 pub enum CardAttributeEvents {
+    // Set Heat to 0
+    DrainHeat(AttribtuteTargetTypesEntities),
     /// Add cards to hand, 0=count, 1=players
     DrawCards(i32, AttribtuteTargetTypesEntities),
     /// Add cards from hand, 0=count, 1=cards
@@ -34,6 +36,7 @@ impl CardAttributeEvents {
             CardAttributeEvents::GainEnergy(_, t0) => vec![DataDepsEmpty::Entities(*t0)],
             CardAttributeEvents::RefillEnergy(t0) => vec![DataDepsEmpty::Entities(*t0)],
             CardAttributeEvents::SetBallMode(_) => vec![],
+            CardAttributeEvents::DrainHeat(t0) => vec![DataDepsEmpty::Entities(*t0)],
         }
     }
 }

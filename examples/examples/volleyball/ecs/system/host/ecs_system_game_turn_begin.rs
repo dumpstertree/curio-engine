@@ -1,6 +1,13 @@
 use crate::{
     game_events::GameEvents,
-    state::{self, host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_deck::StateDeck, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    state::{
+        self,
+        host::{state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_heat::StateHeat},
+        state_deck::StateDeck,
+        state_energy::StateEnergy,
+        state_teams::StateTeamAssignments,
+        state_turn::StateTurn,
+    },
 };
 use built_in_state::state_time::TimeState;
 use core::{
@@ -56,20 +63,24 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
                     let mod_stack = state_modifiers.get_flat_stack_for_entity(*guid);
 
                     let state_energy = game_state.get::<StateEnergy>();
-                    let energy_cur_max = state_energy.all_players.get(guid).unwrap();
+                    let cur_energy = state_energy.all_players.get(guid).unwrap_or(&(0, 0));
 
-                    game_state.edit::<StateDeck>(|x| {
-                        // if let Some(deck) = x.deck.get_mut(&guid) {
-                        //     for _ in 0..(energy_cur_max.0 / 2) {
-                        //         deck.draw();
-                        //     }
-                        // }
+                    println!("cur energy {}", cur_energy.0);
+                    game_state.edit::<StateHeat>(|x| {
+                        if !x.all_players.contains_key(guid) {
+                            x.all_players.insert(*guid, cur_energy.0);
+                        } else {
+                            let c = x.all_players[guid];
+                            x.all_players.insert(*guid, c + cur_energy.0);
+                        }
                     });
+
+                    println!("heat {}", game_state.get::<StateHeat>().all_players[guid]);
                     // update energy
                     game_state.edit::<StateEnergy>(|x| {
-                        let cur = x.all_players[guid];
-                        x.all_players
-                            .insert(*guid, (cur.1 + mod_stack.energy, cur.1 + mod_stack.energy));
+                        if let Some(y) = x.all_players.get_mut(guid) {
+                            y.0 = y.1 + mod_stack.energy;
+                        }
                     });
                 }
 

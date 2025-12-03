@@ -26,6 +26,7 @@ pub mod cards {
         pub(crate) mod event_change_ball_mode;
         pub(crate) mod event_energy_edit;
         pub(crate) mod event_energy_fill;
+        pub(crate) mod event_heat_drain;
         pub(crate) mod event_move_ball;
         pub(crate) mod event_move_entities;
         pub(crate) mod modifier_cost_for_entities;
@@ -91,6 +92,7 @@ pub mod state {
         pub mod state_card_attribute_modifier_stack;
         pub mod state_enounter_mode;
         pub mod state_exploration;
+        pub mod state_heat;
     }
 }
 pub mod ai {

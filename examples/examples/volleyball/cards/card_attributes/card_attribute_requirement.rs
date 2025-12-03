@@ -1,6 +1,7 @@
 use core::collections::game_state::GameState;
 
 use crate::state::{
+    host::state_heat::StateHeat,
     state_ball_mode::{BallModes, StateBallMode},
     state_position_ball::StatePositionBall,
     state_position_player::StatePositionEntities,
@@ -14,6 +15,8 @@ pub enum CardAttributeRequirement {
     RequireNotBallMode(BallModes),
     RequireMaxEnergyLessEqual(i32),
     RequireMaxEnergyGreaterEqual(i32),
+    RequireHeatLessEqual(i32),
+    RequireHeatGreaterEqual(i32),
 }
 
 impl CardAttributeRequirement {
@@ -45,6 +48,22 @@ impl CardAttributeRequirement {
             CardAttributeRequirement::RequireNotBallMode(ball_modes) => game_state.get::<StateBallMode>().mode != *ball_modes,
             CardAttributeRequirement::RequireMaxEnergyLessEqual(_) => todo!(),
             CardAttributeRequirement::RequireMaxEnergyGreaterEqual(_) => todo!(),
+            CardAttributeRequirement::RequireHeatLessEqual(count) => {
+                game_state
+                    .get::<StateHeat>()
+                    .all_players
+                    .get(&user_id)
+                    .unwrap_or(&0)
+                    <= count
+            }
+            CardAttributeRequirement::RequireHeatGreaterEqual(count) => {
+                game_state
+                    .get::<StateHeat>()
+                    .all_players
+                    .get(&user_id)
+                    .unwrap_or(&0)
+                    >= count
+            }
         }
     }
 }

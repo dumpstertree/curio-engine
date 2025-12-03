@@ -5,7 +5,7 @@ use crate::cards::{
     card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers},
     card_dependencies::filled_card_attribute::FilledCardAttribute,
     card_event_runner_recievers::{
-        clear_modifier_all, clear_modifier_for_flag, event_card_discard, event_card_draw, event_change_ball_mode, event_energy_edit, event_energy_fill, event_move_ball, event_move_entities, modifier_cost_for_entities, modifier_energy_for_entities, modifier_range_for_entities,
+        clear_modifier_all, clear_modifier_for_flag, event_card_discard, event_card_draw, event_change_ball_mode, event_energy_edit, event_energy_fill, event_heat_drain, event_move_ball, event_move_entities, modifier_cost_for_entities, modifier_energy_for_entities, modifier_range_for_entities,
     },
     enums::{attribute_clear_flag::ModifierClearFlag, card_events::CardEvents},
 };
@@ -19,6 +19,7 @@ impl CardEventRunner {
     pub fn new() -> CardEventRunner {
         // create the list of all the recievers
         let recievers: Vec<fn(&CardEvents, &mut GameState) -> Vec<CardEvents>> = vec![
+            event_heat_drain::EventReciever::recieve,
             event_card_discard::EventReciever::recieve,
             event_card_draw::EventReciever::recieve,
             event_energy_edit::EventReciever::recieve,
@@ -84,6 +85,10 @@ impl CardEventRunner {
             CardAttributeEvents::SetBallMode(mode) => {
                 self.runner
                     .enqueue(&CardEvents::EventChangeBallMode(mode.clone()));
+            }
+            CardAttributeEvents::DrainHeat(mode) => {
+                self.runner
+                    .enqueue(&&CardEvents::EventHeatDrain(data.filled[0].clone()));
             }
         }
     }

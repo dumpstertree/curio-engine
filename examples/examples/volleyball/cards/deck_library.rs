@@ -8,6 +8,7 @@ impl DeckLibrary {
         let mut deck = Deck::default();
 
         // persistent
+        deck.add_card_to_deck("heat", true);
         deck.add_card_to_deck("rest", true);
         deck.add_card_to_deck("serve", true);
 

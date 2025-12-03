@@ -21,6 +21,20 @@ impl CardLibrary {
         let mut hashmap: HashMap<String, Arc<CardMaster>> = HashMap::new();
         // rest
         hashmap.insert(
+            String::from("heat"),
+            Arc::new(CardMaster::new(
+                "HEAT",
+                "Draw 5 cards. Drain Heat",
+                CardTypes::Rest,
+                vec![CardStatement::new(
+                    0, //
+                    vec![CardAttributeRequirement::RequireHeatGreaterEqual(30)],
+                    vec![],
+                    vec![CardAttributeEvents::DrawCards(5, AttribtuteTargetTypesEntities::User), CardAttributeEvents::DrainHeat(AttribtuteTargetTypesEntities::User)],
+                )],
+            )),
+        );
+        hashmap.insert(
             String::from("rest"),
             Arc::new(CardMaster::new(
                 "rest",
@@ -30,11 +44,7 @@ impl CardLibrary {
                     1, //
                     vec![],
                     vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
-                    vec![
-                        CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser),
-                        CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User),
-                        // CardAttributeEvents::RefillEnergy(AttribtuteTargetTypesEntities::User),
-                    ],
+                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
                 )],
             )),
         );

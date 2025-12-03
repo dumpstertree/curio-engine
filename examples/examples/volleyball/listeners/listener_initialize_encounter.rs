@@ -19,6 +19,7 @@ use crate::{
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
         state_position_player::StatePositionEntities,
+        state_score::StateScore,
         state_teams::{StateTeamAssignments, Teams},
     },
 };
@@ -70,7 +71,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 // insert new
                 match &encounter.team_blue {
                     TeamController::Ai(participants) => {
+                        let mut health_point_total = 0;
                         for p in participants {
+                            // update the healthpoint total
+                            health_point_total += p.health;
+
                             let guid = Random::range_int(-9999, 9999);
 
                             // intialize the team
@@ -95,6 +100,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                 x.all_players.insert(guid, Controller::Ai);
                             });
                         }
+
+                        // set the healthpoint total
+                        game_state.edit::<StateScore>(|x| {
+                            x.all_scores.insert(Teams::Blue, health_point_total);
+                        });
                     }
                     TeamController::Player => {
                         let state_network = game_state.get::<StateNetwork>();
@@ -124,13 +134,22 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                 x.all_players.insert(*guid, Controller::Player);
                             });
                         }
+
+                        // set the healthpoint total
+                        game_state.edit::<StateScore>(|x| {
+                            x.all_scores.insert(Teams::Blue, 5);
+                        });
                     }
                     TeamController::Invald => todo!(),
                 }
 
                 match &encounter.team_red {
                     TeamController::Ai(participants) => {
+                        let mut health_point_total = 0;
                         for p in participants {
+                            // update the healthpoint total
+                            health_point_total += p.health;
+
                             let guid = Random::range_int(-9999, 9999);
 
                             // intialize the team
@@ -155,6 +174,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                 x.all_players.insert(guid, Controller::Ai);
                             });
                         }
+                        // set the healthpoint total
+                        game_state.edit::<StateScore>(|x| {
+                            x.all_scores.insert(Teams::Red, health_point_total);
+                        });
                     }
                     TeamController::Player => {
                         let state_network = game_state.get::<StateNetwork>();
@@ -181,6 +204,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                 x.all_players.insert(*guid, Controller::Player);
                             });
                         }
+                        // set the healthpoint total
+                        game_state.edit::<StateScore>(|x| {
+                            x.all_scores.insert(Teams::Red, 5);
+                        });
                     }
                     TeamController::Invald => todo!(),
                 }
@@ -214,6 +241,7 @@ pub struct Participant {
     pub deck_id: String,
     pub starting_location: Vector2Int,
     pub energy: i32,
+    pub health: i32,
 }
 #[derive(PartialEq, Eq, Hash, Default, Clone, Deserialize, Serialize)]
 pub struct TeamAssignment {

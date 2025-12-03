@@ -1,0 +1,28 @@
+use core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use macro_state_serialize::global_state_serialize;
+use std::{collections::HashMap, hash::Hash};
+
+#[derive(PartialEq, Eq)]
+#[global_state_serialize]
+pub struct StateHeat {
+    pub all_players: HashMap<i32, i32>,
+}
+impl IState for StateHeat {
+    fn id() -> i32 {
+        901830129
+    }
+    fn ownership() -> StateOwnerships {
+        StateOwnerships::Host
+    }
+}
+impl Hash for StateHeat {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let mut axis_keys: Vec<&i32> = self.all_players.keys().collect();
+        axis_keys.sort();
+        axis_keys.len().hash(state);
+        for k in axis_keys {
+            k.hash(state);
+            self.all_players.get(k).unwrap().hash(state);
+        }
+    }
+}
