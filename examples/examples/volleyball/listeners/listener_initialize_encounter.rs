@@ -5,7 +5,7 @@ use core::{
     random::Random,
 };
 
-use built_in_state::state_network::{self, StateNetwork};
+use built_in_state::state_network::StateNetwork;
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
 use serde::{Deserialize, Serialize};
@@ -41,6 +41,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::InitializeEncounter(encounter) => {
+                // log
+                println!("Encounter Initialized");
+
                 // store the encounter
                 game_state.edit::<StateEncounter>(|x| {
                     x.encounter = encounter.clone();
@@ -76,7 +79,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             });
                             // initialize the deck
                             game_state.edit::<StateDeck>(|x| {
-                                x.deck.insert(guid, DeckLibrary::get_deck_for_uid("wild"));
+                                x.deck
+                                    .insert(guid, DeckLibrary::get_deck_for_uid(&p.deck_id));
                             });
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {
@@ -135,7 +139,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             });
                             // initialize the deck
                             game_state.edit::<StateDeck>(|x| {
-                                x.deck.insert(guid, DeckLibrary::get_deck_for_uid("wild"));
+                                x.deck
+                                    .insert(guid, DeckLibrary::get_deck_for_uid(&p.deck_id));
                             });
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {
@@ -180,11 +185,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                     TeamController::Invald => todo!(),
                 }
 
-                // send notification
-                event_queue.enqueue_event(GameEvents::DidInitializeEncounter(encounter.clone()));
-
                 // reset the board now that the encounter has been updated
                 event_queue.enqueue_event(GameEvents::ResetBoard(encounter.server.clone()));
+
+                // send notification
+                event_queue.enqueue_event(GameEvents::DidInitializeEncounter(encounter.clone()));
             }
             _ => {}
         }

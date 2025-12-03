@@ -6,7 +6,7 @@ use core::{
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 
-use crate::listeners::listener_start_encounter::Encounter;
+use crate::listeners::listener_initialize_encounter::Encounter;
 
 #[derive(Hash, PartialEq, Eq)]
 #[global_state_serialize]

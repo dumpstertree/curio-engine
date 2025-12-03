@@ -7,7 +7,7 @@ use crate::{
     cards::enums::simulation_manuevers::SimulationManuevers,
     game_board::Directions,
     game_events::GameEvents,
-    listeners::listener_start_encounter::{Controller, TeamAssignment},
+    listeners::listener_initialize_encounter::{Controller, TeamAssignment},
     state::{
         host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_ball_mode::StateBallMode, state_controller::StateController, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall,
         state_position_player::StatePositionEntities, state_turn::StateTurn,

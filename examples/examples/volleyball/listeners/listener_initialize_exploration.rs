@@ -1,0 +1,111 @@
+use core::{
+    collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
+    dumpster_engine::NetworkModes,
+    gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
+    random::Random,
+};
+use ecs_event::global_ecs_system_event_reciever;
+use hecs::World;
+
+use crate::{
+    exploration::exploration_path::RoomTypes,
+    game_events::GameEvents,
+    listeners::listener_initialize_encounter::{Encounter, Participant, TeamController},
+    state::{host::state_exploration::StateExploration, state_teams::Teams},
+};
+
+#[derive(Default)]
+#[global_ecs_system_event_reciever(GameEvents)]
+pub struct Listener {}
+
+// Impl - Instance
+impl InstanceLimiter for Listener {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_host()
+    }
+}
+// Impl - Listener
+impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+        match event {
+            GameEvents::InitializeExploration(exploration) => {
+                // log
+                println!("Exploration Initialized");
+
+                // assign and start the exploration
+                game_state.edit::<StateExploration>(|x| {
+                    x.exploration = exploration.clone();
+                    x.exploration.start();
+                });
+
+                // get the newly assigned state
+                let state_exploration = game_state.get::<StateExploration>();
+                let cur_exploration = state_exploration.exploration;
+                match cur_exploration.get_cur_room().room_type {
+                    // start a new encounter
+                    RoomTypes::Combat => {
+                        event_queue.enqueue_event(GameEvents::InitializeEncounter(EncounterLibrary::random()));
+                    }
+                    // start a new shop
+                    RoomTypes::Shop => todo!(),
+                    // start a new boss
+                    RoomTypes::Boss => todo!(),
+                }
+                //
+                event_queue.enqueue_event(GameEvents::DidInitializeExploration(cur_exploration.clone()));
+            }
+            _ => {}
+        }
+    }
+}
+
+pub struct EncounterLibrary {}
+
+impl EncounterLibrary {
+    pub fn random() -> Encounter {
+        match Random::range_int(0, 3) {
+            0 => Self::get_encounter_0(),
+            1 => Self::get_encounter_1(),
+            2 => Self::get_encounter_2(),
+            _ => {
+                panic!("Bad Roll")
+            }
+        }
+    }
+    fn get_encounter_0() -> Encounter {
+        Encounter {
+            server: Teams::Red,
+            team_red: TeamController::Player,
+            team_blue: TeamController::Ai(vec![Participant {
+                deck_id: "wild".to_string(),
+                starting_location: Vector2Int::zero(),
+                energy: 5,
+            }]),
+        }
+    }
+    fn get_encounter_1() -> Encounter {
+        Encounter {
+            server: Teams::Red,
+            team_red: TeamController::Player,
+            team_blue: TeamController::Ai(vec![Participant {
+                deck_id: "wild".to_string(),
+                starting_location: Vector2Int::zero(),
+                energy: 5,
+            }]),
+        }
+    }
+    fn get_encounter_2() -> Encounter {
+        Encounter {
+            server: Teams::Red,
+            team_red: TeamController::Player,
+            team_blue: TeamController::Ai(vec![Participant {
+                deck_id: "wild".to_string(),
+                starting_location: Vector2Int::zero(),
+                energy: 5,
+            }]),
+        }
+    }
+}

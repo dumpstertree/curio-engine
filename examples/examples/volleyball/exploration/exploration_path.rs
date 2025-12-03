@@ -1,10 +1,13 @@
-pub struct ExplorationPath {
+use serde::{Deserialize, Serialize};
+
+#[derive(PartialEq, Eq, Hash, Default, Clone, Serialize, Deserialize)]
+pub struct Exploration {
     all_rooms: Vec<Room>,
     cur_room: Vec<i32>,
 }
 
-impl ExplorationPath {
-    pub fn random() -> ExplorationPath {
+impl Exploration {
+    pub fn random() -> Exploration {
         let mut rooms = Vec::new();
         for i in 0..3 {
             rooms.push(Room {
@@ -16,7 +19,7 @@ impl ExplorationPath {
             });
         }
 
-        ExplorationPath { all_rooms: rooms, cur_room: Vec::new() }
+        Exploration { all_rooms: rooms, cur_room: Vec::new() }
     }
     pub fn get_cur_room(&self) -> Room {
         for room in &self.all_rooms {
@@ -63,24 +66,26 @@ impl ExplorationPath {
         }
         rooms
     }
-    pub fn start(&mut self) {
+    pub fn start(&mut self) -> Room {
         for room in &self.all_rooms {
             if room.is_start {
                 self.cur_room.push(room.guid);
                 break;
             }
         }
+        self.get_cur_room()
     }
-    pub fn next(&mut self, next_room_guid: &i32) {
+    pub fn next(&mut self, next_room_guid: &i32) -> Room {
         for room in &self.all_rooms {
             if *next_room_guid == room.guid {
                 self.cur_room.push(*next_room_guid);
                 break;
             }
         }
+        self.get_cur_room()
     }
 }
-#[derive(Clone)]
+#[derive(PartialEq, Eq, Hash, Default, Clone, Serialize, Deserialize)]
 pub struct Room {
     pub guid: i32,
     pub room_type: RoomTypes,
@@ -88,9 +93,10 @@ pub struct Room {
     pub next_rooms: Vec<i32>,
     pub is_start: bool,
 }
-#[derive(Clone)]
+#[derive(PartialEq, Eq, Hash, Default, Clone, Serialize, Deserialize)]
 pub enum RoomTypes {
-    Shop,
+    #[default]
     Combat,
+    Shop,
     Boss,
 }

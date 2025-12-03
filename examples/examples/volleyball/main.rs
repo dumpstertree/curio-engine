@@ -58,8 +58,12 @@ pub mod exploration {
     pub mod exploration_path;
 }
 pub mod listeners {
+    pub mod listener_encounter_failed;
+    pub mod listener_encounter_passed;
+    pub mod listener_encounter_scored;
+    pub mod listener_initialize_encounter;
+    pub mod listener_initialize_exploration;
     pub mod listener_render_encounter;
-    pub mod listener_start_encounter;
 }
 pub mod state {
     pub mod other {
@@ -81,6 +85,7 @@ pub mod state {
     pub mod host {
         pub mod state_card_attribute_modifier_stack;
         pub mod state_enounter_mode;
+        pub mod state_exploration;
     }
 }
 pub mod ai {
@@ -143,7 +148,6 @@ pub mod ecs {
         }
         pub mod host {
             mod ecs_system_game_host_play_card;
-            mod ecs_system_game_host_point_scored;
             mod ecs_system_game_host_request_manuever;
             mod ecs_system_game_host_request_move;
             mod ecs_system_game_host_reset_board;

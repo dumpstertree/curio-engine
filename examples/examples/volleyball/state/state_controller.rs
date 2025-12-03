@@ -3,7 +3,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use macro_state_serialize::global_state_serialize;
 
-use crate::listeners::listener_start_encounter::Controller;
+use crate::listeners::listener_initialize_encounter::Controller;
 
 #[derive(PartialEq, Eq)]
 #[global_state_serialize]

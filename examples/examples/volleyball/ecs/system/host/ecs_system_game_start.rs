@@ -10,8 +10,9 @@ use core::{
 use std::vec;
 
 use crate::{
+    exploration::exploration_path::Exploration,
     game_events::GameEvents,
-    listeners::listener_start_encounter::{Encounter, Participant, TeamAssignment, TeamController},
+    listeners::listener_initialize_encounter::{Encounter, Participant, TeamAssignment, TeamController},
     state::{
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
@@ -38,14 +39,6 @@ impl ECSSystemEventless for ECSSystemGameStart {
             x.resolution_height = 1080 / 1;
         });
 
-        event_queue.enqueue_event(GameEvents::InitializeEncounter(Encounter {
-            server: Teams::Red,
-            team_red: TeamController::Player,
-            team_blue: TeamController::Ai(vec![Participant {
-                deck_id: "".to_string(),
-                starting_location: Vector2Int::zero(),
-                energy: 5,
-            }]),
-        }));
+        event_queue.enqueue_event(GameEvents::InitializeExploration(Exploration::random()));
     }
 }

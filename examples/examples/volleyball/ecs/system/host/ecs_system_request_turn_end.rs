@@ -1,6 +1,6 @@
 use crate::{
     game_events::GameEvents,
-    listeners::listener_start_encounter::TeamAssignment,
+    listeners::listener_initialize_encounter::TeamAssignment,
     state::{
         state_ball_mode::{BallModes, StateBallMode},
         state_teams::StateTeamAssignments,

@@ -1,30 +1,20 @@
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector2_int::Vector2Int, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
     gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
     io::asset_loader::AssetLoader,
-    random::Random,
 };
 
-use built_in::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
-use built_in_state::state_network::{self, StateNetwork};
+use built_in::component::{component_renderer_animated::RendererAnimated, component_transform::Transform};
+
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
-use serde::{Deserialize, Serialize};
 
 use crate::{
     AssetMappingUIDs,
-    cards::deck_library::DeckLibrary,
     ecs::components::{component_player::ComponentPlayer, component_view_player::ComponentViewPlayer},
     game_events::GameEvents,
-    state::{
-        host::state_enounter_mode::StateEncounter,
-        state_controller::StateController,
-        state_deck::{Deck, StateDeck},
-        state_energy::StateEnergy,
-        state_position_player::StatePositionEntities,
-        state_teams::{self, StateTeamAssignments, Teams},
-    },
+    state::state_teams::{StateTeamAssignments, Teams},
 };
 
 #[derive(Default)]
@@ -42,7 +32,7 @@ impl InstanceLimiter for Listener {
 }
 // Impl - Listener
 impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidInitializeEncounter(_) => {
                 let asset_goblin = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::Goblin.uid());

@@ -10,7 +10,8 @@ use std::{
 
 use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
-    listeners::listener_start_encounter::Encounter,
+    exploration::exploration_path::Exploration,
+    listeners::listener_initialize_encounter::Encounter,
     state::{state_ball_mode::BallModes, state_teams::Teams},
 };
 
@@ -30,8 +31,12 @@ pub enum GameEvents {
     DiscardCards(),
     MoveEntity(Vec<i32>, Vector2Int),
     OnDidSetBallMode(BallModes),
+    InitializeExploration(Exploration),
+    DidInitializeExploration(Exploration),
     InitializeEncounter(Encounter),
     DidInitializeEncounter(Encounter),
+    EncounterPassed,
+    EncounterFailed,
     // to -> peer
     DidTurnEnd(Teams),
     DidTurnBegin(Teams),
@@ -76,6 +81,10 @@ impl IGameEvent for GameEvents {
             GameEvents::DidTurnBegin(_) => EventScope::All,
             GameEvents::InitializeEncounter(_) => EventScope::ConnectedHost,
             GameEvents::DidInitializeEncounter(_) => EventScope::All,
+            GameEvents::InitializeExploration(_) => EventScope::ConnectedHost,
+            GameEvents::DidInitializeExploration(_) => EventScope::All,
+            GameEvents::EncounterPassed => EventScope::ConnectedHost,
+            GameEvents::EncounterFailed => EventScope::ConnectedHost,
         }
     }
 }
@@ -105,6 +114,10 @@ impl Display for GameEvents {
             GameEvents::MoveEntity(_, _) => write!(f, "MoveEntity"),
             GameEvents::InitializeEncounter(_) => write!(f, "InitializeEncounter"),
             GameEvents::DidInitializeEncounter(_) => write!(f, "DidInitializeEncounter"),
+            GameEvents::InitializeExploration(exploration) => write!(f, "InitializeExploration"),
+            GameEvents::DidInitializeExploration(exploration) => write!(f, "DidInitializeExploration"),
+            GameEvents::EncounterPassed => write!(f, "EncounterPassed"),
+            GameEvents::EncounterFailed => write!(f, "EncounterFailed"),
         }
     }
 }
