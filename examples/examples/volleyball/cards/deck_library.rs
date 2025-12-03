@@ -3,7 +3,7 @@ use crate::state::state_deck::Deck;
 pub struct DeckLibrary {}
 
 impl DeckLibrary {
-    pub fn get_deck_for_uid(_uid: &str) -> Deck {
+    pub fn get_player_deck_standard() -> Deck {
         // create the empty deck
         let mut deck = Deck::default();
 
@@ -37,5 +37,41 @@ impl DeckLibrary {
 
         //return
         deck
+    }
+    pub fn get_ai_wild_deck() -> Deck {
+        // create the empty deck
+        let mut deck = Deck::default();
+
+        // persistent
+        deck.add_card_to_deck("rest", true);
+        deck.add_card_to_deck("serve", true);
+
+        // manuevers
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("wild_card", false);
+
+        // spells
+        deck.add_card_to_deck("blessing", false);
+        deck.add_card_to_deck("deep_breath", false);
+        // deck.add_card_to_deck("blessing", false);
+        // deck.add_card_to_deck("deep_breath", false);
+
+        deck
+    }
+    pub fn get_deck_for_uid(uid: &str) -> Deck {
+        if uid == "wild" {
+            //
+            Self::get_ai_wild_deck()
+        } else {
+            Self::get_player_deck_standard()
+        }
     }
 }

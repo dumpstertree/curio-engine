@@ -60,7 +60,8 @@ where
     }
 
     fn max_playout_length(&self) -> usize {
-        1_000_000
+        // 1_000_000
+        10 as usize
     }
 
     fn on_backpropagation(&self, _evaln: &mcts::StateEvaluation<Self>, _handle: mcts::SearchHandle<Self>) {}

@@ -142,7 +142,7 @@ impl Deck {
 
     /// Draw one card into hand_consumable (respect hand size)
     pub fn draw(&mut self) {
-        if self.hand_consumable.len() >= 7 {
+        if self.hand_consumable.len() >= 10 {
             return;
         }
 

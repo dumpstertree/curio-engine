@@ -1,6 +1,6 @@
 use crate::{
     game_events::GameEvents,
-    state::{self, host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    state::{self, host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_deck::StateDeck, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use built_in_state::state_time::TimeState;
 use core::{
@@ -14,6 +14,7 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
+use serde::de;
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -55,6 +56,16 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
                     let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
                     let mod_stack = state_modifiers.get_flat_stack_for_entity(*guid);
 
+                    let state_energy = game_state.get::<StateEnergy>();
+                    let energy_cur_max = state_energy.all_players.get(guid).unwrap();
+
+                    game_state.edit::<StateDeck>(|x| {
+                        if let Some(deck) = x.deck.get_mut(&guid) {
+                            for _ in 0..(energy_cur_max.0 / 2) {
+                                deck.draw();
+                            }
+                        }
+                    });
                     // update energy
                     game_state.edit::<StateEnergy>(|x| {
                         let cur = x.all_players[guid];

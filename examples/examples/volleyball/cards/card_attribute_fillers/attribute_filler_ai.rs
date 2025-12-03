@@ -91,6 +91,8 @@ impl CardAttributeFillerAI {
 
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)]));
             }
+            AttributeTargetTypesTiles::Select => todo!(),
+            AttributeTargetTypesTiles::RandomAny => todo!(),
         }
 
         // return the now filled permutations

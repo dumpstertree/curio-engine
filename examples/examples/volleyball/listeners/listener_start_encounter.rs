@@ -76,7 +76,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             });
                             // initialize the deck
                             game_state.edit::<StateDeck>(|x| {
-                                x.deck.insert(guid, DeckLibrary::get_deck_for_uid(""));
+                                x.deck.insert(guid, DeckLibrary::get_deck_for_uid("wild"));
                             });
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {
@@ -135,7 +135,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             });
                             // initialize the deck
                             game_state.edit::<StateDeck>(|x| {
-                                x.deck.insert(guid, DeckLibrary::get_deck_for_uid(""));
+                                x.deck.insert(guid, DeckLibrary::get_deck_for_uid("wild"));
                             });
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {
