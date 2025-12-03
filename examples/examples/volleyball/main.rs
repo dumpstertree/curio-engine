@@ -61,6 +61,10 @@ pub mod listeners {
     pub mod listener_encounter_failed;
     pub mod listener_encounter_passed;
     pub mod listener_encounter_scored;
+    pub mod listener_exploration_did_room_enter_combat;
+    pub mod listener_exploration_did_room_exit_combat;
+    pub mod listener_exploration_room_enter;
+    pub mod listener_exploration_room_exit;
     pub mod listener_initialize_encounter;
     pub mod listener_initialize_exploration;
     pub mod listener_render_encounter;
@@ -79,6 +83,7 @@ pub mod state {
     pub mod state_teams;
     pub mod state_turn;
     pub mod peer {
+        pub mod state_peer_entity_ids;
         pub mod state_peer_input_mode;
         pub mod state_peer_selected_card;
     }

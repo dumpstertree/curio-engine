@@ -10,7 +10,7 @@ use std::{
 
 use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
-    exploration::exploration_path::Exploration,
+    exploration::exploration_path::{Exploration, Room},
     listeners::listener_initialize_encounter::Encounter,
     state::{state_ball_mode::BallModes, state_teams::Teams},
 };
@@ -37,6 +37,10 @@ pub enum GameEvents {
     DidInitializeEncounter(Encounter),
     EncounterPassed,
     EncounterFailed,
+    ExplorationRoomEnter(Room),
+    ExplorationRoomExit(Room),
+    ExplorationDidRoomEnterCombat(Room, Encounter),
+    ExplorationDidRoomExitCombat(Room, Encounter),
     // to -> peer
     DidTurnEnd(Teams),
     DidTurnBegin(Teams),
@@ -85,6 +89,10 @@ impl IGameEvent for GameEvents {
             GameEvents::DidInitializeExploration(_) => EventScope::All,
             GameEvents::EncounterPassed => EventScope::ConnectedHost,
             GameEvents::EncounterFailed => EventScope::ConnectedHost,
+            GameEvents::ExplorationRoomEnter(_) => EventScope::ConnectedHost,
+            GameEvents::ExplorationRoomExit(_) => EventScope::ConnectedHost,
+            GameEvents::ExplorationDidRoomEnterCombat(_, _) => EventScope::All,
+            GameEvents::ExplorationDidRoomExitCombat(_, _) => EventScope::All,
         }
     }
 }
@@ -118,6 +126,10 @@ impl Display for GameEvents {
             GameEvents::DidInitializeExploration(exploration) => write!(f, "DidInitializeExploration"),
             GameEvents::EncounterPassed => write!(f, "EncounterPassed"),
             GameEvents::EncounterFailed => write!(f, "EncounterFailed"),
+            GameEvents::ExplorationRoomEnter(_) => write!(f, "ExplorationRoomEnter"),
+            GameEvents::ExplorationRoomExit(_) => write!(f, "ExplorationRoomExit"),
+            GameEvents::ExplorationDidRoomEnterCombat(room, encounter) => write!(f, "ExplorationDidRoomEnterCombat"),
+            GameEvents::ExplorationDidRoomExitCombat(room, encounter) => write!(f, "ExplorationDidRoomExitCombat"),
         }
     }
 }

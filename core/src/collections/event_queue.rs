@@ -197,8 +197,6 @@ impl EventQueue {
     where
         T: Clone + IGameEvent + Serialize + DeserializeOwned + Display + 'static,
     {
-        println!("ENQUEUE {}", event);
-
         // Insert or push into Queue
         self.cache
             .entry(T::id())

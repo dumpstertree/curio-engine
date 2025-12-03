@@ -133,6 +133,13 @@ where
 
             // add any new events that were added during the application of events
             event.extend(event_queue.drain_queued_events::<T>());
+            // event.splice(0..0, event_queue.drain_queued_events::<T>());
+
+            // let mut e = event_queue.drain_queued_events();
+            // e.reverse();
+            // for x in e {
+            //     event.insert(0, x);
+            // }
         }
 
         for ecs_system in self.ecs_systems.iter_mut() {

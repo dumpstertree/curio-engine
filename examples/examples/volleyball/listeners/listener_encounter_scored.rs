@@ -39,9 +39,6 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
                 // get the score state
                 let state_score = game_state.get::<StateScore>();
 
-                for x in &state_score.all_scores {
-                    println!("score {}: {}", x.0, x.1);
-                }
                 // get the scores
                 let score_red = state_score.all_scores.get(&Teams::Red).unwrap_or(&0);
                 let score_blue = state_score.all_scores.get(&Teams::Blue).unwrap_or(&0);
@@ -49,8 +46,6 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
                 // if either score is above the end threshold its over
                 let encounter_ended = score_red >= &1 || score_blue >= &1;
                 if encounter_ended {
-                    println!("score red {}", score_red);
-                    println!("score bue {}", score_blue);
                     if score_red > score_blue {
                         // if we have a higher score we win
                         event_queue.enqueue_event(GameEvents::EncounterPassed);

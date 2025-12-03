@@ -41,20 +41,16 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                     x.exploration.start();
                 });
 
-                // get the newly assigned state
+                // get the state
                 let state_exploration = game_state.get::<StateExploration>();
+
+                // get the exploration from the state
                 let cur_exploration = state_exploration.exploration;
-                match cur_exploration.get_cur_room().room_type {
-                    // start a new encounter
-                    RoomTypes::Combat => {
-                        event_queue.enqueue_event(GameEvents::InitializeEncounter(EncounterLibrary::random()));
-                    }
-                    // start a new shop
-                    RoomTypes::Shop => todo!(),
-                    // start a new boss
-                    RoomTypes::Boss => todo!(),
-                }
-                //
+
+                // enter the new room
+                event_queue.enqueue_event(GameEvents::ExplorationRoomEnter(cur_exploration.get_cur_room()));
+
+                // completion event
                 event_queue.enqueue_event(GameEvents::DidInitializeExploration(cur_exploration.clone()));
             }
             _ => {}
@@ -82,7 +78,7 @@ impl EncounterLibrary {
             team_blue: TeamController::Ai(vec![Participant {
                 deck_id: "wild".to_string(),
                 starting_location: Vector2Int::zero(),
-                energy: 5,
+                energy: 1,
             }]),
         }
     }
@@ -93,7 +89,7 @@ impl EncounterLibrary {
             team_blue: TeamController::Ai(vec![Participant {
                 deck_id: "wild".to_string(),
                 starting_location: Vector2Int::zero(),
-                energy: 5,
+                energy: 1,
             }]),
         }
     }
@@ -104,7 +100,7 @@ impl EncounterLibrary {
             team_blue: TeamController::Ai(vec![Participant {
                 deck_id: "wild".to_string(),
                 starting_location: Vector2Int::zero(),
-                energy: 5,
+                energy: 1,
             }]),
         }
     }

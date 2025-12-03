@@ -37,7 +37,6 @@ impl ECSSystemEventless for ECSSystemGameTurnBegin {
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue, event: &GameEvents) {
-        println!("got event");
         match event {
             GameEvents::TurnBegin(id) => {
                 // end this turn
@@ -60,11 +59,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
                     let energy_cur_max = state_energy.all_players.get(guid).unwrap();
 
                     game_state.edit::<StateDeck>(|x| {
-                        if let Some(deck) = x.deck.get_mut(&guid) {
-                            for _ in 0..(energy_cur_max.0 / 2) {
-                                deck.draw();
-                            }
-                        }
+                        // if let Some(deck) = x.deck.get_mut(&guid) {
+                        //     for _ in 0..(energy_cur_max.0 / 2) {
+                        //         deck.draw();
+                        //     }
+                        // }
                     });
                     // update energy
                     game_state.edit::<StateEnergy>(|x| {

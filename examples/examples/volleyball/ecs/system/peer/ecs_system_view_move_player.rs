@@ -43,7 +43,7 @@ impl ECSSystemEventless for ECSSystemViewMovePlayers {
             let tar_pos = GameBoard::get_world_position(loc.0, loc.1);
 
             //move towards position and get back the delta
-            let move_delta = transform.move_towards_position(tar_pos, 5.0 * state_time.scaled_delta_time);
+            let move_delta = transform.move_towards_position(tar_pos, 10.0 * state_time.scaled_delta_time);
             if move_delta > 0.0 {
                 // rotate mesh based on direction
                 let move_left = (tar_pos - cur_pos).x > 0.0;

@@ -79,44 +79,44 @@ impl Deck {
 
         panic!(" No card for {}", instance_id); // this is for some reason pulling from the other player
     }
-    pub fn get_location(&self, card_instance: Arc<CardInstance>) -> CardLocation {
+    pub fn get_location(&self, card_instance: Arc<CardInstance>) -> Option<CardLocation> {
         if let Some(index) = self
             .pile_draw
             .iter()
             .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return CardLocation::Deck((self.pile_draw.len() - 1 - index) as i32);
+            return Some(CardLocation::Deck((self.pile_draw.len() - 1 - index) as i32));
         }
         if let Some(index) = self
             .pile_discard
             .iter()
             .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return CardLocation::Discard((self.pile_discard.len() - 1 - index) as i32);
+            return Some(CardLocation::Discard((self.pile_discard.len() - 1 - index) as i32));
         }
         if let Some(index) = self
             .hand_persistent
             .iter()
             .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return CardLocation::Hand(index as i32);
+            return Some(CardLocation::Hand(index as i32));
         }
         if let Some(index) = self
             .hand_consumable
             .iter()
             .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return CardLocation::Hand((self.hand_persistent.len() + index) as i32);
+            return Some(CardLocation::Hand((self.hand_persistent.len() + index) as i32));
         }
 
-        panic!();
+        None
     }
 }
 impl Deck {
     /// Move a card into deck. (unchanged semantics, but explicit)
     pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
         let inst = Arc::new(CardInstance::new(card_uid));
-        println!("add card {} with id {}", inst.card_id, inst.instance_id);
+        // println!("add card {} with id {}", inst.card_id, inst.instance_id);
 
         if is_persistent {
             self.hand_persistent.push(inst.clone());

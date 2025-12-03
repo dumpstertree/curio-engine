@@ -30,11 +30,6 @@ impl ECSSystemEventless for ECSSytem {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn enable(&mut self, _: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        world.spawn((Transform::default(), ComponentRendererText::default(), ComponentUIBallState::default()));
-        world.spawn((Transform::default(), ComponentRendererText::default(), ComponentUITurnState::default()));
-        world.spawn((Transform::default(), ComponentRendererText::default(), ComponentUIScoreState::default()));
-    }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
         let camera_state = game_state.get::<CameraState>();
         for (_, (transform, renderer, _)) in world

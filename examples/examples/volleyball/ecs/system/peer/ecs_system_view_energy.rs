@@ -8,7 +8,6 @@ use built_in::component::component_transform::Transform;
 use built_in_state::state_camera::CameraState;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
-use core::io::asset_loader::AssetLoader;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -28,25 +27,7 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
-
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
-        if self.did_init == 15 {
-            let asset = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::EnergyToken.uid());
-            for team in game_state
-                .get::<StateTeamAssignments>()
-                .team_assignments
-            {
-                for player_id in team.1 {
-                    for i in 0..9 {
-                        let mut r = RendererAnimated::default();
-                        r.set_fps(60).set_asset(Some(asset.clone()));
-                        // r.set_animation("add", true);
-                        world.spawn((ComponentEnergyToken::default().set_index(i), ComponentPlayer::default().set_player_id(player_id), Transform::default(), r));
-                    }
-                }
-            }
-        }
         self.did_init += 1;
         let state_camera = game_state.get::<CameraState>();
         let state_energy = game_state.get::<StateEnergy>();

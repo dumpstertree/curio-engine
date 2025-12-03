@@ -36,7 +36,6 @@ use std::sync::Arc;
 pub struct ECSSystemViewCards {
     // asset: Arc<ModelAsset>,
     // asset_card: HashMap<String, Option<Arc<ModelAsset>>>,
-    cnt: i32,
 }
 impl ECSSystemEventless for ECSSystemViewCards {
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
@@ -50,36 +49,6 @@ impl ECSSystemEventless for ECSSystemViewCards {
     }
 
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
-        self.cnt += 1;
-        if self.cnt < 15 {
-            return;
-        }
-        if self.cnt == 15 {
-            let state_deck = game_state.get::<StateDeck>();
-            let state_teams = game_state.get::<StateTeamAssignments>();
-
-            let my_deck: &Deck;
-            if let Some(deck) = state_deck.deck.get(&game_state.instance_id) {
-                my_deck = deck
-            } else if let Some(deck) = state_deck
-                .deck
-                .get(&state_teams.team_assignments.get(&Teams::Red).unwrap()[0])
-            {
-                // my_deck = deck;
-                return;
-            } else {
-                return;
-            }
-            let camera_state = game_state.get::<CameraState>();
-
-            for card in &my_deck.all_cards {
-                self.spawn_card(world, card.clone(), camera_state.cameras.rotation, game_state);
-            }
-            // run the ai
-            // println!("will running the ai");
-            // run_ai(game_state, events);
-            // println!("did running the ai");
-        }
         let y_selected = 0.25;
         let y_unselected = 0.5;
         let spacing = 0.5;
@@ -101,7 +70,10 @@ impl ECSSystemEventless for ECSSystemViewCards {
                 continue;
             };
 
-            match my_deck.get_location(card_instance.clone()) {
+            let Some(loc) = my_deck.get_location(card_instance.clone()) else {
+                return;
+            };
+            match loc {
                 state_deck::CardLocation::Deck(index) => {
                     let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(0.5, 0.5, 1.0));
                     let rot = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, -0.0));
@@ -183,67 +155,6 @@ impl ECSSystemEventless for ECSSystemViewCards {
             }
         }
     }
-}
-impl ECSSystemViewCards {
-    fn spawn_card(&self, world: &mut World, x: Arc<CardInstance>, rotation: Quaternion, game_state: &GameState) {
-        let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
-        let parent = world.spawn((Transform::default().set_rotation(rotation), Renderer::default().set_asset(Some(asset.clone())), ComponentCard::default().set_instance(x.clone())));
-        // create description
-        let mut r = ComponentRendererText::default();
-        r.set_bounds(Vector2::new(0.25, 0.2));
-        r.set_font_size(0.02);
-        r.set_contents(&x.get_master().description);
-        r.set_parent(Some(parent));
-        world.spawn((
-            r,
-            Transform::default()
-                .set_position(Vector3::back() * 0.02 + Vector3::down() * 0.155)
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
-                .set_parent(Some(parent)),
-        ));
-        // create title
-        let mut r = ComponentRendererText::default();
-        r.set_bounds(Vector2::new(0.5, 0.2));
-        r.set_font_size(0.03);
-        r.set_contents(&x.get_title());
-        r.set_parent(Some(parent));
-        world.spawn((
-            r,
-            Transform::default()
-                .set_position(Vector3::back() * 0.02 + Vector3::up() * 0.235)
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
-                .set_parent(Some(parent)),
-        ));
-        // create type
-        let mut r = ComponentRendererText::default();
-        r.set_bounds(Vector2::new(0.25, 0.2));
-        r.set_font_size(0.02);
-        r.set_contents(&format!("{}", x.get_manuever_type()));
-        r.set_parent(Some(parent));
-        world.spawn((
-            r,
-            Transform::default()
-                .set_position(Vector3::back() * 0.02 + Vector3::down() * 0.06)
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
-                .set_parent(Some(parent)),
-        ));
-        // create cost
-        let mut r = ComponentRendererText::default();
-        r.set_bounds(Vector2::new(0.25, 0.2));
-        r.set_font_size(0.03);
-        r.set_contents(&x.get_cost(&game_state, game_state.instance_id).to_string());
-        r.set_parent(Some(parent));
-        world.spawn((
-            r,
-            Transform::default()
-                .set_position(Vector3::back() * 0.02 + Vector3::down() * 0.25 + Vector3::right() * 0.135)
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0)))
-                .set_parent(Some(parent)),
-        ));
-    }
-}
-impl ECSSystemViewCards {
-    fn run_ai(&self, world: &mut World, game_state: &mut GameState) {}
 }
 
 // #[derive(Clone)]

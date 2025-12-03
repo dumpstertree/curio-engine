@@ -26,11 +26,6 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
         true
     }
-    fn enable(&mut self, _: &mut GameState, world: &mut World, _: &mut EventQueue) {
-        let mut r = Renderer::default();
-        r = r.set_asset(Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Ball.uid())));
-        world.spawn((Transform::default(), r, ComponentBall::default()));
-    }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
         let state_position_ball = game_state.get::<StatePositionBall>();
         let state_time = game_state.get::<TimeState>();
@@ -45,7 +40,7 @@ impl ECSSystemEventless for ECSSystemViewMoveBall {
             let tar_pos = GameBoard::get_world_position(loc.0, loc.1) + Vector3::up();
 
             //move towards position and get back the delta
-            transform.move_towards_position(tar_pos, 10.0 * state_time.scaled_delta_time);
+            transform.move_towards_position(tar_pos, 20.0 * state_time.scaled_delta_time);
             transform.scale = Vector3::one() * 0.25;
         }
     }
