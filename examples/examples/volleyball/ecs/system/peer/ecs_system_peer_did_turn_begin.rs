@@ -26,6 +26,7 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
+use std::vec;
 
 use crate::{
     AssetMappingUIDs,
@@ -36,7 +37,6 @@ use crate::{
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemPeerStart {
-    do_move: bool,
     lastmove: f64,
 }
 impl ECSSystemEventless for ECSSystemPeerStart {
@@ -44,7 +44,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         true
     }
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
+        NetworkModes::all_host()
     }
     fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
     fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
@@ -62,7 +62,9 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
 
         // let is_turn = d == game_state.instance_id;
-        if any_ai && game_state.get::<TimeState>().unscaled_time - self.lastmove > 1.0 {
+        if unsafe { do_move } && any_ai && game_state.get::<TimeState>().unscaled_time - self.lastmove > 1.0 {
+            unsafe { do_move = false };
+
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
                 GameState::new_single_instance(vec![
                     // copy these states
@@ -112,14 +114,19 @@ impl InstanceLimiter for ECSSystemPeerStart {
         true
     }
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        NetworkModes::all_peer()
+        NetworkModes::all_host()
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemPeerStart {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidTurnBegin(id) => {}
-            _ => {}
+            _ => {
+                // self.lastmove = game_state.get::<TimeState>().unscaled_time;
+                unsafe { do_move = true };
+            }
         }
     }
 }
+
+static mut do_move: bool = false;

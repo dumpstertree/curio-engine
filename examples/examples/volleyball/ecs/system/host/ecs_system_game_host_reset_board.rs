@@ -46,7 +46,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ResetBoard(serving_team) => {
-                println!("Board Reset");
+                println!("Board Reset------------------------------------------------");
                 // setup ball mode
                 game_state.edit::<StateBallMode>(|x| x.mode = BallModes::Serve);
 

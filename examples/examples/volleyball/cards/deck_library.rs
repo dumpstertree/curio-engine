@@ -12,6 +12,14 @@ impl DeckLibrary {
         deck.add_card_to_deck("serve", true);
 
         // manuevers
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("wild_card", false);
+
+        deck.add_card_to_deck("counter_spike", false);
+        deck.add_card_to_deck("counter_spike", false);
+        deck.add_card_to_deck("counter_spike", false);
+
         deck.add_card_to_deck("bump", false);
         deck.add_card_to_deck("bump", false);
         deck.add_card_to_deck("bump", false);
@@ -25,7 +33,7 @@ impl DeckLibrary {
         deck.add_card_to_deck("extra_oomph", false);
         deck.add_card_to_deck("hold_back", false);
         deck.add_card_to_deck("blessing", false);
-        // deck.add_card_to_deck("deep_breath", false);
+        deck.add_card_to_deck("deep_breath", false);
 
         //return
         deck

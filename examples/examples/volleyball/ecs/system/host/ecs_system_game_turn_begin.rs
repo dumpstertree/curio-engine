@@ -36,6 +36,7 @@ impl ECSSystemEventless for ECSSystemGameTurnBegin {
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue, event: &GameEvents) {
+        println!("got event");
         match event {
             GameEvents::TurnBegin(id) => {
                 // end this turn

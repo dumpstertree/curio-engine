@@ -41,7 +41,7 @@ impl CardAttributeFillerPlayer {
                     AttributeTargetTypesTiles::RandomOnTeamUser => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_user(id, game_state)),
                     AttributeTargetTypesTiles::RandomOnTeamOpponent => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_opponent(id, game_state)),
                     AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_local(id, game_state, min, max)),
-                    AttributeTargetTypesTiles::RandomInRangeGlobal(_, _) => todo!(),
+                    AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_global(id, game_state, min, max)),
                 },
             }
         }
@@ -202,6 +202,13 @@ impl CardAttributeFillerPlayer {
         let bounds_max = GameBoard::get_bounds_max(&cur_team);
 
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
+    }
+    pub fn get_tiles_random_in_range_global(id: &i32, game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
+        // get between min and max in range
+        let random_x = Random::range_int(min.x, max.x);
+        let random_z = Random::range_int(min.y, max.y);
+
+        DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)])
     }
     pub fn get_tiles_random_in_range_local(id: &i32, game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
         let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();

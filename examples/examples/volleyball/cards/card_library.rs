@@ -92,7 +92,44 @@ impl CardLibrary {
                         CardAttributeRequirement::BallRangeLessEqual(0),
                     ],
                     vec![],
-                    vec![CardAttributeEvents::SetBallMode(BallModes::Set)],
+                    vec![
+                        CardAttributeEvents::SetBallMode(BallModes::Set),
+                        CardAttributeEvents::MoveBall(
+                            //
+                            AttributeTargetTypesTiles::RandomInRangeLocal(
+                                //
+                                Vector2Int::new(0, 0), //
+                                Vector2Int::new(0, 0),
+                            ),
+                        ),
+                    ],
+                )],
+            )),
+        );
+        hashmap.insert(
+            String::from("wild_card"),
+            Arc::new(CardMaster::new(
+                "Wild Card",
+                "Bump the ball to a random position",
+                CardTypes::Bump,
+                vec![CardStatement::new(
+                    0, //
+                    vec![
+                        CardAttributeRequirement::RequireNotBallMode(BallModes::Serve), //
+                        CardAttributeRequirement::BallRangeLessEqual(0),
+                    ],
+                    vec![],
+                    vec![
+                        CardAttributeEvents::SetBallMode(BallModes::Bump),
+                        CardAttributeEvents::MoveBall(
+                            //
+                            AttributeTargetTypesTiles::RandomInRangeGlobal(
+                                //
+                                Vector2Int::new(0, 0), //
+                                Vector2Int::new(3, 3),
+                            ),
+                        ),
+                    ],
                 )],
             )),
         );
@@ -108,6 +145,55 @@ impl CardLibrary {
                         vec![
                             CardAttributeRequirement::RequireNotBallMode(BallModes::Serve), //
                             CardAttributeRequirement::RequireBallMode(BallModes::Set),
+                            CardAttributeRequirement::BallRangeLessEqual(0),
+                        ],
+                        vec![],
+                        vec![
+                            CardAttributeEvents::SetBallMode(BallModes::Spike),
+                            CardAttributeEvents::MoveBall(
+                                //
+                                AttributeTargetTypesTiles::RandomInRangeLocal(
+                                    //
+                                    Vector2Int::new(0, 2), //
+                                    Vector2Int::new(0, 2),
+                                ),
+                            ),
+                        ],
+                    ),
+                    CardStatement::new(
+                        3, //
+                        vec![
+                            CardAttributeRequirement::RequireNotBallMode(BallModes::Serve), //
+                            CardAttributeRequirement::BallRangeLessEqual(0),
+                        ],
+                        vec![],
+                        vec![
+                            CardAttributeEvents::SetBallMode(BallModes::Spike),
+                            CardAttributeEvents::MoveBall(
+                                //
+                                AttributeTargetTypesTiles::RandomInRangeLocal(
+                                    //
+                                    Vector2Int::new(0, 2), //
+                                    Vector2Int::new(0, 2),
+                                ),
+                            ),
+                        ],
+                    ),
+                ],
+            )),
+        );
+        hashmap.insert(
+            String::from("counter_spike"),
+            Arc::new(CardMaster::new(
+                "Counter Spike!",
+                "Forward +2. Cost 0 if ball is Spiked",
+                CardTypes::Spike,
+                vec![
+                    CardStatement::new(
+                        0, //
+                        vec![
+                            CardAttributeRequirement::RequireNotBallMode(BallModes::Serve), //
+                            CardAttributeRequirement::RequireBallMode(BallModes::Spike),
                             CardAttributeRequirement::BallRangeLessEqual(0),
                         ],
                         vec![],
