@@ -1,3 +1,4 @@
+use core::collections::game_state::{self, GameState};
 use core::collections::state_ownerships::StateOwnerships;
 use core::{collections::vector2_int::Vector2Int, system::system_game_state::IState};
 use macro_state_serialize::global_state_serialize;
@@ -37,6 +38,7 @@ pub enum CardLocation {
     Deck(i32),
     Discard(i32),
     Hand(i32),
+    Exhuast(i32),
 }
 
 #[derive(Hash, PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
@@ -44,6 +46,7 @@ pub struct Deck {
     pub all_cards: Vec<Arc<CardInstance>>,
     pub pile_draw: Vec<Arc<CardInstance>>,
     pub pile_discard: Vec<Arc<CardInstance>>,
+    pub pile_exhuast: Vec<Arc<CardInstance>>,
     pub hand_consumable: Vec<Arc<CardInstance>>,
     pub hand_persistent: Vec<Arc<CardInstance>>,
 }
@@ -108,6 +111,13 @@ impl Deck {
         {
             return Some(CardLocation::Hand((self.hand_persistent.len() + index) as i32));
         }
+        if let Some(index) = self
+            .pile_exhuast
+            .iter()
+            .position(|x| x.instance_id == card_instance.instance_id)
+        {
+            return Some(CardLocation::Exhuast((index) as i32));
+        }
 
         None
     }
@@ -161,24 +171,63 @@ impl Deck {
             return;
         }
 
-        // pop from front in an efficient way: use remove(0) is O(n) but keep for semantics,
-        // or pop from end and treat draw as a stack (preferable):
-        // let card = self.pile_draw.pop().unwrap();
-        // self.hand_consumable.push(card);
+        let first_quick_index = self.pile_draw.iter().position(|x| {
+            x.get_attributes_lifecycle()
+                .contains(&CardAttributeLifecycle::Quick)
+        });
 
-        // if you need to keep your draw order where index 0 is top, then:
-        let card = self.pile_draw.remove(0);
-        self.hand_consumable.push(card);
+        // if we have a quick card in the draw pile we draw that card
+        if let Some(first_quick_index) = first_quick_index {
+            // if you need to keep your draw order where index 0 is top, then:
+            let card = self.pile_draw.remove(first_quick_index);
+            self.hand_consumable.push(card);
+        } else {
+            // if you need to keep your draw order where index 0 is top, then:
+            let card = self.pile_draw.remove(0);
+            self.hand_consumable.push(card);
+        }
     }
 
-    /// Discard a card (move from hand_consumable to pile_discard)
-    pub fn discard(&mut self, card_instance: Arc<CardInstance>) {
+    pub fn play(&mut self, card_instance: Arc<CardInstance>) {
+        let lifecycle_attributes = card_instance.get_attributes_lifecycle();
+        let is_exhuast = lifecycle_attributes.contains(&CardAttributeLifecycle::Exhuast);
+
         if let Some(pos) = self
             .hand_consumable
             .iter()
             .position(|c| c.instance_id == card_instance.instance_id)
         {
             let card = self.hand_consumable.remove(pos);
+
+            // if we are not exhuast we push to discard
+            if !is_exhuast {
+                self.pile_discard.push(card);
+            } else {
+                self.pile_exhuast.push(card);
+            }
+        } else {
+            // not found — helpful debug / detect caller errors
+            eprintln!("discard: card {} not found in hand_consumable (hand len {})", card_instance.instance_id, self.hand_consumable.len());
+        }
+    }
+    /// Discard a card (move from hand_consumable to pile_discard)
+    pub fn discard(&mut self, card_instance: Arc<CardInstance>) {
+        let lifecycle_attributes = card_instance.get_attributes_lifecycle();
+        let is_linger = lifecycle_attributes.contains(&CardAttributeLifecycle::Linger);
+
+        // lifecycle_attributes.contains()
+
+        if is_linger {
+            return;
+        }
+        if let Some(pos) = self
+            .hand_consumable
+            .iter()
+            .position(|c| c.instance_id == card_instance.instance_id)
+        {
+            let card = self.hand_consumable.remove(pos);
+
+            // if we are not lingering we push to discard
             self.pile_discard.push(card);
         } else {
             // not found — helpful debug / detect caller errors
@@ -215,4 +264,12 @@ impl Display for CardTypes {
             CardTypes::Spell => write!(f, "SPELL"),
         }
     }
+}
+
+#[derive(PartialEq, Eq, Clone)]
+pub enum CardAttributeLifecycle {
+    Quick,
+    Exhuast,
+    Linger,
+    Light,
 }

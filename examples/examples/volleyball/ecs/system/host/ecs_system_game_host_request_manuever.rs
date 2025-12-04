@@ -261,7 +261,7 @@ impl ECSSystemGameRequestManuever {
                 return;
             };
 
-            deck.discard(card_instance.clone());
+            deck.play(card_instance.clone());
         });
 
         // play the card

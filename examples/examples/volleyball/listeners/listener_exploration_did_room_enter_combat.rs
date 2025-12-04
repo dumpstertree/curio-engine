@@ -180,10 +180,19 @@ impl ECSSystemGamePointScored {
         let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
         let parent = world.spawn((Transform::default().set_rotation(rotation), Renderer::default().set_asset(Some(asset.clone())), ComponentCard::default().set_instance(x.clone())));
         // create description
+        let mut desc = x.get_master().description.clone();
+        for life in x.get_attributes_lifecycle() {
+            match life {
+                crate::state::state_deck::CardAttributeLifecycle::Quick => desc = desc + ".QUICK. ",
+                crate::state::state_deck::CardAttributeLifecycle::Exhuast => desc = desc + ".EXHUAST. ",
+                crate::state::state_deck::CardAttributeLifecycle::Linger => desc = desc + ".LINGER. ",
+                crate::state::state_deck::CardAttributeLifecycle::Light => desc = desc + ".LIGHT. ",
+            }
+        }
         let mut r = ComponentRendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
-        r.set_contents(&x.get_master().description);
+        r.set_contents(&desc);
         r.set_parent(Some(parent));
         let e0 = world.spawn((
             r,

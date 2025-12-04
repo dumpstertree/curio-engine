@@ -71,7 +71,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
             };
 
             let Some(loc) = my_deck.get_location(card_instance.clone()) else {
-                return;
+                continue;
             };
             match loc {
                 state_deck::CardLocation::Deck(index) => {
@@ -84,6 +84,15 @@ impl ECSSystemEventless for ECSSystemViewCards {
                 }
                 state_deck::CardLocation::Discard(index) => {
                     let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(-0.5, 0.5, 1.0));
+                    let rot = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, -0.0));
+
+                    transform.position = Vector3::lerp(transform.position, pos, 0.2);
+                    transform.rotation = transform.rotation.slerp(rot, 0.2);
+                    transform.scale = Vector3::lerp(transform.scale, Vector3::one() * 0.25, 0.2);
+                    renderer.set_enabled(index == 0);
+                }
+                state_deck::CardLocation::Exhuast(index) => {
+                    let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(-0.75, 0.5, 1.0));
                     let rot = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, -0.0));
 
                     transform.position = Vector3::lerp(transform.position, pos, 0.2);

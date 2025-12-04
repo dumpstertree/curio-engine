@@ -1,4 +1,7 @@
-use crate::cards::card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_attribute_requirement::CardAttributeRequirement};
+use crate::{
+    cards::card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_attribute_requirement::CardAttributeRequirement},
+    state::state_deck::CardAttributeLifecycle,
+};
 
 #[derive(Default, Clone)]
 /// A state of the CardMaster that is determined by its requirements.

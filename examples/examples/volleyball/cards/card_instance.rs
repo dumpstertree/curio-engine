@@ -5,7 +5,7 @@ use crate::{
         card_master::CardMaster,
         card_statement::CardStatement,
     },
-    state::state_deck::CardTypes,
+    state::state_deck::{CardAttributeLifecycle, CardTypes},
 };
 use core::{collections::game_state::GameState, random::Random};
 use serde::{Deserialize, Serialize};
@@ -49,6 +49,9 @@ impl CardInstance {
     }
     pub fn get_attributes_requirements(&self, game_state: &GameState, user_id: i32) -> Vec<CardAttributeRequirement> {
         self.get_statement(game_state, user_id).requirements.clone()
+    }
+    pub fn get_attributes_lifecycle(&self) -> Vec<CardAttributeLifecycle> {
+        self.get_master().life.clone()
     }
 
     // get the master

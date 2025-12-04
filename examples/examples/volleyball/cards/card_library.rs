@@ -6,7 +6,10 @@ use crate::{
         card_statement::CardStatement,
         enums::attribute_clear_flag::ModifierClearFlag,
     },
-    state::{state_ball_mode::BallModes, state_deck::CardTypes},
+    state::{
+        state_ball_mode::BallModes,
+        state_deck::{CardAttributeLifecycle, CardTypes},
+    },
 };
 use core::collections::vector2_int::Vector2Int;
 use std::{
@@ -32,6 +35,7 @@ impl CardLibrary {
                     vec![],
                     vec![CardAttributeEvents::DrawCards(5, AttribtuteTargetTypesEntities::User), CardAttributeEvents::DrainHeat(AttribtuteTargetTypesEntities::User)],
                 )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger],
             )),
         );
         hashmap.insert(
@@ -46,6 +50,7 @@ impl CardLibrary {
                     vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
                     vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
                 )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger],
             )),
         );
         hashmap.insert(
@@ -60,6 +65,7 @@ impl CardLibrary {
                     vec![],
                     vec![CardAttributeEvents::SetBallMode(BallModes::Bump), CardAttributeEvents::MoveBall(AttributeTargetTypesTiles::RandomOnTeamOpponent)],
                 )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Exhuast],
             )),
         );
         hashmap.insert(
@@ -87,6 +93,7 @@ impl CardLibrary {
                         ),
                     ],
                 )],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -114,6 +121,7 @@ impl CardLibrary {
                         ),
                     ],
                 )],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -141,6 +149,7 @@ impl CardLibrary {
                         ),
                     ],
                 )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Exhuast],
             )),
         );
         hashmap.insert(
@@ -190,6 +199,7 @@ impl CardLibrary {
                         ],
                     ),
                 ],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -239,6 +249,7 @@ impl CardLibrary {
                         ],
                     ),
                 ],
+                vec![],
             )),
         );
 
@@ -255,6 +266,7 @@ impl CardLibrary {
                     vec![],
                     vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::RandomOpponent)],
                 )],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -269,6 +281,7 @@ impl CardLibrary {
                     vec![],
                     vec![CardAttributeEvents::DrawCards(2, AttribtuteTargetTypesEntities::User)],
                 )],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -283,6 +296,7 @@ impl CardLibrary {
                     vec![],
                     vec![CardAttributeEvents::GainEnergy(2, AttribtuteTargetTypesEntities::User)],
                 )],
+                vec![],
             )),
         );
 
@@ -298,6 +312,7 @@ impl CardLibrary {
                     vec![CardAttributeModifiers::EditRangeForEntities(ModifierClearFlag::Turn, AttribtuteTargetTypesEntities::User, -1)],
                     vec![],
                 )],
+                vec![],
             )),
         );
         hashmap.insert(
@@ -312,6 +327,7 @@ impl CardLibrary {
                     vec![(CardAttributeModifiers::EditRangeForEntities(ModifierClearFlag::Turn, AttribtuteTargetTypesEntities::User, 1))],
                     vec![],
                 )],
+                vec![],
             )),
         );
         hashmap
