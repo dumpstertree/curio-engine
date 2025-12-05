@@ -40,6 +40,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
                     }
                     RoomTypes::Shop => todo!(),
                     RoomTypes::Boss => todo!(),
+                    RoomTypes::Heal => {
+                        //notify as to leaving healing room
+                        event_queue.enqueue_event(GameEvents::ExplorationDidRoomExitHeal(room.clone()));
+                    }
+                    RoomTypes::Invalid => todo!(),
                 }
                 // log
             }

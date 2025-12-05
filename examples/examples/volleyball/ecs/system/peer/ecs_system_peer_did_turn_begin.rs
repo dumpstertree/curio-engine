@@ -5,12 +5,20 @@ use crate::{
         enums::{fidelity::Fidelity, threading::Threading},
     },
     cards::enums::simulation_manuevers::SimulationManuevers,
+    exploration::exploration_path::RoomTypes,
     game_board::Directions,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Controller, TeamAssignment},
     state::{
-        host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, other::state_terminated::StateTerminated, state_ball_mode::StateBallMode, state_controller::StateController, state_deck::StateDeck, state_energy::StateEnergy, state_position_ball::StatePositionBall,
-        state_position_player::StatePositionEntities, state_turn::StateTurn,
+        host::{state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_exploration::StateExploration},
+        other::state_terminated::StateTerminated,
+        state_ball_mode::StateBallMode,
+        state_controller::StateController,
+        state_deck::StateDeck,
+        state_energy::StateEnergy,
+        state_position_ball::StatePositionBall,
+        state_position_player::StatePositionEntities,
+        state_turn::StateTurn,
     },
 };
 use built_in_state::state_time::TimeState;
@@ -40,8 +48,13 @@ pub struct ECSSystemPeerStart {
     lastmove: f64,
 }
 impl ECSSystemEventless for ECSSystemPeerStart {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
-        true
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+        game_state
+            .get::<StateExploration>()
+            .exploration
+            .get_cur_room()
+            .room_type
+            == RoomTypes::Combat
     }
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         NetworkModes::all_host()

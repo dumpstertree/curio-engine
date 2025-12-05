@@ -12,7 +12,7 @@ impl Exploration {
         for i in 0..3 {
             rooms.push(Room {
                 guid: i,
-                room_type: RoomTypes::Combat,
+                room_type: if i == 0 || i == 2 { RoomTypes::Heal } else { RoomTypes::Combat },
                 prev_room: i - 1,
                 next_rooms: vec![i + 1],
                 is_start: i == 0,
@@ -28,7 +28,7 @@ impl Exploration {
             }
         }
 
-        panic!("");
+        Room::default()
     }
     pub fn get_next_room(&self) -> Vec<Room> {
         let mut rooms = Vec::new();
@@ -96,7 +96,9 @@ pub struct Room {
 #[derive(PartialEq, Eq, Hash, Default, Clone, Serialize, Deserialize)]
 pub enum RoomTypes {
     #[default]
+    Invalid,
     Combat,
+    Heal,
     Shop,
     Boss,
 }

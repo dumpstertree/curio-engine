@@ -82,7 +82,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                         game_state.edit::<StateDeck>(|x| {
                             if let Some(y) = x.deck.get_mut(guid) {
                                 y.reshuffle();
-                                for _ in 0..5 {
+                                for _ in 0..8 {
                                     y.draw();
                                 }
                             }
@@ -109,7 +109,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                         game_state.edit::<StateDeck>(|x| {
                             if let Some(y) = x.deck.get_mut(guid) {
                                 y.reshuffle();
-                                for _ in 0..7 {
+                                for _ in 0..8 {
                                     y.draw();
                                 }
                             }

@@ -1,3 +1,5 @@
+use crate::exploration::exploration_path::RoomTypes;
+use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_input_mode::InputModes;
 use crate::state::peer::state_peer_input_mode::StatePeerInputMode;
 use built_in_state::state_input::InputState;
@@ -16,7 +18,12 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        true
+        game_state
+            .get::<StateExploration>()
+            .exploration
+            .get_cur_room()
+            .room_type
+            == RoomTypes::Combat
     }
     fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {

@@ -63,12 +63,23 @@ pub mod listeners {
     pub mod listener_encounter_passed;
     pub mod listener_encounter_scored;
     pub mod listener_exploration_did_room_enter_combat;
+    pub mod listener_exploration_did_room_enter_heal;
     pub mod listener_exploration_did_room_exit_combat;
+    pub mod listener_exploration_did_room_exit_heal;
+    pub mod listener_exploration_request_leave_room;
     pub mod listener_exploration_room_enter;
     pub mod listener_exploration_room_exit;
     pub mod listener_initialize_encounter;
     pub mod listener_initialize_exploration;
     pub mod listener_render_encounter;
+    pub mod listener_request_heal;
+    pub mod listener_ui_set_mode;
+    pub mod ui {
+        pub mod listener_ui_encounter_disable;
+        pub mod listener_ui_encounter_enable;
+        pub mod listener_ui_healing_disable;
+        pub mod listener_ui_healing_enable;
+    }
 }
 pub mod state {
     pub mod other {
@@ -84,12 +95,14 @@ pub mod state {
     pub mod state_teams;
     pub mod state_turn;
     pub mod peer {
+
         pub mod state_peer_entity_ids;
         pub mod state_peer_input_mode;
         pub mod state_peer_selected_card;
     }
     pub mod host {
         pub mod state_card_attribute_modifier_stack;
+        pub mod state_currency;
         pub mod state_enounter_mode;
         pub mod state_exploration;
         pub mod state_heat;

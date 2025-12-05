@@ -38,7 +38,7 @@ pub enum CardLocation {
     Deck(i32),
     Discard(i32),
     Hand(i32),
-    Exhuast(i32),
+    OutOfPlay(i32),
 }
 
 #[derive(Hash, PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
@@ -47,8 +47,9 @@ pub struct Deck {
     pub pile_draw: Vec<Arc<CardInstance>>,
     pub pile_discard: Vec<Arc<CardInstance>>,
     pub pile_exhuast: Vec<Arc<CardInstance>>,
+    pub pile_exile: Vec<Arc<CardInstance>>,
     pub hand_consumable: Vec<Arc<CardInstance>>,
-    pub hand_persistent: Vec<Arc<CardInstance>>,
+    // pub hand_persistent: Vec<Arc<CardInstance>>,
 }
 impl Deck {
     // pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
@@ -63,6 +64,26 @@ impl Deck {
 
     //     self.all_cards.push(inst);
     // }
+    pub fn hand_len(&self) -> i32 {
+        let mut len = 0;
+        for c in &self.hand_consumable {
+            if c.get_attributes_lifecycle()
+                .contains(&CardAttributeLifecycle::Light)
+            {
+                len = len + 0;
+                continue;
+            }
+            if c.get_attributes_lifecycle()
+                .contains(&CardAttributeLifecycle::Heavy)
+            {
+                len = len + 2;
+                continue;
+            }
+            len = len + 1;
+        }
+
+        len
+    }
     pub fn get_instance(&self, instance_id: i32) -> Arc<CardInstance> {
         if let Some(pos) = self
             .all_cards
@@ -97,26 +118,34 @@ impl Deck {
         {
             return Some(CardLocation::Discard((self.pile_discard.len() - 1 - index) as i32));
         }
-        if let Some(index) = self
-            .hand_persistent
-            .iter()
-            .position(|x| x.instance_id == card_instance.instance_id)
-        {
-            return Some(CardLocation::Hand(index as i32));
-        }
+        // if let Some(index) = self
+        //     .hand_persistent
+        //     .iter()
+        //     .position(|x| x.instance_id == card_instance.instance_id)
+        // {
+        //     return Some(CardLocation::Hand(index as i32));
+        // }
         if let Some(index) = self
             .hand_consumable
             .iter()
             .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return Some(CardLocation::Hand((self.hand_persistent.len() + index) as i32));
+            return Some(CardLocation::Hand((index) as i32));
+            // return Some(CardLocation::Hand((self.hand_persistent.len() + index) as i32));
         }
         if let Some(index) = self
             .pile_exhuast
             .iter()
             .position(|x| x.instance_id == card_instance.instance_id)
         {
-            return Some(CardLocation::Exhuast((index) as i32));
+            return Some(CardLocation::OutOfPlay((index) as i32));
+        }
+        if let Some(index) = self
+            .pile_exile
+            .iter()
+            .position(|x| x.instance_id == card_instance.instance_id)
+        {
+            return Some(CardLocation::OutOfPlay((index) as i32));
         }
 
         None
@@ -128,12 +157,13 @@ impl Deck {
         let inst = Arc::new(CardInstance::new(card_uid));
         // println!("add card {} with id {}", inst.card_id, inst.instance_id);
 
-        if is_persistent {
-            self.hand_persistent.push(inst.clone());
-        } else {
-            self.pile_draw.push(inst.clone());
-        }
+        // if is_persistent {
+        // self.hand_persistent.push(inst.clone());
+        // } else {
+        // self.pile_draw.push(inst.clone());
+        // }
 
+        self.pile_draw.push(inst.clone());
         self.all_cards.push(inst);
     }
 
@@ -145,9 +175,42 @@ impl Deck {
         // Move discard into draw by appending (no clones, no extra allocations)
         self.pile_draw.append(&mut self.pile_discard);
 
+        // Move discard into draw by appending (no clones, no extra allocations)
+        self.pile_draw.append(&mut self.pile_exhuast);
+
         // shuffle
         let mut rng = rng();
         self.pile_draw.shuffle(&mut rng);
+
+        let mut reliable_cards: Vec<(i32, Arc<CardInstance>)> = Vec::new();
+
+        for i in (0..self.pile_draw.len()).rev() {
+            let card = &self.pile_draw[i];
+
+            // Look for a Reliable(x) attribute
+            if let Some(CardAttributeLifecycle::Reliable(idx)) = card
+                .get_attributes_lifecycle()
+                .iter()
+                .find(|a| matches!(a, CardAttributeLifecycle::Reliable(_)))
+            {
+                // Remove card from pile_draw, store with its target index
+                let removed = self.pile_draw.remove(i);
+                reliable_cards.push((*idx, removed));
+            }
+        }
+
+        reliable_cards.sort_by_key(|(target_idx, _card)| *target_idx);
+
+        for (target_idx, card) in reliable_cards {
+            let idx_usize = target_idx.max(0) as usize;
+
+            if idx_usize >= self.pile_draw.len() {
+                // If index is past end, push
+                self.pile_draw.push(card);
+            } else {
+                self.pile_draw.insert(idx_usize, card);
+            }
+        }
     }
 
     /// Draw one card into hand_consumable (respect hand size)
@@ -158,12 +221,12 @@ impl Deck {
 
         if self.pile_draw.is_empty() {
             // Move discard into draw (no clones)
-            if !self.pile_discard.is_empty() {
-                self.pile_draw.append(&mut self.pile_discard);
-                // optional: shuffle after moving
-                let mut rng = rng();
-                self.pile_draw.shuffle(&mut rng);
-            }
+            self.pile_draw.append(&mut self.pile_discard);
+            // we dont append exhuast
+            // self.pile_draw.append(&mut self.pile_exhuast);
+
+            let mut rng = rng();
+            self.pile_draw.shuffle(&mut rng);
         }
 
         if self.pile_draw.is_empty() {
@@ -190,21 +253,35 @@ impl Deck {
 
     pub fn play(&mut self, card_instance: Arc<CardInstance>) {
         let lifecycle_attributes = card_instance.get_attributes_lifecycle();
-        let is_exhuast = lifecycle_attributes.contains(&CardAttributeLifecycle::Exhuast);
+        let is_persistant = lifecycle_attributes.contains(&CardAttributeLifecycle::Persistant);
+        if is_persistant {
+            return;
+        }
 
         if let Some(pos) = self
             .hand_consumable
             .iter()
             .position(|c| c.instance_id == card_instance.instance_id)
         {
+            // remove card
             let card = self.hand_consumable.remove(pos);
 
-            // if we are not exhuast we push to discard
-            if !is_exhuast {
-                self.pile_discard.push(card);
-            } else {
-                self.pile_exhuast.push(card);
+            // add card to exile pile
+            let is_exile = lifecycle_attributes.contains(&CardAttributeLifecycle::Exile);
+            if is_exile {
+                self.pile_exile.push(card);
+                return;
             }
+
+            // add card to exhuast pile
+            let is_exhuast = lifecycle_attributes.contains(&CardAttributeLifecycle::Exhuast);
+            if is_exhuast {
+                self.pile_exhuast.push(card);
+                return;
+            }
+
+            // add card to discard
+            self.pile_discard.push(card);
         } else {
             // not found — helpful debug / detect caller errors
             eprintln!("discard: card {} not found in hand_consumable (hand len {})", card_instance.instance_id, self.hand_consumable.len());
@@ -270,6 +347,10 @@ impl Display for CardTypes {
 pub enum CardAttributeLifecycle {
     Quick,
     Exhuast,
+    Exile,
     Linger,
     Light,
+    Heavy,
+    Persistant,
+    Reliable(i32),
 }

@@ -216,16 +216,16 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    fn check_card_index_persistent(game_state: &mut GameState, id: i32, card_index: i32) -> bool {
-        let my_deck = &game_state.get::<StateDeck>().deck[&id];
-        let is_in_range = card_index < my_deck.hand_persistent.len() as i32;
-        if !is_in_range {
-            println!("Card out of bounds");
-            return false;
-        }
+    // fn check_card_index_persistent(game_state: &mut GameState, id: i32, card_index: i32) -> bool {
+    //     let my_deck = &game_state.get::<StateDeck>().deck[&id];
+    //     let is_in_range = card_index < my_deck.hand_persistent.len() as i32;
+    //     if !is_in_range {
+    //         println!("Card out of bounds");
+    //         return false;
+    //     }
 
-        return true;
-    }
+    //     return true;
+    // }
     fn check_card_index_consumable(game_state: &mut GameState, id: i32, card_index: i32) -> bool {
         let my_deck = &game_state.get::<StateDeck>().deck[&id];
         let is_in_range = card_index < my_deck.hand_consumable.len() as i32;

@@ -215,7 +215,7 @@ impl CustomDataSource {
         all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, uid, &deck.hand_consumable));
 
         // add all the persistent cards
-        all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, uid, &deck.hand_persistent));
+        // all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, uid, &deck.hand_persistent));
 
         // return all
         all_manuevers

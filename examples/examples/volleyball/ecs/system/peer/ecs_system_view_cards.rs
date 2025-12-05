@@ -91,7 +91,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                     transform.scale = Vector3::lerp(transform.scale, Vector3::one() * 0.25, 0.2);
                     renderer.set_enabled(index == 0);
                 }
-                state_deck::CardLocation::Exhuast(index) => {
+                state_deck::CardLocation::OutOfPlay(index) => {
                     let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::new(-0.75, 0.5, 1.0));
                     let rot = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, -0.0));
 

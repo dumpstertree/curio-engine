@@ -54,4 +54,6 @@ pub enum EntityIDTypes {
     UIScore,
     UIEnergy,
     UITurn,
+
+    UIPanelHealing,
 }

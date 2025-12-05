@@ -30,16 +30,17 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
 
                 // get the newly assigned state
                 match room.room_type {
-                    // start a new encounter
                     RoomTypes::Combat => {
                         let encounter = EncounterLibrary::random();
                         event_queue.enqueue_event(GameEvents::InitializeEncounter(encounter.clone()));
                         event_queue.enqueue_event(GameEvents::ExplorationDidRoomEnterCombat(room.clone(), encounter.clone()));
                     }
-                    // start a new shop
                     RoomTypes::Shop => todo!(),
-                    // start a new boss
                     RoomTypes::Boss => todo!(),
+                    RoomTypes::Heal => {
+                        event_queue.enqueue_event(GameEvents::ExplorationDidRoomEnterHeal(room.clone()));
+                    }
+                    RoomTypes::Invalid => todo!(),
                 }
             }
             _ => {}

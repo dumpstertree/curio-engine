@@ -11,7 +11,7 @@ use std::{
 use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
     exploration::exploration_path::{Exploration, Room},
-    listeners::listener_initialize_encounter::Encounter,
+    listeners::{listener_initialize_encounter::Encounter, listener_ui_set_mode::UITypes},
     state::{state_ball_mode::BallModes, state_teams::Teams},
 };
 
@@ -41,6 +41,18 @@ pub enum GameEvents {
     ExplorationRoomExit(Room),
     ExplorationDidRoomEnterCombat(Room, Encounter),
     ExplorationDidRoomExitCombat(Room, Encounter),
+    ExplorationDidRoomEnterHeal(Room),
+    ExplorationDidRoomExitHeal(Room),
+    RequestLeaveExplorationRoom,
+    RequestHeal(i32),
+    SetUIMode(UITypes),
+    EnableUICombat,
+    EnableUIHealing,
+    EnableUIShop,
+    DisableUICombat,
+    DisableUIHealing,
+    DisableUIShop,
+
     // to -> peer
     DidTurnEnd(Teams),
     DidTurnBegin(Teams),
@@ -93,6 +105,17 @@ impl IGameEvent for GameEvents {
             GameEvents::ExplorationRoomExit(_) => EventScope::ConnectedHost,
             GameEvents::ExplorationDidRoomEnterCombat(_, _) => EventScope::All,
             GameEvents::ExplorationDidRoomExitCombat(_, _) => EventScope::All,
+            GameEvents::SetUIMode(_) => EventScope::Instance,
+            GameEvents::EnableUICombat => EventScope::Instance,
+            GameEvents::EnableUIHealing => EventScope::Instance,
+            GameEvents::EnableUIShop => EventScope::Instance,
+            GameEvents::DisableUICombat => EventScope::Instance,
+            GameEvents::DisableUIHealing => EventScope::Instance,
+            GameEvents::DisableUIShop => EventScope::Instance,
+            GameEvents::ExplorationDidRoomEnterHeal(_) => EventScope::All,
+            GameEvents::ExplorationDidRoomExitHeal(_) => EventScope::All,
+            GameEvents::RequestLeaveExplorationRoom => EventScope::ConnectedHost,
+            GameEvents::RequestHeal(_) => EventScope::ConnectedHost,
         }
     }
 }
@@ -130,6 +153,17 @@ impl Display for GameEvents {
             GameEvents::ExplorationRoomExit(_) => write!(f, "ExplorationRoomExit"),
             GameEvents::ExplorationDidRoomEnterCombat(room, encounter) => write!(f, "ExplorationDidRoomEnterCombat"),
             GameEvents::ExplorationDidRoomExitCombat(room, encounter) => write!(f, "ExplorationDidRoomExitCombat"),
+            GameEvents::SetUIMode(uitypes) => todo!(),
+            GameEvents::EnableUICombat => todo!(),
+            GameEvents::EnableUIHealing => todo!(),
+            GameEvents::EnableUIShop => todo!(),
+            GameEvents::DisableUICombat => todo!(),
+            GameEvents::DisableUIHealing => todo!(),
+            GameEvents::DisableUIShop => todo!(),
+            GameEvents::ExplorationDidRoomEnterHeal(room) => todo!(),
+            GameEvents::ExplorationDidRoomExitHeal(room) => todo!(),
+            GameEvents::RequestLeaveExplorationRoom => todo!(),
+            GameEvents::RequestHeal(_) => todo!(),
         }
     }
 }

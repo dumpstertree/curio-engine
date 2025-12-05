@@ -41,17 +41,6 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             x.color = Color::white();
             x.direction = (Vector3::forward() + Vector3::down()).normalize_and_copy();
         });
-
-        // let spine = AssetLoader::load_spine_from_path("path");
-        let asset_court = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Court.uid());
-
-        // court
-        world.spawn((
-            Transform::default()
-                .set_position(Vector3::new(0.0, 0.0, 0.0))
-                .set_rotation(Quaternion::from_euler(Vector3::new(0.0, -90.0, 0.0))),
-            Renderer::default().set_asset(Some(asset_court)),
-        ));
     }
     fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
         let Some(team) = game_state

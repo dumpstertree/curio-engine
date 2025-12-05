@@ -9,9 +9,11 @@ use core::{
 };
 
 use crate::{
+    exploration::exploration_path::RoomTypes,
     game_board::GameBoard,
     game_events::GameEvents,
     state::{
+        host::state_exploration::StateExploration,
         peer::state_peer_input_mode::{InputModes, StatePeerInputMode},
         state_ball_mode::{BallModes, StateBallMode},
         state_position_player::{self, StatePositionEntities},
@@ -27,7 +29,13 @@ impl ECSSystemEventless for ECSSystemTurnMove {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
-        game_state.get::<StatePeerInputMode>().mode == InputModes::Move
+        game_state
+            .get::<StateExploration>()
+            .exploration
+            .get_cur_room()
+            .room_type
+            == RoomTypes::Combat
+            && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
         // let is_turn = game_state.get::<StateTurn>().active_instance_id
         //     == game_state
         //         .get::<StateTeamAssignments>()

@@ -1,7 +1,7 @@
+use crate::exploration::exploration_path::RoomTypes;
 use crate::game_events::GameEvents;
-use crate::state::host::state_currency::StateCurrency;
+use crate::listeners::listener_initialize_exploration::EncounterLibrary;
 use crate::state::host::state_exploration::StateExploration;
-use core::collections::event_queue;
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -25,17 +25,23 @@ impl InstanceLimiter for ECSSystemGamePointScored {
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::EncounterPassed => {
-                // log
-                println!("Encounter Passed");
+            GameEvents::RequestLeaveExplorationRoom => {
+                // exit current room
+                let state_exploration = game_state.get::<StateExploration>();
+                event_queue.enqueue_event(GameEvents::ExplorationRoomExit(state_exploration.exploration.get_cur_room()));
 
-                // claim rewards
-                game_state.edit::<StateCurrency>(|x| {
-                    x.currency += 100;
+                // edit the encounter state to move to the next room
+                game_state.edit::<StateExploration>(|x| {
+                    let next_rooms = x.exploration.get_next_room();
+                    let selected_next_room = &next_rooms[0];
+
+                    // progress the exploration
+                    x.exploration.next(&selected_next_room.guid);
                 });
 
-                // request leave room
-                event_queue.enqueue_event(GameEvents::RequestLeaveExplorationRoom);
+                // enter current room
+                let state_exploration = game_state.get::<StateExploration>();
+                event_queue.enqueue_event(GameEvents::ExplorationRoomEnter(state_exploration.exploration.get_cur_room()));
             }
             _ => {}
         }
