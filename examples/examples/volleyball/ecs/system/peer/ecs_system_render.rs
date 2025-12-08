@@ -47,7 +47,7 @@
 //     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
 //         true
 //     }
-//     fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue, asset_loader: &mut core::io::asset_loader::AssetLoader) {
+//     fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue, asset_loader: &mut core::io::asset_loader::AssetLoader) {
 //         let asset = asset_loader.load_gltf("tile.glb").unwrap();
 //         for x in 0..4 {
 //             for z in 0..4 {
@@ -58,8 +58,8 @@
 //         self.asset = asset_loader.load_gltf("player.glb");
 //         self.asset_ball = asset_loader.load_gltf("ball.glb");
 //     }
-//     fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
-//     fn tick(&mut self, game_state: &mut GameState, world: &mut World, events: &mut EventQueue) {
+//     fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
+//     fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
 //         self.cnt += 1;
 //         if self.cnt < 10 {
 //             return;

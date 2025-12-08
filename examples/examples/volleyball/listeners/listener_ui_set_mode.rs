@@ -1,7 +1,10 @@
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
+    gameplay::{
+        ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
+        world_context::WorldContext,
+    },
 };
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
@@ -26,7 +29,7 @@ impl InstanceLimiter for Listener {
 }
 // Impl - Listener
 impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
-    fn dequeue_event(&mut self, _game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, _game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::SetUIMode(ui) => {
                 println!("set ui");

@@ -25,9 +25,12 @@ use built_in_state::state_time::TimeState;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{
-        ecs_event_reciever::{self, InstanceLimiter},
-        ecs_system::ECSSystemEventless,
+    gameplay::{
+        ecs::traits::{
+            ecs_event_reciever::{self, InstanceLimiter},
+            ecs_system::ECSSystemEventless,
+        },
+        world_context::WorldContext,
     },
     system::system_game_state::IState,
 };
@@ -48,7 +51,7 @@ pub struct ECSSystemPeerStart {
     lastmove: f64,
 }
 impl ECSSystemEventless for ECSSystemPeerStart {
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -59,9 +62,9 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         NetworkModes::all_host()
     }
-    fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
-    fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {}
-    fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
+    fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
+    fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
+    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
         let state_team = game_state.get::<StateTeamAssignments>();
         let active_team = game_state.get::<StateTurn>().active_instance_id;
         let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
@@ -131,7 +134,7 @@ impl InstanceLimiter for ECSSystemPeerStart {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemPeerStart {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidTurnBegin(id) => {}
             _ => {

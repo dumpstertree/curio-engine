@@ -6,12 +6,12 @@ use hecs::World;
 use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
     io::asset_loader::AssetLoader,
 };
 
 use crate::{
-    AssetMappingUIDs,
+    AssetMappingUIDs, UIEvents,
     ecs::components::{component_ball::ComponentBall, component_player::ComponentPlayer, component_view_player::ComponentViewPlayer},
     state::state_teams::{StateTeamAssignments, Teams},
 };
@@ -19,16 +19,16 @@ use crate::{
 #[global_ecs_system]
 pub struct ECSSystemPeerStart {}
 impl ECSSystemEventless for ECSSystemPeerStart {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn init(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+    fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         println!("Instance: {}. Peer Init", game_state.instance_id);
     }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 
         // set resolution
@@ -41,38 +41,57 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             x.color = Color::white();
             x.direction = (Vector3::forward() + Vector3::down()).normalize_and_copy();
         });
-    }
-    fn tick(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+
+        // open ui
+        event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIEvents::PanelMedic));
+
+        // }
+        // fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         let Some(team) = game_state
             .get::<StateTeamAssignments>()
             .team_for(&game_state.instance_id)
         else {
             // fallback camera
-            world.spawn((
+
+            let a = world.instantiate();
+            a.add_component_value(
+                // add transform
                 Transform::default()
                     .set_position(Vector3::new(0.0, 6.0, -14.0))
                     .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
+            );
+            a.add_component_value(
+                // add camera
                 Camera::default(),
-            ));
+            );
+
             return;
         };
 
         match team {
             Teams::Red => {
-                world.spawn((
+                let a = world.instantiate();
+                a.add_component_value(
                     Transform::default()
                         .set_position(Vector3::new(0.0, 6.0, -14.0))
                         .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
+                );
+                a.add_component_value(
+                    // add camera
                     Camera::default(),
-                ));
+                );
             }
             Teams::Blue => {
-                world.spawn((
+                let a = world.instantiate();
+                a.add_component_value(
                     Transform::default()
                         .set_position(Vector3::new(0.0, 6.0, 14.0))
                         .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 180.0, 0.0))),
+                );
+                a.add_component_value(
+                    // add camera
                     Camera::default(),
-                ));
+                );
             }
         }
     }

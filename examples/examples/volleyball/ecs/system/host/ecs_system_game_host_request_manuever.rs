@@ -14,9 +14,12 @@ use core::{
         game_state::{self, GameState},
     },
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{
-        ecs_event_reciever::{self, InstanceLimiter},
-        ecs_system::ECSSystemEventless,
+    gameplay::{
+        ecs::traits::{
+            ecs_event_reciever::{self, InstanceLimiter},
+            ecs_system::ECSSystemEventless,
+        },
+        world_context::WorldContext,
     },
 };
 use ecs_event::global_ecs_system_event_reciever;
@@ -28,7 +31,7 @@ use std::sync::Arc;
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameRequestManuever {}
 impl ECSSystemEventless for ECSSystemGameRequestManuever {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
@@ -44,7 +47,7 @@ impl InstanceLimiter for ECSSystemGameRequestManuever {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event

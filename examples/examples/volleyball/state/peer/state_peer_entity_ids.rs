@@ -1,4 +1,4 @@
-use core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use core::{collections::state_ownerships::StateOwnerships, gameplay::world_context::GameObject, system::system_game_state::IState};
 use std::{collections::HashMap, hash::Hash};
 
 use hecs::Entity;
@@ -6,10 +6,10 @@ use macro_state::global_state;
 
 #[global_state]
 pub struct StateEntityIDs {
-    ids: HashMap<EntityIDTypes, Vec<Entity>>,
+    ids: HashMap<EntityIDTypes, Vec<GameObject>>,
 }
 impl StateEntityIDs {
-    pub fn add(&mut self, id_type: EntityIDTypes, id: Entity) {
+    pub fn add(&mut self, id_type: EntityIDTypes, id: GameObject) {
         if !self.ids.contains_key(&id_type) {
             self.ids.insert(id_type.clone(), Vec::new());
         }
@@ -18,7 +18,7 @@ impl StateEntityIDs {
             val.push(id);
         };
     }
-    pub fn get(&self, id_type: EntityIDTypes) -> Vec<Entity> {
+    pub fn get(&self, id_type: EntityIDTypes) -> Vec<GameObject> {
         if let Some(val) = self.ids.get(&id_type) {
             return val.clone();
         };

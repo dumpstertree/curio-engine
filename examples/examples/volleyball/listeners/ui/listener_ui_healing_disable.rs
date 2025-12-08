@@ -8,7 +8,10 @@ use built_in_state::state_camera::CameraState;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
+    gameplay::{
+        ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
+        world_context::WorldContext,
+    },
     io::asset_loader::AssetLoader,
 };
 use ecs_event::global_ecs_system_event_reciever;
@@ -43,12 +46,13 @@ impl InstanceLimiter for Listener {
 }
 // Impl - Listener
 impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DisableUIHealing => {
                 let id = EntityIDTypes::UIPanelHealing;
                 for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
-                    let _ = world.despawn(e);
+                    // let _ = world.despawn(e);
+                    e.destroy();
                 }
                 game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
             }

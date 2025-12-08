@@ -26,7 +26,7 @@
 //         true
 //     }
 
-//     fn debug(&mut self, game_state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+//     fn debug(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
 //         // let state_camera = game_state.get_value2::<CameraState>();
 //         // let state_input = game_state.get_value2::<state_input::InputState>();
 

@@ -2,7 +2,7 @@ use built_in_state::{state_debug::StateDebug, state_input::InputState};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
     input::key_code::ButtonCode,
 };
 use ecs_system::global_ecs_system;
@@ -17,13 +17,13 @@ impl SystemDebugToggle {
 }
 
 impl ECSSystemEventless for SystemDebugToggle {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         // get state
         let state_input = game_state.get::<InputState>();
 

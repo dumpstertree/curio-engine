@@ -12,6 +12,7 @@ use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use built_in_state::state_input::InputState;
 use core::dumpster_engine::NetworkModes;
 use core::extensions::extensions_i32::ExtensionsI32;
+use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
@@ -29,7 +30,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
         // let is_turn = game_state.get::<StateTurn>().active_instance_id
         //     == game_state
         //         .get::<StateTeamAssignments>()
@@ -45,7 +46,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
             == RoomTypes::Combat
             && game_state.get::<StatePeerInputMode>().mode == InputModes::Manuever
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
         let state_input = game_state.get::<InputState>();
         let state_deck = game_state.get::<StateDeck>();
 

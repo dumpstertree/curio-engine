@@ -1,7 +1,7 @@
 use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug, state_time::TimeState};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -15,10 +15,10 @@ impl SystemDebugGuiTime {
 }
 
 impl ECSSystemEventless for SystemDebugGuiTime {
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
         game_state.get::<StateDebug>().is_inspecting
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         // get state
         let state_time = game_state.get::<TimeState>();
 

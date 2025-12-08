@@ -13,6 +13,7 @@ use built_in::component::component_transform::Transform;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
+use core::gameplay::world_context::WorldContext;
 use core::io::asset_loader::AssetLoader;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -34,7 +35,7 @@ impl InstanceLimiter for Listener {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomEnterHeal(_) => {
                 println!("enter heal room");

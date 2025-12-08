@@ -1,4 +1,4 @@
-use core::{collections::color::Color, io::model_asset::ModelAsset};
+use core::{collections::color::Color, gameplay::world_context::GameObject, io::model_asset::ModelAsset};
 use std::sync::Arc;
 
 use hecs::Entity;
@@ -8,10 +8,13 @@ use crate::component::component_renderer_text::RendererCommon;
 // #[derive(Clone)]
 pub struct Renderer {
     pub asset: Option<Arc<ModelAsset>>,
-    parent: Option<Entity>,
+    parent: Option<GameObject>,
     enabled: bool,
     tint: Color,
 }
+
+unsafe impl Send for Renderer {}
+unsafe impl Sync for Renderer {}
 
 impl Renderer {
     pub fn default() -> Renderer {
@@ -28,12 +31,12 @@ impl Renderer {
     }
 }
 impl RendererCommon for Renderer {
-    fn set_parent(&mut self, parent: Option<hecs::Entity>) {
+    fn set_parent(&mut self, parent: Option<GameObject>) {
         self.parent = parent;
     }
 
-    fn get_parent(&self) -> Option<hecs::Entity> {
-        self.parent
+    fn get_parent(&self) -> Option<GameObject> {
+        self.parent.clone()
     }
 
     fn set_enabled(&mut self, enabled: bool) {

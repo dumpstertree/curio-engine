@@ -1,10 +1,13 @@
-use core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
+use core::{
+    collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
+    gameplay::world_context::{GameObject, WorldContext},
+};
 
 use hecs::{Entity, World};
 
 #[derive(Clone)]
 pub struct Transform {
-    pub parent: Option<Entity>,
+    pub parent: Option<GameObject>,
     pub position: Vector3,
     pub rotation: Quaternion,
     pub scale: Vector3,
@@ -19,6 +22,8 @@ impl Default for Transform {
         }
     }
 }
+unsafe impl Send for Transform {}
+unsafe impl Sync for Transform {}
 
 impl Transform {
     pub fn get_matrix(&self) -> Matrix4x4 {
@@ -46,16 +51,16 @@ impl Transform {
         self.scale = scale;
         self
     }
-    pub fn set_parent(mut self, parent: Option<Entity>) -> Transform {
+    pub fn set_parent(mut self, parent: Option<GameObject>) -> Transform {
         self.parent = parent;
         self
     }
-    pub fn get_world_matrix(&self, world: &World) -> Matrix4x4 {
+    pub fn get_world_matrix(&self, world: &WorldContext) -> Matrix4x4 {
         let mut matrix = self.get_matrix();
-        let mut current = self.parent;
+        let mut current = self.parent.clone();
 
         while let Some(parent_entity) = current {
-            if let Ok(parent_transform) = world.get::<&Transform>(parent_entity) {
+            if let Some(parent_transform) = parent_entity.get_component::<Transform>() {
                 // matrix = Matrix4x4::multiply(&matrix, &parent_transform.get_matrix());
 
                 matrix = Matrix4x4::multiply(&parent_transform.get_matrix(), &matrix);

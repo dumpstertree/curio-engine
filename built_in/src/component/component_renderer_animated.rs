@@ -4,13 +4,17 @@ use core::{
         matrix4x4::Matrix4x4,
         mesh::{Mesh, Vertex},
     },
+    gameplay::world_context::GameObject,
     io::model_asset_animated::ModelAssetAnimated,
 };
 use hecs::Entity;
 use rusty_spine::{AnimationState, Skeleton};
 use std::sync::Arc;
 
-use crate::component::component_renderer_text::RendererCommon;
+use crate::component::{component_renderer_static::Renderer, component_renderer_text::RendererCommon};
+
+unsafe impl Send for RendererAnimated {}
+unsafe impl Sync for RendererAnimated {}
 
 // #[derive(Clone)]
 pub struct RendererAnimated {
@@ -21,17 +25,17 @@ pub struct RendererAnimated {
     pub asset: Option<Arc<ModelAssetAnimated>>,
     pub mesh: Vec<Arc<Mesh>>,
     last_animation: String,
-    parent: Option<Entity>,
+    parent: Option<GameObject>,
     enabled: bool,
     tint: Color,
 }
 impl RendererCommon for RendererAnimated {
-    fn set_parent(&mut self, parent: Option<Entity>) {
+    fn set_parent(&mut self, parent: Option<GameObject>) {
         self.parent = parent;
     }
 
-    fn get_parent(&self) -> Option<Entity> {
-        self.parent
+    fn get_parent(&self) -> Option<GameObject> {
+        self.parent.clone()
     }
 
     fn set_enabled(&mut self, enabled: bool) {

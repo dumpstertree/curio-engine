@@ -2,6 +2,7 @@ use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
+use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -22,7 +23,7 @@ impl InstanceLimiter for Listener {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomExitCombat(_, _) => {
                 println!("exit combat room");
@@ -42,25 +43,28 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
 }
 
 impl Listener {
-    fn despawn_entities(game_state: &mut GameState, world: &mut World) {
+    fn despawn_entities(game_state: &mut GameState, world: &mut WorldContext) {
         let id = EntityIDTypes::Entities;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
-            let _ = world.despawn(e);
+            // let _ = world.despawn(e);
+            e.destroy();
         }
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
-    fn despawn_background(game_state: &mut GameState, world: &mut World) {
+    fn despawn_background(game_state: &mut GameState, world: &mut WorldContext) {
         let id = EntityIDTypes::Background;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
-            let _ = world.despawn(e);
+            // let _ = world.despawn(e);
+            e.destroy();
         }
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 
-    fn despawn_ball(game_state: &mut GameState, world: &mut World) {
+    fn despawn_ball(game_state: &mut GameState, world: &mut WorldContext) {
         let id = EntityIDTypes::Ball;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
-            let _ = world.despawn(e);
+            // let _ = world.despawn(e);
+            e.destroy();
         }
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }

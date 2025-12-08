@@ -6,9 +6,12 @@ use crate::{
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{
-        ecs_event_reciever::{self, InstanceLimiter},
-        ecs_system::ECSSystemEventless,
+    gameplay::{
+        ecs::traits::{
+            ecs_event_reciever::{self, InstanceLimiter},
+            ecs_system::ECSSystemEventless,
+        },
+        world_context::WorldContext,
     },
 };
 use ecs_event::global_ecs_system_event_reciever;
@@ -55,7 +58,7 @@ impl ECSSystemGameRequestMove {
     }
 }
 impl ECSSystemEventless for ECSSystemGameRequestMove {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
@@ -71,7 +74,7 @@ impl InstanceLimiter for ECSSystemGameRequestMove {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestMoveZPos(id) => {
                 if !ECSSystemGameRequestMove::check_player_id(game_state, *id) {

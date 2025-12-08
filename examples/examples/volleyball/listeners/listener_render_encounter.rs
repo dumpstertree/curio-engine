@@ -32,7 +32,7 @@
 // }
 // // Impl - Listener
 // impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
-//     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+//     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
 //         match event {
 //             GameEvents::DidInitializeEncounter(_) => {
 //                 let asset_goblin = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::Goblin.uid());

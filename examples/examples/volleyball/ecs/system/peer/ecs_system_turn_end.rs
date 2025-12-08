@@ -3,6 +3,7 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::state_turn::StateTurn;
 use crate::{game_events::GameEvents, state::state_teams::StateTeamAssignments};
 use built_in_state::state_input::InputState;
+use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -17,7 +18,7 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -30,10 +31,10 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
         //         .team_for(&game_state.instance_id)
         //         .unwrap()
     }
-    fn enable(&mut self, _: &mut GameState, _: &mut World, _: &mut EventQueue) {
+    fn enable(&mut self, _: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         println!("enabled turn end");
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut World, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
         // get input
         let state_input = game_state.get::<InputState>();
 

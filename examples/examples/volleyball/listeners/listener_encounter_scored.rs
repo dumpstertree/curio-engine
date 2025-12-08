@@ -1,6 +1,7 @@
 use crate::state::state_teams::Teams;
 use crate::{game_events::GameEvents, state::state_score::StateScore};
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
+use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -21,7 +22,7 @@ impl InstanceLimiter for ECSSystemGamePointScored {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PointScored(team) => {
                 // update score

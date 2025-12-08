@@ -8,6 +8,7 @@ use core::{
         vector2::Vector2,
         vector3::Vector3,
     },
+    gameplay::world_context::{GameObject, WorldContext},
     io::{asset_loader::AssetLoader, file::File, font_asset::FontAsset, model_asset::ModelAsset},
 };
 use std::{collections::HashMap, sync::Arc};
@@ -19,8 +20,8 @@ use crate::component::{component_renderer_animated::RendererAnimated, component_
 
 pub trait RendererCommon {
     // hierachy
-    fn set_parent(&mut self, parent: Option<Entity>);
-    fn get_parent(&self) -> Option<Entity>;
+    fn set_parent(&mut self, parent: Option<GameObject>);
+    fn get_parent(&self) -> Option<GameObject>;
     // tint
     fn set_tint(&mut self, tint: Color);
     fn get_tint(&self) -> Color;
@@ -30,46 +31,46 @@ pub trait RendererCommon {
     //
     fn tint_in_hierachy(&self, world: &World) -> Color {
         let mut tint = self.get_tint();
-        let mut parent_entity = self.get_parent();
-        while parent_entity.is_some() {
-            if let Ok(parent_renderer) = world.get::<&ComponentRendererText>(parent_entity.unwrap()) {
+        let mut current = self.get_parent();
+        while let Some(parent_entity) = &current {
+            if let Some(parent_renderer) = parent_entity.get_component::<&ComponentRendererText>() {
                 tint = tint * parent_renderer.get_tint();
-                parent_entity = parent_renderer.get_parent();
-            } else if let Ok(parent_renderer) = world.get::<&Renderer>(parent_entity.unwrap()) {
+                current = parent_renderer.get_parent();
+            } else if let Some(parent_renderer) = parent_entity.get_component::<&Renderer>() {
                 tint = tint * parent_renderer.get_tint();
-                parent_entity = parent_renderer.get_parent();
-            } else if let Ok(parent_renderer) = world.get::<&RendererAnimated>(parent_entity.unwrap()) {
+                current = parent_renderer.get_parent();
+            } else if let Some(parent_renderer) = parent_entity.get_component::<&RendererAnimated>() {
                 tint = tint * parent_renderer.get_tint();
-                parent_entity = parent_renderer.get_parent();
+                current = parent_renderer.get_parent();
             }
         }
 
         return tint;
     }
-    fn enabled_in_hierarchy(&self, world: &World) -> bool {
+    fn enabled_in_hierarchy(&self, world: &WorldContext) -> bool {
         if !self.get_enabled() {
             return false;
         }
 
-        let mut parent_entity = self.get_parent();
-        while parent_entity.is_some() {
-            if let Ok(parent_renderer) = world.get::<&ComponentRendererText>(parent_entity.unwrap()) {
+        let mut current = self.get_parent();
+        while let Some(parent_entity) = &current {
+            if let Some(parent_renderer) = &parent_entity.get_component::<&ComponentRendererText>() {
                 if !parent_renderer.get_enabled() {
                     return false;
                 } else {
-                    parent_entity = parent_renderer.get_parent();
+                    current = parent_renderer.get_parent();
                 }
-            } else if let Ok(parent_renderer) = world.get::<&Renderer>(parent_entity.unwrap()) {
+            } else if let Some(parent_renderer) = parent_entity.get_component::<&Renderer>() {
                 if !parent_renderer.get_enabled() {
                     return false;
                 } else {
-                    parent_entity = parent_renderer.get_parent();
+                    current = parent_renderer.get_parent();
                 }
-            } else if let Ok(parent_renderer) = world.get::<&RendererAnimated>(parent_entity.unwrap()) {
+            } else if let Some(parent_renderer) = parent_entity.get_component::<&RendererAnimated>() {
                 if !parent_renderer.get_enabled() {
                     return false;
                 } else {
-                    parent_entity = parent_renderer.get_parent();
+                    current = parent_renderer.get_parent();
                 }
             }
         }
@@ -77,6 +78,9 @@ pub trait RendererCommon {
         return true;
     }
 }
+
+unsafe impl Sync for ComponentRendererText {}
+unsafe impl Send for ComponentRendererText {}
 
 pub struct ComponentRendererText {
     pub asset: Vec<(Arc<ModelAsset>, Vec<Matrix4x4>)>,
@@ -88,16 +92,16 @@ pub struct ComponentRendererText {
     bounds: Vector2,
     is_dirty: bool,
     enabled: bool,
-    parent: Option<Entity>,
+    parent: Option<GameObject>,
     tint: Color,
 }
 impl RendererCommon for ComponentRendererText {
-    fn set_parent(&mut self, parent: Option<Entity>) {
+    fn set_parent(&mut self, parent: Option<GameObject>) {
         self.parent = parent;
     }
 
-    fn get_parent(&self) -> Option<Entity> {
-        self.parent
+    fn get_parent(&self) -> Option<GameObject> {
+        self.parent.clone()
     }
 
     fn set_enabled(&mut self, enabled: bool) {
@@ -382,15 +386,15 @@ impl ComponentRendererText {
 
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum AligmentHorizontal {
-    #[default]
     Left,
+    #[default]
     Center,
     Right,
 }
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum AligmentVertical {
-    #[default]
     Top,
+    #[default]
     Center,
     Bottom,
 }

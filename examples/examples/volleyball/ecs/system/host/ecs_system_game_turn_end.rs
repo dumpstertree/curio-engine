@@ -7,9 +7,12 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     extensions::extensions_i32::ExtensionsI32,
-    gameplay::ecs::traits::{
-        ecs_event_reciever::{self, InstanceLimiter},
-        ecs_system::ECSSystemEventless,
+    gameplay::{
+        ecs::traits::{
+            ecs_event_reciever::{self, InstanceLimiter},
+            ecs_system::ECSSystemEventless,
+        },
+        world_context::WorldContext,
     },
 };
 
@@ -23,7 +26,7 @@ use crate::{
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameEndTurn {}
 impl ECSSystemEventless for ECSSystemGameEndTurn {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
@@ -42,7 +45,7 @@ impl InstanceLimiter for ECSSystemGameEndTurn {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnEnd(team) => {
                 // end this turn

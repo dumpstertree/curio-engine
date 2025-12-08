@@ -1,11 +1,8 @@
 use built_in_state::state_time::TimeState;
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -18,20 +15,20 @@ impl SystemRendererUpdateState {
     }
 }
 impl ECSSystemEventless for SystemRendererUpdateState {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalHost]
     }
-    fn enable(&mut self, game_state: &mut GameState, _: &mut World, _: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         // game_state.edit::<StateSun>(|x| {
         //     x.cast_shadows = true;
         //     x.color = Color::green();
         //     x.direction = (Vector3::down() + Vector3::forward()).normalize_and_copy()
         // });
     }
-    fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         //edit draw call states
         let t = state.get::<TimeState>().scaled_time;
         // state.edit::<StateLights>(|x| {
@@ -96,7 +93,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
 //         true
 //     }
 
-//     fn did_tick(&mut self, state: &mut GameState, world: &mut World, _: &mut EventQueue) {
+//     fn did_tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
 //         //edit draw call states
 //         state.edit::<StateLights>(|x| {
 //             // get all lights with transforms

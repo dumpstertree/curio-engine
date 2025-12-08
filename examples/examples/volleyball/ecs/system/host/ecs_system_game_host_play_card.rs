@@ -5,9 +5,12 @@ use crate::{
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::{
-        ecs_event_reciever::{self, InstanceLimiter},
-        ecs_system::ECSSystemEventless,
+    gameplay::{
+        ecs::traits::{
+            ecs_event_reciever::{self, InstanceLimiter},
+            ecs_system::ECSSystemEventless,
+        },
+        world_context::WorldContext,
     },
 };
 use ecs_event::global_ecs_system_event_reciever;
@@ -20,7 +23,7 @@ use std::vec;
 pub struct ECSSystemGameRequestManuever {}
 
 impl ECSSystemEventless for ECSSystemGameRequestManuever {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
@@ -36,7 +39,7 @@ impl InstanceLimiter for ECSSystemGameRequestManuever {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut World, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {
                 // creates an event runner to all the events on

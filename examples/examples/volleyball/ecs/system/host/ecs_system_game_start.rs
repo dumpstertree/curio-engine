@@ -6,7 +6,7 @@ use system_component_default_gameplay::UI;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
 use std::vec;
 
@@ -26,13 +26,13 @@ use crate::{
 #[global_ecs_system]
 pub struct ECSSystemGameStart {}
 impl ECSSystemEventless for ECSSystemGameStart {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
         true
     }
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
-    fn enable(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
         println!("Instance: {}. Host Startup", game_state.instance_id);
 
         // set resolution

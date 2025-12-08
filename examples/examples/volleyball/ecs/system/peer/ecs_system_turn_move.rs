@@ -5,7 +5,7 @@ use hecs::World;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
 
 use crate::{
@@ -28,7 +28,7 @@ impl ECSSystemEventless for ECSSystemTurnMove {
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -44,7 +44,7 @@ impl ECSSystemEventless for ECSSystemTurnMove {
 
         // is_turn && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut World, event_queue: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
         // currently serving and cant move
         let state_ball = game_state.get::<StateBallMode>();
         if state_ball.mode == BallModes::Serve {

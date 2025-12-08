@@ -68,6 +68,7 @@ mod window {
     pub(crate) mod system_window;
 }
 pub mod gameplay {
+    pub mod world_context;
     pub mod ecs {
         pub mod traits {
             pub mod ecs_event_reciever;
