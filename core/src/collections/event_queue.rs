@@ -85,7 +85,7 @@ pub enum EventScope {
     ConnectedPeers,
 }
 
-pub trait IGameEvent: AsAny + IEventClone + /*IEventHash +*/ Sync {
+pub trait IGameEvent: Display+ AsAny + IEventClone + /*IEventHash +*/ Sync {
     fn default_box(self) -> Box<dyn IGameEvent>
     where
         Self: Sized + Default + 'static,
@@ -229,7 +229,7 @@ impl EventQueue {
                 drained
             }
             None => {
-                println!("no queue found for id {}", key);
+                // println!("no queue found for id {}", key);
                 Vec::new()
             }
         }

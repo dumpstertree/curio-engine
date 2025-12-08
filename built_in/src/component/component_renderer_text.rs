@@ -77,6 +77,7 @@ pub trait RendererCommon {
         return true;
     }
 }
+
 pub struct ComponentRendererText {
     pub asset: Vec<(Arc<ModelAsset>, Vec<Matrix4x4>)>,
     font_asset: Option<FontAsset>,
@@ -116,8 +117,8 @@ impl RendererCommon for ComponentRendererText {
     }
 }
 
-impl ComponentRendererText {
-    pub fn default() -> ComponentRendererText {
+impl Default for ComponentRendererText {
+    fn default() -> ComponentRendererText {
         ComponentRendererText {
             asset: Vec::new(),
             font_asset: None,
@@ -132,6 +133,8 @@ impl ComponentRendererText {
             tint: Color::white(),
         }
     }
+}
+impl ComponentRendererText {
     pub fn set_enabled(&mut self, enabled: bool) -> &mut Self {
         if self.enabled == enabled {
             return self;
@@ -377,14 +380,16 @@ impl ComponentRendererText {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum AligmentHorizontal {
+    #[default]
     Left,
     Center,
     Right,
 }
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub enum AligmentVertical {
+    #[default]
     Top,
     Center,
     Bottom,

@@ -79,6 +79,7 @@ pub mod listeners {
         pub mod listener_ui_encounter_enable;
         pub mod listener_ui_healing_disable;
         pub mod listener_ui_healing_enable;
+        pub mod ui_panel_medic;
     }
 }
 pub mod state {
@@ -178,8 +179,12 @@ pub mod ecs {
         }
     }
 }
-use crate::game_events::GameEvents;
+use crate::{
+    game_events::GameEvents,
+    listeners::ui::{listener_ui_encounter_disable, listener_ui_healing_enable, ui_panel_medic},
+};
 use core::{
+    collections::event_queue::{EventScope, IGameEvent},
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
     input::{input_mapping::InputMapping, key_code::ButtonCode},
@@ -188,7 +193,9 @@ use core::{
         asset_loader::AssetLoader,
     },
 };
-use system_component_default_gameplay::SystemComponentDefaultGameplay;
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
+use system_component_default_gameplay::{IUIEvent, SystemComponentDefaultGameplay};
 use system_component_default_input::SystemComponentDefaultInput;
 use system_component_default_networking::SystemComponentDefaultNetworking;
 use system_component_default_physics::SystemComponentDefaultPhysics;
@@ -241,7 +248,7 @@ fn main() {
                     SystemComponentDefaultTime::new(),
                     SystemComponentDefaultInput::new(),
                     SystemComponentDefaultPhysics::new(),
-                    SystemComponentDefaultGameplay::<GameEvents>::new(),
+                    SystemComponentDefaultGameplay::<GameEvents, UIEvents>::new(),
                     SystemComponentDefaultGraphics::new(),
                     SystemComponentDefaultNetworking::new(),
                 ],
@@ -279,4 +286,32 @@ fn main() {
         },
         WindowLayout::fullscreen_1080(),
     );
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
+enum UIEvents {
+    PanelMedic,
+    PanelShop,
+    PanelExploration,
+    HudEncounter,
+}
+impl IUIEvent for UIEvents {
+    fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UI> {
+        match self {
+            UIEvents::PanelMedic => ui_panel_medic::UIPanelMedic::new(),
+            UIEvents::PanelShop => todo!(),
+            UIEvents::PanelExploration => todo!(),
+            UIEvents::HudEncounter => todo!(),
+        }
+    }
+}
+impl Display for UIEvents {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            UIEvents::PanelMedic => f.write_str("medic"),
+            UIEvents::PanelShop => f.write_str("shop"),
+            UIEvents::PanelExploration => f.write_str("exploration"),
+            UIEvents::HudEncounter => f.write_str("enounter"),
+        }
+    }
 }

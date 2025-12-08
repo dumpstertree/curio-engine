@@ -9,9 +9,8 @@ pub struct Transform {
     pub rotation: Quaternion,
     pub scale: Vector3,
 }
-
-impl Transform {
-    pub fn default() -> Transform {
+impl Default for Transform {
+    fn default() -> Transform {
         Transform {
             parent: None,
             position: Vector3::zero(),
@@ -19,6 +18,9 @@ impl Transform {
             scale: Vector3::one(),
         }
     }
+}
+
+impl Transform {
     pub fn get_matrix(&self) -> Matrix4x4 {
         Matrix4x4::new(self.position, self.rotation, self.scale)
     }

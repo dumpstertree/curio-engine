@@ -1,32 +1,44 @@
 use core::{
     collections::{
-        event_queue::{EventQueue, IGameEvent},
-        game_state::GameState,
+        event_queue::{self, EventQueue, EventScope, IGameEvent},
+        game_state::{self, GameState},
+        input_button::InputButtonState,
+        input_cursor::InputAxisState,
     },
     gameplay::ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
+    input::{
+        axis_code::{self, AxisCode},
+        key_code::ButtonCode,
+    },
     static_data::{global_ecs::get_global_ecs_instances, global_event_recievers::get_global_event_receivers},
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
 };
-use hecs::World;
-use std::{fmt::Display, vec};
+use hecs::{Component, ComponentRef, DynamicBundle, Entity, QueryBorrow, World};
+use serde::{Deserialize, Serialize};
+use std::{fmt::Display, marker::PhantomData, sync::Arc, vec};
 
-pub struct GameplayInstance<T>
+pub struct GameplayInstance<T, U>
 where
     T: IGameEvent + Clone + 'static,
+    U: IUIEvent + Clone + 'static,
 {
+    phantom_u: PhantomData<U>,
     // network_mode: NetworkModes,
     has_been_init: bool,
     // game_state: GameState,
     world: World,
     ecs_systems: Vec<(Box<dyn ECSSystemEventless>, bool)>,
     event_recievers: Vec<Box<dyn EventReciever<T>>>,
+
+    ui: Vec<(Box<dyn UI>, WorldContext)>,
 }
 
-impl<T> GameplayInstance<T>
+impl<T, U> GameplayInstance<T, U>
 where
     T: IGameEvent + Clone + 'static,
+    U: IUIEvent + Clone + 'static,
 {
-    pub fn new() -> GameplayInstance<T> {
+    pub fn new() -> GameplayInstance<T, U> {
         //create the world everything is in
         let world = World::new();
 
@@ -43,17 +55,16 @@ where
         }
 
         // create the instance
-        GameplayInstance {
+        GameplayInstance::<T, U> {
             world,
             ecs_systems,
             event_recievers,
             has_been_init: false,
+            ui: Vec::new(),
+            phantom_u: PhantomData::default(),
         }
     }
-    pub fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue)
-    where
-        T: IGameEvent + Display + 'static + Clone,
-    {
+    pub fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue) {
         // if not init -> init
         if !self.has_been_init {
             // flip flag
@@ -99,7 +110,25 @@ where
         }
 
         let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
+        //
+        let event = event_queue.drain_queued_events::<UIEvents<U>>();
+        for e in event {
+            match e {
+                UIEvents::Open(x) => {
+                    let mut c = WorldContext::new();
+                    let mut i = x.new_instance();
+                    i.init();
+                    i.present(game_state, event_queue, &mut c);
+                    //
+                    self.ui.push((i, c))
+                }
+                UIEvents::Close(_) => todo!("close"),
+            }
+        }
 
+        for x in self.ui.iter_mut() {
+            x.0.tick(game_state, event_queue, &mut x.1);
+        }
         //
         let mut event = event_queue.drain_queued_events::<T>();
 
@@ -170,30 +199,34 @@ where
     }
 }
 
-pub struct SystemComponentDefaultGameplay<T>
+pub struct SystemComponentDefaultGameplay<T, U>
 where
     T: IGameEvent + Clone + 'static,
+    U: IUIEvent + 'static,
 {
-    game_instance: Vec<GameplayInstance<T>>,
+    game_instance: Vec<GameplayInstance<T, U>>,
 }
 
-impl<T> SystemComponentDefaultGameplay<T>
+impl<T, U> SystemComponentDefaultGameplay<T, U>
 where
     T: IGameEvent + Clone + 'static,
+    U: IUIEvent + 'static,
 {
-    pub fn new() -> Box<SystemComponentDefaultGameplay<T>> {
-        Box::new(SystemComponentDefaultGameplay::<T> { game_instance: vec![] })
+    pub fn new() -> Box<SystemComponentDefaultGameplay<T, U>> {
+        Box::new(SystemComponentDefaultGameplay::<T, U> { game_instance: vec![] })
     }
 }
-impl<T> SystemComponentGameplay for SystemComponentDefaultGameplay<T>
+impl<T, U> SystemComponentGameplay for SystemComponentDefaultGameplay<T, U>
 where
     T: IGameEvent + Display + 'static + Clone,
+    U: IUIEvent + 'static,
 {
     fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECSSystemEventless>>) {}
 }
-impl<T> SystemComponent for SystemComponentDefaultGameplay<T>
+impl<T, U> SystemComponent for SystemComponentDefaultGameplay<T, U>
 where
     T: IGameEvent + Display + 'static + Clone,
+    U: IUIEvent + 'static,
 {
     fn order(&self) -> i32 {
         5000
@@ -215,5 +248,176 @@ where
             // tick the instance
             self.game_instance[i].tick(game_state, event_queue);
         }
+    }
+}
+
+pub trait UI {
+    fn init(&mut self);
+    /*
+       let obj = context.spawn()
+       let t = obj.addcomponent<Text>
+       let a = obj.addcomponent<Audio>
+
+        t.set_contents()
+
+        obj.destroy()
+
+    */
+    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext);
+    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext);
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext);
+}
+
+pub trait UIHud: UI {}
+
+pub trait UIPanel: UI {
+    fn input_button(button: ButtonCode, state: InputButtonState);
+    fn input_axis(axis: AxisCode, state: InputAxisState);
+}
+
+pub trait UIDialog: UI {
+    fn input_button(button: ButtonCode, state: InputButtonState);
+    fn input_axis(axis: AxisCode, state: InputAxisState);
+}
+use std::cell::RefCell;
+use std::rc::Rc;
+
+pub struct WorldContext {
+    pub world: Rc<RefCell<World>>,
+}
+
+impl WorldContext {
+    pub fn new() -> Self {
+        Self { world: Rc::new(RefCell::new(World::new())) }
+    }
+
+    /// Removes all entities and components.
+    pub fn clear(&mut self) {
+        self.world.borrow_mut().clear();
+    }
+
+    /// Borrow a query from the world.
+    pub fn query<Q, R>(&self, f: impl FnOnce(QueryBorrow<Q>) -> R) -> R
+    where
+        Q: hecs::Query,
+    {
+        let world_ref = self.world.borrow();
+        let q = world_ref.query::<Q>();
+        f(q)
+    }
+
+    /// Create a new empty GameObject (Unity-style "Instantiate").
+    pub fn instantiate(&mut self) -> GameObject {
+        let entity: Entity = self.world.borrow_mut().spawn(());
+
+        GameObject::new(self.world.clone(), entity)
+    }
+
+    /// Destroy a GameObject (Unity-style "Destroy").
+    pub fn destroy(&mut self, go: GameObject) {
+        let _ = self.world.borrow_mut().despawn(go.entity);
+    }
+}
+/// A Unity-style wrapper for an ECS entity.
+#[derive(Clone)]
+pub struct GameObject {
+    world: Rc<RefCell<World>>,
+    pub entity: Entity,
+    pub name: String,
+}
+
+impl GameObject {
+    pub fn new(world: Rc<RefCell<World>>, entity: Entity) -> Self {
+        Self { world, entity, name: String::new() }
+    }
+
+    // -------------------------------
+    // Component Management
+    // -------------------------------
+
+    /// Add a component T using its default value.
+    pub fn add_component_default<T>(&self) -> &GameObject
+    where
+        T: Component + Default,
+    {
+        self.world
+            .borrow_mut()
+            .insert_one(self.entity, T::default())
+            .expect("Failed to insert component");
+
+        self
+    }
+
+    /// Add a specific component instance.
+    pub fn add_component_value<T>(&self, value: T) -> &GameObject
+    where
+        T: Component,
+    {
+        self.world
+            .borrow_mut()
+            .insert_one(self.entity, value)
+            .expect("Failed to insert component");
+
+        self
+    }
+
+    /// Modify a component in-place.
+    pub fn edit_component<T: Component + 'static>(&self, edit_fn: impl FnOnce(&mut T)) {
+        let world = self.world.borrow_mut();
+        let mut borrow = world
+            .get::<&mut T>(self.entity)
+            .unwrap_or_else(|_| panic!("GameObject '{}' does not contain component {}", self.name, std::any::type_name::<T>(),));
+        edit_fn(&mut *borrow);
+    }
+
+    /// Get a cloned component value (Unity style).
+    pub fn get_component<T: Component + Clone + 'static>(&self) -> Option<T> {
+        let world = self.world.borrow();
+        let borrow = world.get::<&T>(self.entity).ok()?;
+        Some((*borrow).clone())
+    }
+
+    /// Returns true if the object contains component T.
+    pub fn has_component<T: Component + 'static>(&self) -> bool {
+        self.world.borrow().get::<&T>(self.entity).is_ok()
+    }
+}
+
+pub trait IUIEvent: Clone + Copy + Display + Sync {
+    fn new_instance(&self) -> Box<dyn UI>;
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub enum UIEvents<T>
+where
+    T: Clone + Sync + IUIEvent + 'static,
+{
+    Open(T),
+    Close(T),
+}
+impl<T> Display for UIEvents<T>
+where
+    T: Clone + Sync + IUIEvent + 'static,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+impl<T> IGameEvent for UIEvents<T>
+where
+    T: Clone + Sync + IUIEvent + 'static,
+{
+    fn id() -> i32
+    where
+        Self: Sized + 'static,
+    {
+        1
+    }
+
+    fn ownership(&self) -> EventScope
+    where
+        Self: Sized + 'static,
+    {
+        EventScope::Instance
     }
 }

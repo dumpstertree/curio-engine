@@ -3773,6 +3773,7 @@ dependencies = [
  "hecs",
  "intertrait",
  "linkme",
+ "serde",
 ]
 
 [[package]]

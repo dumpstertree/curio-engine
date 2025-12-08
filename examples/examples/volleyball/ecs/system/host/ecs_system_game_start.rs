@@ -1,6 +1,7 @@
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::global_ecs_system;
 use hecs::World;
+use system_component_default_gameplay::UI;
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
@@ -10,6 +11,7 @@ use core::{
 use std::vec;
 
 use crate::{
+    UIEvents,
     exploration::exploration_path::Exploration,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamAssignment, TeamController},
@@ -39,6 +41,10 @@ impl ECSSystemEventless for ECSSystemGameStart {
             x.resolution_height = 1080 / 1;
         });
 
+        // open ui
+        event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIEvents::PanelMedic));
+
+        // open exploration
         event_queue.enqueue_event(GameEvents::InitializeExploration(Exploration::random()));
     }
 }

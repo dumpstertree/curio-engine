@@ -11,7 +11,7 @@ use crate::{
     exploration::exploration_path::RoomTypes,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamController},
-    state::{host::state_exploration::StateExploration, state_teams::Teams},
+    state::{host::state_exploration::StateExploration, state_score::StateScore, state_teams::Teams},
 };
 
 #[derive(Default)]
@@ -46,6 +46,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
 
                 // get the exploration from the state
                 let cur_exploration = state_exploration.exploration;
+
+                // set the healthpoint total
+                game_state.edit::<StateScore>(|x| {
+                    x.all_scores.insert(Teams::Red, 10);
+                });
 
                 // enter the new room
                 event_queue.enqueue_event(GameEvents::ExplorationRoomEnter(cur_exploration.get_cur_room()));

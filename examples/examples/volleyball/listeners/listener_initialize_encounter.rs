@@ -134,11 +134,6 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                 x.all_players.insert(*guid, Controller::Player);
                             });
                         }
-
-                        // set the healthpoint total
-                        game_state.edit::<StateScore>(|x| {
-                            x.all_scores.insert(Teams::Blue, 5);
-                        });
                     }
                     TeamController::Invald => todo!(),
                 }
@@ -204,10 +199,6 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                 x.all_players.insert(*guid, Controller::Player);
                             });
                         }
-                        // set the healthpoint total
-                        game_state.edit::<StateScore>(|x| {
-                            x.all_scores.insert(Teams::Red, 5);
-                        });
                     }
                     TeamController::Invald => todo!(),
                 }
