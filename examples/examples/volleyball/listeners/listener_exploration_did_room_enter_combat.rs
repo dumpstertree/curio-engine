@@ -1,4 +1,3 @@
-use crate::AssetMappingUIDs;
 use crate::ecs::components::component_ball::ComponentBall;
 use crate::ecs::components::component_energy_token::ComponentEnergyToken;
 use crate::ecs::components::component_player::ComponentPlayer;
@@ -7,13 +6,14 @@ use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
+use crate::{AssetMappingUIDs, UIViewTypes};
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_renderer_static::Renderer;
-use built_in::component::component_transform::Transform;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
+use core::gameplay::ecs::component::component_transform::Transform;
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
+use core::gameplay::world_context::{WorldContext, WorldContextCommon};
 use core::io::asset_loader::AssetLoader;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -48,6 +48,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
 
                 // change ui
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::Encounter));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterBallMode));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterEnergy));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterScore));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterTurn));
             }
             _ => {}
         }
@@ -58,10 +62,10 @@ impl Listener {
         let mut r = Renderer::default();
         r = r.set_asset(Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Ball.uid())));
 
-        let e = world.instantiate();
-        e.add_component_value(Transform::default().set_scale(Vector3::one() * 0.5));
-        e.add_component_value(ComponentBall::default());
-        e.add_component_value(r);
+        let e = world
+            .instantiate("", Transform::default().set_scale(Vector3::one() * 0.5))
+            .add_component_value(ComponentBall::default())
+            .add_component_value(r);
 
         game_state.edit::<StateEntityIDs>(|x| {
             x.add(EntityIDTypes::Ball, e.clone());
@@ -72,9 +76,9 @@ impl Listener {
         // let spine = AssetLoader::load_spine_from_path("path");
         let asset_court = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Court.uid());
 
-        let e = world.instantiate();
-        e.add_component_value(Transform::default().set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))));
-        e.add_component_value(Renderer::default().set_asset(Some(asset_court)));
+        let e = world
+            .instantiate("", Transform::default().set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))))
+            .add_component_value(Renderer::default().set_asset(Some(asset_court)));
 
         game_state.edit::<StateEntityIDs>(|x| {
             x.add(EntityIDTypes::Background, e.clone());
@@ -91,14 +95,15 @@ impl Listener {
                     let mut rend = RendererAnimated::default();
                     rend.set_asset(Some(asset_goblin.clone()));
                     // players
-                    let e = world.instantiate();
-                    e.add_component_value(ComponentViewPlayer::default())
-                        .add_component_value(ComponentPlayer::default().set_player_id(*guid))
-                        .add_component_value(
+                    let e = world
+                        .instantiate(
+                            "",
                             Transform::default()
                                 .set_position(Vector3::new(-5.0, -5.0, 10.0))
                                 .set_rotation(Quaternion::from_euler(Vector3::new(1.0, 0.0, 1.0))),
                         )
+                        .add_component_value(ComponentViewPlayer::default())
+                        .add_component_value(ComponentPlayer::default().set_player_id(*guid))
                         .add_component_value(rend);
                     game_state.edit::<StateEntityIDs>(|x| {
                         x.add(EntityIDTypes::Entities, e.clone());

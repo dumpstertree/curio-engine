@@ -1,4 +1,3 @@
-use crate::AssetMappingUIDs;
 use crate::ecs::components::component_ball::ComponentBall;
 use crate::ecs::components::component_energy_token::ComponentEnergyToken;
 use crate::ecs::components::component_player::ComponentPlayer;
@@ -7,9 +6,9 @@ use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
+use crate::{AssetMappingUIDs, UIViewTypes};
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_renderer_static::Renderer;
-use built_in::component::component_transform::Transform;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
@@ -41,7 +40,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 println!("enter heal room");
 
                 // change ui
-                event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::Heal));
+                // event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::Heal));
+                // open ui
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::PanelMedic));
             }
             _ => {}
         }

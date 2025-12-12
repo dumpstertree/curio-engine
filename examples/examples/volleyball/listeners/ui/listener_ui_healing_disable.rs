@@ -2,7 +2,6 @@ use built_in::component::{
     component_renderer_animated::RendererAnimated,
     component_renderer_static::Renderer,
     component_renderer_text::{ComponentRendererText, RendererCommon},
-    component_transform::Transform,
 };
 use built_in_state::state_camera::CameraState;
 use core::{

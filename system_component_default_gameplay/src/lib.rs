@@ -4,10 +4,11 @@ use core::{
         game_state::{self, GameState},
         input_button::InputButtonState,
         input_cursor::InputAxisState,
+        key_state::KeyState,
     },
     gameplay::{
         ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
-        world_context::WorldContext,
+        world_context::{WorldContext, WorldContext2D},
     },
     input::{
         axis_code::{self, AxisCode},
@@ -18,7 +19,7 @@ use core::{
 };
 use hecs::{Component, ComponentRef, DynamicBundle, Entity, QueryBorrow, World};
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, marker::PhantomData, sync::Arc, vec};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, hash::Hash, marker::PhantomData, rc::Rc, sync::Arc, vec};
 
 pub struct GameplayInstance<T, U>
 where
@@ -30,10 +31,11 @@ where
     has_been_init: bool,
     // game_state: GameState,
     world: WorldContext,
+    world_2d: WorldContext2D,
     ecs_systems: Vec<(Box<dyn ECSSystemEventless>, bool)>,
     event_recievers: Vec<Box<dyn EventReciever<T>>>,
 
-    ui: Vec<Box<dyn UI>>,
+    ui: HashMap<U, Box<dyn UIPanel>>,
 }
 
 impl<T, U> GameplayInstance<T, U>
@@ -42,8 +44,10 @@ where
     U: IUIEvent + Clone + 'static,
 {
     pub fn new() -> GameplayInstance<T, U> {
+        let w = Rc::new(RefCell::new(World::new()));
         //create the world everything is in
-        let world = WorldContext::new();
+        let world = WorldContext::new(w.clone());
+        let world_2d = WorldContext2D::new(w.clone());
 
         // get all ecs instances
         let mut ecs_systems = vec![];
@@ -60,10 +64,11 @@ where
         // create the instance
         GameplayInstance::<T, U> {
             world,
+            world_2d,
             ecs_systems,
             event_recievers,
             has_been_init: false,
-            ui: Vec::new(),
+            ui: HashMap::new(),
             phantom_u: PhantomData::default(),
         }
     }
@@ -120,11 +125,15 @@ where
                 UIEvents::Open(x) => {
                     let mut i = x.new_instance();
                     i.init();
-                    i.present(game_state, event_queue, &mut self.world);
+                    i.present(game_state, event_queue, &mut self.world_2d);
                     //
-                    self.ui.push(i)
+                    self.ui.insert(x, i);
                 }
-                UIEvents::Close(_) => todo!("close"),
+                UIEvents::Close(u) => {
+                    if let Some(mut x) = self.ui.remove(&u) {
+                        x.dismiss(game_state, event_queue, &mut self.world_2d);
+                    }
+                }
             }
         }
 
@@ -195,7 +204,7 @@ where
         }
 
         for x in self.ui.iter_mut() {
-            x.tick(game_state, event_queue, &mut self.world);
+            x.1.tick(game_state, event_queue, &mut self.world_2d);
         }
         // dequeue events
     }
@@ -230,6 +239,20 @@ where
     T: IGameEvent + Display + 'static + Clone,
     U: IUIEvent + 'static,
 {
+    fn input_button(&mut self, _game_state: &mut Vec<GameState>, key_code: ButtonCode, val: core::collections::key_state::KeyState) {
+        // for x in self.game_instance.iter_mut() {
+        //     for y in x.ui.iter_mut() {
+        //         y.input_button(key_code, val);
+        //     }
+        // }
+    }
+    fn input_axis(&mut self, _game_statee: &mut Vec<GameState>, axis_code: AxisCode, val: core::collections::vector3::Vector3) {
+        // for x in self.game_instance {
+        //     for y in x.ui {
+        //         // y.input_axis(axis_code, inputac);
+        //     }
+        // }
+    }
     fn order(&self) -> i32 {
         5000
     }
@@ -265,16 +288,16 @@ pub trait UI {
         obj.destroy()
 
     */
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext);
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext);
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext);
+    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D);
+    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D);
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D);
 }
 
 pub trait UIHud: UI {}
 
 pub trait UIPanel: UI {
-    fn input_button(button: ButtonCode, state: InputButtonState);
-    fn input_axis(axis: AxisCode, state: InputAxisState);
+    fn input_button(&mut self, button: ButtonCode, state: KeyState);
+    fn input_axis(&mut self, axis: AxisCode, state: InputAxisState);
 }
 
 pub trait UIDialog: UI {
@@ -282,8 +305,8 @@ pub trait UIDialog: UI {
     fn input_axis(axis: AxisCode, state: InputAxisState);
 }
 
-pub trait IUIEvent: Clone + Copy + Display + Sync {
-    fn new_instance(&self) -> Box<dyn UI>;
+pub trait IUIEvent: Clone + Copy + Display + Sync + PartialEq + Eq + Hash {
+    fn new_instance(&self) -> Box<dyn UIPanel>;
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize)]

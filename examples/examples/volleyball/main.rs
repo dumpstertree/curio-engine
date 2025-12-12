@@ -79,6 +79,10 @@ pub mod listeners {
         pub mod listener_ui_encounter_enable;
         pub mod listener_ui_healing_disable;
         pub mod listener_ui_healing_enable;
+        pub mod ui_hud_encounter_ball_mode;
+        pub mod ui_hud_encounter_energy;
+        pub mod ui_hud_encounter_score;
+        pub mod ui_hud_encounter_turn;
         pub mod ui_panel_medic;
     }
 }
@@ -181,7 +185,7 @@ pub mod ecs {
 }
 use crate::{
     game_events::GameEvents,
-    listeners::ui::{listener_ui_encounter_disable, listener_ui_healing_enable, ui_panel_medic},
+    listeners::ui::{listener_ui_encounter_disable, listener_ui_healing_enable, ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_panel_medic},
 };
 use core::{
     collections::event_queue::{EventScope, IGameEvent},
@@ -248,7 +252,7 @@ fn main() {
                     SystemComponentDefaultTime::new(),
                     SystemComponentDefaultInput::new(),
                     SystemComponentDefaultPhysics::new(),
-                    SystemComponentDefaultGameplay::<GameEvents, UIEvents>::new(),
+                    SystemComponentDefaultGameplay::<GameEvents, UIViewTypes>::new(),
                     SystemComponentDefaultGraphics::new(),
                     SystemComponentDefaultNetworking::new(),
                 ],
@@ -288,30 +292,39 @@ fn main() {
     );
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
-enum UIEvents {
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+enum UIViewTypes {
     PanelMedic,
     PanelShop,
     PanelExploration,
-    HudEncounter,
+    HudEncounterEnergy,
+    HudEncounterScore,
+    HudEncounterTurn,
+    HudEncounterBallMode,
 }
-impl IUIEvent for UIEvents {
-    fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UI> {
+impl IUIEvent for UIViewTypes {
+    fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UIPanel> {
         match self {
-            UIEvents::PanelMedic => ui_panel_medic::UIPanelMedic::new(),
-            UIEvents::PanelShop => todo!(),
-            UIEvents::PanelExploration => todo!(),
-            UIEvents::HudEncounter => todo!(),
+            UIViewTypes::PanelMedic => ui_panel_medic::UIPanelMedic::new(),
+            UIViewTypes::PanelShop => todo!(),
+            UIViewTypes::PanelExploration => todo!(),
+            UIViewTypes::HudEncounterEnergy => ui_hud_encounter_energy::UIHUD::new(),
+            UIViewTypes::HudEncounterScore => ui_hud_encounter_score::UIHUD::new(),
+            UIViewTypes::HudEncounterTurn => ui_hud_encounter_turn::UIHUD::new(),
+            UIViewTypes::HudEncounterBallMode => ui_hud_encounter_ball_mode::UIHUD::new(),
         }
     }
 }
-impl Display for UIEvents {
+impl Display for UIViewTypes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UIEvents::PanelMedic => f.write_str("medic"),
-            UIEvents::PanelShop => f.write_str("shop"),
-            UIEvents::PanelExploration => f.write_str("exploration"),
-            UIEvents::HudEncounter => f.write_str("enounter"),
+            UIViewTypes::PanelMedic => f.write_str("medic"),
+            UIViewTypes::PanelShop => f.write_str("shop"),
+            UIViewTypes::PanelExploration => f.write_str("exploration"),
+            UIViewTypes::HudEncounterEnergy => f.write_str("energy"),
+            UIViewTypes::HudEncounterScore => f.write_str("score"),
+            UIViewTypes::HudEncounterTurn => f.write_str("turn"),
+            UIViewTypes::HudEncounterBallMode => f.write_str("ball mode"),
         }
     }
 }

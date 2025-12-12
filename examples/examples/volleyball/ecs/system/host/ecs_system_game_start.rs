@@ -11,7 +11,7 @@ use core::{
 use std::vec;
 
 use crate::{
-    UIEvents,
+    UIViewTypes,
     exploration::exploration_path::Exploration,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamAssignment, TeamController},
@@ -40,9 +40,6 @@ impl ECSSystemEventless for ECSSystemGameStart {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
         });
-
-        // open ui
-        event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIEvents::PanelMedic));
 
         // open exploration
         event_queue.enqueue_event(GameEvents::InitializeExploration(Exploration::random()));

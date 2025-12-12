@@ -4,7 +4,6 @@ pub mod component {
     pub mod component_renderer_animated;
     pub mod component_renderer_static;
     pub mod component_renderer_text;
-    pub mod component_transform;
     pub mod component_colliders {
         pub mod component_collider_box;
         pub mod component_collider_sphere;

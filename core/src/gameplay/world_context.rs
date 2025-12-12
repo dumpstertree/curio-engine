@@ -1,50 +1,116 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use hecs::{Component, Entity, QueryBorrow, QueryMut, World};
+use cgmath::Vector3;
+use hecs::{Component, Entity, Query, QueryBorrow, QueryMut, World};
+use rapier3d::na;
 
-pub struct WorldContext {
-    pub world: Rc<RefCell<World>>,
-}
+use crate::gameplay::ecs::component::{component_transform::Transform, component_transform2d::Transform2D};
 
-impl WorldContext {
-    pub fn new() -> Self {
-        Self { world: Rc::new(RefCell::new(World::new())) }
-    }
-
+pub trait WorldContextCommon {
     /// Removes all entities and components.
-    pub fn clear(&mut self) {
-        self.world.borrow_mut().clear();
+    fn clear(&mut self) {
+        self.get_world().borrow_mut().clear();
     }
+
+    fn get<Q>(&self) -> Vec<Q>
+    where
+        Q: hecs::Component + Clone,
+    {
+        let world_ref = self.get_world();
+        let world = world_ref.borrow(); // Immutable borrow
+        let mut out = Vec::new();
+
+        for (_entity, component) in world.query::<&Q>().iter() {
+            out.push(component.clone()); // Clone Q
+        }
+
+        out
+    }
+    // /// Collect query results into an owned Vec so the borrow ends inside the fn.
+    // fn query<Q>(&self) -> Vec<(Entity, <Q as Query>::Item<'static>)>
+    // where
+    //     Q: hecs::Query + Clone,
+    // {
+    //     let world = self.get_world();
+    //     let world_ref = world.borrow();
+
+    //     let mut out: Vec<(Entity, <Q as Query>::Item<'_>)> = Vec::new();
+
+    //     // iterate produces Q::Item<'a>
+    //     for item in world_ref.query::<Q>().iter() {
+    //         out.push(item.clone());
+    //     }
+
+    //     out
+    // }
+
     /// Borrow a query from the world.
-    pub fn query<Q>(&self, f: impl FnOnce(QueryBorrow<Q>))
+    fn query_mut<Q>(&self, f: impl FnOnce(QueryMut<Q>))
     where
         Q: hecs::Query,
     {
-        let world_ref = self.world.borrow();
-        let q = world_ref.query::<Q>();
-        f(q);
-    }
-    /// Borrow a query from the world.
-    pub fn query_mut<Q>(&self, f: impl FnOnce(QueryMut<Q>))
-    where
-        Q: hecs::Query,
-    {
-        let mut world_ref = self.world.borrow_mut();
+        let w = self.get_world();
+        let mut world_ref = w.borrow_mut();
         let q = world_ref.query_mut::<Q>();
         f(q);
     }
 
-    /// Create a new empty GameObject (Unity-style "Instantiate").
-    pub fn instantiate(&mut self) -> GameObject {
-        let entity: Entity = self.world.borrow_mut().spawn(());
-
-        GameObject::new(self.world.clone(), entity)
+    /// Destroy a GameObject (Unity-style "Destroy").
+    fn destroy(&mut self, go: GameObject) {
+        let _ = self.get_world().borrow_mut().despawn(go.entity);
     }
 
-    /// Destroy a GameObject (Unity-style "Destroy").
-    pub fn destroy(&mut self, go: GameObject) {
-        let _ = self.world.borrow_mut().despawn(go.entity);
+    fn get_world(&self) -> Rc<RefCell<World>>;
+}
+pub struct WorldContext2D {
+    pub world: Rc<RefCell<World>>,
+}
+impl WorldContextCommon for WorldContext2D {
+    fn get_world(&self) -> Rc<RefCell<World>> {
+        self.world.clone()
+    }
+}
+impl WorldContext2D {
+    pub fn new(world: Rc<RefCell<World>>) -> Self {
+        Self { world }
+    }
+
+    /// Create a new empty GameObject (Unity-style "Instantiate").
+    pub fn instantiate(&mut self, name: &str, t: Transform2D) -> GameObject {
+        let entity = {
+            let world = self.get_world();
+            let mut world = world.borrow_mut();
+            world.spawn(())
+        };
+        let go = GameObject::new(name, self.get_world().clone(), entity).add_component_value::<Transform2D>(t);
+        go
+    }
+}
+pub struct WorldContext {
+    pub world: Rc<RefCell<World>>,
+}
+
+impl WorldContextCommon for WorldContext {
+    fn get_world(&self) -> Rc<RefCell<World>> {
+        self.world.clone()
+    }
+}
+impl WorldContext {
+    pub fn new(world: Rc<RefCell<World>>) -> Self {
+        Self { world }
+    }
+
+    ///
+    pub fn instantiate(&mut self, name: &str, t: Transform) -> GameObject {
+        let entity = {
+            let world = self.get_world();
+            let mut world = world.borrow_mut();
+            world.spawn(())
+        };
+
+        let go = GameObject::new(name, self.get_world().clone(), entity).add_component_value(t);
+        go
     }
 }
 /// A Unity-style wrapper for an ECS entity.
@@ -62,8 +128,8 @@ impl PartialEq for GameObject {
 }
 
 impl GameObject {
-    pub fn new(world: Rc<RefCell<World>>, entity: Entity) -> Self {
-        Self { world, entity, name: String::new() }
+    pub fn new(name: &str, world: Rc<RefCell<World>>, entity: Entity) -> Self {
+        Self { world, entity, name: name.to_string() }
     }
 
     // -------------------------------
@@ -71,7 +137,7 @@ impl GameObject {
     // -------------------------------
 
     /// Add a component T using its default value.
-    pub fn add_component_default<T>(&self) -> &GameObject
+    pub fn add_component_default<T>(self) -> Self
     where
         T: Component + Default,
     {
@@ -84,7 +150,7 @@ impl GameObject {
     }
 
     /// Add a specific component instance.
-    pub fn add_component_value<T>(&self, value: T) -> &GameObject
+    pub fn add_component_value<T>(self, value: T) -> Self
     where
         T: Component,
     {
@@ -107,11 +173,14 @@ impl GameObject {
 
     /// Get a cloned component value (Unity style).
     pub fn get_component<T: Component + Clone + 'static>(&self) -> Option<T> {
-        let world = self.world.borrow();
-        let borrow = world.get::<&T>(self.entity).ok()?;
-        Some((*borrow).clone())
-    }
+        let cloned = {
+            let world = self.world.borrow();
+            let borrow = world.get::<&T>(self.entity).ok()?;
+            (*borrow).clone()
+        }; // borrow ends here
 
+        Some(cloned)
+    }
     /// Returns true if the object contains component T.
     pub fn has_component<T: Component + 'static>(&self) -> bool {
         self.world.borrow().get::<&T>(self.entity).is_ok()

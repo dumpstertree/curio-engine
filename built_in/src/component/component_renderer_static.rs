@@ -5,12 +5,14 @@ use hecs::Entity;
 
 use crate::component::component_renderer_text::RendererCommon;
 
-// #[derive(Clone)]
+#[derive(Clone)]
 pub struct Renderer {
     pub asset: Option<Arc<ModelAsset>>,
     parent: Option<GameObject>,
     enabled: bool,
     tint: Color,
+    cached_enabled_in_hierachy: bool,
+    cached_tint_in_hierachy: Color,
 }
 
 unsafe impl Send for Renderer {}
@@ -23,6 +25,8 @@ impl Renderer {
             parent: None,
             enabled: true,
             tint: Color::white(),
+            cached_enabled_in_hierachy: false,
+            cached_tint_in_hierachy: Color::white(),
         }
     }
     pub fn set_asset(mut self, asset: Option<Arc<ModelAsset>>) -> Self {
@@ -53,5 +57,21 @@ impl RendererCommon for Renderer {
 
     fn get_tint(&self) -> Color {
         self.tint
+    }
+
+    fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
+        self.cached_enabled_in_hierachy = val;
+    }
+
+    fn get_cached_enabled_in_hierarchy(&self) -> bool {
+        self.cached_enabled_in_hierachy
+    }
+
+    fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
+        self.cached_tint_in_hierachy = val;
+    }
+
+    fn get_cached_tint_in_hierarchy(&self) -> Color {
+        self.cached_tint_in_hierachy
     }
 }

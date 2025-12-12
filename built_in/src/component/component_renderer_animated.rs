@@ -16,8 +16,9 @@ use crate::component::{component_renderer_static::Renderer, component_renderer_t
 unsafe impl Send for RendererAnimated {}
 unsafe impl Sync for RendererAnimated {}
 
-// #[derive(Clone)]
 pub struct RendererAnimated {
+    cached_enabled_in_hierachy: bool,
+    cached_tint_in_hierachy: Color,
     skeleton: Option<Skeleton>,
     state: Option<AnimationState>,
     pub fps: i32,
@@ -29,7 +30,41 @@ pub struct RendererAnimated {
     enabled: bool,
     tint: Color,
 }
+impl Clone for RendererAnimated {
+    fn clone(&self) -> Self {
+        Self {
+            skeleton: None,
+            state: None,
+            fps: self.fps.clone(),
+            last_update: self.last_update.clone(),
+            asset: self.asset.clone(),
+            mesh: self.mesh.clone(),
+            last_animation: self.last_animation.clone(),
+            parent: self.parent.clone(),
+            enabled: self.enabled.clone(),
+            tint: self.tint.clone(),
+            cached_enabled_in_hierachy: false,
+            cached_tint_in_hierachy: Color::white(),
+        }
+    }
+}
+
 impl RendererCommon for RendererAnimated {
+    fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
+        self.cached_enabled_in_hierachy = val;
+    }
+
+    fn get_cached_enabled_in_hierarchy(&self) -> bool {
+        self.cached_enabled_in_hierachy
+    }
+
+    fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
+        self.cached_tint_in_hierachy = val;
+    }
+
+    fn get_cached_tint_in_hierarchy(&self) -> Color {
+        self.cached_tint_in_hierachy
+    }
     fn set_parent(&mut self, parent: Option<GameObject>) {
         self.parent = parent;
     }
@@ -68,6 +103,8 @@ impl RendererAnimated {
             parent: None,
             enabled: true,
             tint: Color::white(),
+            cached_enabled_in_hierachy: false,
+            cached_tint_in_hierachy: Color::white(),
         }
     }
 
@@ -76,11 +113,13 @@ impl RendererAnimated {
         if name.to_string() == self.last_animation {
             return self;
         }
+
         if let Some(asset_animated) = &self.asset {
             if let Some(state) = &mut self.state {
                 if let Some(animation) = asset_animated.skeleton_data.find_animation(name) {
                     // set animation
                     state.set_animation(0, &animation, looping);
+
                     // update mesh
                     self.update_mesh(self.last_update);
                 } else {

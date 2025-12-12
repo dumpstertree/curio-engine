@@ -1,3 +1,4 @@
+use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
@@ -28,7 +29,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
             GameEvents::ExplorationDidRoomExitHeal(_) => {
                 println!("exit heal room");
                 // change ui
-                event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::None));
+                // event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::None));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::PanelMedic));
             }
             _ => {}
         }

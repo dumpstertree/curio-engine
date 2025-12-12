@@ -76,6 +76,8 @@ pub mod gameplay {
         }
         pub mod component {
             pub mod component_collider;
+            pub mod component_transform;
+            pub mod component_transform2d;
         }
     }
 }

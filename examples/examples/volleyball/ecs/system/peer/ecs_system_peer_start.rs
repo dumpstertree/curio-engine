@@ -1,4 +1,4 @@
-use built_in::component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
+use built_in::component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer};
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork, state_sun::StateSun, state_time::TimeState};
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -6,12 +6,15 @@ use hecs::World;
 use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
-    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
+    gameplay::{
+        ecs::{component::component_transform::Transform, traits::ecs_system::ECSSystemEventless},
+        world_context::{WorldContext, WorldContextCommon},
+    },
     io::asset_loader::AssetLoader,
 };
 
 use crate::{
-    AssetMappingUIDs, UIEvents,
+    AssetMappingUIDs, UIViewTypes,
     ecs::components::{component_ball::ComponentBall, component_player::ComponentPlayer, component_view_player::ComponentViewPlayer},
     state::state_teams::{StateTeamAssignments, Teams},
 };
@@ -42,9 +45,6 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             x.direction = (Vector3::forward() + Vector3::down()).normalize_and_copy();
         });
 
-        // open ui
-        event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIEvents::PanelMedic));
-
         // }
         // fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         let Some(team) = game_state
@@ -53,13 +53,13 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         else {
             // fallback camera
 
-            let a = world.instantiate();
-            a.add_component_value(
-                // add transform
+            let a = world.instantiate(
+                "camera",
                 Transform::default()
                     .set_position(Vector3::new(0.0, 6.0, -14.0))
                     .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
             );
+
             a.add_component_value(
                 // add camera
                 Camera::default(),
@@ -70,8 +70,8 @@ impl ECSSystemEventless for ECSSystemPeerStart {
 
         match team {
             Teams::Red => {
-                let a = world.instantiate();
-                a.add_component_value(
+                let a = world.instantiate(
+                    "camera",
                     Transform::default()
                         .set_position(Vector3::new(0.0, 6.0, -14.0))
                         .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
@@ -82,8 +82,8 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 );
             }
             Teams::Blue => {
-                let a = world.instantiate();
-                a.add_component_value(
+                let a = world.instantiate(
+                    "camera",
                     Transform::default()
                         .set_position(Vector3::new(0.0, 6.0, 14.0))
                         .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 180.0, 0.0))),

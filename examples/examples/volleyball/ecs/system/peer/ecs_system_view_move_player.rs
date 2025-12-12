@@ -5,12 +5,12 @@ use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionEntities;
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_renderer_static::Renderer;
-use built_in::component::component_transform::Transform;
 use built_in_state::state_network::StateNetwork;
 use built_in_state::state_time::TimeState;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
-use core::gameplay::world_context::WorldContext;
+use core::gameplay::ecs::component::component_transform::Transform;
+use core::gameplay::world_context::{WorldContext, WorldContextCommon};
 use core::io::asset_loader::AssetLoader;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},

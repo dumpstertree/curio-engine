@@ -1,13 +1,21 @@
 use crate::component::{
     component_renderer_animated::RendererAnimated,
     component_renderer_static::Renderer,
-    component_renderer_text::{ComponentRendererText, RendererCommon},
-    component_transform::Transform,
+    component_renderer_text::{ComponentRendererText, RendererCommon, update},
 };
-use built_in_state::{state_draw::DrawCallsState, state_time::TimeState};
+use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
 use core::{
-    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4},
-    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
+    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
+    gameplay::{
+        ecs::{
+            component::{
+                component_transform::{Transform, update_transform},
+                component_transform2d::Transform2D,
+            },
+            traits::ecs_system::ECSSystemEventless,
+        },
+        world_context::{WorldContext, WorldContextCommon},
+    },
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
@@ -25,15 +33,45 @@ impl ECSSystemEventless for SystemRendererUpdateState {
     }
 
     fn did_tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
+        let state_camera = state.get::<CameraState>();
+
         let time = state.get::<TimeState>().scaled_time;
         //edit draw call states
+        update(world);
+        update_transform(world);
+        // for x in world.get::<Renderer>() {
+        //     x.update_enabled_in_heirarchy();
+        //     x.update_tint_in_heirarchy();
+        //     //  (_, (renderer)) in query {
+        //     //     renderer.update_enabled_in_heirarchy();
+        //     //     renderer.update_tint_in_heirarchy();
+        //     // }
+        // }
+
+        // world.query_mut::<(&mut RendererAnimated)>(|query| {
+        //     for (_, (renderer)) in query {
+        //         // renderer.update_enabled_in_heirarchy();
+        //         // renderer.update_tint_in_heirarchy();
+        //         renderer.update_enabled_in_heirarchy(query)
+        //     }
+        // });
+        // world.query_mut::<(&mut ComponentRendererText)>(|query| {
+        //     for (_, (renderer)) in query {
+        //         renderer.update_enabled_in_heirarchy();
+        //         renderer.update_tint_in_heirarchy();
+        //     }
+        // });
+
         state.edit::<DrawCallsState>(|x| {
             // iterate over each renderer
 
             // for (_entity, (transform, _camera)) in q {
             world.query_mut::<(&Renderer, &Transform)>(|query| {
                 for (_, (renderer, transform)) in query {
-                    if !renderer.enabled_in_hierarchy(&world) {
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
                         continue;
                     }
                     // guard - no mesh
@@ -50,7 +88,23 @@ impl ECSSystemEventless for SystemRendererUpdateState {
             });
             world.query_mut::<(&mut RendererAnimated, &Transform)>(|query| {
                 for (_, (renderer, _)) in query {
-                    if !renderer.enabled_in_hierarchy(&world) {
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
+                        continue;
+                    }
+                    // update all mesh
+                    renderer.update_mesh(time);
+                }
+            });
+
+            world.query_mut::<(&mut RendererAnimated, &Transform2D)>(|query| {
+                for (_, (renderer, _)) in query {
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
                         continue;
                     }
                     // update all mesh
@@ -60,7 +114,10 @@ impl ECSSystemEventless for SystemRendererUpdateState {
 
             world.query_mut::<(&RendererAnimated, &Transform)>(|query| {
                 for (_, (renderer, transform)) in query {
-                    if !renderer.enabled_in_hierarchy(&world) {
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
                         continue;
                     }
                     // guard - no mesh
@@ -80,7 +137,10 @@ impl ECSSystemEventless for SystemRendererUpdateState {
 
             world.query_mut::<(&mut ComponentRendererText, &Transform)>(|query| {
                 for (_, (renderer, transform)) in query {
-                    if !renderer.enabled_in_hierarchy(&world) {
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
                         continue;
                     }
                     renderer.rebuild();
@@ -101,6 +161,81 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     }
                 }
             });
+
+            world.query_mut::<(&mut RendererAnimated, &Transform2D)>(|query| {
+                for (_, (renderer, transform)) in query {
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
+                        continue;
+                    }
+
+                    let frustrum_w = 2.1; // these values are made up because the camera is perspective
+                    let frustrum_h = 1.1;
+                    // guard - no mesh
+                    if renderer.asset.is_some() {
+                        let zz = 1.0;
+                        let xx = remap(transform.position.x, 0.0, 1.0, -frustrum_w / 2.0, frustrum_w / 2.0);
+                        let yy = remap(transform.position.y, 1.0, 0.0, -frustrum_h / 2.0, frustrum_h / 2.0);
+                        let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
+                        let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz + state_camera.cameras.rotation * Vector3::down() * yy + state_camera.cameras.rotation * Vector3::right() * xx;
+
+                        let Some(asset) = &renderer.asset else {
+                            continue;
+                        };
+
+                        // add draw call
+                        for m in &renderer.mesh {
+                            let transform_matrix = Matrix4x4::new(position, rotation, transform.scale);
+
+                            x.draw_calls
+                                .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform_matrix, renderer.get_tint()));
+                        }
+                    }
+                }
+            });
+            world.query_mut::<(&mut ComponentRendererText, &Transform2D)>(|query| {
+                // let z = 1.0;
+
+                let frustrum_w = 2.1; // these values are made up because the camera is perspective
+                let frustrum_h = 1.1;
+
+                for (_, (renderer, transform)) in query {
+                    let zz = 1.0;
+                    let xx = remap(transform.position.x, 0.0, 1.0, -frustrum_w / 2.0, frustrum_w / 2.0);
+                    let yy = remap(transform.position.y, 1.0, 0.0, -frustrum_h / 2.0, frustrum_h / 2.0);
+                    let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
+                    let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz + state_camera.cameras.rotation * Vector3::down() * yy + state_camera.cameras.rotation * Vector3::right() * xx;
+
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
+                        continue;
+                    }
+                    renderer.rebuild();
+                    for asset_for_matricies in &renderer.asset {
+                        for arc_mesh in &asset_for_matricies.0.mesh {
+                            let transform_matrix = Matrix4x4::new(position, rotation, transform.scale);
+                            // let transform_matrix = transform.get_world_matrix(world);
+                            let mut inst_matricies = Vec::new();
+                            for mesh_matrix in &asset_for_matricies.1 {
+                                inst_matricies.push(Matrix4x4::multiply(&transform_matrix, mesh_matrix));
+                            }
+                            // for inst_matrix in inst_matricies {
+                            //     x.draw_calls
+                            //         .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
+                            // }
+                            x.draw_calls
+                                .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint()));
+                        }
+                    }
+                }
+            });
         });
     }
+}
+pub fn remap(value: f32, from_min: f32, from_max: f32, to_min: f32, to_max: f32) -> f32 {
+    (value - from_min) / (from_max - from_min) * (to_max - to_min) + to_min
 }
