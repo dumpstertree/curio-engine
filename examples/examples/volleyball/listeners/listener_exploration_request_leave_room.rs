@@ -1,3 +1,4 @@
+use crate::UIViewTypes;
 use crate::exploration::exploration_path::RoomTypes;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_initialize_exploration::EncounterLibrary;
@@ -10,6 +11,7 @@ use core::{
 };
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
+use system_component_default_gameplay::UIEvents;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -31,18 +33,12 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
                 let state_exploration = game_state.get::<StateExploration>();
                 event_queue.enqueue_event(GameEvents::ExplorationRoomExit(state_exploration.exploration.get_cur_room()));
 
-                // edit the encounter state to move to the next room
-                game_state.edit::<StateExploration>(|x| {
-                    let next_rooms = x.exploration.get_next_room();
-                    let selected_next_room = &next_rooms[0];
-
-                    // progress the exploration
-                    x.exploration.next(&selected_next_room.guid);
-                });
-
-                // enter current room
+                // change state
                 let state_exploration = game_state.get::<StateExploration>();
-                event_queue.enqueue_event(GameEvents::ExplorationRoomEnter(state_exploration.exploration.get_cur_room()));
+                event_queue.enqueue_event(GameEvents::ExplorationPickRoomStart(state_exploration.exploration.clone()));
+
+                // did pick room
+                event_queue.enqueue_event(GameEvents::ExplorationDidPickRoomStart);
             }
             _ => {}
         }

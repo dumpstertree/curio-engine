@@ -1,7 +1,6 @@
+use crate::UIViewTypes;
 use crate::game_events::GameEvents;
-use crate::state::host::state_currency::StateCurrency;
 use crate::state::host::state_exploration::StateExploration;
-use core::collections::event_queue;
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
 use core::gameplay::world_context::WorldContext;
 use core::{
@@ -9,7 +8,7 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
-use hecs::World;
+use system_component_default_gameplay::UIEvents;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -26,17 +25,19 @@ impl InstanceLimiter for ECSSystemGamePointScored {
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::EncounterPassed => {
-                // log
-                println!("Encounter Passed");
+            GameEvents::ExplorationPickRoomComplete(room) => {
+                // close the ui
+                event_queue.enqueue_event(GameEvents::ExplorationDidPickRoomComplete);
 
-                // claim rewards
-                game_state.edit::<StateCurrency>(|x| {
-                    x.currency += 100;
+                // // edit the encounter state to move to the next room
+                game_state.edit::<StateExploration>(|x| {
+                    // progress the exploration
+                    x.exploration.next(&room.guid);
                 });
 
-                // request leave room
-                event_queue.enqueue_event(GameEvents::DidEncounterPass);
+                // enter current room
+                let state_exploration = game_state.get::<StateExploration>();
+                event_queue.enqueue_event(GameEvents::ExplorationRoomEnter(state_exploration.exploration.get_cur_room()));
             }
             _ => {}
         }

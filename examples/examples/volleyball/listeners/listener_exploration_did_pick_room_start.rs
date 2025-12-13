@@ -36,11 +36,8 @@ impl InstanceLimiter for Listener {
 impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::ExplorationDidRoomEnterHeal(_) => {
-                println!("enter heal room");
-
-                // open ui
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::PanelMedic));
+            GameEvents::ExplorationDidPickRoomStart => {
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::PanelExploration));
             }
             _ => {}
         }

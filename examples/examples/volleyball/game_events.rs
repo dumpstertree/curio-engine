@@ -35,8 +35,14 @@ pub enum GameEvents {
     DidInitializeExploration(Exploration),
     InitializeEncounter(Encounter),
     DidInitializeEncounter(Encounter),
+    DidEncounterPass,
     EncounterPassed,
+    DidEncounterFail,
     EncounterFailed,
+    ExplorationPickRoomStart(Exploration),
+    ExplorationPickRoomComplete(Room),
+    ExplorationDidPickRoomStart,
+    ExplorationDidPickRoomComplete,
     ExplorationRoomEnter(Room),
     ExplorationRoomExit(Room),
     ExplorationDidRoomEnterCombat(Room, Encounter),
@@ -116,6 +122,12 @@ impl IGameEvent for GameEvents {
             GameEvents::ExplorationDidRoomExitHeal(_) => EventScope::All,
             GameEvents::RequestLeaveExplorationRoom => EventScope::ConnectedHost,
             GameEvents::RequestHeal(_) => EventScope::ConnectedHost,
+            GameEvents::ExplorationPickRoomStart(_) => EventScope::ConnectedHost,
+            GameEvents::ExplorationPickRoomComplete(_) => EventScope::ConnectedHost,
+            GameEvents::ExplorationDidPickRoomStart => EventScope::All,
+            GameEvents::ExplorationDidPickRoomComplete => EventScope::All,
+            GameEvents::DidEncounterPass => EventScope::All,
+            GameEvents::DidEncounterFail => EventScope::All,
         }
     }
 }
@@ -164,6 +176,12 @@ impl Display for GameEvents {
             GameEvents::ExplorationDidRoomExitHeal(room) => todo!(),
             GameEvents::RequestLeaveExplorationRoom => todo!(),
             GameEvents::RequestHeal(_) => todo!(),
+            GameEvents::ExplorationPickRoomStart(encounter) => todo!(),
+            GameEvents::ExplorationPickRoomComplete(room) => todo!(),
+            GameEvents::ExplorationDidPickRoomStart => todo!(),
+            GameEvents::ExplorationDidPickRoomComplete => todo!(),
+            GameEvents::DidEncounterPass => todo!(),
+            GameEvents::DidEncounterFail => todo!(),
         }
     }
 }

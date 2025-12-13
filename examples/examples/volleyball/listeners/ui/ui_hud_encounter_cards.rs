@@ -51,58 +51,24 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::EnableUICombat => {
-                println!("enable combat");
-                // add all energy to world
-                // Self::spawn_ui_energy(game_state, world);
-                // add cards to world
                 Self::spawn_ui_cards(game_state, world);
-                // add score to world
-                // Self::spawn_ui_score(game_state, world);
-                // // add turn to world
-                // Self::spawn_ui_turn(game_state, world);
-                // // add ball mode
-                // Self::spawn_ui_ball_mode(game_state, world);
+            }
+            GameEvents::DisableUICombat => {
+                Self::despawn_ui_cards(game_state, world);
             }
             _ => {}
         }
     }
 }
 impl Listener {
-    // pub fn spawn_ui_energy(game_state: &mut GameState, world: &mut World) {
-    //     let asset = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::EnergyToken.uid());
-    //     for team in game_state.get::<StateTeamAssignments>().team_assignments {
-    //         for player_id in team.1 {
-    //             for i in 0..9 {
-    //                 let mut r = RendererAnimated::default();
-    //                 r.set_fps(60).set_asset(Some(asset.clone()));
-    //                 // r.set_animation("add", true);
-    //                 let e = world.spawn((ComponentEnergyToken::default().set_index(i), ComponentPlayer::default().set_player_id(player_id), Transform::default(), r));
-
-    //                 game_state.edit::<StateEntityIDs>(|x| {
-    //                     x.add(EntityIDTypes::UIEnergy, e);
-    //                 });
-    //             }
-    //         }
-    //     }
-    // }
-    // pub fn spawn_ui_score(game_state: &mut GameState, world: &mut WorldContext) {
-    //     let e = world.spawn((Transform::default(), ComponentRendererText::default(), ComponentUIScoreState::default()));
-    //     game_state.edit::<StateEntityIDs>(|x| {
-    //         x.add(EntityIDTypes::UIScore, e);
-    //     });
-    // }
-    // pub fn spawn_ui_ball_mode(game_state: &mut GameState, world: &mut WorldContext) {
-    //     let e = world.spawn((Transform::default(), ComponentRendererText::default(), ComponentUIBallState::default()));
-    //     game_state.edit::<StateEntityIDs>(|x| {
-    //         x.add(EntityIDTypes::UIBallMode, e);
-    //     });
-    // }
-    // pub fn spawn_ui_turn(game_state: &mut GameState, world: &mut WorldContext) {
-    //     let e = world.spawn((Transform::default(), ComponentRendererText::default(), ComponentUITurnState::default()));
-    //     game_state.edit::<StateEntityIDs>(|x| {
-    //         x.add(EntityIDTypes::UITurn, e);
-    //     });
-    // }
+    fn despawn_ui_cards(game_state: &mut GameState, world: &mut WorldContext) {
+        let id = EntityIDTypes::UICards;
+        for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
+            // let _ = world.despawn(e);
+            e.destroy();
+        }
+        game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
+    }
     pub fn spawn_ui_cards(game_state: &mut GameState, world: &mut WorldContext) {
         let state_deck = game_state.get::<StateDeck>();
         let state_teams = game_state.get::<StateTeamAssignments>();

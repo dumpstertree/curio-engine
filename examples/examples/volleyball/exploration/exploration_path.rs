@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(PartialEq, Eq, Hash, Default, Clone, Serialize, Deserialize)]
@@ -14,7 +16,7 @@ impl Exploration {
                 guid: i,
                 room_type: if i == 0 || i == 2 { RoomTypes::Heal } else { RoomTypes::Combat },
                 prev_room: i - 1,
-                next_rooms: vec![i + 1],
+                next_rooms: vec![i + 1, 0],
                 is_start: i == 0,
             });
         }
@@ -101,4 +103,15 @@ pub enum RoomTypes {
     Heal,
     Shop,
     Boss,
+}
+impl Display for RoomTypes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RoomTypes::Invalid => f.write_str("Invalid"),
+            RoomTypes::Combat => f.write_str("Combat"),
+            RoomTypes::Heal => f.write_str("Heal"),
+            RoomTypes::Shop => f.write_str("Shop"),
+            RoomTypes::Boss => f.write_str("Boss"),
+        }
+    }
 }

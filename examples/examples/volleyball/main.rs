@@ -59,31 +59,33 @@ pub mod exploration {
     pub mod exploration_path;
 }
 pub mod listeners {
+    pub mod listener_encounter_did_pass;
     pub mod listener_encounter_failed;
     pub mod listener_encounter_passed;
     pub mod listener_encounter_scored;
+    pub mod listener_exploration_did_pick_room_start;
+    pub mod listener_exploration_did_pick_room_start_complete;
     pub mod listener_exploration_did_room_enter_combat;
     pub mod listener_exploration_did_room_enter_heal;
     pub mod listener_exploration_did_room_exit_combat;
     pub mod listener_exploration_did_room_exit_heal;
+    pub mod listener_exploration_pick_room_complete;
     pub mod listener_exploration_request_leave_room;
     pub mod listener_exploration_room_enter;
     pub mod listener_exploration_room_exit;
     pub mod listener_initialize_encounter;
     pub mod listener_initialize_exploration;
-    pub mod listener_render_encounter;
     pub mod listener_request_heal;
     pub mod listener_ui_set_mode;
     pub mod ui {
-        pub mod listener_ui_encounter_disable;
-        pub mod listener_ui_encounter_enable;
-        pub mod listener_ui_healing_disable;
-        pub mod listener_ui_healing_enable;
         pub mod ui_hud_encounter_ball_mode;
+        pub mod ui_hud_encounter_cards;
         pub mod ui_hud_encounter_energy;
         pub mod ui_hud_encounter_score;
         pub mod ui_hud_encounter_turn;
+        pub mod ui_panel_exploration;
         pub mod ui_panel_medic;
+        pub mod ui_panel_rewards;
     }
 }
 pub mod state {
@@ -100,7 +102,6 @@ pub mod state {
     pub mod state_teams;
     pub mod state_turn;
     pub mod peer {
-
         pub mod state_peer_entity_ids;
         pub mod state_peer_input_mode;
         pub mod state_peer_selected_card;
@@ -185,10 +186,9 @@ pub mod ecs {
 }
 use crate::{
     game_events::GameEvents,
-    listeners::ui::{listener_ui_encounter_disable, listener_ui_healing_enable, ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_panel_medic},
+    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_panel_exploration, ui_panel_medic, ui_panel_rewards},
 };
 use core::{
-    collections::event_queue::{EventScope, IGameEvent},
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
     input::{input_mapping::InputMapping, key_code::ButtonCode},
@@ -297,6 +297,7 @@ enum UIViewTypes {
     PanelMedic,
     PanelShop,
     PanelExploration,
+    PanelRewards,
     HudEncounterEnergy,
     HudEncounterScore,
     HudEncounterTurn,
@@ -307,11 +308,12 @@ impl IUIEvent for UIViewTypes {
         match self {
             UIViewTypes::PanelMedic => ui_panel_medic::UIPanelMedic::new(),
             UIViewTypes::PanelShop => todo!(),
-            UIViewTypes::PanelExploration => todo!(),
+            UIViewTypes::PanelExploration => ui_panel_exploration::UIPanelInstance::new(),
             UIViewTypes::HudEncounterEnergy => ui_hud_encounter_energy::UIHUD::new(),
             UIViewTypes::HudEncounterScore => ui_hud_encounter_score::UIHUD::new(),
             UIViewTypes::HudEncounterTurn => ui_hud_encounter_turn::UIHUD::new(),
             UIViewTypes::HudEncounterBallMode => ui_hud_encounter_ball_mode::UIHUD::new(),
+            UIViewTypes::PanelRewards => ui_panel_rewards::UIPanelInstance::new(),
         }
     }
 }
@@ -325,6 +327,7 @@ impl Display for UIViewTypes {
             UIViewTypes::HudEncounterScore => f.write_str("score"),
             UIViewTypes::HudEncounterTurn => f.write_str("turn"),
             UIViewTypes::HudEncounterBallMode => f.write_str("ball mode"),
+            UIViewTypes::PanelRewards => f.write_str("rewards"),
         }
     }
 }

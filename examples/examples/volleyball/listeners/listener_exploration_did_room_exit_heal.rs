@@ -9,7 +9,6 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
-use hecs::World;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]

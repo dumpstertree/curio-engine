@@ -42,6 +42,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterEnergy));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterScore));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterEnergy));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::PanelRewards));
             }
             _ => {}
         }

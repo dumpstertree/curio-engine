@@ -18,6 +18,7 @@ use crate::{
         state_energy::StateEnergy,
         state_position_ball::StatePositionBall,
         state_position_player::StatePositionEntities,
+        state_score::StateScore,
         state_turn::StateTurn,
     },
 };
@@ -65,6 +66,10 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
     fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
+        let state_score = game_state.get::<StateScore>();
+        if state_score.all_scores.iter().any(|x| *x.1 <= 0) {
+            return;
+        }
         let state_team = game_state.get::<StateTeamAssignments>();
         let active_team = game_state.get::<StateTurn>().active_instance_id;
         let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
