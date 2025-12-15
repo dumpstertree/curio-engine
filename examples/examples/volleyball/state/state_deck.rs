@@ -47,6 +47,7 @@ pub struct Deck {
     pub pile_draw: Vec<Arc<CardInstance>>,
     pub pile_discard: Vec<Arc<CardInstance>>,
     pub pile_exhuast: Vec<Arc<CardInstance>>,
+    pub pile_consume: Vec<Arc<CardInstance>>,
     pub pile_exile: Vec<Arc<CardInstance>>,
     pub hand_consumable: Vec<Arc<CardInstance>>,
     // pub hand_persistent: Vec<Arc<CardInstance>>,
@@ -118,6 +119,7 @@ impl Deck {
         {
             return Some(CardLocation::Discard((self.pile_discard.len() - 1 - index) as i32));
         }
+
         // if let Some(index) = self
         //     .hand_persistent
         //     .iter()
@@ -147,11 +149,27 @@ impl Deck {
         {
             return Some(CardLocation::OutOfPlay((index) as i32));
         }
+        if let Some(index) = self
+            .pile_consume
+            .iter()
+            .position(|x| x.instance_id == card_instance.instance_id)
+        {
+            return Some(CardLocation::OutOfPlay((index) as i32));
+        }
 
         None
     }
 }
 impl Deck {
+    pub fn remove_card_from_deck(&mut self, instance_id: &i32) {
+        self.all_cards.retain(|x| x.instance_id != *instance_id);
+        self.pile_draw.retain(|x| x.instance_id != *instance_id);
+        self.pile_consume.retain(|x| x.instance_id != *instance_id);
+        self.pile_exile.retain(|x| x.instance_id != *instance_id);
+        self.pile_exhuast.retain(|x| x.instance_id != *instance_id);
+        self.hand_consumable
+            .retain(|x| x.instance_id != *instance_id);
+    }
     /// Move a card into deck. (unchanged semantics, but explicit)
     pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
         let inst = Arc::new(CardInstance::new(card_uid));
@@ -266,6 +284,13 @@ impl Deck {
             // remove card
             let card = self.hand_consumable.remove(pos);
 
+            // add card to consumed pile
+            let is_consume = lifecycle_attributes.contains(&CardAttributeLifecycle::Consume);
+            if is_consume {
+                self.pile_consume.push(card);
+                return;
+            }
+
             // add card to exile pile
             let is_exile = lifecycle_attributes.contains(&CardAttributeLifecycle::Exile);
             if is_exile {
@@ -328,6 +353,7 @@ pub enum CardTypes {
     Spike,
     Move,
     Spell,
+    Food,
 }
 impl Display for CardTypes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -339,6 +365,7 @@ impl Display for CardTypes {
             CardTypes::Spike => write!(f, "SPIKE"),
             CardTypes::Move => write!(f, "_"),
             CardTypes::Spell => write!(f, "SPELL"),
+            CardTypes::Food => write!(f, "FOOD"),
         }
     }
 }
@@ -348,6 +375,7 @@ pub enum CardAttributeLifecycle {
     Quick,
     Exhuast,
     Exile,
+    Consume,
     Linger,
     Light,
     Heavy,

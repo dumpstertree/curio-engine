@@ -17,7 +17,7 @@ use crate::{
     cards::deck_library::DeckLibrary,
     game_events::GameEvents,
     state::{
-        host::state_enounter_mode::StateEncounter,
+        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter},
         state_controller::StateController,
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
@@ -121,8 +121,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                     .push(*guid);
                             });
                             // initialize the deck
+                            let state_deck_exploration = game_state.get::<StateDeckExploration>();
                             game_state.edit::<StateDeck>(|x| {
-                                x.deck.insert(*guid, DeckLibrary::get_deck_for_uid(""));
+                                x.deck
+                                    .insert(*guid, state_deck_exploration.deck.get(guid).unwrap().clone());
                             });
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {
@@ -186,8 +188,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                                 x.team_assignments.get_mut(&Teams::Red).unwrap().push(*guid);
                             });
                             // initialize the deck
+                            let state_deck_exploration = game_state.get::<StateDeckExploration>();
                             game_state.edit::<StateDeck>(|x| {
-                                x.deck.insert(*guid, DeckLibrary::get_deck_for_uid(""));
+                                x.deck
+                                    .insert(*guid, state_deck_exploration.deck.get(guid).unwrap().clone());
                             });
                             // initialize the energy max
                             game_state.edit::<StateEnergy>(|x| {

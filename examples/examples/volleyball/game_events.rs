@@ -12,7 +12,7 @@ use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
     exploration::exploration_path::{Exploration, Room},
     listeners::{listener_initialize_encounter::Encounter, listener_ui_set_mode::UITypes},
-    state::{state_ball_mode::BallModes, state_teams::Teams},
+    state::{host::state_shop::Shop, state_ball_mode::BallModes, state_teams::Teams},
 };
 
 #[global_events]
@@ -34,6 +34,11 @@ pub enum GameEvents {
     InitializeExploration(Exploration),
     DidInitializeExploration(Exploration),
     InitializeEncounter(Encounter),
+    FinalizeEncounter(Encounter),
+
+    InitializeShop(Shop),
+    FinalizeShop(Shop),
+
     DidInitializeEncounter(Encounter),
     DidEncounterPass,
     EncounterPassed,
@@ -45,12 +50,15 @@ pub enum GameEvents {
     ExplorationDidPickRoomComplete,
     ExplorationRoomEnter(Room),
     ExplorationRoomExit(Room),
+    ExplorationDidRoomEnterShop(Room, Shop),
+    ExplorationDidRoomExitShop(Room, Shop),
     ExplorationDidRoomEnterCombat(Room, Encounter),
     ExplorationDidRoomExitCombat(Room, Encounter),
     ExplorationDidRoomEnterHeal(Room),
     ExplorationDidRoomExitHeal(Room),
     RequestLeaveExplorationRoom,
     RequestHeal(i32),
+    RequestPurchase(i32, i32),
     SetUIMode(UITypes),
     EnableUICombat,
     EnableUIHealing,
@@ -128,6 +136,12 @@ impl IGameEvent for GameEvents {
             GameEvents::ExplorationDidPickRoomComplete => EventScope::All,
             GameEvents::DidEncounterPass => EventScope::All,
             GameEvents::DidEncounterFail => EventScope::All,
+            GameEvents::RequestPurchase(_, _) => EventScope::ConnectedHost,
+            GameEvents::InitializeShop(_) => EventScope::ConnectedHost,
+            GameEvents::ExplorationDidRoomEnterShop(_, _) => EventScope::All,
+            GameEvents::ExplorationDidRoomExitShop(_, _) => EventScope::All,
+            GameEvents::FinalizeEncounter(_) => EventScope::ConnectedHost,
+            GameEvents::FinalizeShop(shop) => EventScope::ConnectedHost,
         }
     }
 }
@@ -182,6 +196,12 @@ impl Display for GameEvents {
             GameEvents::ExplorationDidPickRoomComplete => todo!(),
             GameEvents::DidEncounterPass => todo!(),
             GameEvents::DidEncounterFail => todo!(),
+            GameEvents::RequestPurchase(_, _) => todo!(),
+            GameEvents::InitializeShop(shop) => todo!(),
+            GameEvents::ExplorationDidRoomEnterShop(room, shop) => todo!(),
+            GameEvents::ExplorationDidRoomExitShop(room, shop) => todo!(),
+            GameEvents::FinalizeEncounter(encounter) => todo!(),
+            GameEvents::FinalizeShop(shop) => todo!(),
         }
     }
 }

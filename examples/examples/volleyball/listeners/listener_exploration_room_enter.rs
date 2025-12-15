@@ -1,6 +1,6 @@
 use crate::exploration::exploration_path::RoomTypes;
 use crate::game_events::GameEvents;
-use crate::listeners::listener_initialize_exploration::EncounterLibrary;
+use crate::listeners::listener_initialize_exploration::{EncounterLibrary, ShopLibrary};
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
 use core::gameplay::world_context::WorldContext;
 use core::{
@@ -32,11 +32,15 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
                 // get the newly assigned state
                 match room.room_type {
                     RoomTypes::Combat => {
-                        let encounter = EncounterLibrary::random();
-                        event_queue.enqueue_event(GameEvents::InitializeEncounter(encounter.clone()));
-                        event_queue.enqueue_event(GameEvents::ExplorationDidRoomEnterCombat(room.clone(), encounter.clone()));
+                        let roll = EncounterLibrary::random();
+                        event_queue.enqueue_event(GameEvents::InitializeEncounter(roll.clone()));
+                        event_queue.enqueue_event(GameEvents::ExplorationDidRoomEnterCombat(room.clone(), roll.clone()));
                     }
-                    RoomTypes::Shop => todo!(),
+                    RoomTypes::Shop => {
+                        let roll = ShopLibrary::random();
+                        event_queue.enqueue_event(GameEvents::InitializeShop(roll.clone()));
+                        event_queue.enqueue_event(GameEvents::ExplorationDidRoomEnterShop(room.clone(), roll.clone()));
+                    }
                     RoomTypes::Boss => todo!(),
                     RoomTypes::Heal => {
                         event_queue.enqueue_event(GameEvents::ExplorationDidRoomEnterHeal(room.clone()));

@@ -14,7 +14,14 @@ use crate::{
     exploration::exploration_path::RoomTypes,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamController},
-    state::{host::state_exploration::StateExploration, state_score::StateScore, state_teams::Teams},
+    state::{
+        host::{
+            state_exploration::StateExploration,
+            state_shop::{Shop, Stock, StockItems},
+        },
+        state_score::StateScore,
+        state_teams::Teams,
+    },
 };
 
 #[derive(Default)]
@@ -114,5 +121,41 @@ impl EncounterLibrary {
                 health: 1,
             }]),
         }
+    }
+}
+
+pub struct ShopLibrary {}
+impl ShopLibrary {
+    pub fn random() -> Shop {
+        match Random::range_int(0, 3) {
+            0 => Self::get_shop_0(),
+            1 => Self::get_shop_1(),
+            2 => Self::get_shop_2(),
+            _ => {
+                panic!("Bad Roll")
+            }
+        }
+    }
+
+    pub fn get_shop_0() -> Shop {
+        Shop::new(vec![
+            Stock::new(StockItems::Card(String::from("bump")), 50, 1), //
+            Stock::new(StockItems::Card(String::from("set")), 25, 1),
+            Stock::new(StockItems::Card(String::from("spike")), 75, 1),
+        ])
+    }
+    pub fn get_shop_1() -> Shop {
+        Shop::new(vec![
+            Stock::new(StockItems::Card(String::from("popsicle")), 25, 1), //
+            Stock::new(StockItems::Card(String::from("popsicle")), 25, 1),
+            Stock::new(StockItems::Card(String::from("popsicle")), 25, 1),
+        ])
+    }
+    pub fn get_shop_2() -> Shop {
+        Shop::new(vec![
+            Stock::new(StockItems::Card(String::from("deep_breath")), 100, 1), //
+            Stock::new(StockItems::Card(String::from("extra_oomph")), 75, 1),
+            Stock::new(StockItems::Card(String::from("blessing")), 100, 1),
+        ])
     }
 }

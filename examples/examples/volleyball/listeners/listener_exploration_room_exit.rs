@@ -1,6 +1,7 @@
 use crate::exploration::exploration_path::RoomTypes;
 use crate::game_events::GameEvents;
 use crate::state::host::state_enounter_mode::StateEncounter;
+use crate::state::host::state_shop::StateShop;
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
 use core::gameplay::world_context::WorldContext;
 use core::{
@@ -38,13 +39,24 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored 
 
                         // notify as to leaving combat room
                         event_queue.enqueue_event(GameEvents::ExplorationDidRoomExitCombat(room.clone(), encounter.clone()));
+                        event_queue.enqueue_event(GameEvents::FinalizeEncounter(encounter.clone()));
                     }
-                    RoomTypes::Shop => todo!(),
-                    RoomTypes::Boss => todo!(),
+                    RoomTypes::Shop => {
+                        // get the current encounter we are leaving
+                        let state_shop = game_state.get::<StateShop>();
+
+                        //get the current encounter
+                        let shop = state_shop.shop;
+
+                        // notify as to leaving combat room
+                        event_queue.enqueue_event(GameEvents::ExplorationDidRoomExitShop(room.clone(), shop.clone()));
+                        event_queue.enqueue_event(GameEvents::FinalizeShop(shop.clone()));
+                    }
                     RoomTypes::Heal => {
                         //notify as to leaving healing room
                         event_queue.enqueue_event(GameEvents::ExplorationDidRoomExitHeal(room.clone()));
                     }
+                    RoomTypes::Boss => todo!(),
                     RoomTypes::Invalid => todo!(),
                 }
                 // log

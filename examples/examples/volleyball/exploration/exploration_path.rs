@@ -14,7 +14,7 @@ impl Exploration {
         for i in 0..3 {
             rooms.push(Room {
                 guid: i,
-                room_type: if i == 0 || i == 2 { RoomTypes::Heal } else { RoomTypes::Combat },
+                room_type: if i == 0 || i == 2 { RoomTypes::Shop } else { RoomTypes::Combat },
                 prev_room: i - 1,
                 next_rooms: vec![i + 1, 0],
                 is_start: i == 0,

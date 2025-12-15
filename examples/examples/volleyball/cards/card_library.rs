@@ -97,11 +97,36 @@ impl CardLibrary {
             )),
         );
         hashmap.insert(
+            String::from("popsicle"),
+            Arc::new(CardMaster::new(
+                "Popsicle",
+                "Eat it up yum. +1 Energy, Draw a card",
+                CardTypes::Food,
+                vec![CardStatement::new(
+                    1, //
+                    vec![],
+                    vec![],
+                    vec![
+                        //
+                        CardAttributeEvents::GainEnergy(1, AttribtuteTargetTypesEntities::User),
+                        CardAttributeEvents::DrawCards(1, AttribtuteTargetTypesEntities::User),
+                    ],
+                )],
+                vec![
+                    //
+                    CardAttributeLifecycle::Quick,
+                    CardAttributeLifecycle::Linger,
+                    CardAttributeLifecycle::Light,
+                    CardAttributeLifecycle::Consume,
+                ],
+            )),
+        );
+        hashmap.insert(
             String::from("set"),
             Arc::new(CardMaster::new(
                 "Set",
                 "Sets the ball",
-                CardTypes::Bump,
+                CardTypes::Set,
                 vec![CardStatement::new(
                     1, //
                     vec![
@@ -149,7 +174,7 @@ impl CardLibrary {
                         ),
                     ],
                 )],
-                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Exhuast],
+                vec![],
             )),
         );
         hashmap.insert(

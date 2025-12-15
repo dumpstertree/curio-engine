@@ -111,6 +111,7 @@ impl Listener {
                 crate::state::state_deck::CardAttributeLifecycle::Reliable(_) => {}
                 crate::state::state_deck::CardAttributeLifecycle::Light => {}
                 crate::state::state_deck::CardAttributeLifecycle::Heavy => {}
+                crate::state::state_deck::CardAttributeLifecycle::Consume => desc = desc + ".CONSUME. ",
             }
         }
         let mut r = ComponentRendererText::default();

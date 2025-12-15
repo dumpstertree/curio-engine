@@ -147,6 +147,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                                 state_deck::CardTypes::Spike => renderer.set_tint(col_spike),
                                 state_deck::CardTypes::Move => renderer.set_tint(Color::white()),
                                 state_deck::CardTypes::Spell => renderer.set_tint(col_spell),
+                                state_deck::CardTypes::Food => renderer.set_tint(Color::white()),
                             }
                             // renderer.set_tint(cur_tint);
                         } else {
@@ -158,6 +159,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                                 state_deck::CardTypes::Spike => renderer.set_tint(col_spike * 0.15),
                                 state_deck::CardTypes::Move => renderer.set_tint(Color::white() * 0.15),
                                 state_deck::CardTypes::Spell => renderer.set_tint(col_persistent * 0.15),
+                                state_deck::CardTypes::Food => renderer.set_tint(col_persistent * 0.15),
                             }
                         }
                     }

@@ -12,10 +12,12 @@ use std::vec;
 
 use crate::{
     UIViewTypes,
+    cards::deck_library::DeckLibrary,
     exploration::exploration_path::Exploration,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamAssignment, TeamController},
     state::{
+        host::{state_currency::StateCurrency, state_deck_exploration::StateDeckExploration},
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
         state_position_player::StatePositionEntities,
@@ -41,6 +43,19 @@ impl ECSSystemEventless for ECSSystemGameStart {
             x.resolution_height = 1080 / 1;
         });
 
+        game_state.edit::<StateCurrency>(|x| {
+            x.currency = 100;
+        });
+
+        // get state
+        let state_network = game_state.get::<StateNetwork>();
+
+        // add starting decks for each player - eventually load this from disc
+        game_state.edit::<StateDeckExploration>(|x| {
+            for id in state_network.peer_instance_ids() {
+                x.deck.insert(*id, DeckLibrary::get_player_deck_standard());
+            }
+        });
         // open exploration
         event_queue.enqueue_event(GameEvents::InitializeExploration(Exploration::random()));
     }

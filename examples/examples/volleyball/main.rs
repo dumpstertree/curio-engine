@@ -67,15 +67,21 @@ pub mod listeners {
     pub mod listener_exploration_did_pick_room_start_complete;
     pub mod listener_exploration_did_room_enter_combat;
     pub mod listener_exploration_did_room_enter_heal;
+    pub mod listener_exploration_did_room_enter_shop;
     pub mod listener_exploration_did_room_exit_combat;
     pub mod listener_exploration_did_room_exit_heal;
+    pub mod listener_exploration_did_room_exit_shop;
     pub mod listener_exploration_pick_room_complete;
     pub mod listener_exploration_request_leave_room;
     pub mod listener_exploration_room_enter;
     pub mod listener_exploration_room_exit;
+    pub mod listener_finalize_encounter;
+    pub mod listener_finalize_shop;
     pub mod listener_initialize_encounter;
     pub mod listener_initialize_exploration;
+    pub mod listener_initialize_shop;
     pub mod listener_request_heal;
+    pub mod listener_request_purchase;
     pub mod listener_ui_set_mode;
     pub mod ui {
         pub mod ui_hud_encounter_ball_mode;
@@ -86,6 +92,7 @@ pub mod listeners {
         pub mod ui_panel_exploration;
         pub mod ui_panel_medic;
         pub mod ui_panel_rewards;
+        pub mod ui_panel_shop;
     }
 }
 pub mod state {
@@ -102,6 +109,7 @@ pub mod state {
     pub mod state_teams;
     pub mod state_turn;
     pub mod peer {
+
         pub mod state_peer_entity_ids;
         pub mod state_peer_input_mode;
         pub mod state_peer_selected_card;
@@ -109,9 +117,11 @@ pub mod state {
     pub mod host {
         pub mod state_card_attribute_modifier_stack;
         pub mod state_currency;
+        pub mod state_deck_exploration;
         pub mod state_enounter_mode;
         pub mod state_exploration;
         pub mod state_heat;
+        pub mod state_shop;
     }
 }
 pub mod ai {
@@ -186,7 +196,7 @@ pub mod ecs {
 }
 use crate::{
     game_events::GameEvents,
-    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_panel_exploration, ui_panel_medic, ui_panel_rewards},
+    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
 use core::{
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
@@ -307,7 +317,7 @@ impl IUIEvent for UIViewTypes {
     fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UIPanel> {
         match self {
             UIViewTypes::PanelMedic => ui_panel_medic::UIPanelMedic::new(),
-            UIViewTypes::PanelShop => todo!(),
+            UIViewTypes::PanelShop => ui_panel_shop::UIPanelInstance::new(),
             UIViewTypes::PanelExploration => ui_panel_exploration::UIPanelInstance::new(),
             UIViewTypes::HudEncounterEnergy => ui_hud_encounter_energy::UIHUD::new(),
             UIViewTypes::HudEncounterScore => ui_hud_encounter_score::UIHUD::new(),

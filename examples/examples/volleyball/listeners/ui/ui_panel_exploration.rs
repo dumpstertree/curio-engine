@@ -46,10 +46,12 @@ impl UI for UIPanelInstance {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+        let mut rend = ComponentRendererText::default();
+        rend.set_contents("Where to go next?");
         // create obj
         let go_desc = context
             .instantiate("text.description", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
-            .add_component_default::<ComponentRendererText>();
+            .add_component_value(rend);
 
         let next_rooms = game_state
             .get::<StateExploration>()
@@ -57,7 +59,6 @@ impl UI for UIPanelInstance {
             .get_next_room();
 
         self.rooms = next_rooms.clone();
-        println!("num {}", next_rooms.len());
 
         for i in 0..next_rooms.len() {
             let x_pos = 0.5 + (-1.0 * (next_rooms.len() as f32 * 0.2) / 2.0) + i as f32 * 0.2;
