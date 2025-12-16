@@ -4,6 +4,7 @@ use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
+use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{AssetMappingUIDs, UIViewTypes};
@@ -37,6 +38,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidPickRoomStart => {
+                // turn off selection value
+                game_state.edit::<StateExploration>(|x| {
+                    x.is_selecting_next = true;
+                });
+
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::PanelExploration));
             }
             _ => {}

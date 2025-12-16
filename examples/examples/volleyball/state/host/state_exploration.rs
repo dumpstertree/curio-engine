@@ -8,6 +8,7 @@ use crate::exploration::exploration_path::Exploration;
 #[global_state_serialize]
 pub struct StateExploration {
     pub exploration: Exploration,
+    pub is_selecting_next: bool,
 }
 impl IState for StateExploration {
     fn id() -> i32 {

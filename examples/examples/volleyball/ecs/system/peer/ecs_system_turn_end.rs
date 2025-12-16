@@ -25,6 +25,7 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
             .get_cur_room()
             .room_type
             == RoomTypes::Combat
+            && !game_state.get::<StateExploration>().is_selecting_next
         // game_state.get::<StateTurn>().active_instance_id
         //     == game_state
         //         .get::<StateTeamAssignments>()

@@ -59,12 +59,13 @@ pub mod exploration {
     pub mod exploration_path;
 }
 pub mod listeners {
+    pub mod listener_did_initialize_exploration;
     pub mod listener_encounter_did_pass;
     pub mod listener_encounter_failed;
     pub mod listener_encounter_passed;
     pub mod listener_encounter_scored;
+    pub mod listener_exploration_did_pick_room_complete;
     pub mod listener_exploration_did_pick_room_start;
-    pub mod listener_exploration_did_pick_room_start_complete;
     pub mod listener_exploration_did_room_enter_combat;
     pub mod listener_exploration_did_room_enter_heal;
     pub mod listener_exploration_did_room_enter_shop;
@@ -89,6 +90,7 @@ pub mod listeners {
         pub mod ui_hud_encounter_energy;
         pub mod ui_hud_encounter_score;
         pub mod ui_hud_encounter_turn;
+        pub mod ui_hud_status;
         pub mod ui_panel_exploration;
         pub mod ui_panel_medic;
         pub mod ui_panel_rewards;
@@ -120,6 +122,7 @@ pub mod state {
         pub mod state_deck_exploration;
         pub mod state_enounter_mode;
         pub mod state_exploration;
+        pub mod state_health_exploration;
         pub mod state_heat;
         pub mod state_shop;
     }
@@ -178,7 +181,6 @@ pub mod ecs {
             mod ecs_system_turn_manuever;
             mod ecs_system_turn_move;
             mod ecs_system_view_cards;
-            mod ecs_system_view_energy;
             mod ecs_system_view_move_ball;
             mod ecs_system_view_move_player;
         }
@@ -196,7 +198,7 @@ pub mod ecs {
 }
 use crate::{
     game_events::GameEvents,
-    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
+    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
 use core::{
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
@@ -312,6 +314,7 @@ enum UIViewTypes {
     HudEncounterScore,
     HudEncounterTurn,
     HudEncounterBallMode,
+    HudStatus,
 }
 impl IUIEvent for UIViewTypes {
     fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UIPanel> {
@@ -324,6 +327,7 @@ impl IUIEvent for UIViewTypes {
             UIViewTypes::HudEncounterTurn => ui_hud_encounter_turn::UIHUD::new(),
             UIViewTypes::HudEncounterBallMode => ui_hud_encounter_ball_mode::UIHUD::new(),
             UIViewTypes::PanelRewards => ui_panel_rewards::UIPanelInstance::new(),
+            UIViewTypes::HudStatus => ui_hud_status::UIHUD::new(),
         }
     }
 }
@@ -338,6 +342,7 @@ impl Display for UIViewTypes {
             UIViewTypes::HudEncounterTurn => f.write_str("turn"),
             UIViewTypes::HudEncounterBallMode => f.write_str("ball mode"),
             UIViewTypes::PanelRewards => f.write_str("rewards"),
+            UIViewTypes::HudStatus => f.write_str("status"),
         }
     }
 }

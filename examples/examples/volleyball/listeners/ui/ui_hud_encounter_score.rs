@@ -48,6 +48,11 @@ impl UI for UIHUD {
         // get cur turn
         let cur_scores = game_state.get::<StateScore>().all_scores;
 
+        // missing scores for some reason
+        if !cur_scores.contains_key(&Teams::Red) || !cur_scores.contains_key(&Teams::Blue) {
+            return;
+        }
+
         // edit the text
         go_text.edit_component::<ComponentRendererText>(|x| {
             x.set_contents(&format!("{} : {}", cur_scores[&Teams::Red], cur_scores[&Teams::Blue]));

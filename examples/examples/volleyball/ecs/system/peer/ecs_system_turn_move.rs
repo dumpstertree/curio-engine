@@ -36,6 +36,7 @@ impl ECSSystemEventless for ECSSystemTurnMove {
             .room_type
             == RoomTypes::Combat
             && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
+            && !game_state.get::<StateExploration>().is_selecting_next
         // let is_turn = game_state.get::<StateTurn>().active_instance_id
         //     == game_state
         //         .get::<StateTeamAssignments>()

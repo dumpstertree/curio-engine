@@ -1,7 +1,7 @@
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::global_ecs_system;
 use hecs::World;
-use system_component_default_gameplay::UI;
+use system_component_default_gameplay::{UI, UIEvents};
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
@@ -17,7 +17,7 @@ use crate::{
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamAssignment, TeamController},
     state::{
-        host::{state_currency::StateCurrency, state_deck_exploration::StateDeckExploration},
+        host::{state_currency::StateCurrency, state_deck_exploration::StateDeckExploration, state_health_exploration::StateHealthExploration},
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
         state_position_player::StatePositionEntities,
@@ -56,6 +56,12 @@ impl ECSSystemEventless for ECSSystemGameStart {
                 x.deck.insert(*id, DeckLibrary::get_player_deck_standard());
             }
         });
+        game_state.edit::<StateHealthExploration>(|x| {
+            for id in state_network.peer_instance_ids() {
+                x.all.insert(*id, (7, 7));
+            }
+        });
+
         // open exploration
         event_queue.enqueue_event(GameEvents::InitializeExploration(Exploration::random()));
     }

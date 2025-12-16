@@ -15,9 +15,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     cards::deck_library::DeckLibrary,
-    game_events::GameEvents,
+    game_events::{self, GameEvents},
     state::{
-        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter},
+        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter, state_health_exploration::StateHealthExploration},
         state_controller::{self, StateController},
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
@@ -64,6 +64,31 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                     }
                 });
 
+                let state_teams = game_state.get::<StateTeamAssignments>();
+                let state_score = game_state.get::<StateScore>();
+
+                // edit health based on encounter change
+                game_state.edit::<StateHealthExploration>(|x| {
+                    // iterate over each
+                    for team_user_id in &state_teams.team_assignments {
+                        // score for encounter
+                        let Some(score_encounter) = state_score.all_scores.get(&team_user_id.0) else {
+                            continue;
+                        };
+
+                        // iterate over each user in id
+                        for user_id in team_user_id.1 {
+                            // get the score for the exploration to edit
+                            let Some(score_exploration) = x.all.get_mut(&user_id) else {
+                                continue;
+                            };
+
+                            // set the exploration score to the encounter score
+                            score_exploration.0 = *score_encounter;
+                        }
+                    }
+                });
+
                 // do some cleanup removing values we are no longer using
 
                 // clear teams foreach
@@ -76,6 +101,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 game_state.edit::<StateController>(|x| x.all_players.clear());
                 // clear decks foreach
                 game_state.edit::<StateDeck>(|x| x.deck.clear());
+                // edit scores
+                game_state.edit::<StateScore>(|x| x.all_scores.clear());
             }
             _ => {}
         }

@@ -45,10 +45,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestTurnE
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestTurnEnd(id) => {
-                let team = game_state
-                    .get::<StateTeamAssignments>()
-                    .team_for(id)
-                    .unwrap();
+                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(id) else {
+                    return;
+                };
                 //  guard -> make sure the requested end of turn is for the active player
                 let is_active_player = game_state.get::<StateTurn>().active_instance_id == team;
                 if !is_active_player {

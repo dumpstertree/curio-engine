@@ -45,6 +45,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
             .room_type
             == RoomTypes::Combat
             && game_state.get::<StatePeerInputMode>().mode == InputModes::Manuever
+            && !game_state.get::<StateExploration>().is_selecting_next
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
         let state_input = game_state.get::<InputState>();
