@@ -18,9 +18,7 @@ impl EventReciever {
                         };
 
                         //draw cards based on count
-                        for _ in 0..*count {
-                            deck.draw();
-                        }
+                        deck.draw(*count);
                     }
                 });
             }

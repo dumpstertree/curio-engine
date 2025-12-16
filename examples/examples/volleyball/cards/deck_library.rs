@@ -12,6 +12,11 @@ impl DeckLibrary {
         deck.add_card_to_deck("rest", true);
         deck.add_card_to_deck("serve", true);
 
+        deck.add_card_to_deck("move_forward_standard", true);
+        deck.add_card_to_deck("move_back_standard", true);
+        deck.add_card_to_deck("move_left_standard", true);
+        deck.add_card_to_deck("move_right_standard", true);
+
         // manuevers
         deck.add_card_to_deck("wild_card", false);
         deck.add_card_to_deck("wild_card", false);
@@ -43,8 +48,13 @@ impl DeckLibrary {
         // create the empty deck
         let mut deck = Deck::default();
 
+        // deck.add_card_to_deck("move_forward_standard", true);
+        // deck.add_card_to_deck("move_back_standard", true);
+        deck.add_card_to_deck("move_left_standard", true);
+        deck.add_card_to_deck("move_right_standard", true);
+
         // persistent
-        deck.add_card_to_deck("rest", true);
+        // deck.add_card_to_deck("rest", true);
         deck.add_card_to_deck("serve", true);
 
         // manuevers
@@ -67,12 +77,41 @@ impl DeckLibrary {
 
         deck
     }
+    pub fn get_ai_crab_deck() -> Deck {
+        // create the empty deck
+        let mut deck = Deck::default();
+
+        // deck.add_card_to_deck("move_forward_standard", true);
+        // deck.add_card_to_deck("move_back_standard", true);
+        deck.add_card_to_deck("move_left_standard", true);
+        deck.add_card_to_deck("move_right_standard", true);
+
+        // persistent
+        // deck.add_card_to_deck("rest", true);
+        deck.add_card_to_deck("serve", true);
+
+        // manuevers
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("bump", false);
+        deck.add_card_to_deck("spike", false);
+        deck.add_card_to_deck("wild_card", false);
+        deck.add_card_to_deck("wild_card", false);
+
+        // spells
+        // deck.add_card_to_deck("blessing", false);
+        // deck.add_card_to_deck("deep_breath", false);
+        // deck.add_card_to_deck("blessing", false);
+        // deck.add_card_to_deck("deep_breath", false);
+
+        deck
+    }
     pub fn get_deck_for_uid(uid: &str) -> Deck {
-        if uid == "wild" {
-            //
-            Self::get_ai_wild_deck()
-        } else {
-            Self::get_player_deck_standard()
+        match uid {
+            "wild" => Self::get_ai_wild_deck(),
+            "crab" => Self::get_ai_crab_deck(),
+            _ => Self::get_player_deck_standard(),
         }
     }
 }

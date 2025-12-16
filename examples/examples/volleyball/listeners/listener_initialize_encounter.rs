@@ -285,7 +285,6 @@ pub struct Encounter {
 #[derive(PartialEq, Eq, Hash, Default, Clone, Deserialize, Serialize)]
 pub struct Participant {
     pub deck_id: String,
-    pub starting_location: Vector2Int,
     pub energy: i32,
     pub health: i32,
 }

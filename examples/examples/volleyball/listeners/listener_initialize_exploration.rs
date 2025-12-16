@@ -79,8 +79,8 @@ impl EncounterLibrary {
     pub fn random() -> Encounter {
         match Random::range_int(0, 3) {
             0 => Self::get_encounter_0(),
-            1 => Self::get_encounter_0(),
-            2 => Self::get_encounter_0(),
+            1 => Self::get_encounter_1(),
+            2 => Self::get_encounter_2(),
             _ => {
                 panic!("Bad Roll")
             }
@@ -91,18 +91,9 @@ impl EncounterLibrary {
             server: Teams::Red,
             team_red: TeamController::Player,
             team_blue: TeamController::Ai(vec![
-                Participant {
-                    deck_id: "wild".to_string(),
-                    starting_location: Vector2Int::zero(),
-                    energy: 3,
-                    health: 1,
-                },
-                Participant {
-                    deck_id: "wild".to_string(),
-                    starting_location: Vector2Int::zero(),
-                    energy: 3,
-                    health: 1,
-                },
+                //
+                OpponentLibrary::get_opponent_grunt(),
+                OpponentLibrary::get_opponent_grunt(),
             ]),
         }
     }
@@ -110,24 +101,21 @@ impl EncounterLibrary {
         Encounter {
             server: Teams::Red,
             team_red: TeamController::Player,
-            team_blue: TeamController::Ai(vec![Participant {
-                deck_id: "wild".to_string(),
-                starting_location: Vector2Int::zero(),
-                energy: 1,
-                health: 1,
-            }]),
+            team_blue: TeamController::Ai(vec![
+                //
+                OpponentLibrary::get_opponent_crab(),
+                OpponentLibrary::get_opponent_crab(),
+            ]),
         }
     }
     fn get_encounter_2() -> Encounter {
         Encounter {
             server: Teams::Red,
             team_red: TeamController::Player,
-            team_blue: TeamController::Ai(vec![Participant {
-                deck_id: "wild".to_string(),
-                starting_location: Vector2Int::zero(),
-                energy: 1,
-                health: 1,
-            }]),
+            team_blue: TeamController::Ai(vec![
+                //
+                OpponentLibrary::get_opponent_human(),
+            ]),
         }
     }
 }
@@ -165,5 +153,18 @@ impl ShopLibrary {
             Stock::new(StockItems::Card(String::from("extra_oomph")), 75, 1),
             Stock::new(StockItems::Card(String::from("blessing")), 100, 1),
         ])
+    }
+}
+
+pub struct OpponentLibrary {}
+impl OpponentLibrary {
+    pub fn get_opponent_grunt() -> Participant {
+        Participant { deck_id: "wild".to_string(), energy: 3, health: 1 }
+    }
+    pub fn get_opponent_crab() -> Participant {
+        Participant { deck_id: "crab".to_string(), energy: 6, health: 1 }
+    }
+    pub fn get_opponent_human() -> Participant {
+        Participant { deck_id: "".to_string(), energy: 4, health: 3 }
     }
 }

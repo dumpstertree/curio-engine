@@ -1,10 +1,14 @@
-use core::collections::game_state::GameState;
+use core::collections::{game_state::GameState, vector2::Vector2, vector2_int::Vector2Int};
 
-use crate::state::{
-    host::state_heat::StateHeat,
-    state_ball_mode::{BallModes, StateBallMode},
-    state_position_ball::StatePositionBall,
-    state_position_player::StatePositionEntities,
+use crate::{
+    game_board::{Directions, GameBoard},
+    state::{
+        host::state_heat::StateHeat,
+        state_ball_mode::{BallModes, StateBallMode},
+        state_position_ball::StatePositionBall,
+        state_position_player::StatePositionEntities,
+        state_teams::StateTeamAssignments,
+    },
 };
 
 #[derive(Clone)]
@@ -17,6 +21,7 @@ pub enum CardAttributeRequirement {
     RequireMaxEnergyGreaterEqual(i32),
     RequireHeatLessEqual(i32),
     RequireHeatGreaterEqual(i32),
+    RequireCanMove(Directions),
 }
 
 impl CardAttributeRequirement {
@@ -63,6 +68,15 @@ impl CardAttributeRequirement {
                     .get(&user_id)
                     .unwrap_or(&0)
                     >= count
+            }
+            CardAttributeRequirement::RequireCanMove(direction) => {
+                let state_pos = game_state.get::<StatePositionEntities>();
+                let tile = state_pos.positions.get(&user_id).unwrap();
+                let team = game_state
+                    .get::<StateTeamAssignments>()
+                    .team_for(&user_id)
+                    .unwrap();
+                GameBoard::can_move(&team, tile, direction.clone())
             }
         }
     }

@@ -14,7 +14,9 @@ pub enum AttributeTargetTypesTiles {
     /// Random tile between the values of min and max. Value is explicit but takes into account team rotation
     RandomInRangeGlobal(Vector2Int, Vector2Int),
     /// Random tile between the values of min and max. Value is added to current ball position but takes into account team rotation
-    RandomInRangeLocal(Vector2Int, Vector2Int),
+    RandomInRangeLocalToBall(Vector2Int, Vector2Int),
+    /// Random tile at the value. Value is added to current user position but takes into account team rotation
+    RandomInRangeLocalToUser(Vector2Int, Vector2Int),
 }
 impl Display for AttributeTargetTypesTiles {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -24,7 +26,8 @@ impl Display for AttributeTargetTypesTiles {
             AttributeTargetTypesTiles::RandomOnTeamUser => f.write_str("RandomOnTeamUser"),
             AttributeTargetTypesTiles::RandomOnTeamOpponent => f.write_str("RandomOnTeamOpponent"),
             AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => f.write_str(&format!("RandomInRangeGlobal -> min : {}, max: {}", min, max)),
-            AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => f.write_str(&format!("RandomInRangeLocal -> min : {}, max: {}", min, max)),
+            AttributeTargetTypesTiles::RandomInRangeLocalToBall(min, max) => f.write_str(&format!("RandomInRangeLocal -> min : {}, max: {}", min, max)),
+            AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => f.write_str(&format!("RandomInRangeLocal -> min : {}, max: {}", min, max)),
         }
     }
 }

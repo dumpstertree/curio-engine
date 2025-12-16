@@ -4,6 +4,7 @@ use core::{
 };
 
 use built_in_state::state_network::StateNetwork;
+use rand::fill;
 
 use crate::{
     cards::{
@@ -11,7 +12,7 @@ use crate::{
         card_dependencies::{data_dep_empty::DataDepsEmpty, data_dep_filled::DataDepsFilled},
     },
     game_board::GameBoard,
-    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_deck::StateDeck, state_position_ball::StatePositionBall, state_teams::StateTeamAssignments, state_turn::StateTurn},
+    state::{host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_deck::StateDeck, state_position_ball::StatePositionBall, state_position_player::StatePositionEntities, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 
 pub struct CardAttributeFillerPlayer {}
@@ -40,8 +41,32 @@ impl CardAttributeFillerPlayer {
                     AttributeTargetTypesTiles::RandomAny => filled.push(CardAttributeFillerPlayer::get_tiles_random_any(game_state)),
                     AttributeTargetTypesTiles::RandomOnTeamUser => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_user(id, game_state)),
                     AttributeTargetTypesTiles::RandomOnTeamOpponent => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_opponent(id, game_state)),
-                    AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_local(id, game_state, min, max)),
+                    AttributeTargetTypesTiles::RandomInRangeLocalToBall(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_local(id, game_state, min, max)),
                     AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_global(id, game_state, min, max)),
+                    AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => {
+                        let uid = id;
+                        let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
+                        let state_turn = game_state.get::<StateTurn>();
+                        let state = game_state.get::<StatePositionEntities>();
+                        let state_position_ball = state.positions.get(uid).unwrap();
+
+                        // get the modifiers for stack
+                        let modifier_stack = state_modifiers.get_flat_stack_for_entity(*uid);
+                        let team = &state_turn.active_instance_id;
+
+                        // get the min and max taking into account any modifiers
+                        let min = team.convert_dir(min.x, min.y + modifier_stack.range);
+                        let max = team.convert_dir(max.x, max.y + modifier_stack.range);
+
+                        // get between min and max in range
+                        let random_x = Random::range_int(min.0, max.0);
+                        let random_z = Random::range_int(min.1, max.1);
+
+                        let col = state_position_ball.0 + random_x;
+                        let row = state_position_ball.1 + random_z;
+
+                        filled.push(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
+                    }
                 },
             }
         }

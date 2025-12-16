@@ -6,6 +6,7 @@ use crate::{
         card_statement::CardStatement,
         enums::attribute_clear_flag::ModifierClearFlag,
     },
+    game_board::Directions,
     state::{
         state_ball_mode::BallModes,
         state_deck::{CardAttributeLifecycle, CardTypes},
@@ -22,6 +23,67 @@ pub struct CardLibrary {}
 impl CardLibrary {
     fn init() -> HashMap<String, Arc<CardMaster>> {
         let mut hashmap: HashMap<String, Arc<CardMaster>> = HashMap::new();
+
+        hashmap.insert(
+            String::from("move_forward_standard"),
+            Arc::new(CardMaster::new(
+                "move_forward_standard",
+                "",
+                CardTypes::Move,
+                vec![CardStatement::new(
+                    1, //
+                    vec![CardAttributeRequirement::RequireCanMove(Directions::Forward)],
+                    vec![],
+                    vec![CardAttributeEvents::MoveEntity(AttribtuteTargetTypesEntities::User, AttributeTargetTypesTiles::RandomInRangeLocalToUser(Vector2Int::new(0, 1), Vector2Int::new(0, 1)))],
+                )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Light],
+            )),
+        );
+        hashmap.insert(
+            String::from("move_back_standard"),
+            Arc::new(CardMaster::new(
+                "move_back_standard",
+                "",
+                CardTypes::Move,
+                vec![CardStatement::new(
+                    1, //
+                    vec![CardAttributeRequirement::RequireCanMove(Directions::Back)],
+                    vec![],
+                    vec![CardAttributeEvents::MoveEntity(AttribtuteTargetTypesEntities::User, AttributeTargetTypesTiles::RandomInRangeLocalToUser(Vector2Int::new(0, -1), Vector2Int::new(0, -1)))],
+                )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Light],
+            )),
+        );
+        hashmap.insert(
+            String::from("move_left_standard"),
+            Arc::new(CardMaster::new(
+                "move_left_standard",
+                "",
+                CardTypes::Move,
+                vec![CardStatement::new(
+                    1, //
+                    vec![CardAttributeRequirement::RequireCanMove(Directions::Left)],
+                    vec![],
+                    vec![CardAttributeEvents::MoveEntity(AttribtuteTargetTypesEntities::User, AttributeTargetTypesTiles::RandomInRangeLocalToUser(Vector2Int::new(-1, 0), Vector2Int::new(-1, 0)))],
+                )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Light],
+            )),
+        );
+        hashmap.insert(
+            String::from("move_right_standard"),
+            Arc::new(CardMaster::new(
+                "move_right_standard",
+                "",
+                CardTypes::Move,
+                vec![CardStatement::new(
+                    1, //
+                    vec![CardAttributeRequirement::RequireCanMove(Directions::Right)],
+                    vec![],
+                    vec![CardAttributeEvents::MoveEntity(AttribtuteTargetTypesEntities::User, AttributeTargetTypesTiles::RandomInRangeLocalToUser(Vector2Int::new(1, 0), Vector2Int::new(1, 0)))],
+                )],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Light],
+            )),
+        );
         // rest
         hashmap.insert(
             String::from("heat"),
@@ -35,7 +97,7 @@ impl CardLibrary {
                     vec![],
                     vec![CardAttributeEvents::DrawCards(5, AttribtuteTargetTypesEntities::User), CardAttributeEvents::DrainHeat(AttribtuteTargetTypesEntities::User)],
                 )],
-                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Reliable(2)],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Reliable(2), CardAttributeLifecycle::Light],
             )),
         );
         hashmap.insert(
@@ -50,7 +112,7 @@ impl CardLibrary {
                     vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
                     vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
                 )],
-                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Reliable(1)],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Reliable(1), CardAttributeLifecycle::Light],
             )),
         );
         hashmap.insert(
@@ -65,7 +127,7 @@ impl CardLibrary {
                     vec![],
                     vec![CardAttributeEvents::SetBallMode(BallModes::Bump), CardAttributeEvents::MoveBall(AttributeTargetTypesTiles::RandomOnTeamOpponent)],
                 )],
-                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Exhuast, CardAttributeLifecycle::Reliable(0)],
+                vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Exhuast, CardAttributeLifecycle::Reliable(0), CardAttributeLifecycle::Light],
             )),
         );
         hashmap.insert(
@@ -85,7 +147,7 @@ impl CardLibrary {
                         ),
                         CardAttributeEvents::MoveBall(
                             //
-                            AttributeTargetTypesTiles::RandomInRangeLocal(
+                            AttributeTargetTypesTiles::RandomInRangeLocalToBall(
                                 //
                                 Vector2Int::new(-1, 1),
                                 Vector2Int::new(1, 1),
@@ -118,6 +180,7 @@ impl CardLibrary {
                     CardAttributeLifecycle::Linger,
                     CardAttributeLifecycle::Light,
                     CardAttributeLifecycle::Consume,
+                    CardAttributeLifecycle::Light,
                 ],
             )),
         );
@@ -138,7 +201,7 @@ impl CardLibrary {
                         CardAttributeEvents::SetBallMode(BallModes::Set),
                         CardAttributeEvents::MoveBall(
                             //
-                            AttributeTargetTypesTiles::RandomInRangeLocal(
+                            AttributeTargetTypesTiles::RandomInRangeLocalToBall(
                                 //
                                 Vector2Int::new(0, 0), //
                                 Vector2Int::new(0, 0),
@@ -196,7 +259,7 @@ impl CardLibrary {
                             CardAttributeEvents::SetBallMode(BallModes::Spike),
                             CardAttributeEvents::MoveBall(
                                 //
-                                AttributeTargetTypesTiles::RandomInRangeLocal(
+                                AttributeTargetTypesTiles::RandomInRangeLocalToBall(
                                     //
                                     Vector2Int::new(0, 2), //
                                     Vector2Int::new(0, 2),
@@ -215,7 +278,7 @@ impl CardLibrary {
                             CardAttributeEvents::SetBallMode(BallModes::Spike),
                             CardAttributeEvents::MoveBall(
                                 //
-                                AttributeTargetTypesTiles::RandomInRangeLocal(
+                                AttributeTargetTypesTiles::RandomInRangeLocalToBall(
                                     //
                                     Vector2Int::new(0, 2), //
                                     Vector2Int::new(0, 2),
@@ -246,7 +309,7 @@ impl CardLibrary {
                             CardAttributeEvents::SetBallMode(BallModes::Spike),
                             CardAttributeEvents::MoveBall(
                                 //
-                                AttributeTargetTypesTiles::RandomInRangeLocal(
+                                AttributeTargetTypesTiles::RandomInRangeLocalToBall(
                                     //
                                     Vector2Int::new(0, 2), //
                                     Vector2Int::new(0, 2),
@@ -265,7 +328,7 @@ impl CardLibrary {
                             CardAttributeEvents::SetBallMode(BallModes::Spike),
                             CardAttributeEvents::MoveBall(
                                 //
-                                AttributeTargetTypesTiles::RandomInRangeLocal(
+                                AttributeTargetTypesTiles::RandomInRangeLocalToBall(
                                     //
                                     Vector2Int::new(0, 2), //
                                     Vector2Int::new(0, 2),

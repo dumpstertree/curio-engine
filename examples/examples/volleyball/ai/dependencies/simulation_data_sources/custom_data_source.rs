@@ -66,10 +66,10 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
 
         // iterate over each user id on the team
         for user_id in &user.1 {
-            // get the amount of energy this uid has left
-            let Some(energy_for_uid) = state_energy.all_players.get(&user_id) else {
-                panic!("Failed to find energy for uid: {}", user_id);
-            };
+            // // get the amount of energy this uid has left
+            // let Some(energy_for_uid) = state_energy.all_players.get(&user_id) else {
+            //     panic!("Failed to find energy for uid: {}", user_id);
+            // };
 
             // append get all manuevers available for this uid
             output.extend(Self::get_available_manuevers(&game_state, &user_id));
@@ -79,27 +79,27 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
                 // add end turn make sure this is added before possible breaking from lack of energy
                 output.push((*user_id, SimulationManuevers::EndTurn));
 
-                // if we have enough energy to move add all the directions
-                let has_energy_for_move = energy_for_uid.0 > 0;
-                if has_energy_for_move {
-                    // if we are unable to find a position for this user return the outpue
-                    let Some(pos) = state_pos.positions.get(&user_id) else {
-                        return output;
-                    };
+                // // if we have enough energy to move add all the directions
+                // let has_energy_for_move = energy_for_uid.0 > 0;
+                // if has_energy_for_move {
+                //     // if we are unable to find a position for this user return the outpue
+                //     let Some(pos) = state_pos.positions.get(&user_id) else {
+                //         return output;
+                //     };
 
-                    if GameBoard::can_move(&user.0, pos, Directions::Forward) {
-                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Forward)));
-                    }
-                    if GameBoard::can_move(&user.0, pos, Directions::Back) {
-                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Back)));
-                    }
-                    if GameBoard::can_move(&user.0, pos, Directions::Left) {
-                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Left)));
-                    }
-                    if GameBoard::can_move(&user.0, pos, Directions::Right) {
-                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Right)));
-                    }
-                }
+                //     if GameBoard::can_move(&user.0, pos, Directions::Forward) {
+                //         output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Forward)));
+                //     }
+                //     if GameBoard::can_move(&user.0, pos, Directions::Back) {
+                //         output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Back)));
+                //     }
+                //     if GameBoard::can_move(&user.0, pos, Directions::Left) {
+                //         output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Left)));
+                //     }
+                //     if GameBoard::can_move(&user.0, pos, Directions::Right) {
+                //         output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Right)));
+                //     }
+                // }
             }
         }
         // return

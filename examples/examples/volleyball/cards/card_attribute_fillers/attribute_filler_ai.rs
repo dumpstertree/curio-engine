@@ -13,6 +13,7 @@ use crate::{
         host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
         state_deck::StateDeck,
         state_position_ball::StatePositionBall,
+        state_position_player::{self, StatePositionEntities},
         state_teams::{StateTeamAssignments, Teams},
         state_turn::StateTurn,
     },
@@ -63,7 +64,7 @@ impl CardAttributeFillerAI {
 
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)]));
             }
-            AttributeTargetTypesTiles::RandomInRangeLocal(min, max) => {
+            AttributeTargetTypesTiles::RandomInRangeLocalToBall(min, max) => {
                 let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
                 let state_turn = game_state.get::<StateTurn>();
                 let state_position_ball = game_state.get::<StatePositionBall>();
@@ -82,6 +83,29 @@ impl CardAttributeFillerAI {
 
                 let col = state_position_ball.column + random_x;
                 let row = state_position_ball.row + random_z;
+
+                permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
+            }
+            AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => {
+                let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
+                let state_turn = game_state.get::<StateTurn>();
+                let state = game_state.get::<StatePositionEntities>();
+                let state_position_ball = state.positions.get(uid).unwrap();
+
+                // get the modifiers for stack
+                let modifier_stack = state_modifiers.get_flat_stack_for_entity(*uid);
+                let team = &state_turn.active_instance_id;
+
+                // get the min and max taking into account any modifiers
+                let min = team.convert_dir(min.x, min.y + modifier_stack.range);
+                let max = team.convert_dir(max.x, max.y + modifier_stack.range);
+
+                // get between min and max in range
+                let random_x = Random::range_int(min.0, max.0);
+                let random_z = Random::range_int(min.1, max.1);
+
+                let col = state_position_ball.0 + random_x;
+                let row = state_position_ball.1 + random_z;
 
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
             }

@@ -232,39 +232,50 @@ impl Deck {
     }
 
     /// Draw one card into hand_consumable (respect hand size)
-    pub fn draw(&mut self) {
-        if self.hand_consumable.len() >= 10 {
-            return;
-        }
+    pub fn draw(&mut self, count: i32) {
+        let mut drawn = 0;
+        while drawn < count {
+            // if self.hand_consumable.len() >= 10 {
+            //     return;
+            // }
 
-        if self.pile_draw.is_empty() {
-            // Move discard into draw (no clones)
-            self.pile_draw.append(&mut self.pile_discard);
-            // we dont append exhuast
-            // self.pile_draw.append(&mut self.pile_exhuast);
+            if self.pile_draw.is_empty() {
+                // Move discard into draw (no clones)
+                self.pile_draw.append(&mut self.pile_discard);
+                // we dont append exhuast
+                // self.pile_draw.append(&mut self.pile_exhuast);
 
-            let mut rng = rng();
-            self.pile_draw.shuffle(&mut rng);
-        }
+                let mut rng = rng();
+                self.pile_draw.shuffle(&mut rng);
+            }
 
-        if self.pile_draw.is_empty() {
-            // no cards to draw
-            return;
-        }
+            if self.pile_draw.is_empty() {
+                // no cards to draw
+                return;
+            }
 
-        let first_quick_index = self.pile_draw.iter().position(|x| {
-            x.get_attributes_lifecycle()
-                .contains(&CardAttributeLifecycle::Quick)
-        });
+            let first_quick_index = self.pile_draw.iter().position(|x| {
+                x.get_attributes_lifecycle()
+                    .contains(&CardAttributeLifecycle::Quick)
+            });
 
-        // if we have a quick card in the draw pile we draw that card
-        if let Some(first_quick_index) = first_quick_index {
-            // if you need to keep your draw order where index 0 is top, then:
-            let card = self.pile_draw.remove(first_quick_index);
-            self.hand_consumable.push(card);
-        } else {
-            // if you need to keep your draw order where index 0 is top, then:
-            let card = self.pile_draw.remove(0);
+            let card;
+            // if we have a quick card in the draw pile we draw that card
+            if let Some(first_quick_index) = first_quick_index {
+                // if you need to keep your draw order where index 0 is top, then:
+                card = self.pile_draw.remove(first_quick_index);
+            } else {
+                // if you need to keep your draw order where index 0 is top, then:
+                card = self.pile_draw.remove(0);
+            }
+
+            if !card
+                .get_attributes_lifecycle()
+                .contains(&CardAttributeLifecycle::Light)
+            {
+                drawn += 1;
+            }
+
             self.hand_consumable.push(card);
         }
     }
