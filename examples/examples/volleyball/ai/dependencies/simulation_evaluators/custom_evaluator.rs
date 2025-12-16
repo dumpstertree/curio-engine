@@ -1,7 +1,5 @@
 use core::collections::game_state::GameState;
 
-use mcts::Moves;
-
 use crate::{
     ai::dependencies::simulation_evaluator::SimulationEvaluator,
     cards::enums::simulation_manuevers::SimulationManuevers,
@@ -10,8 +8,8 @@ use crate::{
 };
 
 pub struct CustomEvaluator {}
-impl SimulationEvaluator<SimulationManuevers, (Teams, i32)> for CustomEvaluator {
-    fn evaluate(&self, game_state: &GameState, user: (Teams, i32), previous_moves: &Vec<SimulationManuevers>) -> i64 {
+impl SimulationEvaluator<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomEvaluator {
+    fn evaluate(&self, game_state: &GameState, user: (Teams, Vec<i32>), previous_moves: &Vec<(i32, SimulationManuevers)>) -> i64 {
         // get states
         let state_position_ball = game_state.get::<StatePositionBall>();
         let state_energy = game_state.get::<StateEnergy>();
@@ -36,33 +34,39 @@ impl SimulationEvaluator<SimulationManuevers, (Teams, i32)> for CustomEvaluator 
             return -99;
         }
 
-        // get the cur and max energy for the user
-        let Some(energy_cur_max) = state_energy.all_players.get(&user.1) else {
-            println!("Unable to find energy data for UID : {}", user.1);
-            return 0;
-        };
+        let mut score_max_energy = 0; // more points the more max energy we still have
+        let mut score_cur_energy = 0; // more points the more max energy we still have
+        let mut score_deck = 0; //less points the more moves it took us to get there
+        let mut score_moves = 0;
 
-        // get the deck for the user
-        let Some(deck) = state_deck.deck.get(&user.1) else {
-            println!("Unable to find deck data for UID : {}", user.1);
-            return 0;
-        };
+        for user_uid in user.1 {
+            // get the cur and max energy for the user
+            let Some(energy_cur_max) = state_energy.all_players.get(&user_uid) else {
+                println!("Unable to find energy data for UID : {}", user_uid);
+                return 0;
+            };
 
-        // get any modifiers for this user
-        let mod_stack = state_modifier_stack.get_flat_stack_for_entity(user.1);
+            // get the deck for the user
+            let Some(deck) = state_deck.deck.get(&user_uid) else {
+                println!("Unable to find deck data for UID : {}", user_uid);
+                return 0;
+            };
 
-        // println!("energy: {}", (energy_cur_max.1 as i64 + mod_stack.energy as i64));
-        // calculate all the parts of the scoring fn
-        let score_max_energy = (energy_cur_max.1 as i64 + mod_stack.energy as i64) * 2; // more points the more max energy we still have
-        let score_cur_energy = (energy_cur_max.0 as i64) * 3; // more points the more max energy we still have
-        let score_deck = deck.hand_consumable.len() as i64; // less points the more moves it took us to get there
-        let score_moves = -(previous_moves.len() as i64); // less points the more moves it took us to get there
+            // get any modifiers for this user
+            let mod_stack = state_modifier_stack.get_flat_stack_for_entity(user_uid);
+
+            // println!("energy: {}", (energy_cur_max.1 as i64 + mod_stack.energy as i64));
+            // calculate all the parts of the scoring fn
+            score_max_energy += (energy_cur_max.1 as i64 + mod_stack.energy as i64) * 2; // more points the more max energy we still have
+            score_cur_energy += (energy_cur_max.0 as i64) * 3; // more points the more max energy we still have
+            score_deck += deck.hand_consumable.len() as i64; // less points the more moves it took us to get there
+            score_moves += -(previous_moves.len() as i64); // less points the more moves it took us to get there
+        }
 
         // put in place incase we ever hit an infite loop
         if score_cur_energy + score_max_energy + score_moves + score_deck > 1000 {
             panic!("unstable score {:?} -> ", previous_moves)
         }
-
         // create the final the score
         score_max_energy + score_cur_energy + score_deck + score_moves
     }

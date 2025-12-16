@@ -79,8 +79,8 @@ impl EncounterLibrary {
     pub fn random() -> Encounter {
         match Random::range_int(0, 3) {
             0 => Self::get_encounter_0(),
-            1 => Self::get_encounter_1(),
-            2 => Self::get_encounter_2(),
+            1 => Self::get_encounter_0(),
+            2 => Self::get_encounter_0(),
             _ => {
                 panic!("Bad Roll")
             }
@@ -90,12 +90,20 @@ impl EncounterLibrary {
         Encounter {
             server: Teams::Red,
             team_red: TeamController::Player,
-            team_blue: TeamController::Ai(vec![Participant {
-                deck_id: "wild".to_string(),
-                starting_location: Vector2Int::zero(),
-                energy: 1,
-                health: 1,
-            }]),
+            team_blue: TeamController::Ai(vec![
+                Participant {
+                    deck_id: "wild".to_string(),
+                    starting_location: Vector2Int::zero(),
+                    energy: 3,
+                    health: 1,
+                },
+                Participant {
+                    deck_id: "wild".to_string(),
+                    starting_location: Vector2Int::zero(),
+                    energy: 3,
+                    health: 1,
+                },
+            ]),
         }
     }
     fn get_encounter_1() -> Encounter {

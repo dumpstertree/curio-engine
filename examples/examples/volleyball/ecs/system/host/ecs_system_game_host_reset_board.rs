@@ -91,6 +91,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                     }
                 }
                 // reset all blue
+                let mut pos_offset = 0;
                 if let Some(guids) = state_team.team_assignments.get(&Teams::Blue) {
                     for guid in guids {
                         // reset energy
@@ -102,10 +103,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
                         // reset position
                         game_state.edit::<StatePositionEntities>(|x| {
                             if let Some(y) = x.positions.get_mut(guid) {
-                                y.0 = GameBoard::get_serving_tile(&Teams::Blue).0;
-                                y.1 = GameBoard::get_serving_tile(&Teams::Blue).1;
+                                y.0 = GameBoard::get_serving_tile(&Teams::Blue).0 - pos_offset;
+                                y.1 = GameBoard::get_serving_tile(&Teams::Blue).1 - pos_offset;
                             }
                         });
+                        pos_offset += 1;
                         // reset shuffle deck
                         game_state.edit::<StateDeck>(|x| {
                             if let Some(y) = x.deck.get_mut(guid) {

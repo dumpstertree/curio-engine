@@ -102,10 +102,10 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                 ])
             });
 
-            let uid = current_guids[0];
+            // let uid = current_guids[0];
             let move2 = simulator.simulate(game_state, Fidelity::Extreme, Threading::Multi);
-
-            match move2 {
+            let uid = move2.0;
+            match move2.1 {
                 SimulationManuevers::EndTurn => events.enqueue_event(GameEvents::RequestTurnEnd(uid)),
                 SimulationManuevers::PlayCard(card_instance, filled_card_response) => events.enqueue_event(GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id, filled_card_response)),
                 SimulationManuevers::MoveEntity(direction) => match direction {

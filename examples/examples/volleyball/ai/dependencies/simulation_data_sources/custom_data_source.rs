@@ -25,8 +25,8 @@ use crate::{
 };
 
 pub struct CustomDataSource {}
-impl SimulationDataSource<SimulationManuevers, (Teams, i32)> for CustomDataSource {
-    fn get_cur_user(&self, game_state: &GameState) -> (Teams, i32) {
+impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomDataSource {
+    fn get_cur_user(&self, game_state: &GameState) -> (Teams, Vec<i32>) {
         // get state
         let state_teams = game_state.get::<StateTeamAssignments>();
         let state_turn = game_state.get::<StateTurn>();
@@ -41,11 +41,11 @@ impl SimulationDataSource<SimulationManuevers, (Teams, i32)> for CustomDataSourc
         };
 
         // return
-        (state_turn.active_instance_id, guids[0])
+        (state_turn.active_instance_id, guids.clone())
     }
-    fn get_all_simulation_actions(&self, game_state: &GameState, user: &(Teams, i32)) -> Vec<SimulationManuevers> {
+    fn get_all_simulation_actions(&self, game_state: &GameState, user: &(Teams, Vec<i32>)) -> Vec<(i32, SimulationManuevers)> {
         // create the output
-        let mut output = Vec::new();
+        let mut output: Vec<(i32, SimulationManuevers)> = Vec::new();
 
         // get state terminated
         let state_terminated = game_state.get::<StateTerminated>();
@@ -64,49 +64,51 @@ impl SimulationDataSource<SimulationManuevers, (Teams, i32)> for CustomDataSourc
         let state_energy = game_state.get::<StateEnergy>();
         let state_pos = game_state.get::<StatePositionEntities>();
 
-        // get the amount of energy this uid has left
-        let Some(energy_for_uid) = state_energy.all_players.get(&user.1) else {
-            panic!("Failed to find energy for uid: {}", user.1);
-        };
+        // iterate over each user id on the team
+        for user_id in &user.1 {
+            // get the amount of energy this uid has left
+            let Some(energy_for_uid) = state_energy.all_players.get(&user_id) else {
+                panic!("Failed to find energy for uid: {}", user_id);
+            };
 
-        // append get all manuevers available for this uid
-        output.extend(Self::get_available_manuevers(&game_state, &user.1));
+            // append get all manuevers available for this uid
+            output.extend(Self::get_available_manuevers(&game_state, &user_id));
 
-        // make sure the ball is not currently being served
-        if game_state.get::<StateBallMode>().mode != BallModes::Serve {
-            // add end turn make sure this is added before possible breaking from lack of energy
-            output.push(SimulationManuevers::EndTurn);
+            // make sure the ball is not currently being served
+            if game_state.get::<StateBallMode>().mode != BallModes::Serve {
+                // add end turn make sure this is added before possible breaking from lack of energy
+                output.push((*user_id, SimulationManuevers::EndTurn));
 
-            // if we have enough energy to move add all the directions
-            let has_energy_for_move = energy_for_uid.0 > 0;
-            if has_energy_for_move {
-                // if we are unable to find a position for this user return the outpue
-                let Some(pos) = state_pos.positions.get(&user.1) else {
-                    return output;
-                };
+                // if we have enough energy to move add all the directions
+                let has_energy_for_move = energy_for_uid.0 > 0;
+                if has_energy_for_move {
+                    // if we are unable to find a position for this user return the outpue
+                    let Some(pos) = state_pos.positions.get(&user_id) else {
+                        return output;
+                    };
 
-                if GameBoard::can_move(&user.0, pos, Directions::Forward) {
-                    output.push(SimulationManuevers::MoveEntity(Directions::Forward));
-                }
-                if GameBoard::can_move(&user.0, pos, Directions::Back) {
-                    output.push(SimulationManuevers::MoveEntity(Directions::Back));
-                }
-                if GameBoard::can_move(&user.0, pos, Directions::Left) {
-                    output.push(SimulationManuevers::MoveEntity(Directions::Left));
-                }
-                if GameBoard::can_move(&user.0, pos, Directions::Right) {
-                    output.push(SimulationManuevers::MoveEntity(Directions::Right));
+                    if GameBoard::can_move(&user.0, pos, Directions::Forward) {
+                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Forward)));
+                    }
+                    if GameBoard::can_move(&user.0, pos, Directions::Back) {
+                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Back)));
+                    }
+                    if GameBoard::can_move(&user.0, pos, Directions::Left) {
+                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Left)));
+                    }
+                    if GameBoard::can_move(&user.0, pos, Directions::Right) {
+                        output.push((*user_id, SimulationManuevers::MoveEntity(Directions::Right)));
+                    }
                 }
             }
         }
-
         // return
         output
     }
 }
 
 impl CustomDataSource {
-    fn get_available_manuevers_for_cards(game_state: &GameState, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<SimulationManuevers> {
+    fn get_available_manuevers_for_cards(game_state: &GameState, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<(i32, SimulationManuevers)> {
         //
         let mut all_manuevers = Vec::new();
         let state_energy = game_state.get::<StateEnergy>();
@@ -191,14 +193,14 @@ impl CustomDataSource {
 
             // convert those permutations into a play
             for combo in combined_permutations {
-                all_manuevers.push(SimulationManuevers::PlayCard(card.clone(), combo));
+                all_manuevers.push((*uid, SimulationManuevers::PlayCard(card.clone(), combo)));
             }
         }
 
         // return
         all_manuevers
     }
-    fn get_available_manuevers(game_state: &GameState, uid: &i32) -> Vec<SimulationManuevers> {
+    fn get_available_manuevers(game_state: &GameState, user_uid: &i32) -> Vec<(i32, SimulationManuevers)> {
         // create the return object containing all the moves
         let mut all_manuevers = Vec::new();
 
@@ -206,13 +208,13 @@ impl CustomDataSource {
         let state_deck = game_state.get::<StateDeck>();
 
         // get deck from state
-        let Some(deck) = state_deck.deck.get(uid) else {
-            println!("Failed to find 'Deck' for UID {}", uid);
+        let Some(deck) = state_deck.deck.get(user_uid) else {
+            println!("Failed to find 'Deck' for UID {}", user_uid);
             return all_manuevers;
         };
 
         // add all the consumable cards
-        all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, uid, &deck.hand_consumable));
+        all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, user_uid, &deck.hand_consumable));
 
         // add all the persistent cards
         // all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, uid, &deck.hand_persistent));

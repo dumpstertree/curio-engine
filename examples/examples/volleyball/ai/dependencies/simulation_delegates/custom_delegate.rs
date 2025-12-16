@@ -13,13 +13,16 @@ use crate::{
     state::{other::state_terminated::StateTerminated, state_energy::StateEnergy, state_position_player::StatePositionEntities, state_teams::Teams},
 };
 pub struct CustomDelegate {}
-impl SimulationDelegate<SimulationManuevers, (Teams, i32)> for CustomDelegate {
+impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomDelegate {
     // simulates the current move into the gamestate
-    fn simulate(&self, game_state: &mut GameState, user: &(Teams, i32), manuever: &SimulationManuevers) {
+    fn simulate(&self, game_state: &mut GameState, user: &(Teams, Vec<i32>), manuever: &(i32, SimulationManuevers)) {
+        let user_team = user.0;
+        let user_id = manuever.0;
+        let manuever = manuever.1.clone();
         // each manuever type is handled differently. call the corresponding fn for each manuever
         match manuever {
-            SimulationManuevers::PlayCard(card, data) => Self::make_manuever_card(game_state, &data, &card, &user),
-            SimulationManuevers::MoveEntity(vector2_int) => Self::make_manuever_move(game_state, &vector2_int, &user),
+            SimulationManuevers::PlayCard(card, data) => Self::make_manuever_card(game_state, &data, &card, &(user_team, user_id)),
+            SimulationManuevers::MoveEntity(vector2_int) => Self::make_manuever_move(game_state, &vector2_int, &(user_team, user_id)),
             SimulationManuevers::EndTurn => Self::make_manuever_end(game_state),
             SimulationManuevers::Invalid => {}
         }
@@ -28,8 +31,8 @@ impl SimulationDelegate<SimulationManuevers, (Teams, i32)> for CustomDelegate {
         let state_energy = game_state.get::<StateEnergy>();
 
         // get the energy for this user
-        let Some(energy_cur_max) = state_energy.all_players.get(&user.1) else {
-            println!("Could not find 'Energy' for UID: {}", user.1);
+        let Some(energy_cur_max) = state_energy.all_players.get(&user_id) else {
+            println!("Could not find 'Energy' for UID: {}", user_id);
             return;
         };
 
