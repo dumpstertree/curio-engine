@@ -4,7 +4,7 @@ use crate::ecs::components::component_card::ComponentCard;
 use crate::game_board::GameBoard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
-use crate::state::state_deck::{self, Deck, StateDeck};
+use crate::state::state_deck::{self, CardTypes, Deck, StateDeck};
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
@@ -70,7 +70,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                     continue;
                 };
 
-                let Some(loc) = my_deck.get_location(card_instance.clone()) else {
+                let Some(loc) = my_deck.get_location(card_instance.clone(), |x| x.get_manuever_type() != CardTypes::Move) else {
                     continue;
                 };
                 match loc {

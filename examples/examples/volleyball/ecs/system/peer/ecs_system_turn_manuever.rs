@@ -7,6 +7,7 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
+use crate::state::state_deck::CardTypes;
 use crate::state::state_teams::StateTeamAssignments;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use built_in_state::state_input::InputState;
@@ -67,112 +68,55 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
         };
         // my deck
         let my_deck = &state_deck.deck[&game_state.instance_id];
+        let my_cards_in_hand = my_deck.get_cards_from_hand(|x| x.get_manuever_type() != CardTypes::Move);
 
         // new bounds for looping
         let bounds_min = 0;
-        let bounds_max = my_deck.hand_consumable.len() as i32;
+        let bounds_max = my_cards_in_hand.len() as i32;
         // let bounds_max = (my_deck.hand_persistent.len() + my_deck.hand_consumable.len()) as i32;
 
         // move left or right
         if input_card_left || input_card_right {
             // edit the selected cards
             game_state.edit::<StatePeerSelectedCards>(|x| {
-                // clamp any old value
-                x.index = x.index.clamp(bounds_min, bounds_max);
-
-                // generate the list of cards using
-                let mut list: Vec<Arc<CardInstance>> = vec![];
-                // for x in my_deck.hand_persistent.clone() {
-                //     list.push(x);
-                // }
-                for x in my_deck.hand_consumable.clone() {
-                    list.push(x);
-                }
-
                 // move left
                 if input_card_left {
                     x.index = (x.index - 1).repeat(bounds_min, bounds_max);
-                    println!("card leeft -> change card : {}", list[x.index as usize].get_title());
                 }
 
                 // move right
                 if input_card_right {
                     x.index = (x.index + 1).repeat(bounds_min, bounds_max);
-                    println!("card right -> change card : {}", list[x.index as usize].get_title());
                 }
             });
         }
 
+        // edit the selected cards
+        game_state.edit::<StatePeerSelectedCards>(|x| {
+            // incase its out of bounds clamp it
+            x.index = x.index.clamp(bounds_min, bounds_max);
+        });
+
         // try to submit card
         if input_card_submit {
-            // edit the selected cards
-            game_state.edit::<StatePeerSelectedCards>(|x| {
-                // incase its out of bounds clamp it
-                x.index = x.index.clamp(bounds_min, bounds_max);
-            });
-
-            //
-            // let persistent_len = my_deck.hand_persistent.len() as i32;
             let index = game_state.get::<StatePeerSelectedCards>().index;
-            // let is_persistent = index < persistent_len;
-            // if is_persistent {
-            //     let index = game_state.get::<StatePeerSelectedCards>().index;
-            //     // generate the list of cards using
-            //     let mut list0 = vec![];
-            //     // for x in my_deck.hand_persistent.clone() {
-            //     //     list0.push(x);
-            //     // }
-            //     for x in my_deck.hand_consumable.clone() {
-            //         list0.push(x);
-            //     }
 
-            //     let is_met = list0[index as usize].has_statement(&game_state, game_state.instance_id);
-            //     if !is_met {
-            //         println!("Requirements not met");
-            //         return;
-            //     }
-
-            //     let mut evnt_filled = vec![];
-            //     for evnt in &list0[index as usize].get_attributes_events(game_state, game_state.instance_id) {
-            //         evnt_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &game_state.instance_id, &&evnt.get_data_dependencies_empty())));
-            //     }
-            //     let mut mod_filled = vec![];
-            //     for evnt in &list0[index as usize].get_attributes_modifiers(game_state, game_state.instance_id) {
-            //         mod_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &game_state.instance_id, &evnt.get_data_dependencies_empty())));
-            //     }
-
-            //     event_queue.enqueue_event(GameEvents::RequestUseManeuverPersistent(game_state.instance_id, list0[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
-            // } else {
-            let index = game_state.get::<StatePeerSelectedCards>().index;
-            // generate the list of cards using
-            let mut list0 = vec![];
-            // for x in my_deck.hand_persistent.clone() {
-            //     list0.push(x);
-            // }
-            for x in my_deck.hand_consumable.clone() {
-                list0.push(x);
-            }
-
-            let is_met = list0[index as usize].has_statement(&game_state, game_state.instance_id);
-            if !is_met {
-                println!("Requirements not met");
-                return;
-            }
+            let is_met = my_cards_in_hand[index as usize].has_statement(&game_state, game_state.instance_id);
             if !is_met {
                 println!("Requirements not met");
                 return;
             }
 
             let mut evnt_filled = vec![];
-            for evnt in &list0[index as usize].get_attributes_events(&game_state, game_state.instance_id) {
+            for evnt in &my_cards_in_hand[index as usize].get_attributes_events(&game_state, game_state.instance_id) {
                 evnt_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &game_state.instance_id, &evnt.get_data_dependencies_empty())));
             }
             let mut mod_filled = vec![];
-            for evnt in &list0[index as usize].get_attributes_modifiers(&game_state, game_state.instance_id) {
+            for evnt in &my_cards_in_hand[index as usize].get_attributes_modifiers(&game_state, game_state.instance_id) {
                 mod_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &game_state.instance_id, &evnt.get_data_dependencies_empty())));
             }
 
-            event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, list0[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
+            event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, my_cards_in_hand[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
             // }
         }
     }

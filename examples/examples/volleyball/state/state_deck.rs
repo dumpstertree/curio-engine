@@ -65,6 +65,24 @@ impl Deck {
 
     //     self.all_cards.push(inst);
     // }
+    pub fn get_cards_from_all(&self, predicate: fn(&Arc<CardInstance>) -> bool) -> Vec<Arc<CardInstance>> {
+        let mut cards = Vec::new();
+        for card in &self.all_cards {
+            if predicate(card) {
+                cards.push(card.clone());
+            }
+        }
+        cards
+    }
+    pub fn get_cards_from_hand(&self, predicate: fn(&Arc<CardInstance>) -> bool) -> Vec<Arc<CardInstance>> {
+        let mut cards = Vec::new();
+        for card in &self.hand_consumable {
+            if predicate(card) {
+                cards.push(card.clone());
+            }
+        }
+        cards
+    }
     pub fn hand_len(&self) -> i32 {
         let mut len = 0;
         for c in &self.hand_consumable {
@@ -104,10 +122,11 @@ impl Deck {
 
         panic!(" No card for {}", instance_id); // this is for some reason pulling from the other player
     }
-    pub fn get_location(&self, card_instance: Arc<CardInstance>) -> Option<CardLocation> {
+    pub fn get_location(&self, card_instance: Arc<CardInstance>, predicate: fn(&Arc<CardInstance>) -> bool) -> Option<CardLocation> {
         if let Some(index) = self
             .pile_draw
             .iter()
+            .filter(|x| predicate(x))
             .position(|x| x.instance_id == card_instance.instance_id)
         {
             return Some(CardLocation::Deck((self.pile_draw.len() - 1 - index) as i32));
@@ -115,6 +134,7 @@ impl Deck {
         if let Some(index) = self
             .pile_discard
             .iter()
+            .filter(|x| predicate(x))
             .position(|x| x.instance_id == card_instance.instance_id)
         {
             return Some(CardLocation::Discard((self.pile_discard.len() - 1 - index) as i32));
@@ -130,6 +150,7 @@ impl Deck {
         if let Some(index) = self
             .hand_consumable
             .iter()
+            .filter(|x| predicate(x))
             .position(|x| x.instance_id == card_instance.instance_id)
         {
             return Some(CardLocation::Hand((index) as i32));
@@ -138,6 +159,7 @@ impl Deck {
         if let Some(index) = self
             .pile_exhuast
             .iter()
+            .filter(|x| predicate(x))
             .position(|x| x.instance_id == card_instance.instance_id)
         {
             return Some(CardLocation::OutOfPlay((index) as i32));
@@ -145,6 +167,7 @@ impl Deck {
         if let Some(index) = self
             .pile_exile
             .iter()
+            .filter(|x| predicate(x))
             .position(|x| x.instance_id == card_instance.instance_id)
         {
             return Some(CardLocation::OutOfPlay((index) as i32));
@@ -152,6 +175,7 @@ impl Deck {
         if let Some(index) = self
             .pile_consume
             .iter()
+            .filter(|x| predicate(x))
             .position(|x| x.instance_id == card_instance.instance_id)
         {
             return Some(CardLocation::OutOfPlay((index) as i32));

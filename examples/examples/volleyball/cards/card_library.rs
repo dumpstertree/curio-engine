@@ -110,7 +110,7 @@ impl CardLibrary {
                     1, //
                     vec![],
                     vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
-                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(7, AttribtuteTargetTypesEntities::User)],
+                    vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(5, AttribtuteTargetTypesEntities::User)],
                 )],
                 vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Linger, CardAttributeLifecycle::Persistant, CardAttributeLifecycle::Reliable(1), CardAttributeLifecycle::Light],
             )),

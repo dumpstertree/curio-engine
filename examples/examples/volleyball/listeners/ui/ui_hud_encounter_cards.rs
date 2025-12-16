@@ -28,7 +28,7 @@ use crate::{
     game_events::GameEvents,
     state::{
         peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs},
-        state_deck::{Deck, StateDeck},
+        state_deck::{CardTypes, Deck, StateDeck},
         state_teams::{StateTeamAssignments, Teams},
     },
 };
@@ -87,7 +87,7 @@ impl Listener {
         }
         let camera_state = game_state.get::<CameraState>();
 
-        for card in &my_deck.all_cards {
+        for card in &my_deck.get_cards_from_all(|x| x.get_manuever_type() != CardTypes::Move) {
             Self::spawn_card(world, card.clone(), camera_state.cameras.rotation, game_state);
         }
     }
