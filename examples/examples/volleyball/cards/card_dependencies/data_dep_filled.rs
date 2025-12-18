@@ -5,7 +5,7 @@ use std::fmt::{Display, Formatter, Result};
 use crate::cards::card_dependencies::data_dep_empty::DataDepsEmpty;
 
 /// Data that has been filled and is ready to be passed into an attribute
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub enum DataDepsFilled {
     /// A list of Entities. 0=all_ids
     Entities(Vec<i32>),

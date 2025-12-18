@@ -1,9 +1,13 @@
 use crate::{
     cards::{card_event_runner::CardEventRunner, enums::attribute_clear_flag::ModifierClearFlag},
     game_events::GameEvents,
+    state::host::state_play_history::StatePlayHistory,
 };
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{
+        event_queue::{self, EventQueue},
+        game_state::GameState,
+    },
     dumpster_engine::NetworkModes,
     gameplay::{
         ecs::traits::{
@@ -17,6 +21,7 @@ use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
 use std::vec;
+use winit::event;
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -39,7 +44,7 @@ impl InstanceLimiter for ECSSystemGameRequestManuever {
     }
 }
 impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {
                 // creates an event runner to all the events on
@@ -65,6 +70,14 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManue
 
                 // run all inside runner
                 event_runner.post_and_drain(game_state);
+
+                // add play to history
+                game_state.edit::<StatePlayHistory>(|x| {
+                    x.history.push((*id, card_instance.clone(), data.clone()));
+                });
+
+                // send event that we did play the card
+                event_queue.enqueue_event(GameEvents::DidPlayCard(*id, card_instance.clone(), data.clone()));
             }
 
             _ => {}

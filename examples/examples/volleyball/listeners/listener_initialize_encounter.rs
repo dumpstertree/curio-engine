@@ -5,6 +5,7 @@ use core::{
         ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
         world_context::WorldContext,
     },
+    io::asset_database::AssetDatabaseListing,
     random::Random,
 };
 
@@ -14,10 +15,11 @@ use hecs::World;
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    AssetMappingUIDs,
     cards::deck_library::DeckLibrary,
     game_events::GameEvents,
     state::{
-        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter, state_health_exploration::StateHealthExploration},
+        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter, state_entity_visual::StateVisualEntity, state_health_exploration::StateHealthExploration},
         state_controller::StateController,
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
@@ -74,11 +76,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 // insert new
                 match &encounter.team_blue {
                     TeamController::Ai(participants) => {
-                        // let mut health_point_total = 0;
                         for p in participants {
-                            // update the healthpoint total
-                            // health_point_total += p.health;
-
                             let guid = Random::range_int(-9999, 9999);
 
                             // intialize the team
@@ -102,12 +100,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             game_state.edit::<StateController>(|x| {
                                 x.all_players.insert(guid, Controller::Ai);
                             });
+                            // initialze the visual
+                            game_state.edit::<StateVisualEntity>(|x| {
+                                x.all.insert(guid, p.visual.clone());
+                            });
                         }
-
-                        // // set the healthpoint total
-                        // game_state.edit::<StateScore>(|x| {
-                        //     x.all_scores.insert(Teams::Blue, health_point_total);
-                        // });
                     }
                     TeamController::Player => {
                         let state_network = game_state.get::<StateNetwork>();
@@ -145,11 +142,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
 
                 match &encounter.team_red {
                     TeamController::Ai(participants) => {
-                        // let mut health_point_total = 0;
                         for p in participants {
                             // update the healthpoint total
-                            // health_point_total += p.health;
-
                             let guid = Random::range_int(-9999, 9999);
 
                             // intialize the team
@@ -173,11 +167,11 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             game_state.edit::<StateController>(|x| {
                                 x.all_players.insert(guid, Controller::Ai);
                             });
+                            // initialze the visual
+                            game_state.edit::<StateVisualEntity>(|x| {
+                                x.all.insert(guid, p.visual.clone());
+                            });
                         }
-                        // set the healthpoint total
-                        // game_state.edit::<StateScore>(|x| {
-                        //     x.all_scores.insert(Teams::Red, health_point_total);
-                        // });
                     }
                     TeamController::Player => {
                         let state_network = game_state.get::<StateNetwork>();
@@ -285,6 +279,7 @@ pub struct Encounter {
 #[derive(PartialEq, Eq, Hash, Default, Clone, Deserialize, Serialize)]
 pub struct Participant {
     pub deck_id: String,
+    pub visual: AssetMappingUIDs,
     pub energy: i32,
     pub health: i32,
 }

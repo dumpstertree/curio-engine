@@ -50,6 +50,7 @@ use crate::{
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemPeerStart {
     lastmove: f64,
+    move_time: f64,
 }
 impl ECSSystemEventless for ECSSystemPeerStart {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
@@ -83,7 +84,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
 
         // let is_turn = d == game_state.instance_id;
-        if unsafe { do_move } && any_ai && game_state.get::<TimeState>().unscaled_time - self.lastmove > 1.0 {
+        if unsafe { do_move } && any_ai && game_state.get::<TimeState>().unscaled_time - self.lastmove > self.move_time {
             unsafe { do_move = false };
 
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
@@ -107,13 +108,19 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             let uid = move2.0;
             match move2.1 {
                 SimulationManuevers::EndTurn => events.enqueue_event(GameEvents::RequestTurnEnd(uid)),
-                SimulationManuevers::PlayCard(card_instance, filled_card_response) => events.enqueue_event(GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id, filled_card_response)),
-                SimulationManuevers::MoveEntity(direction) => match direction {
-                    Directions::Forward => events.enqueue_event(GameEvents::RequestMoveZPos(uid)),
-                    Directions::Back => events.enqueue_event(GameEvents::RequestMoveZNeg(uid)),
-                    Directions::Left => events.enqueue_event(GameEvents::RequestMoveXNeg(uid)),
-                    Directions::Right => events.enqueue_event(GameEvents::RequestMoveXPos(uid)),
-                },
+                SimulationManuevers::PlayCard(card_instance, filled_card_response) => {
+                    match card_instance.get_manuever_type() {
+                        crate::state::state_deck::CardTypes::Move => self.move_time = 0.5,
+                        _ => self.move_time = 3.0,
+                    }
+                    events.enqueue_event(GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id, filled_card_response));
+                }
+                // SimulationManuevers::MoveEntity(direction) => match direction {
+                //     Directions::Forward => events.enqueue_event(GameEvents::RequestMoveZPos(uid)),
+                //     Directions::Back => events.enqueue_event(GameEvents::RequestMoveZNeg(uid)),
+                //     Directions::Left => events.enqueue_event(GameEvents::RequestMoveXNeg(uid)),
+                //     Directions::Right => events.enqueue_event(GameEvents::RequestMoveXPos(uid)),
+                // },
                 _ => {}
             }
 

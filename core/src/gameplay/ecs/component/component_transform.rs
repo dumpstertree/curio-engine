@@ -4,7 +4,10 @@ use hecs::World;
 
 use crate::{
     collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
-    gameplay::world_context::{GameObject, WorldContext},
+    gameplay::{
+        ecs::component::component_transform2d::Transform2D,
+        world_context::{GameObject, WorldContext},
+    },
 };
 
 #[derive(Clone)]
@@ -97,6 +100,9 @@ pub fn update_transform(world: &mut WorldContext) {
     let borrow = world.world.borrow_mut();
     for w in borrow.iter() {
         if let Some(mut x) = w.get::<&mut Transform>() {
+            _ = x.update_matrix_in_heirarchy(&borrow);
+        }
+        if let Some(mut x) = w.get::<&mut Transform2D>() {
             _ = x.update_matrix_in_heirarchy(&borrow);
         }
     }

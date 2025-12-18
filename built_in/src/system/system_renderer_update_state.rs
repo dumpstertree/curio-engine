@@ -66,6 +66,33 @@ impl ECSSystemEventless for SystemRendererUpdateState {
             // iterate over each renderer
 
             // for (_entity, (transform, _camera)) in q {
+            world.query_mut::<(&Renderer, &Transform2D)>(|query| {
+                for (_, (renderer, transform)) in query {
+                    // if !renderer.enabled_in_hierarchy(&world) {
+                    //     continue;
+                    // }
+
+                    let zz = 1.0;
+                    let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
+                    let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz;
+
+                    if !renderer.get_cached_enabled_in_hierarchy() {
+                        continue;
+                    }
+                    // guard - no mesh
+                    let Some(asset) = &renderer.asset else {
+                        continue;
+                    };
+
+                    let matrix = Matrix4x4::multiply(&Matrix4x4::new(position, rotation, Vector3::one()), &transform.get_world_matrix(world));
+
+                    // add draw call
+                    for _ in &asset.mesh {
+                        x.draw_calls
+                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), matrix, renderer.get_tint()));
+                    }
+                }
+            });
             world.query_mut::<(&Renderer, &Transform)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
@@ -198,15 +225,10 @@ impl ECSSystemEventless for SystemRendererUpdateState {
             world.query_mut::<(&mut ComponentRendererText, &Transform2D)>(|query| {
                 // let z = 1.0;
 
-                let frustrum_w = 2.1; // these values are made up because the camera is perspective
-                let frustrum_h = 1.1;
-
                 for (_, (renderer, transform)) in query {
                     let zz = 1.0;
-                    let xx = remap(transform.position.x, 0.0, 1.0, -frustrum_w / 2.0, frustrum_w / 2.0);
-                    let yy = remap(transform.position.y, 1.0, 0.0, -frustrum_h / 2.0, frustrum_h / 2.0);
                     let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
-                    let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz + state_camera.cameras.rotation * Vector3::down() * yy + state_camera.cameras.rotation * Vector3::right() * xx;
+                    let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz;
 
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
@@ -217,8 +239,8 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     renderer.rebuild();
                     for asset_for_matricies in &renderer.asset {
                         for arc_mesh in &asset_for_matricies.0.mesh {
-                            let transform_matrix = Matrix4x4::new(position, rotation, transform.scale);
-                            // let transform_matrix = transform.get_world_matrix(world);
+                            // let transform_matrix = Matrix4x4::new(position, rotation, transform.scale);
+                            let transform_matrix = Matrix4x4::multiply(&Matrix4x4::new(position, rotation, Vector3::one()), &transform.get_world_matrix(world));
                             let mut inst_matricies = Vec::new();
                             for mesh_matrix in &asset_for_matricies.1 {
                                 inst_matricies.push(Matrix4x4::multiply(&transform_matrix, mesh_matrix));

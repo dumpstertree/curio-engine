@@ -4,6 +4,7 @@ use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
+use crate::state::host::state_entity_visual::StateVisualEntity;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{AssetMappingUIDs, UIViewTypes};
@@ -52,6 +53,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterEnergy));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterScore));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterTurn));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudPreviouslyPlayed));
             }
             _ => {}
         }
@@ -86,12 +88,17 @@ impl Listener {
     }
 
     pub fn spawn_entities(game_state: &mut GameState, world: &mut WorldContext) {
-        let asset_goblin = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::Goblin.uid());
-
+        let state_entity_visual = game_state.get::<StateVisualEntity>();
         let state_teams = game_state.get::<StateTeamAssignments>();
         for team in Teams::all() {
             if let Some(guids) = state_teams.team_assignments.get(&team) {
                 for guid in guids {
+                    let asset_id = state_entity_visual
+                        .all
+                        .get(guid)
+                        .unwrap_or(&AssetMappingUIDs::Goblin);
+
+                    let asset_goblin = AssetLoader::load_model_animated_from_database(asset_id.uid());
                     let mut rend = RendererAnimated::default();
                     rend.set_asset(Some(asset_goblin.clone()));
                     // players

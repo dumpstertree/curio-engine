@@ -11,6 +11,7 @@ use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
 
 use crate::{
+    AssetMappingUIDs,
     exploration::exploration_path::RoomTypes,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamController},
@@ -159,12 +160,27 @@ impl ShopLibrary {
 pub struct OpponentLibrary {}
 impl OpponentLibrary {
     pub fn get_opponent_grunt() -> Participant {
-        Participant { deck_id: "wild".to_string(), energy: 3, health: 1 }
+        Participant {
+            deck_id: "wild".to_string(),
+            visual: AssetMappingUIDs::CharGrunt,
+            energy: 3,
+            health: 1,
+        }
     }
     pub fn get_opponent_crab() -> Participant {
-        Participant { deck_id: "crab".to_string(), energy: 6, health: 1 }
+        Participant {
+            deck_id: "crab".to_string(),
+            visual: AssetMappingUIDs::CharCrab,
+            energy: 6,
+            health: 1,
+        }
     }
     pub fn get_opponent_human() -> Participant {
-        Participant { deck_id: "".to_string(), energy: 4, health: 3 }
+        Participant {
+            deck_id: "".to_string(),
+            visual: AssetMappingUIDs::Goblin,
+            energy: 4,
+            health: 3,
+        }
     }
 }

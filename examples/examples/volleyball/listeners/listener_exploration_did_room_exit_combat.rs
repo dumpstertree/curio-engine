@@ -39,9 +39,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::None));
 
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterBallMode));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterEnergy));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterTurn));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterScore));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterEnergy));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudPreviouslyPlayed));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::PanelRewards));
             }
             _ => {}

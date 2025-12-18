@@ -26,6 +26,7 @@ pub enum GameEvents {
     TurnBegin(Teams),
     TurnEnd(Teams),
     PlayCard(i32, Arc<CardInstance>, FilledCardResponse),
+    DidPlayCard(i32, Arc<CardInstance>, FilledCardResponse),
     ResetBoard(Teams),
     DrawCard(),
     DiscardCards(),
@@ -141,7 +142,8 @@ impl IGameEvent for GameEvents {
             GameEvents::ExplorationDidRoomEnterShop(_, _) => EventScope::All,
             GameEvents::ExplorationDidRoomExitShop(_, _) => EventScope::All,
             GameEvents::FinalizeEncounter(_) => EventScope::ConnectedHost,
-            GameEvents::FinalizeShop(shop) => EventScope::ConnectedHost,
+            GameEvents::FinalizeShop(_) => EventScope::ConnectedHost,
+            GameEvents::DidPlayCard(_, _, _) => EventScope::All,
         }
     }
 }
@@ -202,6 +204,7 @@ impl Display for GameEvents {
             GameEvents::ExplorationDidRoomExitShop(room, shop) => todo!(),
             GameEvents::FinalizeEncounter(encounter) => todo!(),
             GameEvents::FinalizeShop(shop) => todo!(),
+            GameEvents::DidPlayCard(_, card_instance, filled_card_response) => todo!(),
         }
     }
 }

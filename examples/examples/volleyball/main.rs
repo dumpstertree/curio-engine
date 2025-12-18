@@ -90,6 +90,7 @@ pub mod listeners {
         pub mod ui_hud_encounter_energy;
         pub mod ui_hud_encounter_score;
         pub mod ui_hud_encounter_turn;
+        pub mod ui_hud_previously_played;
         pub mod ui_hud_status;
         pub mod ui_panel_exploration;
         pub mod ui_panel_medic;
@@ -121,9 +122,11 @@ pub mod state {
         pub mod state_currency;
         pub mod state_deck_exploration;
         pub mod state_enounter_mode;
+        pub mod state_entity_visual;
         pub mod state_exploration;
         pub mod state_health_exploration;
         pub mod state_heat;
+        pub mod state_play_history;
         pub mod state_shop;
     }
 }
@@ -198,7 +201,7 @@ pub mod ecs {
 }
 use crate::{
     game_events::GameEvents,
-    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
+    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
 use core::{
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
@@ -218,10 +221,15 @@ use system_component_default_physics::SystemComponentDefaultPhysics;
 use system_component_default_rendering::SystemComponentDefaultGraphics;
 use system_component_default_time::SystemComponentDefaultTime;
 
+#[derive(Default, Hash, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum AssetMappingUIDs {
+    #[default]
+    Invald,
     // animated
     Ball,
     Goblin,
+    CharCrab,
+    CharGrunt,
     EnergyToken,
     // static
     Court,
@@ -230,13 +238,14 @@ pub enum AssetMappingUIDs {
 impl AssetMappingUIDs {
     pub fn uid(&self) -> String {
         match self {
-            // mesh - animated
             AssetMappingUIDs::Ball => String::from("mesh_animated_ball"),
             AssetMappingUIDs::Goblin => String::from("mesh_animated_goblin"),
             AssetMappingUIDs::EnergyToken => String::from("mesh_animated_energy"),
-            // mesh - static
+            AssetMappingUIDs::CharCrab => String::from("mesh_animated_crab"),
+            AssetMappingUIDs::CharGrunt => String::from("mesh_animated_grunt"),
             AssetMappingUIDs::Court => String::from("mesh_static_court"),
             AssetMappingUIDs::Card => String::from("mesh_static_card"),
+            AssetMappingUIDs::Invald => String::from(""),
         }
     }
 }
@@ -245,6 +254,8 @@ fn main() {
         // remote
         (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/z-P4xIan"))),
         (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu"))),
+        (AssetMappingUIDs::CharCrab.uid(), AssetDatabaseListing::Local(String::from("mesh/char_crab.asset"))),
+        (AssetMappingUIDs::CharGrunt.uid(), AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset"))),
         // local
         (AssetMappingUIDs::Court.uid(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
         (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
@@ -315,6 +326,7 @@ enum UIViewTypes {
     HudEncounterTurn,
     HudEncounterBallMode,
     HudStatus,
+    HudPreviouslyPlayed,
 }
 impl IUIEvent for UIViewTypes {
     fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UIPanel> {
@@ -328,6 +340,7 @@ impl IUIEvent for UIViewTypes {
             UIViewTypes::HudEncounterBallMode => ui_hud_encounter_ball_mode::UIHUD::new(),
             UIViewTypes::PanelRewards => ui_panel_rewards::UIPanelInstance::new(),
             UIViewTypes::HudStatus => ui_hud_status::UIHUD::new(),
+            UIViewTypes::HudPreviouslyPlayed => ui_hud_previously_played::UIHUD::new(),
         }
     }
 }
@@ -343,6 +356,7 @@ impl Display for UIViewTypes {
             UIViewTypes::HudEncounterBallMode => f.write_str("ball mode"),
             UIViewTypes::PanelRewards => f.write_str("rewards"),
             UIViewTypes::HudStatus => f.write_str("status"),
+            UIViewTypes::HudPreviouslyPlayed => f.write_str("previously played"),
         }
     }
 }
