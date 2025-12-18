@@ -1,7 +1,9 @@
 use crate::ecs::components::component_ball::ComponentBall;
 use crate::ecs::components::component_energy_token::ComponentEnergyToken;
+use crate::ecs::components::component_gameboard_tile::ComponentGameBoardTile;
 use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
+use crate::game_board::GameBoard;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::host::state_entity_visual::StateVisualEntity;
@@ -11,6 +13,7 @@ use crate::{AssetMappingUIDs, UIViewTypes};
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_renderer_static::Renderer;
 use core::collections::quaternion::Quaternion;
+use core::collections::vector2_int::Vector2Int;
 use core::collections::vector3::Vector3;
 use core::gameplay::ecs::component::component_transform::Transform;
 use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
@@ -46,6 +49,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 Self::spawn_background(game_state, world);
                 // add score to world
                 Self::spawn_ball(game_state, world);
+                // add the tile visuals
+                Self::spawn_tiles(game_state, world);
 
                 // change ui
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::Encounter));
@@ -60,6 +65,23 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
     }
 }
 impl Listener {
+    pub fn spawn_tiles(game_state: &mut GameState, world: &mut WorldContext) {
+        let asset = Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::GameBoardTileActive.uid()));
+        for team in Teams::all() {
+            let min = GameBoard::get_bounds_min(&team);
+            let max = GameBoard::get_bounds_max(&team);
+
+            for x in min.x..(max.x + 1) {
+                for z in min.y..(max.y + 1) {
+                    let pos = GameBoard::get_world_position(x, z);
+                    world
+                        .instantiate("w", Transform::default().set_position(pos + Vector3::up() * 0.05))
+                        .add_component_value(ComponentGameBoardTile::default().set_tile(Vector2Int::new(x, z)))
+                        .add_component_value(Renderer::default().set_asset(asset.clone()));
+                }
+            }
+        }
+    }
     pub fn spawn_ball(game_state: &mut GameState, world: &mut WorldContext) {
         let mut r = Renderer::default();
         r = r.set_asset(Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Ball.uid())));

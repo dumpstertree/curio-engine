@@ -166,6 +166,7 @@ pub mod ecs {
         pub mod component_ball;
         pub mod component_card;
         pub mod component_energy_token;
+        pub mod component_gameboard_tile;
         pub mod component_player;
         pub mod component_ui_ball_state;
         pub mod component_ui_score;
@@ -179,6 +180,7 @@ pub mod ecs {
             mod ecs_system_peer_start;
             mod ecs_system_peer_update_input_mode;
             mod ecs_system_peer_view_ball_state;
+            mod ecs_system_peer_view_gameboard_tiles;
             mod ecs_system_render;
             mod ecs_system_turn_end;
             mod ecs_system_turn_manuever;
@@ -234,10 +236,12 @@ pub enum AssetMappingUIDs {
     // static
     Court,
     Card,
+    GameBoardTileActive,
 }
 impl AssetMappingUIDs {
     pub fn uid(&self) -> String {
         match self {
+            AssetMappingUIDs::GameBoardTileActive => String::from("mesh_static_gameboard_tile_active"),
             AssetMappingUIDs::Ball => String::from("mesh_animated_ball"),
             AssetMappingUIDs::Goblin => String::from("mesh_animated_goblin"),
             AssetMappingUIDs::EnergyToken => String::from("mesh_animated_energy"),
@@ -256,6 +260,7 @@ fn main() {
         (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu"))),
         (AssetMappingUIDs::CharCrab.uid(), AssetDatabaseListing::Local(String::from("mesh/char_crab.asset"))),
         (AssetMappingUIDs::CharGrunt.uid(), AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset"))),
+        (AssetMappingUIDs::GameBoardTileActive.uid(), AssetDatabaseListing::Local(String::from("mesh/gameboard_tile_available.glb"))),
         // local
         (AssetMappingUIDs::Court.uid(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
         (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
