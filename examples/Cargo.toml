@@ -17,6 +17,7 @@ built_in = { path = "../built_in" }
 built_in_state = { path = "../built_in_state" }
 ecs_system = { path = "../ecs_system" }
 ecs_event = { path = "../ecs_event" }
+futures = "0.3"
 
 system_component_default_time = { path = "../system_component_default_time" }
 system_component_default_input = { path = "../system_component_default_input" }

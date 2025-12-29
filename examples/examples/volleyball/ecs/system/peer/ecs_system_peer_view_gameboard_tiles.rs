@@ -1,4 +1,3 @@
-use crate::AssetMappingUIDs;
 use crate::cards::card_attributes_targets::attribute_target_type_tiles::AttributeTargetTypesTiles;
 use crate::cards::card_dependencies::data_dep_empty::DataDepsEmpty;
 use crate::ecs::components::component_gameboard_tile::ComponentGameBoardTile;
@@ -9,11 +8,13 @@ use crate::game_board::GameBoard;
 use crate::state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
+use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::{CardTypes, StateDeck};
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::StateTeamAssignments;
+use crate::{AssetMappingUIDs, game_events};
 use built_in::component::component_renderer_animated::RendererAnimated;
 use built_in::component::component_renderer_static::Renderer;
 use built_in::component::component_renderer_text::RendererCommon;
@@ -51,7 +52,7 @@ impl ECSSystemEventless for Instance {
         let state_mode = game_state.get::<StatePeerInputMode>();
         let state_deck = game_state.get::<StateDeck>();
         let state_index = game_state.get::<StatePeerSelectedCards>();
-        if state_mode.mode != InputModes::Manuever {
+        if state_mode.mode != InputModes::Manuever && game_state.get::<StatePeerSelectTargets>().enabled.is_none() {
             world.query_mut::<(&mut Transform, &ComponentGameBoardTile, &mut Renderer)>(|query| {
                 for (_, (transform, gameboard_tile, renderer)) in query {
                     renderer.set_enabled(false);
@@ -68,7 +69,10 @@ impl ECSSystemEventless for Instance {
                 let state_entity_pos = game_state.get::<StatePositionEntities>();
 
                 let hand = deck.get_cards_from_hand(|x| x.get_manuever_type() != CardTypes::Move);
-                let selected = &hand[state_index.index as usize];
+                let selected = &hand.get(state_index.index as usize);
+                let Some(selected) = selected else {
+                    return;
+                };
                 let team = game_state
                     .get::<StateTeamAssignments>()
                     .team_for(&game_state.instance_id)
@@ -113,18 +117,27 @@ impl ECSSystemEventless for Instance {
                                         }
                                     }
                                 }
-                                AttributeTargetTypesTiles::RandomOnTeamUser => {
-                                    let min = GameBoard::get_bounds_min(&team);
-                                    let max = GameBoard::get_bounds_max(&team);
+                                AttributeTargetTypesTiles::RandomOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamUser => {
+                                    let min = GameBoard::get_bounds_min_for_team(&team);
+                                    let max = GameBoard::get_bounds_max_for_team(&team);
                                     for x in min.x..(max.x + 1) {
                                         for y in min.y..(max.y + 1) {
                                             targets.push(Vector2Int::new(x, y));
                                         }
                                     }
                                 }
-                                AttributeTargetTypesTiles::RandomOnTeamOpponent => {
-                                    let min = GameBoard::get_bounds_min(&team.next_team());
-                                    let max = GameBoard::get_bounds_max(&team.next_team());
+                                AttributeTargetTypesTiles::RandomOnTeamOpponent | AttributeTargetTypesTiles::SelectOnTeamOpponent => {
+                                    let min = GameBoard::get_bounds_min_for_team(&team.next_team());
+                                    let max = GameBoard::get_bounds_max_for_team(&team.next_team());
+                                    for x in min.x..(max.x + 1) {
+                                        for y in min.y..(max.y + 1) {
+                                            targets.push(Vector2Int::new(x, y));
+                                        }
+                                    }
+                                }
+                                AttributeTargetTypesTiles::RandomAny | AttributeTargetTypesTiles::SelectAny => {
+                                    let min = GameBoard::get_bounds_min();
+                                    let max = GameBoard::get_bounds_max();
                                     for x in min.x..(max.x + 1) {
                                         for y in min.y..(max.y + 1) {
                                             targets.push(Vector2Int::new(x, y));

@@ -133,7 +133,7 @@ impl ECSSystemGameRequestManuever {
 
         // check that they have the same length
         if deps_empty.len() != deps_filled.len() {
-            println!("Event dependency length mismatch");
+            println!("Event dependency length mismatch {} to {}", deps_empty.len(), deps_filled.len());
             return false;
         }
 

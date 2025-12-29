@@ -1,10 +1,14 @@
 use core::collections::vector2_int::Vector2Int;
 use std::fmt::Display;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AttributeTargetTypesTiles {
     /// Select a tile - Not yet implemented
-    Select,
+    SelectAny,
+    /// Select a tile on users team
+    SelectOnTeamUser,
+    /// Select a tile on the opponents team
+    SelectOnTeamOpponent,
     /// Random tile on either the user or opponents side
     RandomAny,
     /// Random tile on the users side
@@ -21,13 +25,15 @@ pub enum AttributeTargetTypesTiles {
 impl Display for AttributeTargetTypesTiles {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AttributeTargetTypesTiles::Select => f.write_str("Select"),
+            AttributeTargetTypesTiles::SelectAny => f.write_str("SelectAny"),
             AttributeTargetTypesTiles::RandomAny => f.write_str("RandomAny"),
             AttributeTargetTypesTiles::RandomOnTeamUser => f.write_str("RandomOnTeamUser"),
             AttributeTargetTypesTiles::RandomOnTeamOpponent => f.write_str("RandomOnTeamOpponent"),
             AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => f.write_str(&format!("RandomInRangeGlobal -> min : {}, max: {}", min, max)),
             AttributeTargetTypesTiles::RandomInRangeLocalToBall(min, max) => f.write_str(&format!("RandomInRangeLocal -> min : {}, max: {}", min, max)),
             AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => f.write_str(&format!("RandomInRangeLocal -> min : {}, max: {}", min, max)),
+            AttributeTargetTypesTiles::SelectOnTeamUser => f.write_str("SelectOnTeamUser"),
+            AttributeTargetTypesTiles::SelectOnTeamOpponent => f.write_str("SelectOnTeamOpponent"),
         }
     }
 }

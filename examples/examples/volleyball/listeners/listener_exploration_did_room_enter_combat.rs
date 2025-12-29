@@ -1,5 +1,6 @@
 use crate::ecs::components::component_ball::ComponentBall;
 use crate::ecs::components::component_energy_token::ComponentEnergyToken;
+use crate::ecs::components::component_gameboard_selection::ComponentGameBoardSelection;
 use crate::ecs::components::component_gameboard_tile::ComponentGameBoardTile;
 use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
@@ -51,6 +52,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 Self::spawn_ball(game_state, world);
                 // add the tile visuals
                 Self::spawn_tiles(game_state, world);
+                // spawn tile selection
+                Self::spawn_tile_select(game_state, world);
 
                 // change ui
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::Encounter));
@@ -65,11 +68,18 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
     }
 }
 impl Listener {
+    pub fn spawn_tile_select(game_state: &mut GameState, world: &mut WorldContext) {
+        let asset = Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::Ball.uid()));
+        world
+            .instantiate("w", Transform::default().set_position(Vector3::up() * 0.05))
+            .add_component_value(ComponentGameBoardSelection::default())
+            .add_component_value(Renderer::default().set_asset(asset.clone()));
+    }
     pub fn spawn_tiles(game_state: &mut GameState, world: &mut WorldContext) {
         let asset = Some(AssetLoader::load_model_static_from_database(AssetMappingUIDs::GameBoardTileActive.uid()));
         for team in Teams::all() {
-            let min = GameBoard::get_bounds_min(&team);
-            let max = GameBoard::get_bounds_max(&team);
+            let min = GameBoard::get_bounds_min_for_team(&team);
+            let max = GameBoard::get_bounds_max_for_team(&team);
 
             for x in min.x..(max.x + 1) {
                 for z in min.y..(max.y + 1) {

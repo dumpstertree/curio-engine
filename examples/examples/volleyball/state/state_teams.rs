@@ -62,8 +62,8 @@ impl Teams {
     }
     pub fn on_side(&self, _: i32, z: i32) -> bool {
         match self {
-            Teams::Red => return z <= GameBoard::get_bounds_max(&Teams::Red).y,
-            Teams::Blue => return z >= GameBoard::get_bounds_min(&Teams::Blue).y,
+            Teams::Red => return z <= GameBoard::get_bounds_max_for_team(&Teams::Red).y,
+            Teams::Blue => return z >= GameBoard::get_bounds_min_for_team(&Teams::Blue).y,
         }
     }
     pub fn next_team(&self) -> Self {

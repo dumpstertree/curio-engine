@@ -14,7 +14,10 @@ use crate::{
     game_events::GameEvents,
     state::{
         host::state_exploration::StateExploration,
-        peer::state_peer_input_mode::{InputModes, StatePeerInputMode},
+        peer::{
+            state_peer_input_mode::{InputModes, StatePeerInputMode},
+            state_peer_select_targets::StatePeerSelectTargets,
+        },
         state_ball_mode::{BallModes, StateBallMode},
         state_position_player::{self, StatePositionEntities},
         state_teams::StateTeamAssignments,
@@ -37,6 +40,8 @@ impl ECSSystemEventless for ECSSystemTurnMove {
             == RoomTypes::Combat
             && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
             && !game_state.get::<StateExploration>().is_selecting_next
+            && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
+
         // let is_turn = game_state.get::<StateTurn>().active_instance_id
         //     == game_state
         //         .get::<StateTeamAssignments>()

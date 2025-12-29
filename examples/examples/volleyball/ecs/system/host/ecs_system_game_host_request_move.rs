@@ -89,7 +89,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 };
 
                 let dir = team.convert_dir(0, 1);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 
@@ -113,7 +113,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                     return;
                 };
                 let dir = team.convert_dir(0, -1);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 
@@ -138,7 +138,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 };
 
                 let dir = team.convert_dir(1, 0);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 
@@ -163,7 +163,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestMove 
                 };
 
                 let dir = team.convert_dir(-1, 0);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min(&team), GameBoard::get_bounds_max(&team)) {
+                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 

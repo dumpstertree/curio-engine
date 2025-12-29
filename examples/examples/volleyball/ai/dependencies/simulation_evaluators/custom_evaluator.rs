@@ -18,8 +18,8 @@ impl SimulationEvaluator<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cust
         let state_deck = game_state.get::<StateDeck>();
 
         // get bounds
-        let min = GameBoard::get_bounds_min(&user.0);
-        let max = GameBoard::get_bounds_max(&user.0);
+        let min = GameBoard::get_bounds_min_for_team(&user.0);
+        let max = GameBoard::get_bounds_max_for_team(&user.0);
 
         // check if on my size
         let on_my_side = state_position_ball.row >= min.y && state_position_ball.row <= max.y;

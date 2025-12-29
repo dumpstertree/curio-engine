@@ -112,9 +112,9 @@ pub mod state {
     pub mod state_teams;
     pub mod state_turn;
     pub mod peer {
-
         pub mod state_peer_entity_ids;
         pub mod state_peer_input_mode;
+        pub mod state_peer_select_targets;
         pub mod state_peer_selected_card;
     }
     pub mod host {
@@ -166,6 +166,7 @@ pub mod ecs {
         pub mod component_ball;
         pub mod component_card;
         pub mod component_energy_token;
+        pub mod component_gameboard_selection;
         pub mod component_gameboard_tile;
         pub mod component_player;
         pub mod component_ui_ball_state;
@@ -177,10 +178,12 @@ pub mod ecs {
 
         pub mod peer {
             mod ecs_system_peer_did_turn_begin;
+            mod ecs_system_peer_select_targets;
             mod ecs_system_peer_start;
             mod ecs_system_peer_update_input_mode;
             mod ecs_system_peer_view_ball_state;
             mod ecs_system_peer_view_gameboard_tiles;
+            mod ecs_system_peer_view_gameboard_tiles_selected;
             mod ecs_system_render;
             mod ecs_system_turn_end;
             mod ecs_system_turn_manuever;

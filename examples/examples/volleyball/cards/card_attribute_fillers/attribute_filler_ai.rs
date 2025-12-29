@@ -36,8 +36,8 @@ impl CardAttributeFillerAI {
                     return permuatations;
                 };
 
-                let min = GameBoard::get_bounds_min(&my_team);
-                let max = GameBoard::get_bounds_max(&my_team);
+                let min = GameBoard::get_bounds_min_for_team(&my_team);
+                let max = GameBoard::get_bounds_max_for_team(&my_team);
 
                 let random_x = Random::range_int(min.x, max.x);
                 let random_z = Random::range_int(min.y, max.y);
@@ -56,8 +56,8 @@ impl CardAttributeFillerAI {
 
                 let other_team = my_team.next_team();
 
-                let min = GameBoard::get_bounds_min(&other_team);
-                let max = GameBoard::get_bounds_max(&other_team);
+                let min = GameBoard::get_bounds_min_for_team(&other_team);
+                let max = GameBoard::get_bounds_max_for_team(&other_team);
 
                 let random_x = Random::range_int(min.x, max.x);
                 let random_z = Random::range_int(min.y, max.y);
@@ -115,8 +115,10 @@ impl CardAttributeFillerAI {
 
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)]));
             }
-            AttributeTargetTypesTiles::Select => todo!(),
+            AttributeTargetTypesTiles::SelectAny => todo!(),
             AttributeTargetTypesTiles::RandomAny => todo!(),
+            AttributeTargetTypesTiles::SelectOnTeamUser => todo!(),
+            AttributeTargetTypesTiles::SelectOnTeamOpponent => todo!(),
         }
 
         // return the now filled permutations

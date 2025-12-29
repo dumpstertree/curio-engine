@@ -1,0 +1,63 @@
+use crate::AssetMappingUIDs;
+use crate::cards::card_attributes_targets::attribute_target_type_tiles::AttributeTargetTypesTiles;
+use crate::cards::card_dependencies::data_dep_empty::DataDepsEmpty;
+use crate::ecs::components::component_gameboard_selection::ComponentGameBoardSelection;
+use crate::ecs::components::component_gameboard_tile::ComponentGameBoardTile;
+use crate::ecs::components::component_player::ComponentPlayer;
+use crate::ecs::components::component_view_player::ComponentViewPlayer;
+use crate::exploration::exploration_path::{Exploration, RoomTypes};
+use crate::game_board::GameBoard;
+use crate::state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack;
+use crate::state::host::state_exploration::StateExploration;
+use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
+use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
+use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
+use crate::state::state_deck::{CardTypes, StateDeck};
+use crate::state::state_position_ball::StatePositionBall;
+use crate::state::state_position_player::StatePositionEntities;
+use crate::state::state_teams::StateTeamAssignments;
+use built_in::component::component_renderer_animated::RendererAnimated;
+use built_in::component::component_renderer_static::Renderer;
+use built_in::component::component_renderer_text::RendererCommon;
+use built_in_state::state_debug::StateDebug;
+use built_in_state::state_network::StateNetwork;
+use built_in_state::state_time::TimeState;
+use core::collections::game_state;
+use core::collections::quaternion::Quaternion;
+use core::collections::vector2_int::Vector2Int;
+use core::collections::vector3::Vector3;
+use core::gameplay::ecs::component::component_transform::Transform;
+use core::gameplay::world_context::{WorldContext, WorldContextCommon};
+use core::io::asset_loader::AssetLoader;
+use core::{
+    collections::{event_queue::EventQueue, game_state::GameState},
+    dumpster_engine::NetworkModes,
+    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+};
+use ecs_system::global_ecs_system;
+use hecs::World;
+use mcts::Player;
+use winit::dpi::Position;
+
+#[global_ecs_system]
+pub struct Instance {}
+impl ECSSystemEventless for Instance {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+        NetworkModes::all_peer()
+    }
+    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+        let state_exploration = game_state.get::<StateExploration>();
+        state_exploration.exploration.get_cur_room().room_type == RoomTypes::Combat && !state_exploration.is_selecting_next
+    }
+    fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
+        let state_selection = game_state.get::<StatePeerSelectTargets>();
+
+        world.query_mut::<(&mut Transform, &ComponentGameBoardSelection, &mut Renderer)>(|query| {
+            for (_, (transform, _, renderer)) in query {
+                let pos = GameBoard::get_world_position(state_selection.selected_index.x, state_selection.selected_index.y);
+                transform.position = pos;
+                renderer.set_enabled(state_selection.enabled.is_some());
+            }
+        });
+    }
+}

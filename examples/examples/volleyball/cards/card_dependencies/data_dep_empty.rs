@@ -3,7 +3,7 @@ use std::fmt::Display;
 use crate::cards::card_attributes_targets::{attribute_target_type_cards::AttributeTargetTypesCards, attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles};
 
 /// Data that is empty in order to base filled data off of
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DataDepsEmpty {
     /// A list of entities. 0=target_mode
     Entities(AttribtuteTargetTypesEntities),

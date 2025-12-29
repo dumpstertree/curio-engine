@@ -1,5 +1,6 @@
 use crate::exploration::exploration_path::RoomTypes;
 use crate::state::host::state_exploration::StateExploration;
+use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use crate::state::state_turn::StateTurn;
 use crate::{game_events::GameEvents, state::state_teams::StateTeamAssignments};
 use built_in_state::state_input::InputState;
@@ -26,6 +27,7 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
             .room_type
             == RoomTypes::Combat
             && !game_state.get::<StateExploration>().is_selecting_next
+            && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
         // game_state.get::<StateTurn>().active_instance_id
         //     == game_state
         //         .get::<StateTeamAssignments>()

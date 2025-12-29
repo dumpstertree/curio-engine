@@ -1,14 +1,15 @@
-use crate::AssetMappingUIDs;
 use crate::cards::card_instance::CardInstance;
 use crate::ecs::components::component_card::ComponentCard;
 use crate::game_board::GameBoard;
 use crate::state::peer::state_peer_input_mode::{InputModes, StatePeerInputMode};
+use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::{self, CardTypes, Deck, StateDeck};
 use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::{StateTeamAssignments, Teams};
+use crate::{AssetMappingUIDs, state};
 use built_in::component::component_renderer_static::Renderer;
 use built_in::component::component_renderer_text::{ComponentRendererText, RendererCommon};
 // use built_in::component::component_renderer::Renderer;
@@ -65,6 +66,7 @@ impl ECSSystemEventless for ECSSystemViewCards {
                 let my_deck = state_deck.deck.get(&game_state.instance_id).unwrap();
                 let camera_state = game_state.get::<CameraState>();
                 let state_selected = game_state.get::<StatePeerSelectedCards>();
+                let state_targets = game_state.get::<StatePeerSelectTargets>();
 
                 let Some(card_instance) = &card.card_instance else {
                     continue;
@@ -109,12 +111,12 @@ impl ECSSystemEventless for ECSSystemViewCards {
                             .get::<StateTeamAssignments>()
                             .team_for(&game_state.instance_id)
                             .unwrap();
-                        if is_manuever_mode && state_selected.index == index {
+                        if is_manuever_mode && state_selected.index == index && state_targets.enabled.is_none() {
                             z = z_selected;
                             y = y_selected;
                         }
 
-                        if !is_manuever_mode {
+                        if !is_manuever_mode && state_targets.enabled.is_none() {
                             if is_met {
                                 y = y + 0.4;
                             } else {

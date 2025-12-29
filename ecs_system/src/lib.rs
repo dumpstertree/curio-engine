@@ -9,7 +9,7 @@ pub fn global_ecs_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Append derives to the struct
     input.attrs.push(parse_quote!(#[derive(Default)]));
-    input.attrs.push(parse_quote!(#[derive(Clone)]));
+    // input.attrs.push(parse_quote!(#[derive(Clone)]));
 
     let register_fn = format_ident!("global_ecs_system_{}", name);
 

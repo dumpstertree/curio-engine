@@ -125,7 +125,7 @@ impl CardLibrary {
                     0, //
                     vec![CardAttributeRequirement::RequireBallMode(BallModes::Serve), CardAttributeRequirement::BallRangeLessEqual(0)],
                     vec![],
-                    vec![CardAttributeEvents::SetBallMode(BallModes::Bump), CardAttributeEvents::MoveBall(AttributeTargetTypesTiles::RandomOnTeamOpponent)],
+                    vec![CardAttributeEvents::SetBallMode(BallModes::Bump), CardAttributeEvents::MoveBall(AttributeTargetTypesTiles::SelectOnTeamOpponent)],
                 )],
                 vec![CardAttributeLifecycle::Quick, CardAttributeLifecycle::Exhuast, CardAttributeLifecycle::Reliable(0), CardAttributeLifecycle::Light],
             )),
