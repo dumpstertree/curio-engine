@@ -19,7 +19,7 @@ use crate::{
     cards::deck_library::DeckLibrary,
     game_events::GameEvents,
     state::{
-        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter, state_entity_visual::StateVisualEntity, state_health_exploration::StateHealthExploration},
+        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter, state_entity_visual::StateVisualEntity, state_health_exploration::StateHealthExploration, state_heat::StateHeat},
         state_controller::StateController,
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
@@ -72,6 +72,9 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 game_state.edit::<StatePositionEntities>(|x| {
                     x.positions.clear();
                 });
+                game_state.edit::<StateHeat>(|x| {
+                    x.all_players.clear();
+                });
 
                 // insert new
                 match &encounter.team_blue {
@@ -104,6 +107,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             game_state.edit::<StateVisualEntity>(|x| {
                                 x.all.insert(guid, p.visual.clone());
                             });
+                            // initialize heat
+                            game_state.edit::<StateHeat>(|x| {
+                                x.all_players.insert(guid, 0);
+                            });
                         }
                     }
                     TeamController::Player => {
@@ -134,6 +141,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             // initialze the controll state
                             game_state.edit::<StateController>(|x| {
                                 x.all_players.insert(*guid, Controller::Player);
+                            });
+                            // initialize heat
+                            game_state.edit::<StateHeat>(|x| {
+                                x.all_players.insert(*guid, 0);
                             });
                         }
                     }
@@ -171,6 +182,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             game_state.edit::<StateVisualEntity>(|x| {
                                 x.all.insert(guid, p.visual.clone());
                             });
+                            // initialize heat
+                            game_state.edit::<StateHeat>(|x| {
+                                x.all_players.insert(guid, 0);
+                            });
                         }
                     }
                     TeamController::Player => {
@@ -198,6 +213,10 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                             // initialze the controll state
                             game_state.edit::<StateController>(|x| {
                                 x.all_players.insert(*guid, Controller::Player);
+                            });
+                            // initialize heat
+                            game_state.edit::<StateHeat>(|x| {
+                                x.all_players.insert(*guid, 0);
                             });
                         }
                     }

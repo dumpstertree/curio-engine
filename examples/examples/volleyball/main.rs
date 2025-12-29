@@ -90,6 +90,7 @@ pub mod listeners {
         pub mod ui_hud_encounter_energy;
         pub mod ui_hud_encounter_score;
         pub mod ui_hud_encounter_turn;
+        pub mod ui_hud_heat;
         pub mod ui_hud_previously_played;
         pub mod ui_hud_status;
         pub mod ui_panel_exploration;
@@ -206,7 +207,7 @@ pub mod ecs {
 }
 use crate::{
     game_events::GameEvents,
-    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
+    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_heat, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
 use core::{
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
@@ -334,6 +335,7 @@ enum UIViewTypes {
     HudEncounterTurn,
     HudEncounterBallMode,
     HudStatus,
+    HUDHeat,
     HudPreviouslyPlayed,
 }
 impl IUIEvent for UIViewTypes {
@@ -349,6 +351,7 @@ impl IUIEvent for UIViewTypes {
             UIViewTypes::PanelRewards => ui_panel_rewards::UIPanelInstance::new(),
             UIViewTypes::HudStatus => ui_hud_status::UIHUD::new(),
             UIViewTypes::HudPreviouslyPlayed => ui_hud_previously_played::UIHUD::new(),
+            UIViewTypes::HUDHeat => ui_hud_heat::UIHUD::new(),
         }
     }
 }
@@ -365,6 +368,7 @@ impl Display for UIViewTypes {
             UIViewTypes::PanelRewards => f.write_str("rewards"),
             UIViewTypes::HudStatus => f.write_str("status"),
             UIViewTypes::HudPreviouslyPlayed => f.write_str("previously played"),
+            UIViewTypes::HUDHeat => f.write_str("heat"),
         }
     }
 }

@@ -17,7 +17,7 @@ use crate::{
     cards::deck_library::DeckLibrary,
     game_events::{self, GameEvents},
     state::{
-        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter, state_health_exploration::StateHealthExploration},
+        host::{state_deck_exploration::StateDeckExploration, state_enounter_mode::StateEncounter, state_health_exploration::StateHealthExploration, state_heat::StateHeat},
         state_controller::{self, StateController},
         state_deck::{Deck, StateDeck},
         state_energy::StateEnergy,
@@ -103,6 +103,8 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 game_state.edit::<StateDeck>(|x| x.deck.clear());
                 // edit scores
                 game_state.edit::<StateScore>(|x| x.all_scores.clear());
+                // edit scores
+                game_state.edit::<StateHeat>(|x| x.all_players.clear());
             }
             _ => {}
         }

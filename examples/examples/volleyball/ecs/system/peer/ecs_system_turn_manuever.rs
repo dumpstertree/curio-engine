@@ -114,7 +114,6 @@ impl AttributeBuilder {
     pub fn update(&mut self, game_state: &mut GameState, user_id: &i32) -> bool {
         while self.output.len() < self.reference.len() {
             let i = self.output.len();
-            println!("adding {} of {}", i, self.reference.len());
             // match for the reference
             match self.reference[i] {
                 // reference is an entity
