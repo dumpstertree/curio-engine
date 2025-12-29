@@ -59,7 +59,13 @@ impl UI for UIHUD {
         }
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {}
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {
+        for x in &self.go_text {
+            x.1.destroy();
+        }
+
+        self.go_text.clear();
+    }
 
     fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {
         // get cur turn

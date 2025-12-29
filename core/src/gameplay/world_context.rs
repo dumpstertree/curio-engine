@@ -1,5 +1,6 @@
-use std::cell::RefCell;
+use std::hash::BuildHasher;
 use std::rc::Rc;
+use std::{cell::RefCell, hash::Hash};
 
 use cgmath::Vector3;
 use hecs::{Component, Entity, Query, QueryBorrow, QueryMut, World};
@@ -124,6 +125,13 @@ impl PartialEq for GameObject {
     fn eq(&self, other: &Self) -> bool {
         // currently doesnt check world
         self.entity == other.entity && self.name == other.name
+    }
+}
+impl Hash for GameObject {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // self.world.hash(state);
+        self.entity.hash(state);
+        self.name.hash(state);
     }
 }
 
