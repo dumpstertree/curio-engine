@@ -66,6 +66,22 @@ impl Quaternion {
             z: cr * cp * sy - sr * sp * cy,
         }
     }
+    pub fn inverse(&self) -> Self {
+        let norm_sq = self.x * self.x + self.y * self.y + self.z * self.z + self.w * self.w;
+
+        if norm_sq == 0.0 {
+            // Return identity as a safe fallback
+            return Self::identity();
+        }
+
+        Self {
+            x: -self.x / norm_sq,
+            y: -self.y / norm_sq,
+            z: -self.z / norm_sq,
+            w: self.w / norm_sq,
+        }
+    }
+
     /// Returns an instance of a Quaternion representing the angle in degrees around provided axis
     pub fn from_angle_axis(axis: Vector3, angle: f32) -> Quaternion {
         if angle == 0.0 {

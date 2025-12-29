@@ -46,6 +46,33 @@ impl Transform {
         self.position = self.position + dir * dist;
         dist
     }
+    pub fn rotate_towards_rotation(
+        &mut self,
+        target: Quaternion,
+        delta: Vector3, // max euler step per axis (radians or degrees — your choice)
+    ) -> f32 {
+        // Delta rotation from current to target
+        let delta_rot = target * self.rotation.inverse();
+
+        // Convert delta rotation to Euler angles
+        let delta_euler = delta_rot.to_euler();
+
+        // Clamp per-axis rotation
+        let clamped_euler = Vector3::new(delta_euler.x.clamp(-delta.x, delta.x), delta_euler.y.clamp(-delta.y, delta.y), delta_euler.z.clamp(-delta.z, delta.z));
+
+        // If no rotation is needed
+        if clamped_euler.x == 0.0 && clamped_euler.y == 0.0 && clamped_euler.z == 0.0 {
+            return 0.0;
+        }
+
+        // Apply incremental rotation
+        let step = Quaternion::from_euler(clamped_euler);
+        self.rotation = step * self.rotation;
+
+        // Return "distance moved" equivalent
+        clamped_euler.magnitude()
+    }
+
     pub fn set_position(mut self, position: Vector3) -> Transform {
         self.position = position;
         self

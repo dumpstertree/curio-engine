@@ -178,6 +178,7 @@ pub mod ecs {
     pub mod system {
 
         pub mod peer {
+            mod ecs_system_camera_controller;
             mod ecs_system_peer_did_turn_begin;
             mod ecs_system_peer_select_targets;
             mod ecs_system_peer_start;
