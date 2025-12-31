@@ -216,6 +216,8 @@
 //     label: String,
 // }
 
+use std::sync::Arc;
+
 // #[derive(Clone, Serialize, Deserialize)]
 // pub struct ShaderColorDesc {
 //     label: String,
@@ -239,11 +241,11 @@ use crate::{
 #[derive(PartialEq)]
 pub struct Material {
     pub shader: ShaderModule,
-    shader_desc: ShaderDesc,
-    textures: Vec<Option<TextureAsset>>,
+    shader_desc: Arc<ShaderDesc>,
+    textures: Vec<Option<Arc<TextureAsset>>>,
     colors: Vec<Color>,
     color_buffers: Vec<Option<Buffer>>,
-    none: TextureAsset,
+    none: Arc<TextureAsset>,
 }
 
 // A uniform buffer struct for one color
@@ -262,7 +264,7 @@ impl ColorUniform {
 // Construction
 //=========================================
 impl Material {
-    pub fn new(shader_desc: ShaderDesc) -> Material {
+    pub fn new(shader_desc: Arc<ShaderDesc>) -> Material {
         let device = &SystemGPU::get_device();
         let shader = AssetLoader::load_shader_module(device, &shader_desc.shader_module_path);
 
@@ -271,7 +273,7 @@ impl Material {
             textures: Vec::new(),
             colors: Vec::new(),
             color_buffers: Vec::new(),
-            none: TextureAsset::none(),
+            none: Arc::new(TextureAsset::none()),
             shader,
         };
         m.initialize_vec_lengths();
@@ -317,11 +319,11 @@ impl Material {
         }
     }
 
-    pub fn set_texture_with_index(&mut self, texture: Option<TextureAsset>, index: usize) {
+    pub fn set_texture_with_index(&mut self, texture: Option<Arc<TextureAsset>>, index: usize) {
         self.textures[index] = texture;
     }
 
-    pub fn set_texture_with_label(&mut self, texture: Option<TextureAsset>, label: &str) {
+    pub fn set_texture_with_label(&mut self, texture: Option<Arc<TextureAsset>>, label: &str) {
         for i in 0..self.shader_desc.textures.len() {
             if self.shader_desc.textures[i].label == label {
                 self.textures[i] = texture;

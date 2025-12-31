@@ -21,6 +21,7 @@ use rusty_spine::Atlas;
 use rusty_spine::SkeletonData;
 use rusty_spine::SkeletonJson;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::error::Error;
 use std::fs;
 use std::io::Cursor;
@@ -43,7 +44,8 @@ impl AssetLoader {
     }
 
     // load - from path
-    pub fn load_texture_from_path(path: &str) -> TextureAsset {
+    pub fn load_texture_from_path(path: &str) -> Arc<TextureAsset> {
+        println!("try load texture");
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
                 panic!();
@@ -60,9 +62,10 @@ impl AssetLoader {
             };
 
             // try to get the asset from the cache
-            if let Some(cached_asset) = asset_cache.try_get_asset_model(&uid) {
+            if let Some(cached_asset) = asset_cache.try_get_asset_texture(&path) {
                 return cached_asset;
             }
+
             let data = File::read(path);
             if data.len() == 0 {
                 eprintln!("Something went wrong and data came back as empty for path {}", path);
@@ -75,12 +78,20 @@ impl AssetLoader {
                 panic!();
             };
 
-            result
+            let asset = Arc::new(result);
+            // add the new data to the cache
+            asset_cache.try_store_asset_texture(&path, asset.clone());
+            // return asset
+            asset
         }
     }
 
     // load - from database
     pub fn load_model_static_from_database(uid: String) -> Arc<ModelAsset> {
+        let mut all_shaders = HashMap::new();
+        all_shaders.insert("assets/shader/my_shader.shader".to_string(), AssetLoader::load_shader_desc("assets/shader/my_shader.shader"));
+        all_shaders.insert("assets/shader/unlit_shader.shader".to_string(), AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader"));
+
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
                 panic!();
@@ -107,17 +118,22 @@ impl AssetLoader {
             }
 
             // unwrap
-            let unwrapped_gltf = Self::unwrap_gltf(data.as_slice()).unwrap();
+            let unwrapped_gltf = Self::unwrap_gltf(data.as_slice(), all_shaders).unwrap();
             let asset = Arc::new(ModelAsset::new(unwrapped_gltf.0, unwrapped_gltf.1));
 
             // add the new data to the cache
-            asset_cache.try_store_asset(&uid, asset.clone());
+            asset_cache.try_store_asset_model(&uid, asset.clone());
 
             // return the asset
             return asset;
         }
     }
     pub fn load_model_animated_from_database(uid: String) -> Arc<ModelAssetAnimated> {
+        let shader_desc: Arc<ShaderDesc>;
+        {
+            //create a material
+            shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+        }
         unsafe {
             let Some(asset_database) = &ASSET_DATABASE else {
                 panic!();
@@ -133,11 +149,8 @@ impl AssetLoader {
                 panic!("Err {}", spine_data.err().unwrap());
             };
 
-            //create a material
-            let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
-
             let mut material = Material::new(shader_desc.clone());
-            material.set_texture_with_label(Some(spine_data.2), "diffuse");
+            material.set_texture_with_label(Some(Arc::new(spine_data.2)), "diffuse");
 
             // create the asset
             let x = Arc::new(ModelAssetAnimated::new(Arc::new(material), spine_data.1.clone(), Arc::new(AnimationStateData::new(spine_data.1.clone()))));
@@ -188,7 +201,7 @@ impl AssetLoader {
         let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
         Ok((atlas, skeleton_data, texture))
     }
-    pub fn unwrap_gltf(data: &[u8]) -> Option<(Vec<Arc<Mesh>>, Vec<Arc<Material>>)> {
+    pub fn unwrap_gltf(data: &[u8], shaders: HashMap<String, Arc<ShaderDesc>>) -> Option<(Vec<Arc<Mesh>>, Vec<Arc<Material>>)> {
         // Import GLTF directly from memory slice
         let (gltf, buffers, images) = gltf::import_slice(data).ok()?;
 
@@ -197,8 +210,9 @@ impl AssetLoader {
 
         // --- Materials ---
         if gltf.materials().count() == 0 {
-            let shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
-            all_materials.push(Arc::new(Material::new(shader_desc.clone())));
+            // let shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
+            let s = shaders.get("assets/shader/unlit_shader.shader").unwrap();
+            all_materials.push(Arc::new(Material::new(s.clone())));
         } else {
             for material in gltf.materials() {
                 let pbr = material.pbr_metallic_roughness();
@@ -222,17 +236,32 @@ impl AssetLoader {
                     TextureAsset::default()
                 };
 
-                let shader_desc: ShaderDesc;
+                let shader_desc: Arc<ShaderDesc>;
                 if material.name().unwrap().starts_with("lit:") {
-                    shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+                    shader_desc = shaders
+                        .get("assets/shader/my_shader.shader")
+                        .unwrap()
+                        .clone();
+
+                    // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 } else if material.name().unwrap().starts_with("unlit:") {
-                    shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
+                    shader_desc = shaders
+                        .get("assets/shader/unlit_shader.shader")
+                        .unwrap()
+                        .clone();
+
+                    // shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
                 } else {
-                    shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+                    shader_desc = shaders
+                        .get("assets/shader/my_shader.shader")
+                        .unwrap()
+                        .clone();
+
+                    // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 }
 
                 let mut mat = Material::new(shader_desc.clone());
-                mat.set_texture_with_label(Some(texture_asset), "diffuse");
+                mat.set_texture_with_label(Some(Arc::new(texture_asset)), "diffuse");
                 all_materials.push(Arc::new(mat));
             }
         }
@@ -301,11 +330,36 @@ impl AssetLoader {
             source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
         })
     }
-    pub fn load_shader_desc(path: &str) -> ShaderDesc {
-        let file = fs::File::open(path).expect("file should open read only");
-        let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
-        let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
-        my_struct
+    pub fn load_shader_desc(path: &str) -> Arc<ShaderDesc> {
+        unsafe {
+            let Some(asset_cache) = &ASSET_CACHE else {
+                panic!();
+            };
+            let Some(asset_database) = &ASSET_DATABASE else {
+                panic!();
+            };
+
+            let Ok(asset_database) = asset_database.lock() else {
+                panic!();
+            };
+            let Ok(mut asset_cache) = asset_cache.lock() else {
+                panic!();
+            };
+
+            // try to get the asset from the cache
+            if let Some(cached_asset) = asset_cache.try_get_asset_shader_desc(&path) {
+                return cached_asset;
+            }
+
+            // load
+            let file = fs::File::open(path).expect("file should open read only");
+            let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+            let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
+
+            let asset = Arc::new(my_struct);
+            asset_cache.try_store_asset_shader_desc(path, asset.clone());
+            return asset;
+        }
     }
     pub fn load_font_asset_from_path(path: &str) -> FontAsset {
         let file = File::read(path);

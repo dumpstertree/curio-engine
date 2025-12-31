@@ -214,7 +214,6 @@ use core::{
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
     input::{input_mapping::InputMapping, key_code::ButtonCode},
     io::{
-        asset_cache::AssetCache,
         asset_database::{AssetDatabase, AssetDatabaseListing},
         asset_loader::AssetLoader,
     },
