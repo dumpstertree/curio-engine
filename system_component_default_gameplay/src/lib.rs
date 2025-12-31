@@ -118,6 +118,9 @@ where
         }
 
         let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
+
+        // update any timed events to get added to the queu before we pull anything
+        event_queue.update_timed_events();
         //
         let event = event_queue.drain_queued_events::<UIEvents<U>>();
         for e in event {

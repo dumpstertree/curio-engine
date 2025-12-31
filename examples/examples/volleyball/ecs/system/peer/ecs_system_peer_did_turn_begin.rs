@@ -54,18 +54,34 @@ pub struct ECSSystemPeerStart {
 }
 impl ECSSystemEventless for ECSSystemPeerStart {
     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+        let state_team = game_state.get::<StateTeamAssignments>();
+        let active_team = game_state.get::<StateTurn>().active_instance_id;
+        let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
+            return false;
+        };
+
+        let any_ai = game_state
+            .get::<StateController>()
+            .all_players
+            .iter()
+            .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
+
         game_state
             .get::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
             == RoomTypes::Combat
+            && any_ai
     }
     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         NetworkModes::all_host()
     }
     fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
-    fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
+    fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
+        self.move_time = 3.0;
+        self.lastmove = game_state.get::<TimeState>().scaled_time;
+    }
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
         let state_score = game_state.get::<StateScore>();
         if state_score.all_scores.iter().any(|x| *x.1 <= 0) {
@@ -84,7 +100,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
 
         // let is_turn = d == game_state.instance_id;
-        if unsafe { do_move } && any_ai && game_state.get::<TimeState>().unscaled_time - self.lastmove > self.move_time {
+        if unsafe { do_move } && any_ai && game_state.get::<TimeState>().scaled_time - self.lastmove > self.move_time {
             unsafe { do_move = false };
 
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
@@ -104,10 +120,12 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             });
 
             // let uid = current_guids[0];
-            let move2 = simulator.simulate(game_state, Fidelity::Extreme, Threading::Multi);
+            let move2 = simulator.simulate(game_state, Fidelity::Medium, Threading::Multi);
             let uid = move2.0;
             match move2.1 {
-                SimulationManuevers::EndTurn => events.enqueue_event(GameEvents::RequestTurnEnd(uid)),
+                SimulationManuevers::EndTurn => {
+                    events.enqueue_event(GameEvents::RequestTurnEnd(uid));
+                }
                 SimulationManuevers::PlayCard(card_instance, filled_card_response) => {
                     match card_instance.get_manuever_type() {
                         crate::state::state_deck::CardTypes::Move => self.move_time = 0.5,
@@ -126,7 +144,7 @@ impl ECSSystemEventless for ECSSystemPeerStart {
 
             // let e = run_ai(game_state);
             // events.enqueue_event(e);
-            self.lastmove = game_state.get::<TimeState>().unscaled_time;
+            self.lastmove = game_state.get::<TimeState>().scaled_time;
             println!(
                 "did ai
                         
@@ -150,6 +168,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemPeerStart {
         match event {
             GameEvents::DidTurnBegin(id) => {}
             _ => {
+                let state_time = game_state.get::<TimeState>();
                 // self.lastmove = game_state.get::<TimeState>().unscaled_time;
                 unsafe { do_move = true };
             }

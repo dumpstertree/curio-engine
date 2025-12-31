@@ -7,6 +7,7 @@ use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
     gameplay::{
+        ecs::{component::component_transform::Transform, traits::ecs_system::ECSSystemEventless},
         world_context::{WorldContext, WorldContextCommon},
     },
     io::asset_loader::AssetLoader,
@@ -52,11 +53,11 @@ impl ECSSystemEventless for ECSSystemPeerStart {
 
         let mut t = Vector3::zero();
         let mut i = 0.0;
-        for x in state_pos_entity.positions {
-            let p = GameBoard::get_world_position(x.1.0, x.1.1);
-            t = t + p;
-            i += 1.0;
-        }
+        // for x in state_pos_entity.positions {
+        //     let p = GameBoard::get_world_position(x.1.0, x.1.1);
+        //     t = t + p;
+        //     i += 1.0;
+        // }
         for _ in 0..1 {
             t = t + pos_ball;
             i += 1.0;
@@ -78,9 +79,9 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                         let d = (pos_ball - pos_player).z.clamp(0.0, 14.0);
                         tar = focus_pos + Vector3::new(0.0, 6.0, -(5.0 + d / 2.0));
                         if d == 0.0 {
-                            tar.z = -12.0;
+                            tar.z = -13.0;
                         } else {
-                            tar.z = -12.0 - (14.0 / d) * 1.0;
+                            tar.z = -13.0 - (14.0 / d) * 1.0;
                         }
                         // tar.x = tar.x / 2.0;
 
@@ -92,6 +93,12 @@ impl ECSSystemEventless for ECSSystemPeerStart {
                         // rot = Quaternion::from_euler(Vector3::new(30.0, dir_to.y, 0.0));
 
                         rot = Quaternion::from_look_rotation(dir_to, Vector3::up());
+
+                        let mut rot3 = rot.to_euler();
+                        rot3.clamp_y(-30.0, 30.0);
+
+                        let rot = Quaternion::from_euler(rot3);
+
                         let rot2 = rot * Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0));
 
                         t.rotation = t.rotation.slerp(rot2, 0.05);

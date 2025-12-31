@@ -208,7 +208,7 @@ pub mod ecs {
 }
 use crate::{
     game_events::GameEvents,
-    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_heat, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
+    listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_cards, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_heat, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
 use core::{
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
@@ -335,6 +335,7 @@ enum UIViewTypes {
     HudEncounterScore,
     HudEncounterTurn,
     HudEncounterBallMode,
+    HudEncounterCards,
     HudStatus,
     HUDHeat,
     HudPreviouslyPlayed,
@@ -342,6 +343,7 @@ enum UIViewTypes {
 impl IUIEvent for UIViewTypes {
     fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UIPanel> {
         match self {
+            UIViewTypes::HudEncounterCards => ui_hud_encounter_cards::UIHUDInstance::new(),
             UIViewTypes::PanelMedic => ui_panel_medic::UIPanelMedic::new(),
             UIViewTypes::PanelShop => ui_panel_shop::UIPanelInstance::new(),
             UIViewTypes::PanelExploration => ui_panel_exploration::UIPanelInstance::new(),
@@ -370,6 +372,7 @@ impl Display for UIViewTypes {
             UIViewTypes::HudStatus => f.write_str("status"),
             UIViewTypes::HudPreviouslyPlayed => f.write_str("previously played"),
             UIViewTypes::HUDHeat => f.write_str("heat"),
+            UIViewTypes::HudEncounterCards => f.write_str("cards"),
         }
     }
 }

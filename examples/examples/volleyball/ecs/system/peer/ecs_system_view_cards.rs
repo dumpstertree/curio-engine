@@ -128,9 +128,9 @@ impl ECSSystemEventless for ECSSystemViewCards {
                         let pos = camera_state.cameras.position + (camera_state.cameras.rotation * Vector3::forward()) * z + Vector3::right() * dir * ((index - state_selected.index) as f32 * spacing) + camera_state.cameras.rotation * Vector3::down() * y;
                         let rot = camera_state.cameras.rotation;
 
-                        transform.position = Vector3::lerp(transform.position, pos, 0.2);
-                        transform.rotation = transform.rotation.slerp(rot, 0.2);
-                        transform.scale = Vector3::lerp(transform.scale, Vector3::one(), 0.2);
+                        transform.position = Vector3::lerp(transform.position, pos, 0.5);
+                        transform.rotation = transform.rotation.slerp(rot, 0.5);
+                        transform.scale = Vector3::lerp(transform.scale, Vector3::one(), 0.5);
                         renderer.set_enabled(true);
 
                         let col_spell = Color::new_hex("#f7a5f3");

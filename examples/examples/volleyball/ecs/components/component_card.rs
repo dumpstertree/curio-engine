@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::cards::card_instance::CardInstance;
 
 // #[derive(Debug, Clone, Serialize, RegisterComponent)]
+#[derive(Clone)]
 pub struct ComponentCard {
     pub card_instance: Option<Arc<CardInstance>>,
 }

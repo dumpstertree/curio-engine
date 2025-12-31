@@ -66,6 +66,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
 
                 // begin the next player
                 event_queue.enqueue_event(GameEvents::TurnBegin(team.next_team()));
+                // event_queue.enqueue_event_delayed(GameEvents::TurnBegin(team.next_team()), 1.0);
             }
             _ => {}
         }

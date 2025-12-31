@@ -45,6 +45,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudPreviouslyPlayed));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::PanelRewards));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HUDHeat));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterCards));
             }
             _ => {}
         }

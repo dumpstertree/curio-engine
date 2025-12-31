@@ -63,6 +63,7 @@ impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterTurn));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudPreviouslyPlayed));
                 event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HUDHeat));
+                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterCards));
             }
             _ => {}
         }
