@@ -220,6 +220,7 @@ impl UIHUDInstance {
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&desc);
+        r.set_parent(Some(parent.clone()));
         let e0: GameObject = world
             .instantiate(
                 "",
@@ -237,7 +238,7 @@ impl UIHUDInstance {
         r.set_bounds(Vector2::new(0.5, 0.2));
         r.set_font_size(0.03);
         r.set_contents(&x.get_title());
-        // r.set_parent(Some(parent.clone()));
+        r.set_parent(Some(parent.clone()));
         let e1 = world
             .instantiate(
                 "",
@@ -253,7 +254,7 @@ impl UIHUDInstance {
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&format!("{}", x.get_manuever_type()));
-        // r.set_parent(Some(parent.clone()));
+        r.set_parent(Some(parent.clone()));
         let e2 = world
             .instantiate(
                 "",
@@ -270,7 +271,7 @@ impl UIHUDInstance {
         r.set_font_size(0.03);
         r.set_contents(&x.get_cost(&game_state, game_state.instance_id).to_string());
         // r.set_contents("0");
-        // r.set_parent(Some(parent.clone()));
+        r.set_parent(Some(parent.clone()));
         let e3 = world
             .instantiate(
                 "",

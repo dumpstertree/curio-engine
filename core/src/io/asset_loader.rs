@@ -5,17 +5,22 @@ use crate::collections::material::ShaderDesc;
 use crate::collections::matrix4x4::Matrix4x4;
 use crate::collections::mesh::Mesh;
 use crate::collections::mesh::Vertex;
+use crate::io::asset_cache;
+use crate::io::asset_cache::AssetCache;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::file::File;
 use crate::io::font_asset::FontAsset;
 use crate::io::model_asset_animated::ModelAssetAnimated;
 use core::panic;
+use egui::cache;
 use egui_wgpu::wgpu::Device;
 use egui_wgpu::wgpu::ShaderModule;
+use gltf::json::asset;
 use rusty_spine::AnimationStateData;
 use rusty_spine::Atlas;
 use rusty_spine::SkeletonData;
 use rusty_spine::SkeletonJson;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
 use std::io::Cursor;
@@ -23,7 +28,8 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use zip::ZipArchive;
 
-static mut ASSET_DATABASE: Mutex<Option<AssetDatabase>> = Mutex::new(None);
+static mut ASSET_DATABASE: Option<Mutex<AssetDatabase>> = None;
+static mut ASSET_CACHE: Option<Mutex<AssetCache>> = None;
 
 pub struct AssetLoader {}
 // private
@@ -31,83 +37,118 @@ impl AssetLoader {
     // set database
     pub fn set_database(database: AssetDatabase) {
         unsafe {
-            let mut guard = ASSET_DATABASE.lock().unwrap();
-            *guard = Some(database);
+            ASSET_DATABASE = Some(Mutex::new(database));
+            ASSET_CACHE = Some(Mutex::new(AssetCache::new()))
         }
     }
 
     // load - from path
     pub fn load_texture_from_path(path: &str) -> TextureAsset {
-        let data = File::read(path);
-        if data.len() == 0 {
-            eprintln!("Something went wrong and data came back as empty for path {}", path);
-            panic!();
+        unsafe {
+            let Some(asset_cache) = &ASSET_CACHE else {
+                panic!();
+            };
+            let Some(asset_database) = &ASSET_DATABASE else {
+                panic!();
+            };
+
+            let Ok(asset_database) = asset_database.lock() else {
+                panic!();
+            };
+            let Ok(mut asset_cache) = asset_cache.lock() else {
+                panic!();
+            };
+
+            // try to get the asset from the cache
+            if let Some(cached_asset) = asset_cache.try_get_asset_model(&uid) {
+                return cached_asset;
+            }
+            let data = File::read(path);
+            if data.len() == 0 {
+                eprintln!("Something went wrong and data came back as empty for path {}", path);
+                panic!();
+            }
+
+            let result = Self::unwrap_texture(&data);
+            let Ok(result) = result else {
+                eprintln!("Something went wrong: {}", result.err().unwrap());
+                panic!();
+            };
+
+            result
         }
-
-        let result = Self::unwrap_texture(&data);
-        let Ok(result) = result else {
-            eprintln!("Something went wrong: {}", result.err().unwrap());
-            panic!();
-        };
-
-        result
     }
 
     // load - from database
     pub fn load_model_static_from_database(uid: String) -> Arc<ModelAsset> {
         unsafe {
-            let Ok(guard) = ASSET_DATABASE.lock() else {
+            let Some(asset_cache) = &ASSET_CACHE else {
+                panic!();
+            };
+            let Some(asset_database) = &ASSET_DATABASE else {
                 panic!();
             };
 
-            match &(*guard) {
-                None => panic!("AssetDatabase has not been set"),
-                Some(x) => {
-                    let data = x.fetch_asset(uid);
-
-                    if data.len() == 0 {
-                        panic!("No data!");
-                    }
-                    let unwraped_gltf = Self::unwrap_gltf(data.as_slice()).unwrap();
-
-                    return Arc::new(ModelAsset::new(unwraped_gltf.0, unwraped_gltf.1));
-                }
+            let Ok(asset_database) = asset_database.lock() else {
+                panic!();
+            };
+            let Ok(mut asset_cache) = asset_cache.lock() else {
+                panic!();
+            };
+            // try to get the asset from the cache
+            if let Some(cached_asset) = asset_cache.try_get_asset_model(&uid) {
+                return cached_asset;
             }
+
+            // not in cache so fetch the asset
+            let data = asset_database.fetch_asset(uid.clone());
+            if data.len() == 0 {
+                panic!("No data!");
+            }
+
+            // unwrap
+            let unwrapped_gltf = Self::unwrap_gltf(data.as_slice()).unwrap();
+            let asset = Arc::new(ModelAsset::new(unwrapped_gltf.0, unwrapped_gltf.1));
+
+            // add the new data to the cache
+            asset_cache.try_store_asset(&uid, asset.clone());
+
+            // return the asset
+            return asset;
         }
     }
     pub fn load_model_animated_from_database(uid: String) -> Arc<ModelAssetAnimated> {
         unsafe {
-            let Ok(guard) = ASSET_DATABASE.lock() else {
+            let Some(asset_database) = &ASSET_DATABASE else {
                 panic!();
             };
 
-            match &(*guard) {
-                None => panic!("AssetDatabase has not been set"),
-                Some(x) => {
-                    let data = x.fetch_asset(uid);
-                    let spine_data = Self::unwrap_spine(data.as_slice());
-                    let Ok(spine_data) = spine_data else {
-                        panic!("Err {}", spine_data.err().unwrap());
-                    };
+            let Ok(asset_database) = asset_database.lock() else {
+                panic!();
+            };
 
-                    //create a material
-                    let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+            let data = asset_database.fetch_asset(uid);
+            let spine_data = Self::unwrap_spine(data.as_slice());
+            let Ok(spine_data) = spine_data else {
+                panic!("Err {}", spine_data.err().unwrap());
+            };
 
-                    let mut material = Material::new(shader_desc.clone());
-                    material.set_texture_with_label(Some(spine_data.2), "diffuse");
+            //create a material
+            let shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
 
-                    // create the asset
-                    let x = Arc::new(ModelAssetAnimated::new(Arc::new(material), spine_data.1.clone(), Arc::new(AnimationStateData::new(spine_data.1.clone()))));
+            let mut material = Material::new(shader_desc.clone());
+            material.set_texture_with_label(Some(spine_data.2), "diffuse");
 
-                    return x;
-                }
-            }
+            // create the asset
+            let x = Arc::new(ModelAssetAnimated::new(Arc::new(material), spine_data.1.clone(), Arc::new(AnimationStateData::new(spine_data.1.clone()))));
+
+            return x;
         }
     }
 
     // unwrap
     pub fn unwrap_texture(data: &[u8]) -> Result<TextureAsset, Box<dyn Error>> {
-        let image = image::load_from_memory(&data).unwrap();
+        let image: image::DynamicImage = image::load_from_memory(&data).unwrap();
         let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
         Ok(texture)
     }

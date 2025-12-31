@@ -22,6 +22,7 @@ pub mod input {
 }
 pub mod io {
     pub mod asset;
+    pub mod asset_cache;
     pub mod asset_database;
     pub mod asset_loader;
     pub mod file;

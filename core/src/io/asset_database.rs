@@ -44,11 +44,12 @@ impl AssetDatabaseListing {
         }
     }
     fn fetch_asset_local(local_path: &str) -> Vec<u8> {
-        println!("{}", &File::join_path(&File::get_built_in_asset_path(), &local_path));
+        println!("Performed LOCAL fetch at : {}", &File::join_path(&File::get_built_in_asset_path(), &local_path));
         // pull asset from local path
         return File::read(&File::join_path(&File::get_built_in_asset_path(), &local_path));
     }
     fn fetch_asset_remote(local_path: &str, remote_path: &String) -> Vec<u8> {
+        println!("Performed REMOTE fetch at : {}", remote_path);
         let cache_path = File::join_path(&&File::get_cache_path(), &local_path);
         //gets the meta data
         let last_modified = File::get_meta_modified(&cache_path);
