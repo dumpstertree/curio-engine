@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
-pub struct FontAsset {
+pub struct FontDesc {
     pub texture_path: String,
     pub shader_path: String,
     // spacing

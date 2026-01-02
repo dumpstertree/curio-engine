@@ -6,6 +6,7 @@ use winit::window::Window;
 use crate::collections::vector2::Vector2;
 use crate::graphics::graphics_mapping::GraphicsMapping;
 use crate::input::input_mapping::InputMapping;
+use crate::random::Random;
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug)]
 pub enum NetworkModes {
@@ -103,10 +104,12 @@ pub struct GPUInstance {
     pub config: Arc<SurfaceConfiguration>,
 } // now that the curio_engine is initialized use those values to populate the system
 
+#[derive(Clone)]
 pub struct CurioMetadata {
     pub name: String,
     pub icon: String,
     pub version: VersionNumber,
+    pub instance: i32,
 }
 impl CurioMetadata {
     pub fn new(name: &str, icon: &str, version: VersionNumber) -> CurioMetadata {
@@ -114,16 +117,29 @@ impl CurioMetadata {
             name: String::from(name),
             icon: String::from(icon),
             version,
+            instance: Random::range_int(-9999999, 9999999),
         }
     }
 }
+
+impl CurioMetadata {
+    pub const fn invalid() -> Self {
+        Self {
+            name: String::new(),
+            icon: String::new(),
+            version: VersionNumber::new(0, 0, 0),
+            instance: -1,
+        }
+    }
+}
+#[derive(Clone)]
 pub struct VersionNumber {
     pub major: i32,
     pub minor: i32,
     pub patch: i32,
 }
 impl VersionNumber {
-    pub fn new(major: i32, minor: i32, patch: i32) -> VersionNumber {
+    pub const fn new(major: i32, minor: i32, patch: i32) -> VersionNumber {
         VersionNumber { major, minor, patch }
     }
 }

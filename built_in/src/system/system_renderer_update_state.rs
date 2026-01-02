@@ -89,7 +89,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     // add draw call
                     for _ in &asset.mesh {
                         x.draw_calls
-                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), matrix, renderer.get_tint()));
+                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), matrix, renderer.get_tint(), false));
                     }
                 }
             });
@@ -109,7 +109,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     // add draw call
                     for _ in &asset.mesh {
                         x.draw_calls
-                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix(), renderer.get_tint()));
+                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix(), renderer.get_tint(), true));
                     }
                 }
             });
@@ -155,8 +155,10 @@ impl ECSSystemEventless for SystemRendererUpdateState {
 
                         // add draw call
                         for m in &renderer.mesh {
-                            x.draw_calls
-                                .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform.get_matrix(), renderer.get_tint()));
+                            for mesh in &m.mesh {
+                                x.draw_calls
+                                    .push(DrawCall::draw_mesh_single(mesh.clone(), m.materials[0].clone(), transform.get_matrix(), renderer.get_tint(), true));
+                            }
                         }
                     }
                 }
@@ -183,7 +185,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                             //         .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
                             // }
                             x.draw_calls
-                                .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint()));
+                                .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint(), true));
                         }
                     }
                 }
@@ -214,10 +216,12 @@ impl ECSSystemEventless for SystemRendererUpdateState {
 
                         // add draw call
                         for m in &renderer.mesh {
-                            let transform_matrix = Matrix4x4::new(position, rotation, transform.scale);
+                            for mesh in &m.mesh {
+                                let transform_matrix = Matrix4x4::new(position, rotation, transform.scale);
 
-                            x.draw_calls
-                                .push(DrawCall::draw_mesh_single(m.clone(), asset.material.clone(), transform_matrix, renderer.get_tint()));
+                                x.draw_calls
+                                    .push(DrawCall::draw_mesh_single(mesh.clone(), m.materials[0].clone(), transform_matrix, renderer.get_tint(), false));
+                            }
                         }
                     }
                 }
@@ -250,7 +254,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                             //         .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
                             // }
                             x.draw_calls
-                                .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint()));
+                                .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint(), false));
                         }
                     }
                 }

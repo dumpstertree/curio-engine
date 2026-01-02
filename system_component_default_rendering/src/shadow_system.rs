@@ -359,20 +359,23 @@ impl ShadowSystem {
         shadow_pass.set_bind_group(0, &self.matrix_bind_groups[screen_index], &[]);
 
         for draw_call in draw_calls {
-            for mesh in &draw_call.mesh {
-                let n_buffer = device.create_buffer_init(&util::BufferInitDescriptor {
-                    label: Some("Instance Buffer"),
-                    contents: bytemuck::cast_slice(&draw_call.matrix),
-                    usage: BufferUsages::VERTEX,
-                });
-
-                shadow_pass.set_vertex_buffer(0, mesh.get_vertex_buffer_for_device().slice(..));
-                shadow_pass.set_vertex_buffer(1, n_buffer.slice(..));
-                shadow_pass.set_index_buffer(mesh.get_index_buffer_for_device().slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
-
-                // draw
-                shadow_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
+            if !draw_call.cast_shadow {
+                continue;
             }
+            let mesh = &draw_call.mesh;
+
+            let n_buffer = device.create_buffer_init(&util::BufferInitDescriptor {
+                label: Some("Instance Buffer"),
+                contents: bytemuck::cast_slice(&draw_call.matrix),
+                usage: BufferUsages::VERTEX,
+            });
+
+            shadow_pass.set_vertex_buffer(0, mesh.get_vertex_buffer_for_device().slice(..));
+            shadow_pass.set_vertex_buffer(1, n_buffer.slice(..));
+            shadow_pass.set_index_buffer(mesh.get_index_buffer_for_device().slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
+
+            // draw
+            shadow_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..draw_call.matrix.len() as u32);
         }
     }
 

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages};
 use pollster::FutureExt;
@@ -12,11 +12,21 @@ use winit::{
 
 use crate::{
     collections::{key_state::KeyState, vector3::Vector3},
-    dumpster_engine::{CurioMetadata, GPUInstance, WindowLayout},
+    dumpster_engine::{CurioMetadata, GPUInstance, VersionNumber, WindowLayout},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
+
+static mut ALL_META: Mutex<Vec<CurioMetadata>> = Mutex::new(Vec::new());
+
+pub fn curios_on_display() -> Vec<CurioMetadata> {
+    if let Ok(meta) = unsafe { ALL_META.lock() } {
+        return meta.clone();
+    }
+
+    return Vec::new();
+}
 
 pub struct CurioCabinet<T>
 where
@@ -37,6 +47,11 @@ where
     where
         T: 'static + CurioCommon,
     {
+        // store this curio metadata
+        if let Ok(mut m) = unsafe { ALL_META.lock() } {
+            m.push(meta.clone());
+        }
+
         // create a new curio_engine instance
         let mut curio_engine = CurioCabinet {
             app_instance: None,

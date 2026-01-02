@@ -9,7 +9,7 @@ use crate::io::asset_cache;
 use crate::io::asset_cache::AssetCache;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::file::File;
-use crate::io::font_asset::FontAsset;
+use crate::io::font_asset::FontDesc;
 use crate::io::model_asset_animated::ModelAssetAnimated;
 use core::panic;
 use egui::cache;
@@ -35,6 +35,19 @@ static mut ASSET_CACHE: Option<Mutex<AssetCache>> = None;
 pub struct AssetLoader {}
 // private
 impl AssetLoader {
+    pub fn preload_remote_assets(force: bool) {
+        unsafe {
+            let Some(asset_database) = &ASSET_DATABASE else {
+                panic!();
+            };
+            let Ok(mut asset_database) = asset_database.lock() else {
+                panic!();
+            };
+
+            // preload
+            asset_database.preload_remote_assets(force);
+        }
+    }
     // set database
     pub fn set_database(database: AssetDatabase) {
         unsafe {
@@ -45,7 +58,6 @@ impl AssetLoader {
 
     // load - from path
     pub fn load_texture_from_path(path: &str) -> Arc<TextureAsset> {
-        println!("try load texture");
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
                 panic!();
@@ -143,22 +155,58 @@ impl AssetLoader {
                 panic!();
             };
 
-            let data = asset_database.fetch_asset(uid);
+            let data = asset_database.fetch_asset(uid.clone());
             let spine_data = Self::unwrap_spine(data.as_slice());
             let Ok(spine_data) = spine_data else {
                 panic!("Err {}", spine_data.err().unwrap());
             };
 
-            let mut material = Material::new(shader_desc.clone());
+            let mut material = Material::new(&uid, shader_desc.clone(), false);
             material.set_texture_with_label(Some(Arc::new(spine_data.2)), "diffuse");
-
+            material.finalize();
             // create the asset
             let x = Arc::new(ModelAssetAnimated::new(Arc::new(material), spine_data.1.clone(), Arc::new(AnimationStateData::new(spine_data.1.clone()))));
 
             return x;
         }
     }
+    pub fn load_font_asset(uid: &str) -> Arc<FontAsset> {
+        unsafe {
+            let Some(asset_cache) = &ASSET_CACHE else {
+                panic!();
+            };
+            let Ok(mut asset_cache) = asset_cache.lock() else {
+                panic!();
+            };
 
+            // try to get the asset from the cache
+            if let Some(cached_asset) = asset_cache.try_get_asset_font_asset(&uid) {
+                return cached_asset;
+            }
+        }
+
+        let font_asset: Arc<FontAsset>;
+
+        {
+            let file = File::read(uid);
+            let json: serde_json::Value = serde_json::from_slice(file.as_slice()).expect("file should be proper JSON");
+            let my_struct: FontDesc = serde_json::from_str(&json.to_string()).unwrap();
+            font_asset = Arc::new(FontAsset::new(Arc::new(my_struct)));
+        }
+
+        unsafe {
+            let Some(asset_cache) = &ASSET_CACHE else {
+                panic!();
+            };
+            let Ok(mut asset_cache) = asset_cache.lock() else {
+                panic!();
+            };
+
+            asset_cache.try_store_asset_font_asset(uid, font_asset.clone());
+        }
+
+        font_asset
+    }
     // unwrap
     pub fn unwrap_texture(data: &[u8]) -> Result<TextureAsset, Box<dyn Error>> {
         let image: image::DynamicImage = image::load_from_memory(&data).unwrap();
@@ -210,9 +258,10 @@ impl AssetLoader {
 
         // --- Materials ---
         if gltf.materials().count() == 0 {
-            // let shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
             let s = shaders.get("assets/shader/unlit_shader.shader").unwrap();
-            all_materials.push(Arc::new(Material::new(s.clone())));
+
+            // let shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
+            all_materials.push(Arc::new(Material::new("gltf", s.clone(), true)));
         } else {
             for material in gltf.materials() {
                 let pbr = material.pbr_metallic_roughness();
@@ -260,8 +309,9 @@ impl AssetLoader {
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 }
 
-                let mut mat = Material::new(shader_desc.clone());
+                let mut mat = Material::new("gltf", shader_desc.clone(), false);
                 mat.set_texture_with_label(Some(Arc::new(texture_asset)), "diffuse");
+                mat.finalize();
                 all_materials.push(Arc::new(mat));
             }
         }
@@ -323,12 +373,31 @@ impl AssetLoader {
     }
 
     // load
-    pub fn load_shader_module(device: &Device, path: &str) -> ShaderModule {
-        let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-        device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
-            label: Some(path),
-            source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
-        })
+    pub fn load_shader_module(device: &Device, path: &str) -> Arc<ShaderModule> {
+        unsafe {
+            let Some(asset_cache) = &ASSET_CACHE else {
+                panic!();
+            };
+            let Ok(mut asset_cache) = asset_cache.lock() else {
+                panic!();
+            };
+
+            // try to get the asset from the cache
+            if let Some(cached_asset) = asset_cache.try_get_asset_shader_module(&path) {
+                return cached_asset;
+            }
+            let contents = fs::read_to_string(path).expect("Should have been able to read the file");
+            let module = device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
+                label: Some(path),
+                source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
+            });
+
+            let asset = Arc::new(module);
+
+            asset_cache.try_store_asset_shader_module(path, asset.clone());
+
+            return asset;
+        }
     }
     pub fn load_shader_desc(path: &str) -> Arc<ShaderDesc> {
         unsafe {
@@ -361,10 +430,120 @@ impl AssetLoader {
             return asset;
         }
     }
-    pub fn load_font_asset_from_path(path: &str) -> FontAsset {
+    pub fn load_font_asset_from_path(path: &str) -> Arc<FontDesc> {
         let file = File::read(path);
         let json: serde_json::Value = serde_json::from_slice(file.as_slice()).expect("file should be proper JSON");
-        let my_struct: FontAsset = serde_json::from_str(&json.to_string()).unwrap();
-        my_struct
+        let my_struct: FontDesc = serde_json::from_str(&json.to_string()).unwrap();
+        let asset = Arc::new(my_struct);
+        asset
+    }
+}
+
+pub struct FontAsset {
+    desc: Arc<FontDesc>,
+    material: Arc<Material>,
+    mesh: HashMap<char, Arc<ModelAsset>>,
+    glyph_width: f32,
+    glyph_height: f32,
+}
+
+impl FontAsset {
+    pub fn new(desc: Arc<FontDesc>) -> FontAsset {
+        // FontAsset {
+        //     desc
+        // }
+
+        println!("NEW FONT");
+        let texture = AssetLoader::load_texture_from_path(&File::join_path(&File::get_built_in_asset_path(), &desc.texture_path));
+        let shader = AssetLoader::load_shader_desc(&File::join_path(&File::get_built_in_asset_path(), &desc.shader_path));
+
+        let w = texture.texture.width() as f32;
+        let h = texture.texture.height() as f32;
+
+        let padding_left_01 = desc.padding_left as f32 / w;
+        let padding_right_01 = desc.padding_right as f32 / w;
+        let padding_top_01 = desc.padding_top as f32 / h;
+        let padding_bottom_01 = desc.padding_bottom as f32 / h;
+
+        // Glyph UV layout
+        let glyph_width = (1.0 - padding_left_01 - padding_right_01) / desc.columns as f32;
+        let glyph_height = (1.0 - padding_top_01 - padding_bottom_01) / desc.rows as f32;
+
+        let mut mesh = HashMap::new();
+
+        let mut material = Material::new("font asset", shader, false);
+        material.set_texture_with_label(Some(texture), "diffuse");
+        material.finalize();
+        let material = Arc::new(material);
+
+        for (index, ch) in desc.char_order.chars().enumerate() {
+            let col = index as i32 % desc.columns;
+            let row = index as i32 / desc.columns;
+
+            let u_min = padding_left_01 + col as f32 * glyph_width;
+            let v_min = padding_top_01 + row as f32 * glyph_height;
+            let u_max = u_min + glyph_width;
+            let v_max = v_min + glyph_height;
+            // let m =
+            let vertices = vec![
+                Vertex {
+                    position: [0.0, 0.0, 0.0],
+                    normal: [0.0, 0.0, 1.0],
+                    color: [1.0, 1.0, 1.0, 1.0],
+                    uv0: [u_min, v_max],
+                    uv1: [0.0, 0.0],
+                },
+                Vertex {
+                    position: [1.0, 0.0, 0.0],
+                    normal: [0.0, 0.0, 1.0],
+                    color: [1.0, 1.0, 1.0, 1.0],
+                    uv0: [u_max, v_max],
+                    uv1: [0.0, 0.0],
+                },
+                Vertex {
+                    position: [1.0, 1.0, 0.0],
+                    normal: [0.0, 0.0, 1.0],
+                    color: [1.0, 1.0, 1.0, 1.0],
+                    uv0: [u_max, v_min],
+                    uv1: [0.0, 0.0],
+                },
+                Vertex {
+                    position: [0.0, 1.0, 0.0],
+                    normal: [0.0, 0.0, 1.0],
+                    color: [1.0, 1.0, 1.0, 1.0],
+                    uv0: [u_min, v_min],
+                    uv1: [0.0, 0.0],
+                },
+            ];
+            let m = Arc::new(Mesh::new(format!("glyph_{}", ch), vertices, vec![0, 1, 2, 0, 2, 3], Matrix4x4::default()));
+
+            mesh.insert(ch, Arc::new(ModelAsset::new(vec![m], vec![material.clone()])));
+        }
+
+        FontAsset {
+            desc: desc,
+            material: material,
+            mesh,
+            glyph_width,
+            glyph_height,
+        }
+    }
+
+    pub fn glyph_width(&self) -> f32 {
+        self.glyph_width
+    }
+    pub fn glyph_height(&self) -> f32 {
+        self.glyph_height
+    }
+    pub fn material(&self) -> Arc<Material> {
+        self.material.clone()
+    }
+    pub fn mesh_all() {}
+    pub fn mesh_for_char(&self, char: char) -> Arc<ModelAsset> {
+        let Some(cached) = self.mesh.get(&char) else {
+            return Arc::new(ModelAsset::new(vec![], vec![]));
+        };
+
+        return cached.clone();
     }
 }

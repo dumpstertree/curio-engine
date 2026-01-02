@@ -9,7 +9,12 @@ use core::{
         vector3::Vector3,
     },
     gameplay::world_context::{GameObject, WorldContext},
-    io::{asset_loader::AssetLoader, file::File, font_asset::FontAsset, model_asset::ModelAsset},
+    io::{
+        asset_loader::{AssetLoader, FontAsset},
+        file::File,
+        font_asset::{self, FontDesc},
+        model_asset::ModelAsset,
+    },
 };
 use std::{
     cell::{Ref, RefCell, RefMut},
@@ -185,7 +190,7 @@ pub struct ComponentRendererText {
     cached_tint_in_hierachy: Color,
 
     pub asset: Vec<(Arc<ModelAsset>, Vec<Matrix4x4>)>,
-    font_asset: Option<FontAsset>,
+    font_asset: Option<Arc<FontAsset>>,
     contents: String,
     align_horizontal: AligmentHorizontal,
     align_vertical: AligmentVertical,
@@ -265,10 +270,10 @@ impl ComponentRendererText {
         self.enabled = enabled;
         self
     }
-    pub fn set_font_asset(&mut self, font_asset: Option<FontAsset>) -> &mut Self {
-        if self.font_asset == font_asset {
-            return self;
-        }
+    pub fn set_font_asset(&mut self, font_asset: Option<Arc<FontAsset>>) -> &mut Self {
+        // if self.font_asset == font_asset {
+        //     return self;
+        // }
 
         self.font_asset = font_asset;
         self.is_dirty = true;
@@ -323,39 +328,27 @@ impl ComponentRendererText {
         }
 
         self.is_dirty = false;
-        let font_asset: FontAsset = self
-            .font_asset
-            .clone()
-            .unwrap_or_else(|| AssetLoader::load_font_asset_from_path("assets/default.font"));
+        // let font_asset = self
+        //     .font_asset
+        //     .clone()
+        //     .unwrap_or_else(|| AssetLoader::load_font_asset("assets/default.font"));
 
-        let texture = AssetLoader::load_texture_from_path(&File::join_path(&File::get_built_in_asset_path(), &font_asset.texture_path));
-        let shader = AssetLoader::load_shader_desc(&File::join_path(&File::get_built_in_asset_path(), &font_asset.shader_path));
+        if self.font_asset.is_none() {
+            self.font_asset = Some(AssetLoader::load_font_asset("assets/default.font"));
+        }
+        let Some(font_asset) = &self.font_asset else {
+            return;
+        };
 
-        let w = texture.texture.width() as f32;
-        let h = texture.texture.height() as f32;
+        let mut output: Vec<(Arc<ModelAsset>, Vec<Matrix4x4>)> = Vec::new();
 
-        let mut material = Material::new(shader);
-        material.set_texture_with_label(Some(texture), "diffuse");
-        let material = Arc::new(material);
-
-        // Padding → normalized
-        let padding_left_01 = font_asset.padding_left as f32 / w;
-        let padding_right_01 = font_asset.padding_right as f32 / w;
-        let padding_top_01 = font_asset.padding_top as f32 / h;
-        let padding_bottom_01 = font_asset.padding_bottom as f32 / h;
-
-        // Glyph UV layout
-        let glyph_width = (1.0 - padding_left_01 - padding_right_01) / font_asset.columns as f32;
-        let glyph_height = (1.0 - padding_top_01 - padding_bottom_01) / font_asset.rows as f32;
-
-        let mut quad_cache: HashMap<char, Arc<Mesh>> = HashMap::new();
-        let mut output: Vec<(Arc<Mesh>, Vec<Matrix4x4>)> = Vec::new();
-
-        let advance = self.font_size + (self.font_size * font_asset.char_spacing);
-        let line_height = self.font_size + (self.font_size * font_asset.line_spacing);
+        // let advance = self.font_size + (self.font_size * font_asset.char_spacing);
+        // let line_height = self.font_size + (self.font_size * font_asset.line_spacing);
+        let advance = self.font_size + (self.font_size * font_asset.glyph_width());
+        let line_height = self.font_size + (self.font_size * font_asset.glyph_height());
 
         // === Step 1: Preprocess into wrapped lines ===
-        let mut lines: Vec<String> = Vec::new();
+        let mut lines = Vec::new();
         let mut current_line = String::new();
         let mut current_width = 0.0;
         let mut total_height = line_height;
@@ -409,55 +402,8 @@ impl ComponentRendererText {
                     continue;
                 }
 
-                // Find glyph index in atlas
-                let index = font_asset.char_order.find(|c| c == ch);
-                let Some(index) = index else {
-                    cursor_x += advance;
-                    continue;
-                };
-
-                let col = index as i32 % font_asset.columns;
-                let row = index as i32 / font_asset.columns;
-
-                let u_min = padding_left_01 + col as f32 * glyph_width;
-                let v_min = padding_top_01 + row as f32 * glyph_height;
-                let u_max = u_min + glyph_width;
-                let v_max = v_min + glyph_height;
-
                 // Create/reuse quad mesh
-                let mesh_arc = quad_cache.entry(ch).or_insert_with(|| {
-                    let vertices = vec![
-                        Vertex {
-                            position: [0.0, 0.0, 0.0],
-                            normal: [0.0, 0.0, 1.0],
-                            color: [1.0, 1.0, 1.0, 1.0],
-                            uv0: [u_min, v_max],
-                            uv1: [0.0, 0.0],
-                        },
-                        Vertex {
-                            position: [self.font_size, 0.0, 0.0],
-                            normal: [0.0, 0.0, 1.0],
-                            color: [1.0, 1.0, 1.0, 1.0],
-                            uv0: [u_max, v_max],
-                            uv1: [0.0, 0.0],
-                        },
-                        Vertex {
-                            position: [self.font_size, self.font_size, 0.0],
-                            normal: [0.0, 0.0, 1.0],
-                            color: [1.0, 1.0, 1.0, 1.0],
-                            uv0: [u_max, v_min],
-                            uv1: [0.0, 0.0],
-                        },
-                        Vertex {
-                            position: [0.0, self.font_size, 0.0],
-                            normal: [0.0, 0.0, 1.0],
-                            color: [1.0, 1.0, 1.0, 1.0],
-                            uv0: [u_min, v_min],
-                            uv1: [0.0, 0.0],
-                        },
-                    ];
-                    Arc::new(Mesh::new(format!("glyph_{}", ch), vertices, vec![0, 1, 2, 0, 2, 3], Matrix4x4::default()))
-                });
+                let mesh_arc = font_asset.mesh_for_char(ch);
                 let x_offset: f32 = match self.align_horizontal {
                     AligmentHorizontal::Center => -total_line_width * 0.5,
                     AligmentHorizontal::Left => -self.bounds.x * 0.5,
@@ -480,12 +426,12 @@ impl ComponentRendererText {
                 }
 
                 // build matrix taking into account offsets in each direection
-                let transform = Matrix4x4::new(Vector3::new(x_offset + cursor_x, y_offset + cursor_y, 0.0), Quaternion::zero(), Vector3::new(1.0, 1.0, 1.0));
+                let transform = Matrix4x4::new(Vector3::new(x_offset + cursor_x, y_offset + cursor_y, 0.0), Quaternion::zero(), Vector3::new(self.font_size, self.font_size, 1.0));
                 // Add transform to output
-                if let Some((_mesh, matrices)) = output.iter_mut().find(|(m, _)| Arc::ptr_eq(m, mesh_arc)) {
+                if let Some((_mesh, matrices)) = output.iter_mut().find(|(m, _)| Arc::ptr_eq(m, &mesh_arc)) {
                     matrices.push(transform);
                 } else {
-                    output.push((mesh_arc.clone(), vec![transform]));
+                    output.push((mesh_arc, vec![transform]));
                 }
 
                 cursor_x += advance;
@@ -493,13 +439,7 @@ impl ComponentRendererText {
         }
 
         // === Step 3: Upload results ===
-        self.asset.clear();
-        for x in &output {
-            let mesh = vec![x.0.clone()];
-            let material = vec![material.clone()];
-            let asset = Arc::new(ModelAsset::new(mesh, material));
-            self.asset.push((asset, x.1.clone()));
-        }
+        self.asset = output;
     }
 }
 

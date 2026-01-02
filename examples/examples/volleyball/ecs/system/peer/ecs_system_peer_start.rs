@@ -34,6 +34,9 @@ impl ECSSystemEventless for ECSSystemPeerStart {
     fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 
+        // load any remote assets now
+        AssetLoader::preload_remote_assets(false);
+
         // set resolution
         game_state.edit::<CameraState>(|x| {
             x.resolution_width = 1920 / 1;

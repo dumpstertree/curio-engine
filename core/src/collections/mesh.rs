@@ -13,15 +13,21 @@ use crate::collections::vector3;
 use crate::extensions::extensions_f32::ExtensionsF32;
 use crate::random::Random;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
-#[derive(PartialEq, Hash)]
+#[derive(PartialEq)]
 pub struct Mesh {
+    pub instance_id: i32,
     pub name: String,
     pub verticies: Vec<Vertex>,
     pub indicies: Vec<u32>,
-    pub instance_num: i32,
     pub matrix: Matrix4x4,
     vertex_buffer: Buffer,
     index_buffer: Buffer,
+}
+impl Eq for Mesh {}
+impl Hash for Mesh {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.instance_id.hash(state);
+    }
 }
 
 impl Mesh {
@@ -300,7 +306,7 @@ impl Mesh {
             name,
             verticies,
             indicies,
-            instance_num: Random::range_int(-9999, 9999),
+            instance_id: Random::range_int(-9999, 9999),
             vertex_buffer: v_buffer,
             index_buffer: i_buffer,
             matrix,

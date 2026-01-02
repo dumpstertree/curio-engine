@@ -216,7 +216,7 @@
 //     label: String,
 // }
 
-use std::sync::Arc;
+use std::{hash::Hash, sync::Arc};
 
 // #[derive(Clone, Serialize, Deserialize)]
 // pub struct ShaderColorDesc {
@@ -232,6 +232,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, texture_asset::TextureAsset},
+    random::Random,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 
@@ -240,12 +241,21 @@ use crate::{
 //=========================================
 #[derive(PartialEq)]
 pub struct Material {
-    pub shader: ShaderModule,
+    name: String,
+    pub instance_id: i32,
+    // pub shader: Arc<ShaderModule>,
     shader_desc: Arc<ShaderDesc>,
     textures: Vec<Option<Arc<TextureAsset>>>,
     colors: Vec<Color>,
     color_buffers: Vec<Option<Buffer>>,
     none: Arc<TextureAsset>,
+    cache: Option<Arc<(BindGroup, BindGroupLayout)>>,
+}
+impl Eq for Material {}
+impl Hash for Material {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.instance_id.hash(state);
+    }
 }
 
 // A uniform buffer struct for one color
@@ -264,30 +274,45 @@ impl ColorUniform {
 // Construction
 //=========================================
 impl Material {
-    pub fn new(shader_desc: Arc<ShaderDesc>) -> Material {
-        let device = &SystemGPU::get_device();
-        let shader = AssetLoader::load_shader_module(device, &shader_desc.shader_module_path);
+    pub fn new(name: &str, shader_desc: Arc<ShaderDesc>, finalize: bool) -> Material {
+        // let device = &SystemGPU::get_device();
+        // let shader = AssetLoader::load_shader_module(device, &shader_desc.shader_module_path);
 
         let mut m = Material {
+            name: name.to_string(),
+            instance_id: Random::range_int(-99999999, 9999999),
             shader_desc,
             textures: Vec::new(),
             colors: Vec::new(),
             color_buffers: Vec::new(),
             none: Arc::new(TextureAsset::none()),
-            shader,
+            cache: None, // shader,
         };
+
         m.initialize_vec_lengths();
+        m.upload_color_buffer(0);
+
+        if finalize {
+            m.finalize();
+        }
         m
     }
 
-    pub fn instantiate(&self) -> Material {
+    pub fn shader(&self) -> Arc<ShaderModule> {
+        let device = &SystemGPU::get_device();
+        AssetLoader::load_shader_module(device, &self.shader_desc.shader_module_path)
+    }
+    pub fn instantiate(&self, name: &str) -> Material {
         Material {
-            shader: self.shader.clone(),
+            name: name.to_string(),
+            instance_id: Random::range_int(-9999999, 9999999),
+            // shader: self.shader.clone(),
             shader_desc: self.shader_desc.clone(),
             textures: self.textures.clone(),
             colors: self.colors.clone(),
             color_buffers: self.color_buffers.clone(),
             none: self.none.clone(),
+            cache: None,
         }
     }
 
@@ -296,7 +321,7 @@ impl Material {
             self.textures.push(None);
         }
         for _ in &self.shader_desc.colors {
-            self.colors.push(Color::black());
+            self.colors.push(Color::white());
             self.color_buffers.push(None);
         }
     }
@@ -349,7 +374,8 @@ impl Material {
     //=========================================
     // Combined Binding Group
     //=========================================
-    pub fn get_combined_binding_group<'a>(&self, device: &Device) -> (BindGroup, BindGroupLayout) {
+    pub fn finalize(&mut self) {
+        let device = SystemGPU::get_device();
         let mut entries: Vec<egui_wgpu::wgpu::BindGroupEntry> = Vec::new();
         let mut layouts: Vec<egui_wgpu::wgpu::BindGroupLayoutEntry> = Vec::new();
         let mut binding_index = 0u32;
@@ -421,7 +447,17 @@ impl Material {
             label: Some("Material Combined Group"),
         });
 
-        (group, layout)
+        let arc_val = Arc::new((group, layout));
+
+        self.cache = Some(arc_val.clone());
+    }
+    pub fn get_combined_binding_group<'a>(&self) -> Arc<(BindGroup, BindGroupLayout)> {
+        // return cached
+        if let Some(cached) = &self.cache {
+            return cached.clone();
+        }
+
+        panic!("Not finalized {}", self.name);
     }
 }
 

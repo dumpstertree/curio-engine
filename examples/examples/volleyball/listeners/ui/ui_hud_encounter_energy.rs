@@ -68,12 +68,10 @@ impl UI for UIHUD {
                 // iterate over total number of energy
                 for j in 0..10 {
                     let mut r = RendererAnimated::default();
-                    r.set_fps(60);
                     r.set_asset(Some(asset.clone()));
                     r.set_animation("add", false);
 
                     let mut rr = RendererAnimated::default();
-                    rr.set_fps(60);
                     rr.set_asset(Some(asset.clone()));
                     rr.set_animation("add", false);
 
