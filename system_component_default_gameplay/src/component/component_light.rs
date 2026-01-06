@@ -1,7 +1,4 @@
-use core::{
-    PrefabOverridable,
-    collections::{color::Color, light_uniform::LightType, vector3::Vector3},
-};
+use core::collections::{color::Color, light_uniform::LightType, vector3::Vector3};
 
 // use macro_component::global_component;
 use serde::Deserialize;

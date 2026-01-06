@@ -4,13 +4,7 @@ use crate::{component::{
     component_renderer_text::{ComponentRendererText, RendererCommon, update}, component_transform::{Transform, update_transform}, component_transform2d::Transform2D,
 }, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
-use core::{
-    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
-    gameplay::{
-        // ,
-        // world_context::{WorldContext, WorldContextCommon},
-    },
-};
+use core::collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
 // use ecs_system::global_ecs_system;
 // use hecs::World;
 

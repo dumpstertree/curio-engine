@@ -40,21 +40,21 @@ pub mod field_override;
 
 use core::{
     collections::{
-        event_queue::{self, EventQueue, EventScope, IGameEvent},
-        game_state::{self, GameState},
+        event_queue::{EventQueue, EventScope, IGameEvent},
+        game_state::GameState,
         input_button::InputButtonState,
         input_cursor::InputAxisState,
         key_state::KeyState,
     },
     input::{
-        axis_code::{self, AxisCode},
+        axis_code::AxisCode,
         key_code::ButtonCode,
     },
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
 };
-use hecs::{Component, ComponentRef, DynamicBundle, Entity, QueryBorrow, World};
+use hecs::World;
 use serde::{Deserialize, Serialize};
-use std::{cell::RefCell, collections::HashMap, fmt::Display, hash::Hash, marker::PhantomData, rc::Rc, sync::Arc, vec};
+use std::{cell::RefCell, collections::HashMap, fmt::Display, hash::Hash, marker::PhantomData, rc::Rc, vec};
 
 use crate::{
     component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_renderer_text::ComponentRendererText, component_transform::Transform, component_transform2d::Transform2D},
@@ -66,11 +66,11 @@ use crate::{
         global_event_recievers::get_global_event_receivers,
     },
     system::{
-        system_camera_update_state::{self, PostCameraECSSystem},
+        system_camera_update_state::PostCameraECSSystem,
         system_debug_gui_screen::SystemDebugGuiScreen,
         system_debug_gui_time::SystemDebugGuiTime,
         system_debug_toggle::SystemDebugToggle,
-        system_renderer_update_light_state::{self, SystemRendererUpdateState},
+        system_renderer_update_light_state::{self},
         system_renderer_update_state,
     },
     world_context::{WorldContext, WorldContext2D},

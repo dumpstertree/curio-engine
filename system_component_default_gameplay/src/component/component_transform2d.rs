@@ -2,7 +2,6 @@ use core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector2::V
 use std::cell::RefMut;
 
 use hecs::World;
-use serde::{Deserialize, de::DeserializeOwned};
 
 use crate::{
     field_override::FieldDeserialize,

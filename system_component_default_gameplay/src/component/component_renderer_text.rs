@@ -1,28 +1,22 @@
 use core::{
     collections::{
         color::Color,
-        material::Material,
         matrix4x4::Matrix4x4,
-        mesh::{Mesh, Vertex},
         quaternion::Quaternion,
         vector2::Vector2,
         vector3::Vector3,
     },
     io::{
         asset_loader::{AssetLoader, FontAsset},
-        file::File,
-        font_asset::{self, FontDesc},
         model_asset::ModelAsset,
     },
 };
 use std::{
-    cell::{Ref, RefCell, RefMut},
-    collections::HashMap,
-    rc::Rc,
+    cell::RefMut,
     sync::Arc,
 };
 
-use hecs::{Entity, World};
+use hecs::World;
 
 use crate::{
     component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer},

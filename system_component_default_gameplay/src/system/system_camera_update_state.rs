@@ -1,16 +1,9 @@
 use built_in_state::{state_camera::CameraState, state_debug::StateDebug};
-use core::{
-    collections::{
+use core::collections::{
         event_queue::EventQueue,
-        game_state::{self, GameState},
-    },
-    gameplay::{
-        // ecs::{component::component_transform::Transform, traits::ecs_system::ECSSystemEventless},
-        // world_context::{WorldContext, WorldContextCommon},
-    },
-};
+        game_state::GameState,
+    };
 // use ecs_system::global_ecs_system;
-use hecs::World;
 
 use crate::{component::{component_camera::Camera, component_transform::Transform}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
 

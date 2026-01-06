@@ -2,12 +2,10 @@ use core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::V
 use std::cell::RefMut;
 
 use hecs::World;
-use serde::Deserialize;
 
 use crate::{
     component::component_transform2d::Transform2D,
     field_override::FieldDeserialize,
-    static_data::global_components,
     world_context::{GameObject, WorldContext},
 };
 

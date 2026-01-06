@@ -14,7 +14,7 @@ use message_io::{
     node::NodeHandler,
 };
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     sync::{Arc, Mutex},
     vec,
 };
@@ -349,8 +349,6 @@ use std::thread;
 //     GameEvent,
 // }
 
-use std::mem;
-use std::slice;
 
 use serde::{Deserialize, Serialize};
 

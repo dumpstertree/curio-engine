@@ -5,7 +5,6 @@ use core::{
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 // use ecs_system::global_ecs_system;
-use hecs::World;
 
 use crate::{ecs_system::ECSSystemEventless, world_context::WorldContext};
 
