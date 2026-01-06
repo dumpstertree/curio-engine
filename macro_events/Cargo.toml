@@ -9,6 +9,5 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-proc-macro2 = "1"
 core = { path = "../core" }
 serde = { version = "1.0.104", features = ["derive"] }

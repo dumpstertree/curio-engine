@@ -3,7 +3,6 @@ use core::{
     collections::{color::Color, light_uniform::LightType, vector3::Vector3},
 };
 
-// use macro_component::global_component;
 use serde::Deserialize;
 
 use crate::field_override::FieldDeserialize;

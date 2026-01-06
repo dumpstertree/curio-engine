@@ -9,6 +9,3 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-proc-macro2 = "1"
-linkme = "=0.2.10"
-intertrait = "0.2.2"

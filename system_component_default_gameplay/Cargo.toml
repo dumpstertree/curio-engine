@@ -8,9 +8,5 @@ edition = "2024"
 core = { path = "../core" }
 built_in_state = { path = "../built_in_state" }
 hecs = "0.10.5"
-linkme = "=0.2.10"
 intertrait = "0.2.2"
-bincode = "1"
 serde = { version = "1.0.104", features = ["derive"] }
-serde_yaml = "0.9.34"
-ctor = "0.2"

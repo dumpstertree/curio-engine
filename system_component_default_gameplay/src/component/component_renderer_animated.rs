@@ -22,7 +22,6 @@ pub struct RendererAnimated {
     last_anim: String,
     last_frame_index: i32,
 }
-
 impl Default for RendererAnimated {
     fn default() -> Self {
         Self {
@@ -49,6 +48,7 @@ impl FieldDeserialize for RendererAnimated {
             "tint" => self.tint = value.parse().unwrap_or_default(),
             "animation" => self.animation = value.to_string(),
             "looping" => self.looping = value.parse().unwrap_or_default(),
+
             _ => {}
         }
     }

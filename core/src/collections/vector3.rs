@@ -23,6 +23,7 @@ pub struct Vector3 {
     pub y: f32,
     pub z: f32,
 }
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseError;
 impl FromStr for Vector3 {
