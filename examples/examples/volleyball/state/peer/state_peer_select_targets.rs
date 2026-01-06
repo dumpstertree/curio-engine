@@ -5,12 +5,10 @@ use core::{
 use std::hash::Hash;
 
 use macro_state::global_state;
-use macro_state_serialize::global_state_serialize;
-use serde::{Deserialize, Serialize};
 
 use crate::cards::{
     card_attributes_targets::attribute_target_type_tiles::AttributeTargetTypesTiles,
-    card_dependencies::{data_dep_empty::DataDepsEmpty, data_dep_filled::DataDepsFilled},
+    card_dependencies::data_dep_filled::DataDepsFilled,
 };
 
 #[global_state]

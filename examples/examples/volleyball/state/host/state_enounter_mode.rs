@@ -1,10 +1,9 @@
 use core::{
-    collections::{state_ownerships::StateOwnerships, vector2_int::Vector2Int},
+    collections::state_ownerships::StateOwnerships,
     system::system_game_state::IState,
 };
 
 use macro_state_serialize::global_state_serialize;
-use serde::{Deserialize, Serialize};
 
 use crate::listeners::listener_initialize_encounter::Encounter;
 

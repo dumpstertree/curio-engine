@@ -13,7 +13,7 @@ use crate::{
         host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack,
         state_deck::StateDeck,
         state_position_ball::StatePositionBall,
-        state_position_player::{self, StatePositionEntities},
+        state_position_player::StatePositionEntities,
         state_teams::{StateTeamAssignments, Teams},
         state_turn::StateTurn,
     },

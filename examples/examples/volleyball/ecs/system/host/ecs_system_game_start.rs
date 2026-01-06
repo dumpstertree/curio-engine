@@ -1,27 +1,18 @@
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::global_ecs_system;
-use hecs::World;
-use system_component_default_gameplay::{UI, UIEvents, ecs_system::ECSSystemEventless, world_context::WorldContext};
+use system_component_default_gameplay::{ecs_system::ECSSystemEventless, world_context::WorldContext};
 
 use core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
+    collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use std::vec;
 
 use crate::{
-    UIViewTypes,
     cards::deck_library::DeckLibrary,
     exploration::exploration_path::Exploration,
     game_events::GameEvents,
-    listeners::listener_initialize_encounter::{Encounter, Participant, TeamAssignment, TeamController},
-    state::{
-        host::{state_currency::StateCurrency, state_deck_exploration::StateDeckExploration, state_health_exploration::StateHealthExploration},
-        state_deck::{Deck, StateDeck},
-        state_energy::StateEnergy,
-        state_position_player::StatePositionEntities,
-        state_teams::{StateTeamAssignments, Teams},
-    },
+    state::host::{state_currency::StateCurrency, state_deck_exploration::StateDeckExploration, state_health_exploration::StateHealthExploration},
 };
 
 #[global_ecs_system]

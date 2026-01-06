@@ -1,4 +1,4 @@
-use core::collections::{game_state::GameState, vector2::Vector2, vector2_int::Vector2Int};
+use core::collections::game_state::GameState;
 
 use crate::{
     game_board::{Directions, GameBoard},

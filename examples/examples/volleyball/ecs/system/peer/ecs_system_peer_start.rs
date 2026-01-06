@@ -1,22 +1,14 @@
-use built_in_state::{state_camera::CameraState, state_network::StateNetwork, state_sun::StateSun, state_time::TimeState};
+use built_in_state::{state_camera::CameraState, state_sun::StateSun};
 use ecs_system::global_ecs_system;
-use futures::channel::oneshot::Canceled;
-use hecs::World;
-use system_component_default_gameplay::{component::{component_camera::Camera, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
+use system_component_default_gameplay::{component::{component_camera::Camera, component_transform::Transform}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
 
 use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
-    gameplay::{
-    },
     io::asset_loader::AssetLoader,
 };
 
-use crate::{
-    AssetMappingUIDs, UIViewTypes,
-    ecs::components::{component_ball::ComponentBall, component_player::ComponentPlayer, component_view_player::ComponentViewPlayer},
-    state::state_teams::{StateTeamAssignments, Teams},
-};
+use crate::state::state_teams::{StateTeamAssignments, Teams};
 
 #[global_ecs_system]
 pub struct ECSSystemPeerStart {}

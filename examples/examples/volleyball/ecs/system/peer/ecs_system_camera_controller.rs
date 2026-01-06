@@ -1,27 +1,20 @@
-use built_in_state::{state_camera::CameraState, state_network::StateNetwork, state_sun::StateSun, state_time::TimeState};
+use built_in_state::state_time::TimeState;
 use ecs_system::global_ecs_system;
-use hecs::World;
 use system_component_default_gameplay::{component::{component_camera::Camera, component_transform::Transform}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
 
 use core::{
-    collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
-    gameplay::{
-    },
-    io::asset_loader::AssetLoader,
 };
 
 use crate::{
-    AssetMappingUIDs, UIViewTypes,
-    ecs::components::{component_ball::ComponentBall, component_player::ComponentPlayer, component_view_player::ComponentViewPlayer},
-    game_board::{self, GameBoard},
+    game_board::GameBoard,
     state::{
-        self,
         peer::state_peer_select_targets::StatePeerSelectTargets,
         state_position_ball::StatePositionBall,
         state_position_player::StatePositionEntities,
-        state_teams::{StateTeamAssignments, Teams},
-        state_turn::{self, StateTurn},
+        state_teams::Teams,
+        state_turn::StateTurn,
     },
 };
 

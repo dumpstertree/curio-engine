@@ -1,21 +1,12 @@
-use core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2},
-    gameplay::{
-
-    },
-};
+use core::collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2};
 
 use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
 
-use crate::state::{
-    host::{
+use crate::state::host::{
         state_currency::StateCurrency,
-        state_deck_exploration::{self, StateDeckExploration},
-        state_enounter_mode::StateEncounter,
+        state_deck_exploration::StateDeckExploration,
         state_health_exploration::StateHealthExploration,
-    },
-    state_score::StateScore,
-};
+    };
 
 pub struct UIHUD {
     go_health: Option<GameObject>,

@@ -6,9 +6,8 @@ use crate::{
     },
     cards::enums::simulation_manuevers::SimulationManuevers,
     exploration::exploration_path::RoomTypes,
-    game_board::Directions,
     game_events::GameEvents,
-    listeners::listener_initialize_encounter::{Controller, TeamAssignment},
+    listeners::listener_initialize_encounter::Controller,
     state::{
         host::{state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_exploration::StateExploration},
         other::state_terminated::StateTerminated,
@@ -27,21 +26,13 @@ use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, Inst
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::{
-
-    },
     system::system_game_state::IState,
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
-use hecs::World;
 use std::vec;
 
-use crate::{
-    AssetMappingUIDs,
-    ecs::components::{component_ball::ComponentBall, component_player::ComponentPlayer, component_view_player::ComponentViewPlayer},
-    state::state_teams::{StateTeamAssignments, Teams},
-};
+use crate::state::state_teams::StateTeamAssignments;
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -97,8 +88,8 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
 
         // let is_turn = d == game_state.instance_id;
-        if unsafe { do_move } && any_ai && game_state.get::<TimeState>().scaled_time - self.lastmove > self.move_time {
-            unsafe { do_move = false };
+        if unsafe { DO_MOVE } && any_ai && game_state.get::<TimeState>().scaled_time - self.lastmove > self.move_time {
+            unsafe { DO_MOVE = false };
 
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
                 GameState::new_single_instance(vec![
@@ -167,10 +158,10 @@ impl EventReciever<GameEvents> for ECSSystemPeerStart {
             _ => {
                 let state_time = game_state.get::<TimeState>();
                 // self.lastmove = game_state.get::<TimeState>().unscaled_time;
-                unsafe { do_move = true };
+                unsafe { DO_MOVE = true };
             }
         }
     }
 }
 
-static mut do_move: bool = false;
+static mut DO_MOVE: bool = false;

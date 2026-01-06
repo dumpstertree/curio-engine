@@ -1,4 +1,3 @@
-use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
 use core::{
@@ -7,7 +6,6 @@ use core::{
 };
 use ecs_event::global_ecs_system_event_reciever;
 use system_component_default_gameplay::{
-    UIEvents,
     ecs_event_reciever::{EventReciever, InstanceLimiter},
     world_context::WorldContext,
 };

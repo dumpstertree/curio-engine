@@ -1,22 +1,17 @@
 use core::collections::{
     event_queue::EventQueue,
     game_state::GameState,
-    vector2::{self, Vector2},
-    vector3::Vector3,
+    vector2::Vector2,
 };
 
-use built_in_state::{state_input::InputState, state_time::TimeState};
+use built_in_state::state_input::InputState;
 use system_component_default_gameplay::{
     UI, UIPanel,
     component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D},
     world_context::{GameObject, WorldContext2D},
 };
 
-use crate::{
-    exploration::exploration_path::{Room, RoomTypes},
-    game_events::GameEvents,
-    state::host::{state_currency::StateCurrency, state_exploration::StateExploration},
-};
+use crate::game_events::GameEvents;
 
 pub struct UIPanelInstance {
     go_desc: Option<GameObject>,

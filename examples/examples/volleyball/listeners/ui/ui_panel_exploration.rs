@@ -1,7 +1,7 @@
 use core::collections::{
     event_queue::EventQueue,
     game_state::GameState,
-    vector2::{self, Vector2},
+    vector2::Vector2,
     vector3::Vector3,
 };
 
@@ -18,7 +18,7 @@ use system_component_default_gameplay::{
 use crate::{
     exploration::exploration_path::{Room, RoomTypes},
     game_events::GameEvents,
-    state::host::{state_currency::StateCurrency, state_exploration::StateExploration},
+    state::host::state_exploration::StateExploration,
 };
 
 pub struct UIPanelInstance {

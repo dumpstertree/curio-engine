@@ -1,31 +1,22 @@
 use core::{
     collections::{
         event_queue::EventQueue,
-        game_state::{self, GameState},
+        game_state::GameState,
         vector2::Vector2,
         vector3::Vector3,
     },
-    gameplay::{
-
-    },
-    io::{
-        asset_database::{self, AssetDatabase, AssetDatabaseListing},
-        asset_loader::AssetLoader,
-    },
+    io::asset_loader::AssetLoader,
 };
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_animated::RendererAnimated, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
 
 use crate::{
     AssetMappingUIDs,
-    game_events::GameEvents,
     state::{
         state_energy::StateEnergy,
         state_teams::{StateTeamAssignments, Teams},
     },
-    ui_hud_encounter_ball_mode,
 };
 
 pub struct UIHUD {

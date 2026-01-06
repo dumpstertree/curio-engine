@@ -8,7 +8,6 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::global_ecs_system;
-use hecs::World;
 use system_component_default_gameplay::ecs_system::ECSSystemEventless;
 use system_component_default_gameplay::world_context::WorldContext;
 

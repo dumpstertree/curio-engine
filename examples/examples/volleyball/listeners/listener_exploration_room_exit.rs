@@ -7,7 +7,6 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
-use hecs::World;
 use system_component_default_gameplay::{
     ecs_event_reciever::{self, InstanceLimiter},
     world_context::WorldContext,

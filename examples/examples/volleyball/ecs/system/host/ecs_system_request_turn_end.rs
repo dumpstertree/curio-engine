@@ -1,6 +1,5 @@
 use crate::{
     game_events::GameEvents,
-    listeners::listener_initialize_encounter::TeamAssignment,
     state::{
         state_ball_mode::{BallModes, StateBallMode},
         state_teams::StateTeamAssignments,
@@ -10,12 +9,9 @@ use crate::{
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::{
-    },
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
-use hecs::World;
 use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, ecs_system::ECSSystemEventless, world_context::WorldContext};
 
 #[global_ecs_system]

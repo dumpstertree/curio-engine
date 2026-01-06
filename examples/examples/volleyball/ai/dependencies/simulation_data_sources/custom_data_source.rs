@@ -12,13 +12,11 @@ use crate::{
         card_instance::CardInstance,
         enums::simulation_manuevers::SimulationManuevers,
     },
-    game_board::{Directions, GameBoard},
     state::{
         other::state_terminated::StateTerminated,
         state_ball_mode::{BallModes, StateBallMode},
         state_deck::StateDeck,
         state_energy::StateEnergy,
-        state_position_player::StatePositionEntities,
         state_teams::{StateTeamAssignments, Teams},
         state_turn::StateTurn,
     },
