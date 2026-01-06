@@ -7,7 +7,10 @@ use core::{
 use built_in_state::state_network::StateNetwork;
 use ecs_event::global_ecs_system_event_reciever;
 use serde::{Deserialize, Serialize};
-use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, world_context::WorldContext};
+use system_component_default_gameplay::{
+    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    world_context::WorldContext,
+};
 
 use crate::{
     AssetMappingUIDs,

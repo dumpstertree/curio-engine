@@ -12,7 +12,7 @@ use ecs_system::global_ecs_system;
 use system_component_default_gameplay::component::component_renderer_static::Renderer;
 use system_component_default_gameplay::component::component_renderer_text::RendererCommon;
 use system_component_default_gameplay::component::component_transform::Transform;
-use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
 use system_component_default_gameplay::world_context::{WorldContext, WorldContextCommon};
 
 #[global_ecs_system]

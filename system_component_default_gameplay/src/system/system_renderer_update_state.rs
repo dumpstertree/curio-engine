@@ -1,8 +1,14 @@
-use crate::{component::{
-    component_renderer_animated::RendererAnimated,
-    component_renderer_static::Renderer,
-    component_renderer_text::{ComponentRendererText, RendererCommon, update}, component_transform::{Transform, update_transform}, component_transform2d::Transform2D,
-}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
+use crate::{
+    component::{
+        component_renderer_animated::RendererAnimated,
+        component_renderer_static::Renderer,
+        component_renderer_text::{ComponentRendererText, RendererCommon, update},
+        component_transform::{Transform, update_transform},
+        component_transform2d::Transform2D,
+    },
+    traits::ecs_system::ECSSystemEventless,
+    world_context::{WorldContext, WorldContextCommon},
+};
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
 use core::collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
 // use ecs_system::global_ecs_system;
@@ -84,7 +90,6 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 }
             });
             world.query_mut::<(&Renderer, &Transform)>(|query| {
-
                 for (_, (renderer, transform)) in query {
                     // println!( "update {}" ,renderer.asset.clone().unwrap().instance_id);
                     // if !renderer.enabled_in_hierarchy(&world) {
@@ -106,21 +111,19 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 }
             });
             world.query_mut::<(&mut RendererAnimated, &Transform)>(|query| {
-              let mut i=0;
+                let mut i = 0;
                 for (_, (renderer, _)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
                     // }
 
-                    println!( "render {}", i);
                     if !renderer.get_cached_enabled_in_hierarchy() {
                         continue;
                     }
-                                        println!( "success {}", i);
 
                     // update all mesh
                     renderer.update_mesh(time);
-                    i +=1;
+                    i += 1;
                 }
             });
 
@@ -147,7 +150,6 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     }
                     // guard - no mesh
                     if renderer.asset.is_some() {
-
                         let Some(asset) = &renderer.asset else {
                             continue;
                         };
@@ -155,7 +157,6 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                         // add draw call
                         for m in &renderer.mesh {
                             for mesh in &m.mesh {
-
                                 x.draw_calls
                                     .push(DrawCall::draw_mesh_single(mesh.clone(), m.materials[0].clone(), transform.get_matrix(), renderer.get_tint(), true));
                             }

@@ -14,7 +14,7 @@ use core::{
 };
 use ecs_system::global_ecs_system;
 use std::panic;
-use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
 use system_component_default_gameplay::world_context::WorldContext;
 
 #[global_ecs_system]

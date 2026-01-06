@@ -7,8 +7,11 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
-use system_component_default_gameplay::ecs_event_reciever::{EventReciever, InstanceLimiter};
 use system_component_default_gameplay::world_context::WorldContext;
+use system_component_default_gameplay::{
+    UIEvents,
+    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+};
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]

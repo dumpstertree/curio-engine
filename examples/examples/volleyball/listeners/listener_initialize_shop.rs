@@ -4,12 +4,12 @@ use core::{
 };
 
 use ecs_event::global_ecs_system_event_reciever;
-use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, world_context::WorldContext};
-
-use crate::{
-    game_events::GameEvents,
-    state::host::state_shop::StateShop,
+use system_component_default_gameplay::{
+    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    world_context::WorldContext,
 };
+
+use crate::{game_events::GameEvents, state::host::state_shop::StateShop};
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]

@@ -24,7 +24,7 @@ use ecs_event::global_ecs_system_event_reciever;
 use system_component_default_gameplay::component::component_renderer_animated::RendererAnimated;
 use system_component_default_gameplay::component::component_renderer_static::Renderer;
 use system_component_default_gameplay::component::component_transform::Transform;
-use system_component_default_gameplay::ecs_event_reciever::{EventReciever, InstanceLimiter};
+use system_component_default_gameplay::{UIEvents, traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter}};
 use system_component_default_gameplay::world_context::{WorldContext, WorldContextCommon};
 
 #[derive(Default)]

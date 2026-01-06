@@ -5,7 +5,7 @@ use core::{
     // gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
 
-use crate::{ecs_system::ECSSystemEventless, world_context::WorldContext};
+use crate::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
 // use ecs_system::global_ecs_system;
 // use hecs::World;
 

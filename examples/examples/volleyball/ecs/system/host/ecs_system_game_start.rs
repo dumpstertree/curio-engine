@@ -1,6 +1,6 @@
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::{ecs_system::ECSSystemEventless, world_context::WorldContext};
+use system_component_default_gameplay::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},

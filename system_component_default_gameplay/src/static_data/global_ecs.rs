@@ -3,7 +3,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use crate::ecs_system::ECSSystemEventless;
+use crate::traits::ecs_system::ECSSystemEventless;
 
 /// Function that creates a boxed untyped value (what register stores)
 type ReceiverCreateFn = fn() -> Box<dyn ECSSystemEventless>;

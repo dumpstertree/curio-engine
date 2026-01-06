@@ -1,8 +1,11 @@
-pub mod ecs_event_reciever;
-pub mod ecs_system;
 pub mod prefab;
 pub mod world_context;
 
+pub mod traits {
+    pub mod ecs_system;
+    pub mod event_reciever;
+    pub mod instance_scope;
+}
 pub mod static_data {
     pub mod global_components;
     pub mod global_ecs;
@@ -46,10 +49,7 @@ use core::{
         input_cursor::InputAxisState,
         key_state::KeyState,
     },
-    input::{
-        axis_code::AxisCode,
-        key_code::ButtonCode,
-    },
+    input::{axis_code::AxisCode, key_code::ButtonCode},
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
 };
 use hecs::World;
@@ -58,8 +58,6 @@ use std::{cell::RefCell, collections::HashMap, fmt::Display, hash::Hash, marker:
 
 use crate::{
     component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_renderer_text::ComponentRendererText, component_transform::Transform, component_transform2d::Transform2D},
-    ecs_event_reciever::EventReciever,
-    ecs_system::ECSSystemEventless,
     static_data::{
         global_components::register_global_component,
         global_ecs::{get_global_ecs_instances, register_global_ecs},
@@ -73,6 +71,7 @@ use crate::{
         system_renderer_update_light_state::{self},
         system_renderer_update_state,
     },
+    traits::{ecs_system::ECSSystemEventless, event_reciever::EventReciever},
     world_context::{WorldContext, WorldContext2D},
 };
 

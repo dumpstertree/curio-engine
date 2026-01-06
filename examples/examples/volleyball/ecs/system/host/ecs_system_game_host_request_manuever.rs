@@ -1,24 +1,19 @@
 use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
     game_events::GameEvents,
-    state::{
-        state_deck::StateDeck,
-        state_energy::StateEnergy,
-        state_teams::StateTeamAssignments,
-        state_turn::StateTurn,
-    },
+    state::{state_deck::StateDeck, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, ecs_system::ECSSystemEventless, world_context::WorldContext};
 use std::sync::Arc;
+use system_component_default_gameplay::{
+    traits::{ecs_system::ECSSystemEventless, event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    world_context::WorldContext,
+};
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]

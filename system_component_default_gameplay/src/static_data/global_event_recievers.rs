@@ -5,7 +5,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use crate::ecs_event_reciever::EventReciever;
+use crate::traits::event_reciever::EventReciever;
 
 /// Function that creates a boxed untyped value (what register stores)
 type ReceiverCreateFn = fn() -> Box<dyn Any>;

@@ -1,6 +1,10 @@
 use built_in_state::{state_camera::CameraState, state_sun::StateSun};
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::{component::{component_camera::Camera, component_transform::Transform}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
+use system_component_default_gameplay::{
+    component::{component_camera::Camera, component_transform::Transform},
+    traits::ecs_system::ECSSystemEventless,
+    world_context::{WorldContext, WorldContextCommon},
+};
 
 use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},

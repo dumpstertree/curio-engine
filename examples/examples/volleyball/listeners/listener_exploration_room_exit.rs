@@ -8,7 +8,7 @@ use core::{
 };
 use ecs_event::global_ecs_system_event_reciever;
 use system_component_default_gameplay::{
-    ecs_event_reciever::{self, InstanceLimiter},
+    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
     world_context::WorldContext,
 };
 
@@ -24,7 +24,7 @@ impl InstanceLimiter for ECSSystemGamePointScored {
         NetworkModes::all_host()
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored {
+impl EventReciever<GameEvents> for ECSSystemGamePointScored {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationRoomExit(room) => {

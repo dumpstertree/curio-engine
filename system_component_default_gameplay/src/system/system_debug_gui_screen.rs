@@ -6,7 +6,7 @@ use core::{
 };
 // use ecs_system::global_ecs_system;
 
-use crate::{ecs_system::ECSSystemEventless, world_context::WorldContext};
+use crate::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
 
 // #[global_ecs_system]
 #[derive(Default)]

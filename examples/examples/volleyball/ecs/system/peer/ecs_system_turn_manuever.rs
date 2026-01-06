@@ -20,7 +20,7 @@ use core::dumpster_engine::NetworkModes;
 use core::extensions::extensions_i32::ExtensionsI32;
 use ecs_system::global_ecs_system;
 use std::sync::Arc;
-use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
 use system_component_default_gameplay::world_context::WorldContext;
 
 pub struct ResponseBuilder {

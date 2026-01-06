@@ -9,7 +9,10 @@ use core::{
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, ecs_system::ECSSystemEventless, world_context::WorldContext};
+use system_component_default_gameplay::{
+    traits::{ecs_system::ECSSystemEventless, event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    world_context::WorldContext,
+};
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
