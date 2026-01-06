@@ -1,11 +1,12 @@
 use bytemuck::{Pod, Zeroable};
 use egui_wgpu::wgpu;
+use serde::{Deserialize, Serialize};
 use std::{hash::Hash, num::NonZeroU64};
 
 use crate::{extensions::extensions_f32::ExtensionsF32, system_adapters::adapter_system_gpu::SystemGPU};
 
 // CPU-side light types for your ECS
-#[derive(Clone, Copy, Default, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum LightType {
     #[default]
     Point, // uses position + radius/falloff in params

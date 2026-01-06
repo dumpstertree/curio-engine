@@ -1,13 +1,14 @@
+use core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
 use std::cell::RefMut;
 
 use hecs::World;
+use serde::Deserialize;
 
 use crate::{
-    collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
-    gameplay::{
-        ecs::component::component_transform2d::Transform2D,
-        world_context::{GameObject, WorldContext},
-    },
+    component::component_transform2d::Transform2D,
+    field_override::FieldDeserialize,
+    static_data::global_components,
+    world_context::{GameObject, WorldContext},
 };
 
 #[derive(Clone)]
@@ -17,6 +18,16 @@ pub struct Transform {
     pub rotation: Quaternion,
     pub scale: Vector3,
     pub ws_matrix: Matrix4x4,
+}
+impl FieldDeserialize for Transform {
+    fn override_field(&mut self, field: &str, val: &str) {
+        match field {
+            "position" => self.position = val.parse().unwrap_or_default(),
+            "rotation" => self.rotation = Quaternion::from_euler(val.parse().unwrap_or_default()),
+            "scale" => self.scale = val.parse().unwrap_or_default(),
+            _ => {}
+        }
+    }
 }
 impl Default for Transform {
     fn default() -> Transform {

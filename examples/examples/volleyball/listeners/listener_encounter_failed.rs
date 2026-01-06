@@ -1,12 +1,14 @@
 use crate::game_events::GameEvents;
-use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
+use system_component_default_gameplay::{
+    ecs_event_reciever::{EventReciever, InstanceLimiter},
+    world_context::WorldContext,
+};
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -20,7 +22,7 @@ impl InstanceLimiter for ECSSystemGamePointScored {
         NetworkModes::all_host()
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored {
+impl EventReciever<GameEvents> for ECSSystemGamePointScored {
     fn dequeue_event(&mut self, _game_state: &mut GameState, _: &mut WorldContext, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::EncounterFailed => {

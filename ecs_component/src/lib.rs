@@ -42,7 +42,7 @@ pub fn register_component_derive(input: TokenStream) -> TokenStream {
 
         #[ctor::ctor]
         fn #register_fn() {
-            crate::register_component::<#name>(stringify!(#name));
+            system_component_default_gameplay::static_data::register_component::<#name>(stringify!(#name));
         }
     };
 

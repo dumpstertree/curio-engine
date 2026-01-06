@@ -13,6 +13,7 @@ use std::fmt::Formatter;
 use std::fmt::Result;
 use std::hash::Hash;
 use std::ops::{Add, Div, Mul, Sub};
+use std::str::FromStr;
 
 /// A 2D Vector backed by f32
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize, Default)]
@@ -27,6 +28,40 @@ impl Hash for Vector2 {
         self.y.hash(state);
     }
 }
+#[derive(Debug, PartialEq, Eq)]
+pub struct ParseError;
+impl FromStr for Vector2 {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let s = s.trim();
+
+        // Must start with '(' and end with ')'
+        if !s.starts_with('(') || !s.ends_with(')') {
+            return Err(ParseError);
+        }
+
+        let inner = &s[1..s.len() - 1];
+        let mut parts = inner.split(',');
+
+        let x = parts
+            .next()
+            .and_then(|p| p.trim().parse::<f32>().ok())
+            .ok_or(ParseError)?;
+
+        let y = parts
+            .next()
+            .and_then(|p| p.trim().parse::<f32>().ok())
+            .ok_or(ParseError)?;
+        // No extra values allowed
+        if parts.next().is_some() {
+            return Err(ParseError);
+        }
+
+        Ok(Vector2 { x, y })
+    }
+}
+
 impl Eq for Vector2 {}
 // const constructors
 impl Vector2 {

@@ -1,12 +1,16 @@
 use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug, state_time::TimeState};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
+    // gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
-use ecs_system::global_ecs_system;
-use hecs::World;
 
-#[global_ecs_system]
+use crate::{ecs_system::ECSSystemEventless, world_context::WorldContext};
+// use ecs_system::global_ecs_system;
+// use hecs::World;
+
+// #[global_ecs_system]
+#[derive(Default)]
+
 pub struct SystemDebugGuiTime {}
 impl SystemDebugGuiTime {
     pub fn new() -> Box<SystemDebugGuiTime> {

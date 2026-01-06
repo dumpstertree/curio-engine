@@ -13,6 +13,7 @@ use std::fmt::Formatter;
 use std::fmt::Result;
 use std::hash::Hash;
 use std::ops::{Add, Div, Mul, Sub};
+use std::str::FromStr;
 
 /// A 3D Vector backed by f32
 #[repr(C)]
@@ -22,6 +23,46 @@ pub struct Vector3 {
     pub y: f32,
     pub z: f32,
 }
+#[derive(Debug, PartialEq, Eq)]
+pub struct ParseError;
+impl FromStr for Vector3 {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let s = s.trim();
+
+        // Must start with '(' and end with ')'
+        if !s.starts_with('(') || !s.ends_with(')') {
+            return Err(ParseError);
+        }
+
+        let inner = &s[1..s.len() - 1];
+        let mut parts = inner.split(',');
+
+        let x = parts
+            .next()
+            .and_then(|p| p.trim().parse::<f32>().ok())
+            .ok_or(ParseError)?;
+
+        let y = parts
+            .next()
+            .and_then(|p| p.trim().parse::<f32>().ok())
+            .ok_or(ParseError)?;
+
+        let z = parts
+            .next()
+            .and_then(|p| p.trim().parse::<f32>().ok())
+            .ok_or(ParseError)?;
+
+        // No extra values allowed
+        if parts.next().is_some() {
+            return Err(ParseError);
+        }
+
+        Ok(Vector3 { x, y, z })
+    }
+}
+
 // hash
 impl Hash for Vector3 {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {

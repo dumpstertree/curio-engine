@@ -1,12 +1,11 @@
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::global_ecs_system;
 use hecs::World;
-use system_component_default_gameplay::{UI, UIEvents};
+use system_component_default_gameplay::{UI, UIEvents, ecs_system::ECSSystemEventless, world_context::WorldContext};
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
-    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
 use std::vec;
 

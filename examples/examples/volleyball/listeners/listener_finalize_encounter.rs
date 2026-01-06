@@ -2,8 +2,6 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
     gameplay::{
-        ecs::traits::ecs_event_reciever::{self, InstanceLimiter},
-        world_context::WorldContext,
     },
     random::Random,
 };
@@ -12,6 +10,7 @@ use built_in_state::state_network::StateNetwork;
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
 use serde::{Deserialize, Serialize};
+use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, world_context::WorldContext};
 
 use crate::{
     cards::deck_library::DeckLibrary,
@@ -41,7 +40,7 @@ impl InstanceLimiter for Listener {
     }
 }
 // Impl - Listener
-impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
+impl EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::FinalizeEncounter(_) => {

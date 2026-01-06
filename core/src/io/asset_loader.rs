@@ -20,6 +20,8 @@ use rusty_spine::AnimationStateData;
 use rusty_spine::Atlas;
 use rusty_spine::SkeletonData;
 use rusty_spine::SkeletonJson;
+use serde::Deserialize;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::error::Error;
@@ -55,7 +57,15 @@ impl AssetLoader {
             ASSET_CACHE = Some(Mutex::new(AssetCache::new()))
         }
     }
+    pub fn load_prefab() -> PrefabGameObject {
+        unsafe {
+            if let Ok(asset) = serde_yaml::from_slice::<PrefabGameObject>(&File::read("assets/test.yml")) {
+                return asset;
+            }
+        }
 
+        panic!();
+    }
     // load - from path
     pub fn load_texture_from_path(path: &str) -> Arc<TextureAsset> {
         unsafe {
@@ -126,7 +136,7 @@ impl AssetLoader {
             // not in cache so fetch the asset
             let data = asset_database.fetch_asset(uid.clone());
             if data.len() == 0 {
-                panic!("No data!");
+                panic!("No data for {}!", uid);
             }
 
             // unwrap
@@ -546,4 +556,15 @@ impl FontAsset {
 
         return cached.clone();
     }
+}
+#[derive(Serialize, Deserialize)]
+pub struct PrefabGameObject {
+    pub name: String,
+    pub components: Vec<PrefabComponent>,
+    pub children: Vec<PrefabGameObject>,
+}
+#[derive(Serialize, Deserialize)]
+pub struct PrefabComponent {
+    pub r#type: String,
+    pub fields: Vec<String>,
 }

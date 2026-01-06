@@ -8,9 +8,11 @@ core = { path = "../core" }
 ecs_system = { path = "../ecs_system" }
 ecs_event = { path = "../ecs_event" }
 built_in_state = { path = "../built_in_state" }
+macro_component = { path = "../macro_component" }
 
 ctor = "0.2"
 intertrait = "0.2.2"
 linkme = "=0.2.10"
 hecs = "0.10.5"
 rusty_spine = { path = "../../rusty_spine3.8" }
+serde = { version = "1.0.104", features = ["derive"] }

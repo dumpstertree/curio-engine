@@ -7,20 +7,20 @@ use core::{
         vector2::Vector2,
         vector3::Vector3,
     },
-    gameplay::{
-        ecs::component::{component_transform::Transform, component_transform2d::Transform2D},
-        world_context::{GameObject, WorldContext2D},
-    },
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
 
-use built_in::component::{
-    component_renderer_static::Renderer,
-    component_renderer_text::{ComponentRendererText, RendererCommon},
-};
 use built_in_state::state_time::TimeState;
-use system_component_default_gameplay::{UI, UIPanel};
+use system_component_default_gameplay::{
+    UI, UIPanel,
+    component::{
+        component_renderer_static::Renderer,
+        component_renderer_text::{ComponentRendererText, RendererCommon},
+        component_transform2d::Transform2D,
+    },
+    world_context::{GameObject, WorldContext2D},
+};
 
 use crate::{
     AssetMappingUIDs,

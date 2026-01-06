@@ -2,17 +2,13 @@ use built_in_state::state_network::StateNetwork;
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
+use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, ecs_system::ECSSystemEventless, world_context::WorldContext};
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     extensions::extensions_i32::ExtensionsI32,
     gameplay::{
-        ecs::traits::{
-            ecs_event_reciever::{self, InstanceLimiter},
-            ecs_system::ECSSystemEventless,
-        },
-        world_context::WorldContext,
     },
 };
 
@@ -44,7 +40,7 @@ impl InstanceLimiter for ECSSystemGameEndTurn {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameEndTurn {
+impl EventReciever<GameEvents> for ECSSystemGameEndTurn {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnEnd(team) => {

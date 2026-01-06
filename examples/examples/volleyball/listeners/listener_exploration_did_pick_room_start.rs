@@ -8,19 +8,14 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{AssetMappingUIDs, UIViewTypes};
-use built_in::component::component_renderer_animated::RendererAnimated;
-use built_in::component::component_renderer_static::Renderer;
-use core::collections::quaternion::Quaternion;
-use core::collections::vector3::Vector3;
-use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
 use core::io::asset_loader::AssetLoader;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
-use hecs::World;
+use system_component_default_gameplay::ecs_event_reciever::{EventReciever, InstanceLimiter};
+use system_component_default_gameplay::world_context::WorldContext;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -34,7 +29,7 @@ impl InstanceLimiter for Listener {
         NetworkModes::all_peer()
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
+impl EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidPickRoomStart => {

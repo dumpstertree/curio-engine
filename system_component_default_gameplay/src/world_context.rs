@@ -1,12 +1,23 @@
+use core::io::asset_loader::PrefabGameObject;
 use std::hash::BuildHasher;
 use std::rc::Rc;
 use std::{cell::RefCell, hash::Hash};
 
-use cgmath::Vector3;
-use hecs::{Component, Entity, Query, QueryBorrow, QueryMut, World};
-use rapier3d::na;
+use hecs::{Component, Entity, QueryMut, World};
+use serde::Deserialize;
 
-use crate::gameplay::ecs::component::{component_transform::Transform, component_transform2d::Transform2D};
+use crate::component::component_transform::Transform;
+use crate::component::component_transform2d::Transform2D;
+use crate::static_data::global_components::get_global_ecs_instances;
+// use crate::global_components::get_global_ecs_instances;
+
+// use cgmath::Vector3;
+// use hecs::{Component, Entity, Query, QueryBorrow, QueryMut, World};
+// use rapier3d::na;
+
+// use crate::gameplay::ecs::component::component_transform::Transform;
+// use crate::prefab::PrefabGameObject;
+// use crate::static_data::global_components::get_global_ecs_instances;
 
 pub trait WorldContextCommon {
     /// Removes all entities and components.
@@ -28,6 +39,34 @@ pub trait WorldContextCommon {
 
         out
     }
+    fn instantiate_prefab(&mut self, prefab: &PrefabGameObject) -> GameObject {
+        // create entity
+        let entity = {
+            let world = self.get_world();
+            let mut world = world.borrow_mut();
+            world.spawn(())
+        };
+
+        println!("instantiated {}", prefab.name);
+
+        let mut go = GameObject::new(
+            &prefab.name,
+            self.get_world().clone(),
+            entity,
+            prefab
+                .children
+                .iter()
+                .map(|x| self.instantiate_prefab(x))
+                .collect(),
+        );
+        for component in &prefab.components {
+            let x = get_global_ecs_instances(&component.r#type);
+            x(&mut go, &component.fields);
+        }
+
+        go
+    }
+
     // /// Collect query results into an owned Vec so the borrow ends inside the fn.
     // fn query<Q>(&self) -> Vec<(Entity, <Q as Query>::Item<'static>)>
     // where
@@ -84,7 +123,7 @@ impl WorldContext2D {
             let mut world = world.borrow_mut();
             world.spawn(())
         };
-        let go = GameObject::new(name, self.get_world().clone(), entity).add_component_value::<Transform2D>(t);
+        let go = GameObject::new(name, self.get_world().clone(), entity, vec![]).add_component_value::<Transform2D>(t);
         go
     }
 }
@@ -110,16 +149,18 @@ impl WorldContext {
             world.spawn(())
         };
 
-        let go = GameObject::new(name, self.get_world().clone(), entity).add_component_value(t);
+        let go = GameObject::new(name, self.get_world().clone(), entity, vec![]).add_component_value(t);
         go
     }
 }
+
 /// A Unity-style wrapper for an ECS entity.
 #[derive(Clone)]
 pub struct GameObject {
     world: Rc<RefCell<World>>,
     pub entity: Entity,
     pub name: String,
+    pub children: Vec<GameObject>,
 }
 impl PartialEq for GameObject {
     fn eq(&self, other: &Self) -> bool {
@@ -136,8 +177,13 @@ impl Hash for GameObject {
 }
 
 impl GameObject {
-    pub fn new(name: &str, world: Rc<RefCell<World>>, entity: Entity) -> Self {
-        Self { world, entity, name: name.to_string() }
+    pub fn new(name: &str, world: Rc<RefCell<World>>, entity: Entity, children: Vec<GameObject>) -> Self {
+        Self {
+            world,
+            entity,
+            name: name.to_string(),
+            children: children,
+        }
     }
 
     // -------------------------------

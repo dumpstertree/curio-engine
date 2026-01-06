@@ -5,16 +5,18 @@ use core::{
         game_state::{self, GameState},
     },
     gameplay::{
-        ecs::{component::component_transform::Transform, traits::ecs_system::ECSSystemEventless},
-        world_context::{WorldContext, WorldContextCommon},
+        // ecs::{component::component_transform::Transform, traits::ecs_system::ECSSystemEventless},
+        // world_context::{WorldContext, WorldContextCommon},
     },
 };
-use ecs_system::global_ecs_system;
+// use ecs_system::global_ecs_system;
 use hecs::World;
 
-use crate::component::component_camera::Camera;
+use crate::{component::{component_camera::Camera, component_transform::Transform}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
 
-#[global_ecs_system]
+// #[global_ecs_system]
+#[derive(Default)]
+
 pub struct PostCameraECSSystem {}
 impl PostCameraECSSystem {}
 impl ECSSystemEventless for PostCameraECSSystem {

@@ -5,14 +5,14 @@ use crate::state::host::state_heat::StateHeat;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_score::StateScore;
 use crate::state::state_teams::StateTeamAssignments;
-use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
+use system_component_default_gameplay::ecs_event_reciever::{self, EventReciever, InstanceLimiter};
+use system_component_default_gameplay::world_context::WorldContext;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -26,7 +26,7 @@ impl InstanceLimiter for Listener {
         NetworkModes::all_host()
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
+impl EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestHeal(user_guid) => {

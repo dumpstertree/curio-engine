@@ -19,14 +19,10 @@ use crate::state::state_teams::StateTeamAssignments;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use built_in_state::state_input::InputState;
 use core::collections::event_queue;
+use core::collections::{event_queue::EventQueue, game_state::GameState};
 use core::dumpster_engine::NetworkModes;
 use core::events;
 use core::extensions::extensions_i32::ExtensionsI32;
-use core::gameplay::world_context::WorldContext;
-use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
-};
 use ecs_system::global_ecs_system;
 use futures::FutureExt;
 use futures::future::LocalBoxFuture;
@@ -36,6 +32,8 @@ use pollster::block_on;
 use std::rc::Rc;
 use std::sync::Arc;
 use std::task::{Context, Poll};
+use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::world_context::WorldContext;
 
 pub struct ResponseBuilder {
     card_instance: Arc<CardInstance>,

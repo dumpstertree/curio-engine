@@ -3,8 +3,6 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_currency::StateCurrency;
 use crate::state::host::state_exploration::StateExploration;
 use core::collections::event_queue;
-use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -12,6 +10,8 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
 use system_component_default_gameplay::UIEvents;
+use system_component_default_gameplay::ecs_event_reciever::{EventReciever, InstanceLimiter};
+use system_component_default_gameplay::world_context::WorldContext;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -25,7 +25,7 @@ impl InstanceLimiter for ECSSystemGamePointScored {
         NetworkModes::all_peer()
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGamePointScored {
+impl EventReciever<GameEvents> for ECSSystemGamePointScored {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidInitializeExploration(_) => {

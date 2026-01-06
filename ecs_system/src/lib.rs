@@ -19,10 +19,10 @@ pub fn global_ecs_system(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-            fn _check_system<T: core::gameplay::ecs::traits::ecs_system::ECSSystemEventless>() {}
+            fn _check_system<T: system_component_default_gameplay::ecs_system::ECSSystemEventless>() {}
             _check_system::<#name>();
 
-           core::static_data::global_ecs::register_global_ecs::<#name>();
+           system_component_default_gameplay::static_data::global_ecs::register_global_ecs::<#name>();
         }
     };
 

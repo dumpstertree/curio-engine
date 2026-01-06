@@ -1,26 +1,22 @@
-use crate::component::{
+use crate::{component::{
     component_renderer_animated::RendererAnimated,
     component_renderer_static::Renderer,
-    component_renderer_text::{ComponentRendererText, RendererCommon, update},
-};
+    component_renderer_text::{ComponentRendererText, RendererCommon, update}, component_transform::{Transform, update_transform}, component_transform2d::Transform2D,
+}, ecs_system::ECSSystemEventless, world_context::{WorldContext, WorldContextCommon}};
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
 use core::{
     collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
     gameplay::{
-        ecs::{
-            component::{
-                component_transform::{Transform, update_transform},
-                component_transform2d::Transform2D,
-            },
-            traits::ecs_system::ECSSystemEventless,
-        },
-        world_context::{WorldContext, WorldContextCommon},
+        // ,
+        // world_context::{WorldContext, WorldContextCommon},
     },
 };
-use ecs_system::global_ecs_system;
-use hecs::World;
+// use ecs_system::global_ecs_system;
+// use hecs::World;
 
-#[global_ecs_system]
+// #[global_ecs_system]
+#[derive(Default)]
+
 pub struct SystemRendererUpdateState {}
 impl SystemRendererUpdateState {
     pub fn new() -> Box<SystemRendererUpdateState> {
@@ -76,9 +72,9 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
                     let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz;
 
-                    if !renderer.get_cached_enabled_in_hierarchy() {
-                        continue;
-                    }
+                    // if !renderer.get_cached_enabled_in_hierarchy() {
+                    //     continue;
+                    // }
                     // guard - no mesh
                     let Some(asset) = &renderer.asset else {
                         continue;
@@ -94,13 +90,15 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 }
             });
             world.query_mut::<(&Renderer, &Transform)>(|query| {
+
                 for (_, (renderer, transform)) in query {
+                    // println!( "update {}" ,renderer.asset.clone().unwrap().instance_id);
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
                     // }
-                    if !renderer.get_cached_enabled_in_hierarchy() {
-                        continue;
-                    }
+                    // if !renderer.get_cached_enabled_in_hierarchy() {
+                    //     continue;
+                    // }
                     // guard - no mesh
                     let Some(asset) = &renderer.asset else {
                         continue;
@@ -114,15 +112,21 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                 }
             });
             world.query_mut::<(&mut RendererAnimated, &Transform)>(|query| {
+              let mut i=0;
                 for (_, (renderer, _)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
                     // }
+
+                    println!( "render {}", i);
                     if !renderer.get_cached_enabled_in_hierarchy() {
                         continue;
                     }
+                                        println!( "success {}", i);
+
                     // update all mesh
                     renderer.update_mesh(time);
+                    i +=1;
                 }
             });
 
@@ -149,6 +153,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                     }
                     // guard - no mesh
                     if renderer.asset.is_some() {
+
                         let Some(asset) = &renderer.asset else {
                             continue;
                         };
@@ -156,6 +161,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                         // add draw call
                         for m in &renderer.mesh {
                             for mesh in &m.mesh {
+
                                 x.draw_calls
                                     .push(DrawCall::draw_mesh_single(mesh.clone(), m.materials[0].clone(), transform.get_matrix(), renderer.get_tint(), true));
                             }
@@ -253,6 +259,7 @@ impl ECSSystemEventless for SystemRendererUpdateState {
                             //     x.draw_calls
                             //         .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
                             // }
+
                             x.draw_calls
                                 .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint(), false));
                         }

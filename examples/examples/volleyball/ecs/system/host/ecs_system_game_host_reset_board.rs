@@ -10,17 +10,17 @@ use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::{StateTeamAssignments, Teams};
-use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
 use serde::de;
+use system_component_default_gameplay::ecs_event_reciever::{EventReciever, InstanceLimiter};
+use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::world_context::WorldContext;
 use winit::dpi::Position;
 
 #[global_ecs_system]
@@ -43,7 +43,7 @@ impl InstanceLimiter for ECSSystemGameResetBoard {
     }
 }
 
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameResetBoard {
+impl EventReciever<GameEvents> for ECSSystemGameResetBoard {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ResetBoard(serving_team) => {

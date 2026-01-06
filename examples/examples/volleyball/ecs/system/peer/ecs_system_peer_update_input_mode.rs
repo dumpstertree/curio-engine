@@ -3,14 +3,14 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_input_mode::InputModes;
 use crate::state::peer::state_peer_input_mode::StatePeerInputMode;
 use built_in_state::state_input::InputState;
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
+use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::world_context::WorldContext;
 
 #[global_ecs_system]
 pub struct ECSSystemTurnEnd {}

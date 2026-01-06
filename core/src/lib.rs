@@ -62,29 +62,30 @@ pub mod collections {
     pub mod vector4;
     pub mod vector4_int;
 }
-pub mod prefab;
+// pub mod prefab;
 pub mod random;
 
 mod window {
     pub(crate) mod system_window;
 }
 pub mod gameplay {
-    pub mod world_context;
+    // pub mod world_context;
     pub mod ecs {
         pub mod traits {
-            pub mod ecs_event_reciever;
-            pub mod ecs_system;
+            // pub mod ecs_event_reciever;
+            // pub mod ecs_system;
         }
         pub mod component {
             pub mod component_collider;
-            pub mod component_transform;
-            pub mod component_transform2d;
+            // pub mod component_transform;
+            // pub mod component_transform2d;
         }
     }
 }
 pub mod static_data {
-    pub mod global_ecs;
-    pub mod global_event_recievers;
+    // pub mod global_components;
+    // pub mod global_ecs;
+    // pub mod global_event_recievers;
     pub mod global_events;
     pub mod global_states;
 }
@@ -155,4 +156,8 @@ pub fn main() {
         }
         NetEvent::Disconnected(_endpoint) => println!("Client disconnected"), //Tcp or Ws
     });
+}
+
+pub trait PrefabOverridable {
+    fn apply_override(&mut self, key: &str, value: &str);
 }

@@ -1,19 +1,10 @@
-use built_in::component::{
-    component_input_index::InputIndex,
-    component_renderer_animated::RendererAnimated,
-    component_renderer_static::Renderer,
-    component_renderer_text::{ComponentRendererText, RendererCommon},
-};
+
 use built_in_state::{state_camera::CameraState, state_time::TimeState};
 use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     dumpster_engine::NetworkModes,
     gameplay::{
-        ecs::{
-            component::{component_transform::Transform, component_transform2d::Transform2D},
-            traits::ecs_event_reciever::{self, InstanceLimiter},
-        },
-        world_context::{GameObject, WorldContext, WorldContext2D},
+     
     },
     io::asset_loader::AssetLoader,
 };
@@ -21,7 +12,7 @@ use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use system_component_default_gameplay::{UI, UIPanel};
+use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_static::Renderer, component_renderer_text::{ComponentRendererText, RendererCommon}, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
 
 use crate::{
     AssetMappingUIDs,

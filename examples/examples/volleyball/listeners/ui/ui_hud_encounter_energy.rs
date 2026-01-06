@@ -6,8 +6,7 @@ use core::{
         vector3::Vector3,
     },
     gameplay::{
-        ecs::component::component_transform2d::Transform2D,
-        world_context::{GameObject, WorldContext2D},
+
     },
     io::{
         asset_database::{self, AssetDatabase, AssetDatabaseListing},
@@ -16,9 +15,8 @@ use core::{
 };
 use std::collections::{HashMap, HashSet};
 
-use built_in::component::{component_renderer_animated::RendererAnimated, component_renderer_text::ComponentRendererText};
 use built_in_state::{state_input::InputState, state_time::TimeState};
-use system_component_default_gameplay::{UI, UIPanel};
+use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_animated::RendererAnimated, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
 
 use crate::{
     AssetMappingUIDs,

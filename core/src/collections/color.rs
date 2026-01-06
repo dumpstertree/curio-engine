@@ -6,6 +6,7 @@ use std::fmt::Formatter;
 use std::fmt::Result;
 use std::hash::Hash;
 use std::ops::Mul;
+use std::str::FromStr;
 
 use crate::extensions::extensions_f32::ExtensionsF32;
 
@@ -26,6 +27,73 @@ impl Hash for Color {
         self.g.hash(state);
         self.b.hash(state);
         self.a.hash(state);
+    }
+}
+pub struct ParseError;
+impl FromStr for Color {
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let s = s.trim();
+
+        // ---------- HEX ----------
+        if let Some(hex) = s.strip_prefix('#').or_else(|| s.strip_prefix("0x")) {
+            let bytes = match hex.len() {
+                6 => {
+                    let r = u8::from_str_radix(&hex[0..2], 16).map_err(|_| ParseError)?;
+                    let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| ParseError)?;
+                    let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| ParseError)?;
+                    (r, g, b, 255)
+                }
+                8 => {
+                    let r = u8::from_str_radix(&hex[0..2], 16).map_err(|_| ParseError)?;
+                    let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| ParseError)?;
+                    let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| ParseError)?;
+                    let a = u8::from_str_radix(&hex[6..8], 16).map_err(|_| ParseError)?;
+                    (r, g, b, a)
+                }
+                _ => return Err(ParseError),
+            };
+
+            return Ok(Color {
+                r: bytes.0 as f32 / 255.0,
+                g: bytes.1 as f32 / 255.0,
+                b: bytes.2 as f32 / 255.0,
+                a: bytes.3 as f32 / 255.0,
+            });
+        }
+
+        // ---------- TUPLE ----------
+        if !s.starts_with('(') || !s.ends_with(')') {
+            return Err(ParseError);
+        }
+
+        let inner = &s[1..s.len() - 1];
+        let mut parts = inner.split(',').map(|p| p.trim());
+
+        let r = parts
+            .next()
+            .and_then(|v| v.parse::<f32>().ok())
+            .ok_or(ParseError)?;
+        let g = parts
+            .next()
+            .and_then(|v| v.parse::<f32>().ok())
+            .ok_or(ParseError)?;
+        let b = parts
+            .next()
+            .and_then(|v| v.parse::<f32>().ok())
+            .ok_or(ParseError)?;
+
+        let a = match parts.next() {
+            Some(v) => v.parse::<f32>().map_err(|_| ParseError)?,
+            None => 1.0,
+        };
+
+        if parts.next().is_some() {
+            return Err(ParseError);
+        }
+
+        Ok(Color { r, g, b, a })
     }
 }
 // const

@@ -2,13 +2,17 @@ use built_in_state::{state_debug::StateDebug, state_input::InputState};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
+    // gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
     input::key_code::ButtonCode,
 };
-use ecs_system::global_ecs_system;
-use hecs::World;
 
-#[global_ecs_system]
+use crate::{ecs_system::ECSSystemEventless, world_context::WorldContext};
+// use ecs_system::global_ecs_system;
+// use hecs::World;
+
+// #[global_ecs_system]
+#[derive(Default)]
+
 pub struct SystemDebugToggle {}
 impl SystemDebugToggle {
     pub fn new() -> Box<SystemDebugToggle> {

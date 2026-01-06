@@ -3,23 +3,22 @@ use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionEntities;
-use built_in::component::component_renderer_animated::RendererAnimated;
-use built_in::component::component_renderer_static::Renderer;
 use built_in_state::state_network::StateNetwork;
 use built_in_state::state_time::TimeState;
 use core::collections::quaternion::Quaternion;
 use core::collections::vector3::Vector3;
-use core::gameplay::ecs::component::component_transform::Transform;
-use core::gameplay::world_context::{WorldContext, WorldContextCommon};
 use core::io::asset_loader::AssetLoader;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
 use mcts::Player;
+use system_component_default_gameplay::component::component_renderer_animated::RendererAnimated;
+use system_component_default_gameplay::component::component_transform::Transform;
+use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::world_context::{WorldContext, WorldContextCommon};
 
 #[global_ecs_system]
 pub struct ECSSystemViewMovePlayers {}

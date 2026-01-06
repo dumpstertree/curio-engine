@@ -15,16 +15,16 @@ use built_in_state::state_input::InputState;
 use core::collections::game_state;
 use core::collections::vector2;
 use core::collections::vector2_int::Vector2Int;
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
 use rand::rand_core::le;
 use std::panic;
+use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::world_context::WorldContext;
 
 #[global_ecs_system]
 pub struct System {}

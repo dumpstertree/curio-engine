@@ -8,7 +8,6 @@ use core::{
         vector2::Vector2,
         vector3::Vector3,
     },
-    gameplay::world_context::{GameObject, WorldContext},
     io::{
         asset_loader::{AssetLoader, FontAsset},
         file::File,
@@ -24,9 +23,12 @@ use std::{
 };
 
 use hecs::{Entity, World};
-use rusty_spine::c;
 
-use crate::component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer};
+use crate::{
+    component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer},
+    field_override::FieldDeserialize,
+    world_context::{GameObject, WorldContext},
+};
 
 pub fn update(world: &mut WorldContext) {
     let borrow = world.world.borrow_mut();
@@ -201,6 +203,19 @@ pub struct ComponentRendererText {
     parent: Option<GameObject>,
     tint: Color,
 }
+impl FieldDeserialize for ComponentRendererText {
+    fn override_field(&mut self, field: &str, value: &str) {
+        match field {
+            "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
+            "contents" => self.contents = value.to_string(),
+            "enabled" => self.enabled = value.parse().unwrap_or_default(),
+            "font_size" => self.font_size = value.parse().unwrap_or_default(),
+            "bounds" => self.bounds = value.parse().unwrap_or_default(),
+            _ => {}
+        }
+    }
+}
+
 impl RendererCommon for ComponentRendererText {
     fn set_parent(&mut self, parent: Option<GameObject>) {
         self.parent = parent;

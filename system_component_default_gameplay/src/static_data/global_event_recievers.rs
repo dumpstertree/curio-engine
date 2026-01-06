@@ -1,10 +1,11 @@
+use core::collections::event_queue::IGameEvent;
 use std::{
     any::Any,
     collections::HashMap,
     sync::{LazyLock, RwLock},
 };
 
-use crate::{collections::event_queue::IGameEvent, gameplay::ecs::traits::ecs_event_reciever::EventReciever};
+use crate::ecs_event_reciever::EventReciever;
 
 /// Function that creates a boxed untyped value (what register stores)
 type ReceiverCreateFn = fn() -> Box<dyn Any>;

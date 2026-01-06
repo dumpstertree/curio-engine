@@ -1,11 +1,11 @@
-use core::{collections::color::Color, gameplay::world_context::GameObject, io::model_asset::ModelAsset};
+use crate::{component::component_renderer_text::RendererCommon, field_override::FieldDeserialize, world_context::GameObject};
+use core::{
+    collections::color::Color,
+    io::{asset_loader::AssetLoader, model_asset::ModelAsset},
+};
 use std::sync::Arc;
 
-use hecs::Entity;
-
-use crate::component::component_renderer_text::RendererCommon;
-
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Renderer {
     pub asset: Option<Arc<ModelAsset>>,
     parent: Option<GameObject>,
@@ -13,6 +13,17 @@ pub struct Renderer {
     tint: Color,
     cached_enabled_in_hierachy: bool,
     cached_tint_in_hierachy: Color,
+}
+
+impl FieldDeserialize for Renderer {
+    fn override_field(&mut self, field: &str, value: &str) {
+        match field {
+            "asset" => self.asset = Some(AssetLoader::load_model_static_from_database(value.to_string())),
+            "enabled" => self.enabled = value.parse().unwrap_or_default(),
+            "tint" => self.tint = value.parse().unwrap_or_default(),
+            _ => {}
+        }
+    }
 }
 
 unsafe impl Send for Renderer {}
@@ -25,7 +36,7 @@ impl Renderer {
             parent: None,
             enabled: true,
             tint: Color::white(),
-            cached_enabled_in_hierachy: false,
+            cached_enabled_in_hierachy: true,
             cached_tint_in_hierachy: Color::white(),
         }
     }

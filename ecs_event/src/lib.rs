@@ -106,7 +106,7 @@ pub fn global_ecs_system_event_reciever(attr: TokenStream, item: TokenStream) ->
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-            core::static_data::global_event_recievers::register_global_event_receiver::<#event_path,#receiver_name >();
+            system_component_default_gameplay::static_data::global_event_recievers::register_global_event_receiver::<#event_path,#receiver_name >();
         }
     };
 

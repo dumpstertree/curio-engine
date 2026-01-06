@@ -10,15 +10,12 @@ use crate::{
     },
 };
 use built_in_state::state_time::TimeState;
+use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, ecs_system::ECSSystemEventless, world_context::WorldContext};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     gameplay::{
-        ecs::traits::{
-            ecs_event_reciever::{self, InstanceLimiter},
-            ecs_system::ECSSystemEventless,
-        },
-        world_context::WorldContext,
+
     },
 };
 use ecs_event::global_ecs_system_event_reciever;
@@ -45,7 +42,7 @@ impl ECSSystemEventless for ECSSystemGameTurnBegin {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameTurnBegin {
+impl EventReciever<GameEvents> for ECSSystemGameTurnBegin {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnBegin(id) => {

@@ -1,11 +1,10 @@
 use core::{
     collections::color::Color,
-    gameplay::world_context::GameObject,
-    io::{model_asset::ModelAsset, model_asset_animated::ModelAssetAnimated},
+    io::{asset_loader::AssetLoader, model_asset::ModelAsset, model_asset_animated::ModelAssetAnimated},
 };
 use std::sync::Arc;
 
-use crate::component::component_renderer_text::RendererCommon;
+use crate::{component::component_renderer_text::RendererCommon, field_override::FieldDeserialize, world_context::GameObject};
 
 unsafe impl Send for RendererAnimated {}
 unsafe impl Sync for RendererAnimated {}
@@ -22,6 +21,37 @@ pub struct RendererAnimated {
     looping: bool,
     last_anim: String,
     last_frame_index: i32,
+}
+
+impl Default for RendererAnimated {
+    fn default() -> Self {
+        Self {
+            cached_enabled_in_hierachy: Default::default(),
+            cached_tint_in_hierachy: Default::default(),
+            asset: Default::default(),
+            mesh: Default::default(),
+            animation: Default::default(),
+            parent: Default::default(),
+            enabled: true,
+            tint: Color::white(),
+            looping: Default::default(),
+            last_anim: Default::default(),
+            last_frame_index: Default::default(),
+        }
+    }
+}
+
+impl FieldDeserialize for RendererAnimated {
+    fn override_field(&mut self, field: &str, value: &str) {
+        match field {
+            "asset" => self.asset = Some(AssetLoader::load_model_animated_from_database(value.to_string())),
+            "enabled" => self.enabled = value.parse().unwrap_or_default(),
+            "tint" => self.tint = value.parse().unwrap_or_default(),
+            "animation" => self.animation = value.to_string(),
+            "looping" => self.looping = value.parse().unwrap_or_default(),
+            _ => {}
+        }
+    }
 }
 impl Clone for RendererAnimated {
     fn clone(&self) -> Self {

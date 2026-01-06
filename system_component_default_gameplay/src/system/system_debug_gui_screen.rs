@@ -1,13 +1,17 @@
 use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
+    // gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
-use ecs_system::global_ecs_system;
+// use ecs_system::global_ecs_system;
 use hecs::World;
 
-#[global_ecs_system]
+use crate::{ecs_system::ECSSystemEventless, world_context::WorldContext};
+
+// #[global_ecs_system]
+#[derive(Default)]
+
 pub struct SystemDebugGuiScreen {}
 impl SystemDebugGuiScreen {}
 impl SystemDebugGuiScreen {

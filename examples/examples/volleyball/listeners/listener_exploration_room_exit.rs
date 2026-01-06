@@ -2,14 +2,16 @@ use crate::exploration::exploration_path::RoomTypes;
 use crate::game_events::GameEvents;
 use crate::state::host::state_enounter_mode::StateEncounter;
 use crate::state::host::state_shop::StateShop;
-use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
 use hecs::World;
+use system_component_default_gameplay::{
+    ecs_event_reciever::{self, InstanceLimiter},
+    world_context::WorldContext,
+};
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]

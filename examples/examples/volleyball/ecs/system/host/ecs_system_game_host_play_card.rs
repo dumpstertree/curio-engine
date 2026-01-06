@@ -11,15 +11,13 @@ use core::{
     dumpster_engine::NetworkModes,
     gameplay::{
         ecs::traits::{
-            ecs_event_reciever::{self, InstanceLimiter},
-            ecs_system::ECSSystemEventless,
         },
-        world_context::WorldContext,
     },
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use hecs::World;
+use system_component_default_gameplay::{ecs_event_reciever::{EventReciever, InstanceLimiter}, ecs_system::ECSSystemEventless, world_context::WorldContext};
 use std::vec;
 use winit::event;
 
@@ -43,7 +41,7 @@ impl InstanceLimiter for ECSSystemGameRequestManuever {
         NetworkModes::all_host()
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for ECSSystemGameRequestManuever {
+impl EventReciever<GameEvents> for ECSSystemGameRequestManuever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {

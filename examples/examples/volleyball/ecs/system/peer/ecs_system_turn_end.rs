@@ -4,14 +4,14 @@ use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use crate::state::state_turn::StateTurn;
 use crate::{game_events::GameEvents, state::state_teams::StateTeamAssignments};
 use built_in_state::state_input::InputState;
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 };
 use ecs_system::global_ecs_system;
 use hecs::World;
+use system_component_default_gameplay::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::world_context::WorldContext;
 
 #[global_ecs_system]
 pub struct ECSSystemTurnEnd {}

@@ -1,4 +1,7 @@
 use hecs::World;
+use serde::{Deserialize, Serialize};
+
+// use crate::gameplay::world_context::GameObject;
 
 pub struct Prefab {}
 impl Prefab {
@@ -14,3 +17,9 @@ impl Prefab {
         // set art
     }
 }
+
+// #[derive(Serialize, Deserialize)]
+// pub struct PrefabComponentKeyValuePair {
+//     pub key: String,
+//     pub value: String,
+// }

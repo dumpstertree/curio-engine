@@ -1,3 +1,43 @@
+pub mod ecs_event_reciever;
+pub mod ecs_system;
+pub mod prefab;
+pub mod world_context;
+
+pub mod static_data {
+    pub mod global_components;
+    pub mod global_ecs;
+    pub mod global_event_recievers;
+}
+pub mod component {
+    pub mod component_camera;
+    pub mod component_input_index;
+    pub mod component_renderer_animated;
+    pub mod component_renderer_static;
+    pub mod component_renderer_text;
+    pub mod component_colliders {
+        pub mod component_collider_box;
+        pub mod component_collider_sphere;
+    }
+    pub mod component_light;
+    pub mod component_transform;
+    pub mod component_transform2d;
+}
+pub mod system {
+    pub mod system_camera_update_state;
+    // pub mod system_collider_box_update_state;
+    // pub mod system_collider_sphere_update_state;
+    // pub mod system_debug_camera;
+    // pub mod system_debug_gui_colliders;
+    // pub mod system_debug_gui_collision;
+    // pub mod system_debug_gui_entity;
+    pub mod system_debug_gui_screen;
+    pub mod system_debug_gui_time;
+    pub mod system_debug_toggle;
+    pub mod system_renderer_update_light_state;
+    pub mod system_renderer_update_state;
+}
+pub mod field_override;
+
 use core::{
     collections::{
         event_queue::{self, EventQueue, EventScope, IGameEvent},
@@ -6,20 +46,35 @@ use core::{
         input_cursor::InputAxisState,
         key_state::KeyState,
     },
-    gameplay::{
-        ecs::traits::{ecs_event_reciever::EventReciever, ecs_system::ECSSystemEventless},
-        world_context::{WorldContext, WorldContext2D},
-    },
     input::{
         axis_code::{self, AxisCode},
         key_code::ButtonCode,
     },
-    static_data::{global_ecs::get_global_ecs_instances, global_event_recievers::get_global_event_receivers},
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
 };
 use hecs::{Component, ComponentRef, DynamicBundle, Entity, QueryBorrow, World};
 use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, collections::HashMap, fmt::Display, hash::Hash, marker::PhantomData, rc::Rc, sync::Arc, vec};
+
+use crate::{
+    component::{component_camera::Camera, component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_renderer_text::ComponentRendererText, component_transform::Transform, component_transform2d::Transform2D},
+    ecs_event_reciever::EventReciever,
+    ecs_system::ECSSystemEventless,
+    static_data::{
+        global_components::register_global_component,
+        global_ecs::{get_global_ecs_instances, register_global_ecs},
+        global_event_recievers::get_global_event_receivers,
+    },
+    system::{
+        system_camera_update_state::{self, PostCameraECSSystem},
+        system_debug_gui_screen::SystemDebugGuiScreen,
+        system_debug_gui_time::SystemDebugGuiTime,
+        system_debug_toggle::SystemDebugToggle,
+        system_renderer_update_light_state::{self, SystemRendererUpdateState},
+        system_renderer_update_state,
+    },
+    world_context::{WorldContext, WorldContext2D},
+};
 
 pub struct GameplayInstance<T, U>
 where
@@ -38,12 +93,31 @@ where
     ui: HashMap<U, Box<dyn UIPanel>>,
 }
 
+pub fn register_built_in_component() {
+    register_global_component::<Transform>();
+    register_global_component::<Transform2D>();
+    register_global_component::<Camera>();
+    register_global_component::<ComponentLight>();
+    register_global_component::<Renderer>();
+    register_global_component::<RendererAnimated>();
+    register_global_component::<ComponentRendererText>();
+}
+pub fn register_built_in_ecs() {
+    register_global_ecs::<PostCameraECSSystem>();
+    register_global_ecs::<SystemDebugGuiScreen>();
+    register_global_ecs::<SystemDebugGuiTime>();
+    register_global_ecs::<SystemDebugToggle>();
+    register_global_ecs::<system_renderer_update_light_state::SystemRendererUpdateState>();
+    register_global_ecs::<system_renderer_update_state::SystemRendererUpdateState>();
+}
+
 impl<T, U> GameplayInstance<T, U>
 where
     T: IGameEvent + Clone + 'static,
     U: IUIEvent + Clone + 'static,
 {
     pub fn new() -> GameplayInstance<T, U> {
+        //
         let w = Rc::new(RefCell::new(World::new()));
         //create the world everything is in
         let world = WorldContext::new(w.clone());
@@ -227,6 +301,12 @@ where
     U: IUIEvent + 'static,
 {
     pub fn new() -> Box<SystemComponentDefaultGameplay<T, U>> {
+        // register any built in components to static data
+
+        register_built_in_ecs();
+        register_built_in_component();
+
+        // return instance
         Box::new(SystemComponentDefaultGameplay::<T, U> { game_instance: vec![] })
     }
 }
@@ -235,7 +315,7 @@ where
     T: IGameEvent + Display + 'static + Clone,
     U: IUIEvent + 'static,
 {
-    fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECSSystemEventless>>) {}
+    // fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECSSystemEventless>>) {}
 }
 impl<T, U> SystemComponent for SystemComponentDefaultGameplay<T, U>
 where

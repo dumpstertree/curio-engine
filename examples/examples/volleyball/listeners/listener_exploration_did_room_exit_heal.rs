@@ -2,13 +2,13 @@ use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
-use core::gameplay::ecs::traits::ecs_event_reciever::{self, InstanceLimiter};
-use core::gameplay::world_context::WorldContext;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use ecs_event::global_ecs_system_event_reciever;
+use system_component_default_gameplay::ecs_event_reciever::{EventReciever, InstanceLimiter};
+use system_component_default_gameplay::world_context::WorldContext;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
@@ -22,7 +22,7 @@ impl InstanceLimiter for Listener {
         NetworkModes::all_peer()
     }
 }
-impl ecs_event_reciever::EventReciever<GameEvents> for Listener {
+impl EventReciever<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomExitHeal(_) => {

@@ -1,13 +1,11 @@
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2},
     gameplay::{
-        ecs::component::component_transform2d::Transform2D,
-        world_context::{GameObject, WorldContext2D},
+
     },
 };
 
-use built_in::component::component_renderer_text::ComponentRendererText;
-use system_component_default_gameplay::{UI, UIPanel};
+use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
 
 use crate::state::{
     host::{
@@ -22,7 +20,7 @@ use crate::state::{
 pub struct UIHUD {
     go_health: Option<GameObject>,
     go_gold: Option<GameObject>,
-    go_cards_cnt: Option<GameObject>,
+    go_cards_cnt: Option<GameObject>
 }
 impl UIHUD {
     pub fn new() -> Box<UIHUD> {
