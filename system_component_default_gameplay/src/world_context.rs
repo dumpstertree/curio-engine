@@ -7,15 +7,6 @@ use hecs::{Component, Entity, QueryMut, World};
 use crate::component::component_transform::Transform;
 use crate::component::component_transform2d::Transform2D;
 use crate::static_data::global_components::get_global_ecs_instances;
-// use crate::global_components::get_global_ecs_instances;
-
-// use cgmath::Vector3;
-// use hecs::{Component, Entity, Query, QueryBorrow, QueryMut, World};
-// use rapier3d::na;
-
-// use crate::gameplay::ecs::component::component_transform::Transform;
-// use crate::prefab::PrefabGameObject;
-// use crate::static_data::global_components::get_global_ecs_instances;
 
 pub trait WorldContextCommon {
     /// Removes all entities and components.

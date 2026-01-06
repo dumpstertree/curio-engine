@@ -1,6 +1,9 @@
 use built_in_state::state_input::InputState;
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
+use system_component_default_gameplay::{
+    traits::{habit::Habit, scope::Scope},
+    world_context::WorldContext,
+};
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -24,12 +27,9 @@ use crate::{
 };
 
 #[global_ecs_system]
-pub struct ECSSystemTurnMove {}
-impl ECSSystemEventless for ECSSystemTurnMove {
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
-    }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -39,15 +39,12 @@ impl ECSSystemEventless for ECSSystemTurnMove {
             && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
             && !game_state.get::<StateExploration>().is_selecting_next
             && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
-
-        // let is_turn = game_state.get::<StateTurn>().active_instance_id
-        //     == game_state
-        //         .get::<StateTeamAssignments>()
-        //         .team_for(&game_state.instance_id)
-        //         .unwrap();
-
-        // is_turn && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
     }
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_peer()
+    }
+}
+impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
         // currently serving and cant move
         let state_ball = game_state.get::<StateBallMode>();

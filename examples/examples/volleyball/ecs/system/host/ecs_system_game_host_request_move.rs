@@ -10,11 +10,11 @@ use core::{
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use system_component_default_gameplay::{
-    traits::{ecs_system::ECSSystemEventless, event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    traits::{habit::Habit, impulse::Impulse, scope::Scope},
     world_context::WorldContext,
 };
 
-#[global_ecs_system]
+#[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameRequestMove {}
 impl ECSSystemGameRequestMove {
@@ -53,15 +53,7 @@ impl ECSSystemGameRequestMove {
         return true;
     }
 }
-impl ECSSystemEventless for ECSSystemGameRequestMove {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    }
-}
-impl InstanceLimiter for ECSSystemGameRequestMove {
+impl Scope for ECSSystemGameRequestMove {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
@@ -69,7 +61,7 @@ impl InstanceLimiter for ECSSystemGameRequestMove {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl EventReciever<GameEvents> for ECSSystemGameRequestMove {
+impl Impulse<GameEvents> for ECSSystemGameRequestMove {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestMoveZPos(id) => {

@@ -1,28 +1,13 @@
-use core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
-};
-
-// use crate::{
-//     collections::{event_queue::EventQueue, game_state::GameState},
-//     dumpster_engine::NetworkModes,
-//     gameplay::world_context::WorldContext,
-// };
+use core::collections::{event_queue::EventQueue, game_state::GameState};
 use hecs::World;
-use intertrait::CastFrom;
 
-use crate::world_context::WorldContext;
+use crate::{traits::scope::Scope, world_context::WorldContext};
 
-pub trait ECSSystemEventless: CastFrom {
+pub trait Habit: Scope {
     // data
     fn order(&self, _: &GameState, _: &World) -> i32 {
         0
     }
-    fn is_enabled(&mut self, game_state: &mut GameState, world: &mut WorldContext) -> bool;
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::LocalPeer, NetworkModes::OnlineHost, NetworkModes::OnlinePeer]
-    }
-
     // init
     fn init(&mut self, _: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {}
 

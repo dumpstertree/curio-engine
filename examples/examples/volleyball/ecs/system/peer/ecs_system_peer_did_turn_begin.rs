@@ -31,8 +31,8 @@ use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use std::vec;
 use system_component_default_gameplay::{
-    traits::ecs_system::ECSSystemEventless,
-    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    traits::habit::Habit,
+    traits::{impulse::Impulse, scope::Scope},
     world_context::WorldContext,
 };
 
@@ -40,12 +40,12 @@ use crate::state::state_teams::StateTeamAssignments;
 
 #[global_ecs_system]
 #[global_ecs_system_event_reciever(GameEvents)]
-pub struct ECSSystemPeerStart {
+pub struct Instance {
     lastmove: f64,
     move_time: f64,
 }
-impl ECSSystemEventless for ECSSystemPeerStart {
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         let state_team = game_state.get::<StateTeamAssignments>();
         let active_team = game_state.get::<StateTurn>().active_instance_id;
         let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
@@ -66,9 +66,11 @@ impl ECSSystemEventless for ECSSystemPeerStart {
             == RoomTypes::Combat
             && any_ai
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
+}
+impl Habit for Instance {
     fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
     fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         self.move_time = 3.0;
@@ -147,15 +149,15 @@ impl ECSSystemEventless for ECSSystemPeerStart {
         }
     }
 }
-impl InstanceLimiter for ECSSystemPeerStart {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        NetworkModes::all_host()
-    }
-}
-impl EventReciever<GameEvents> for ECSSystemPeerStart {
+// impl Scope for Instance {
+//     fn is_enabled(&mut self, _: &mut GameState) -> bool {
+//         true
+//     }
+//     fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+//         NetworkModes::all_host()
+//     }
+// }
+impl Impulse<GameEvents> for Instance {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidTurnBegin(id) => {}

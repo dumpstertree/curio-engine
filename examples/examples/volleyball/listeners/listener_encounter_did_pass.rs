@@ -6,14 +6,14 @@ use core::{
 };
 use ecs_event::global_ecs_system_event_reciever;
 use system_component_default_gameplay::UIEvents;
-use system_component_default_gameplay::traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter};
+use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
 use system_component_default_gameplay::world_context::WorldContext;
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGamePointScored {}
 
-impl InstanceLimiter for ECSSystemGamePointScored {
+impl Scope for ECSSystemGamePointScored {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
@@ -21,7 +21,7 @@ impl InstanceLimiter for ECSSystemGamePointScored {
         NetworkModes::all_peer()
     }
 }
-impl EventReciever<GameEvents> for ECSSystemGamePointScored {
+impl Impulse<GameEvents> for ECSSystemGamePointScored {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidEncounterPass => {

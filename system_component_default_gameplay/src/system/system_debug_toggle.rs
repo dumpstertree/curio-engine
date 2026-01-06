@@ -2,31 +2,30 @@ use built_in_state::{state_debug::StateDebug, state_input::InputState};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    // gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
     input::key_code::ButtonCode,
 };
 
-use crate::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
-// use ecs_system::global_ecs_system;
-// use hecs::World;
+use crate::{
+    traits::{habit::Habit, scope::Scope},
+    world_context::WorldContext,
+};
 
-// #[global_ecs_system]
 #[derive(Default)]
-
-pub struct SystemDebugToggle {}
-impl SystemDebugToggle {
-    pub fn new() -> Box<SystemDebugToggle> {
-        Box::new(SystemDebugToggle {})
+pub struct Instance {}
+impl Instance {
+    pub fn new() -> Box<Instance> {
+        Box::new(Instance {})
     }
 }
-
-impl ECSSystemEventless for SystemDebugToggle {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
-        true
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+        game_state.get::<StateDebug>().is_inspecting
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_host()
     }
+}
+impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         // get state
         let state_input = game_state.get::<InputState>();

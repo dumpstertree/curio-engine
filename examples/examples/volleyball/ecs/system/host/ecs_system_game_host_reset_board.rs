@@ -13,25 +13,17 @@ use core::{
 };
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::world_context::WorldContext;
 use system_component_default_gameplay::{
     UIEvents,
-    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    traits::{impulse::Impulse, scope::Scope},
 };
 
-#[global_ecs_system]
+#[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameResetBoard {}
-impl ECSSystemEventless for ECSSystemGameResetBoard {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    }
-}
-impl InstanceLimiter for ECSSystemGameResetBoard {
+impl Scope for ECSSystemGameResetBoard {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
@@ -40,7 +32,7 @@ impl InstanceLimiter for ECSSystemGameResetBoard {
     }
 }
 
-impl EventReciever<GameEvents> for ECSSystemGameResetBoard {
+impl Impulse<GameEvents> for ECSSystemGameResetBoard {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ResetBoard(serving_team) => {

@@ -11,22 +11,14 @@ use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use std::sync::Arc;
 use system_component_default_gameplay::{
-    traits::{ecs_system::ECSSystemEventless, event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    traits::{habit::Habit, impulse::Impulse, scope::Scope},
     world_context::WorldContext,
 };
 
-#[global_ecs_system]
+#[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameRequestManuever {}
-impl ECSSystemEventless for ECSSystemGameRequestManuever {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    }
-}
-impl InstanceLimiter for ECSSystemGameRequestManuever {
+impl Scope for ECSSystemGameRequestManuever {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
@@ -34,7 +26,7 @@ impl InstanceLimiter for ECSSystemGameRequestManuever {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl EventReciever<GameEvents> for ECSSystemGameRequestManuever {
+impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {

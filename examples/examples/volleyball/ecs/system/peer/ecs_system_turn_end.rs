@@ -8,16 +8,16 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::{habit::Habit, scope::Scope};
 use system_component_default_gameplay::world_context::WorldContext;
 
 #[global_ecs_system]
-pub struct ECSSystemTurnEnd {}
-impl ECSSystemEventless for ECSSystemTurnEnd {
+pub struct Instance {}
+impl Scope for Instance {
     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -32,6 +32,8 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
         //         .team_for(&game_state.instance_id)
         //         .unwrap()
     }
+}
+impl Habit for Instance {
     fn enable(&mut self, _: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         println!("enabled turn end");
     }

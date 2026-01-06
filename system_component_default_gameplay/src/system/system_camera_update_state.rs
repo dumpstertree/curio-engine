@@ -1,22 +1,28 @@
 use built_in_state::{state_camera::CameraState, state_debug::StateDebug};
-use core::collections::{event_queue::EventQueue, game_state::GameState};
+use core::{
+    collections::{event_queue::EventQueue, game_state::GameState},
+    dumpster_engine::NetworkModes,
+};
 // use ecs_system::global_ecs_system;
 
 use crate::{
     component::{component_camera::Camera, component_transform::Transform},
-    traits::ecs_system::ECSSystemEventless,
+    traits::{habit::Habit, scope::Scope},
     world_context::{WorldContext, WorldContextCommon},
 };
 
 // #[global_ecs_system]
 #[derive(Default)]
-
-pub struct PostCameraECSSystem {}
-impl PostCameraECSSystem {}
-impl ECSSystemEventless for PostCameraECSSystem {
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
         true
     }
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all()
+    }
+}
+impl Habit for Instance {
     fn tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         if state.get::<StateDebug>().is_paused {
             return;

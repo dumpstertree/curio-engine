@@ -1,8 +1,8 @@
 use ecs_event::global_ecs_system_event_reciever;
 use ecs_system::global_ecs_system;
 use system_component_default_gameplay::{
-    traits::ecs_system::ECSSystemEventless,
-    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    traits::habit::Habit,
+    traits::{impulse::Impulse, scope::Scope},
     world_context::WorldContext,
 };
 
@@ -17,21 +17,10 @@ use crate::{
     state::state_position_ball::StatePositionBall,
 };
 
-#[global_ecs_system]
+#[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct ECSSystemGameEndTurn {}
-impl ECSSystemEventless for ECSSystemGameEndTurn {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
-        true
-    }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    }
-    // fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-    //     vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
-    // }
-}
-impl InstanceLimiter for ECSSystemGameEndTurn {
+impl Scope for ECSSystemGameEndTurn {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
@@ -39,7 +28,7 @@ impl InstanceLimiter for ECSSystemGameEndTurn {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl EventReciever<GameEvents> for ECSSystemGameEndTurn {
+impl Impulse<GameEvents> for ECSSystemGameEndTurn {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnEnd(team) => {

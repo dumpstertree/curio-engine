@@ -20,7 +20,8 @@ use core::dumpster_engine::NetworkModes;
 use core::extensions::extensions_i32::ExtensionsI32;
 use ecs_system::global_ecs_system;
 use std::sync::Arc;
-use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::habit::Habit;
+use system_component_default_gameplay::traits::scope::Scope;
 use system_component_default_gameplay::world_context::WorldContext;
 
 pub struct ResponseBuilder {
@@ -172,32 +173,19 @@ impl AttributeBuilder {
     }
 }
 #[global_ecs_system]
-pub struct ECSSystemTurnManuever {
+pub struct Instance {
     builder: Option<ResponseBuilder>,
 }
-impl ECSSystemTurnManuever {}
-impl ECSSystemEventless for ECSSystemTurnManuever {
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
-    }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
-        // let is_turn = game_state.get::<StateTurn>().active_instance_id
-        //     == game_state
-        //         .get::<StateTeamAssignments>()
-        //         .team_for(&game_state.instance_id)
-        //         .unwrap();
-
-        // is_turn &&
-        // game_state
-        // .get::<StateExploration>()
-        // .exploration
-        // .get_cur_room()
-        // .room_type
-        // == RoomTypes::Combat
-        // && game_state.get::<StatePeerInputMode>().mode == InputModes::Manuever
-        /*&&*/
+impl Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         !game_state.get::<StateExploration>().is_selecting_next
     }
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_peer()
+    }
+}
+impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
         let team = game_state
             .get::<StateTeamAssignments>()
@@ -333,7 +321,7 @@ impl ECSSystemEventless for ECSSystemTurnManuever {
     }
 }
 
-impl ECSSystemTurnManuever {
+impl Instance {
     async fn fill_all_attributes_async(game_state: GameState, card: Arc<CardInstance>) -> (Arc<CardInstance>, FilledCardResponse) {
         println!("did start");
         // set flag -> true

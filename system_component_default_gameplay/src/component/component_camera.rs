@@ -1,7 +1,6 @@
-
 use serde::Deserialize;
 
-use crate::field_override::FieldDeserialize;
+use crate::traits::field_override::FieldOverride;
 
 #[derive(Default, Deserialize, Clone)]
 pub struct Camera {
@@ -14,8 +13,8 @@ impl Camera {
     }
 }
 
-impl FieldDeserialize for Camera {
-    fn override_field(&mut self, key: &str, value: &str) {
+impl FieldOverride for Camera {
+    fn apply(&mut self, key: &str, value: &str) {
         match value {
             "fov" => self.fov = value.parse().unwrap_or_default(),
             _ => {}

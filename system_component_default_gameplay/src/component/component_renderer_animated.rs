@@ -4,7 +4,7 @@ use core::{
 };
 use std::sync::Arc;
 
-use crate::{component::component_renderer_text::RendererCommon, field_override::FieldDeserialize, world_context::GameObject};
+use crate::{component::component_renderer_text::RendererCommon, traits::field_override::FieldOverride, world_context::GameObject};
 
 unsafe impl Send for RendererAnimated {}
 unsafe impl Sync for RendererAnimated {}
@@ -40,8 +40,8 @@ impl Default for RendererAnimated {
     }
 }
 
-impl FieldDeserialize for RendererAnimated {
-    fn override_field(&mut self, field: &str, value: &str) {
+impl FieldOverride for RendererAnimated {
+    fn apply(&mut self, field: &str, value: &str) {
         match field {
             "asset" => self.asset = Some(AssetLoader::load_model_animated_from_database(value.to_string())),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),

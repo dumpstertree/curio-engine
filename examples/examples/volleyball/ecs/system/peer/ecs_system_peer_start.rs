@@ -2,7 +2,7 @@ use built_in_state::{state_camera::CameraState, state_sun::StateSun};
 use ecs_system::global_ecs_system;
 use system_component_default_gameplay::{
     component::{component_camera::Camera, component_transform::Transform},
-    traits::ecs_system::ECSSystemEventless,
+    traits::{habit::Habit, scope::Scope},
     world_context::{WorldContext, WorldContextCommon},
 };
 
@@ -15,14 +15,16 @@ use core::{
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 
 #[global_ecs_system]
-pub struct ECSSystemPeerStart {}
-impl ECSSystemEventless for ECSSystemPeerStart {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_peer()
     }
+}
+impl Habit for Instance {
     fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         println!("Instance: {}. Peer Init", game_state.instance_id);
     }

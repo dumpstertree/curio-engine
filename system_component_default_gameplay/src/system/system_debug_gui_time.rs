@@ -1,27 +1,30 @@
 use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug, state_time::TimeState};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    // gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
+    dumpster_engine::NetworkModes,
 };
 
-use crate::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
-// use ecs_system::global_ecs_system;
-// use hecs::World;
+use crate::{
+    traits::{habit::Habit, scope::Scope},
+    world_context::WorldContext,
+};
 
-// #[global_ecs_system]
 #[derive(Default)]
-
-pub struct SystemDebugGuiTime {}
-impl SystemDebugGuiTime {
-    pub fn new() -> Box<SystemDebugGuiTime> {
-        Box::new(SystemDebugGuiTime {})
+pub struct Instance {}
+impl Instance {
+    pub fn new() -> Box<Instance> {
+        Box::new(Instance {})
     }
 }
-
-impl ECSSystemEventless for SystemDebugGuiTime {
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         game_state.get::<StateDebug>().is_inspecting
     }
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all()
+    }
+}
+impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         // get state
         let state_time = game_state.get::<TimeState>();

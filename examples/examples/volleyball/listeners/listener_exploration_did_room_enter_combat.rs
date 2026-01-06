@@ -24,14 +24,17 @@ use ecs_event::global_ecs_system_event_reciever;
 use system_component_default_gameplay::component::component_renderer_animated::RendererAnimated;
 use system_component_default_gameplay::component::component_renderer_static::Renderer;
 use system_component_default_gameplay::component::component_transform::Transform;
-use system_component_default_gameplay::{UIEvents, traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter}};
 use system_component_default_gameplay::world_context::{WorldContext, WorldContextCommon};
+use system_component_default_gameplay::{
+    UIEvents,
+    traits::{impulse::Impulse, scope::Scope},
+};
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct Listener {}
 
-impl InstanceLimiter for Listener {
+impl Scope for Listener {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
@@ -39,7 +42,7 @@ impl InstanceLimiter for Listener {
         NetworkModes::all_peer()
     }
 }
-impl EventReciever<GameEvents> for Listener {
+impl Impulse<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomEnterCombat(_, _) => {

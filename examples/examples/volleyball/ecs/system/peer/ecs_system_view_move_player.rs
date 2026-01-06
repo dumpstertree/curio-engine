@@ -12,18 +12,21 @@ use core::{
 use ecs_system::global_ecs_system;
 use system_component_default_gameplay::component::component_renderer_animated::RendererAnimated;
 use system_component_default_gameplay::component::component_transform::Transform;
-use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::habit::Habit;
+use system_component_default_gameplay::traits::scope::Scope;
 use system_component_default_gameplay::world_context::{WorldContext, WorldContextCommon};
 
 #[global_ecs_system]
-pub struct ECSSystemViewMovePlayers {}
-impl ECSSystemEventless for ECSSystemViewMovePlayers {
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        NetworkModes::all_peer()
-    }
-    fn is_enabled(&mut self, _game_state: &mut GameState, _: &mut WorldContext) -> bool {
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         true
     }
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_peer()
+    }
+}
+impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
         let state_position_player = game_state.get::<StatePositionEntities>();
         let state_time = game_state.get::<TimeState>();

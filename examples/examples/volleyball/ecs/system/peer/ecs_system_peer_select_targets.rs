@@ -14,16 +14,14 @@ use core::{
 };
 use ecs_system::global_ecs_system;
 use std::panic;
-use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::habit::Habit;
+use system_component_default_gameplay::traits::scope::Scope;
 use system_component_default_gameplay::world_context::WorldContext;
 
 #[global_ecs_system]
-pub struct System {}
-impl ECSSystemEventless for System {
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
-    }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -31,7 +29,11 @@ impl ECSSystemEventless for System {
             .room_type
             == RoomTypes::Combat
     }
-
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_peer()
+    }
+}
+impl Habit for Instance {
     fn enable(&mut self, _: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
         let state_select_targets = game_state.get::<StatePeerSelectTargets>();
@@ -122,7 +124,7 @@ impl ECSSystemEventless for System {
         }
     }
 }
-impl System {
+impl Instance {
     fn get_all_tiles(&self, game_state: &GameState, target_type: AttributeTargetTypesTiles) -> Vec<Vector2Int> {
         match target_type {
             AttributeTargetTypesTiles::SelectAny => GameBoard::get_tiles(),

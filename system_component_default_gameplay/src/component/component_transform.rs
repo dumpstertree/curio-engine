@@ -5,7 +5,7 @@ use hecs::World;
 
 use crate::{
     component::component_transform2d::Transform2D,
-    field_override::FieldDeserialize,
+    traits::field_override::FieldOverride,
     world_context::{GameObject, WorldContext},
 };
 
@@ -17,8 +17,8 @@ pub struct Transform {
     pub scale: Vector3,
     pub ws_matrix: Matrix4x4,
 }
-impl FieldDeserialize for Transform {
-    fn override_field(&mut self, field: &str, val: &str) {
+impl FieldOverride for Transform {
+    fn apply(&mut self, field: &str, val: &str) {
         match field {
             "position" => self.position = val.parse().unwrap_or_default(),
             "rotation" => self.rotation = Quaternion::from_euler(val.parse().unwrap_or_default()),

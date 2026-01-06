@@ -1,4 +1,4 @@
-use crate::{component::component_renderer_text::RendererCommon, field_override::FieldDeserialize, world_context::GameObject};
+use crate::{component::component_renderer_text::RendererCommon, traits::field_override::FieldOverride, world_context::GameObject};
 use core::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset},
@@ -15,8 +15,8 @@ pub struct Renderer {
     cached_tint_in_hierachy: Color,
 }
 
-impl FieldDeserialize for Renderer {
-    fn override_field(&mut self, field: &str, value: &str) {
+impl FieldOverride for Renderer {
+    fn apply(&mut self, field: &str, value: &str) {
         match field {
             "asset" => self.asset = Some(AssetLoader::load_model_static_from_database(value.to_string())),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),

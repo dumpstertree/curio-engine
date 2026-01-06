@@ -10,14 +10,14 @@ use ecs_event::global_ecs_system_event_reciever;
 use system_component_default_gameplay::world_context::WorldContext;
 use system_component_default_gameplay::{
     UIEvents,
-    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    traits::{impulse::Impulse, scope::Scope},
 };
 
 #[derive(Default)]
 #[global_ecs_system_event_reciever(GameEvents)]
 pub struct Listener {}
 
-impl InstanceLimiter for Listener {
+impl Scope for Listener {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
@@ -25,7 +25,7 @@ impl InstanceLimiter for Listener {
         NetworkModes::all_host()
     }
 }
-impl EventReciever<GameEvents> for Listener {
+impl Impulse<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestPurchase(user_id, instance_id) => {

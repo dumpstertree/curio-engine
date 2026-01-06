@@ -8,16 +8,14 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::traits::ecs_system::ECSSystemEventless;
+use system_component_default_gameplay::traits::habit::Habit;
+use system_component_default_gameplay::traits::scope::Scope;
 use system_component_default_gameplay::world_context::WorldContext;
 
 #[global_ecs_system]
-pub struct ECSSystemTurnEnd {}
-impl ECSSystemEventless for ECSSystemTurnEnd {
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
-    }
-    fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -25,6 +23,11 @@ impl ECSSystemEventless for ECSSystemTurnEnd {
             .room_type
             == RoomTypes::Combat
     }
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_peer()
+    }
+}
+impl Habit for Instance {
     fn enable(&mut self, _: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
         let state_input = game_state.get::<InputState>();

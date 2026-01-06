@@ -1,8 +1,8 @@
 use core::collections::{event_queue::EventQueue, game_state::GameState};
 
-use crate::{traits::instance_scope::InstanceLimiter, world_context::WorldContext};
+use crate::{traits::scope::Scope, world_context::WorldContext};
 
-pub trait EventReciever<T>: InstanceLimiter
+pub trait Impulse<T>: Scope
 where
     T: Clone,
 {

@@ -6,28 +6,31 @@ use crate::{
         component_transform::{Transform, update_transform},
         component_transform2d::Transform2D,
     },
-    traits::ecs_system::ECSSystemEventless,
+    traits::{habit::Habit, scope::Scope},
     world_context::{WorldContext, WorldContextCommon},
 };
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
-use core::collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
-// use ecs_system::global_ecs_system;
-// use hecs::World;
+use core::{
+    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
+    dumpster_engine::NetworkModes,
+};
 
-// #[global_ecs_system]
 #[derive(Default)]
-
-pub struct SystemRendererUpdateState {}
-impl SystemRendererUpdateState {
-    pub fn new() -> Box<SystemRendererUpdateState> {
-        Box::new(SystemRendererUpdateState {})
+pub struct Instance {}
+impl Instance {
+    pub fn new() -> Box<Instance> {
+        Box::new(Instance {})
     }
 }
-impl ECSSystemEventless for SystemRendererUpdateState {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         true
     }
-
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all()
+    }
+}
+impl Habit for Instance {
     fn did_tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         let state_camera = state.get::<CameraState>();
 

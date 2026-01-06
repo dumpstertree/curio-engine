@@ -1,10 +1,10 @@
-pub mod prefab;
 pub mod world_context;
 
 pub mod traits {
-    pub mod ecs_system;
-    pub mod event_reciever;
-    pub mod instance_scope;
+    pub mod field_override;
+    pub mod habit;
+    pub mod impulse;
+    pub mod scope;
 }
 pub mod static_data {
     pub mod global_components;
@@ -27,19 +27,12 @@ pub mod component {
 }
 pub mod system {
     pub mod system_camera_update_state;
-    // pub mod system_collider_box_update_state;
-    // pub mod system_collider_sphere_update_state;
-    // pub mod system_debug_camera;
-    // pub mod system_debug_gui_colliders;
-    // pub mod system_debug_gui_collision;
-    // pub mod system_debug_gui_entity;
     pub mod system_debug_gui_screen;
     pub mod system_debug_gui_time;
     pub mod system_debug_toggle;
     pub mod system_renderer_update_light_state;
     pub mod system_renderer_update_state;
 }
-pub mod field_override;
 
 use core::{
     collections::{
@@ -64,14 +57,11 @@ use crate::{
         global_event_recievers::get_global_event_receivers,
     },
     system::{
-        system_camera_update_state::PostCameraECSSystem,
-        system_debug_gui_screen::SystemDebugGuiScreen,
-        system_debug_gui_time::SystemDebugGuiTime,
-        system_debug_toggle::SystemDebugToggle,
+        system_camera_update_state::Instance,
         system_renderer_update_light_state::{self},
         system_renderer_update_state,
     },
-    traits::{ecs_system::ECSSystemEventless, event_reciever::EventReciever},
+    traits::{habit::Habit, impulse::Impulse},
     world_context::{WorldContext, WorldContext2D},
 };
 
@@ -86,8 +76,8 @@ where
     // game_state: GameState,
     world: WorldContext,
     world_2d: WorldContext2D,
-    ecs_systems: Vec<(Box<dyn ECSSystemEventless>, bool)>,
-    event_recievers: Vec<Box<dyn EventReciever<T>>>,
+    ecs_systems: Vec<(Box<dyn Habit>, bool)>,
+    event_recievers: Vec<Box<dyn Impulse<T>>>,
 
     ui: HashMap<U, Box<dyn UIPanel>>,
 }
@@ -102,12 +92,12 @@ pub fn register_built_in_component() {
     register_global_component::<ComponentRendererText>();
 }
 pub fn register_built_in_ecs() {
-    register_global_ecs::<PostCameraECSSystem>();
-    register_global_ecs::<SystemDebugGuiScreen>();
-    register_global_ecs::<SystemDebugGuiTime>();
-    register_global_ecs::<SystemDebugToggle>();
-    register_global_ecs::<system_renderer_update_light_state::SystemRendererUpdateState>();
-    register_global_ecs::<system_renderer_update_state::SystemRendererUpdateState>();
+    register_global_ecs::<Instance>();
+    register_global_ecs::<Instance>();
+    register_global_ecs::<Instance>();
+    register_global_ecs::<Instance>();
+    register_global_ecs::<system_renderer_update_light_state::Instance>();
+    register_global_ecs::<system_renderer_update_state::Instance>();
 }
 
 impl<T, U> GameplayInstance<T, U>
@@ -170,7 +160,7 @@ where
 
             // get cur state of enable
             let is_enabled = ecs_system.1;
-            let should_be_enabled = ecs_system.0.is_enabled(game_state, &mut self.world);
+            let should_be_enabled = ecs_system.0.is_enabled(game_state);
 
             // enable
             if should_be_enabled && !is_enabled {

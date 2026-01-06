@@ -1,26 +1,17 @@
 use core::{
-    collections::{
-        color::Color,
-        matrix4x4::Matrix4x4,
-        quaternion::Quaternion,
-        vector2::Vector2,
-        vector3::Vector3,
-    },
+    collections::{color::Color, matrix4x4::Matrix4x4, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     io::{
         asset_loader::{AssetLoader, FontAsset},
         model_asset::ModelAsset,
     },
 };
-use std::{
-    cell::RefMut,
-    sync::Arc,
-};
+use std::{cell::RefMut, sync::Arc};
 
 use hecs::World;
 
 use crate::{
     component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer},
-    field_override::FieldDeserialize,
+    traits::field_override::FieldOverride,
     world_context::{GameObject, WorldContext},
 };
 
@@ -197,8 +188,8 @@ pub struct ComponentRendererText {
     parent: Option<GameObject>,
     tint: Color,
 }
-impl FieldDeserialize for ComponentRendererText {
-    fn override_field(&mut self, field: &str, value: &str) {
+impl FieldOverride for ComponentRendererText {
+    fn apply(&mut self, field: &str, value: &str) {
         match field {
             "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
             "contents" => self.contents = value.to_string(),

@@ -2,28 +2,29 @@ use built_in_state::state_time::TimeState;
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
-    // gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 };
 
-use crate::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
-// use ecs_system::global_ecs_system;
-// use hecs::World;
+use crate::{
+    traits::{habit::Habit, scope::Scope},
+    world_context::WorldContext,
+};
 
-// #[global_ecs_system]
 #[derive(Default)]
-pub struct SystemRendererUpdateState {}
-impl SystemRendererUpdateState {
-    pub fn new() -> Box<SystemRendererUpdateState> {
-        Box::new(SystemRendererUpdateState {})
+pub struct Instance {}
+impl Instance {
+    pub fn new() -> Box<Instance> {
+        Box::new(Instance {})
     }
 }
-impl ECSSystemEventless for SystemRendererUpdateState {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
-        vec![NetworkModes::LocalHost]
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        NetworkModes::all_host()
     }
+}
+impl Habit for Instance {
     fn enable(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         // game_state.edit::<StateSun>(|x| {
         //     x.cast_shadows = true;

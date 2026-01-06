@@ -3,7 +3,7 @@ use core::collections::{color::Color, light_uniform::LightType, vector3::Vector3
 // use macro_component::global_component;
 use serde::Deserialize;
 
-use crate::field_override::FieldDeserialize;
+use crate::traits::field_override::FieldOverride;
 
 #[derive(Default, Deserialize)]
 pub struct ComponentLight {
@@ -24,8 +24,8 @@ impl ComponentLight {
         }
     }
 }
-impl FieldDeserialize for ComponentLight {
-    fn override_field(&mut self, field: &str, value: &str) {
+impl FieldOverride for ComponentLight {
+    fn apply(&mut self, field: &str, value: &str) {
         match field {
             // "type" => self.asset = value.parse().unwrap_or_default(),
             "direction" => self.direction = value.parse().unwrap_or_default(),

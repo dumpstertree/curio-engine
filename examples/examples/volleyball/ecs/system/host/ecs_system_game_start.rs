@@ -1,6 +1,9 @@
 use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::global_ecs_system;
-use system_component_default_gameplay::{traits::ecs_system::ECSSystemEventless, world_context::WorldContext};
+use system_component_default_gameplay::{
+    traits::{habit::Habit, scope::Scope},
+    world_context::WorldContext,
+};
 
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -16,14 +19,16 @@ use crate::{
 };
 
 #[global_ecs_system]
-pub struct ECSSystemGameStart {}
-impl ECSSystemEventless for ECSSystemGameStart {
-    fn is_enabled(&mut self, _: &mut GameState, _: &mut WorldContext) -> bool {
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
+}
+impl Habit for Instance {
     fn enable(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
         println!("Instance: {}. Host Startup", game_state.instance_id);
 

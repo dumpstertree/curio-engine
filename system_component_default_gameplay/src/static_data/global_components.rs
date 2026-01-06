@@ -4,8 +4,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-
-use crate::{field_override::FieldDeserialize, world_context::GameObject};
+use crate::{traits::field_override::FieldOverride, world_context::GameObject};
 
 /// Function that creates a boxed untyped value (what register stores)
 type AddComponentFn = fn(&mut GameObject, &Vec<String>) -> bool;
@@ -18,7 +17,7 @@ static COMPONENT_REGISTRY: LazyLock<RwLock<ReceiverRegistry>> = LazyLock::new(||
 
 pub fn register_global_component<T>()
 where
-    T: Default + hecs::Component + FieldDeserialize,
+    T: Default + hecs::Component + FieldOverride,
 {
     let key = type_name::<T>()
         .split("::")
@@ -39,7 +38,7 @@ where
         let mut val = T::default();
         for e in y {
             let mut s = e.split(":");
-            val.override_field(s.next().unwrap(), s.next().unwrap());
+            val.apply(s.next().unwrap(), s.next().unwrap());
         }
         // let asset = serde_yaml::from_str::<T>(&serialized);
         // if let Err(e) = asset {

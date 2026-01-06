@@ -5,7 +5,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use crate::traits::event_reciever::EventReciever;
+use crate::traits::impulse::Impulse;
 
 /// Function that creates a boxed untyped value (what register stores)
 type ReceiverCreateFn = fn() -> Box<dyn Any>;
@@ -21,7 +21,7 @@ static RECEIVER_REGISTRY: LazyLock<RwLock<ReceiverRegistry>> = LazyLock::new(|| 
 pub fn register_global_event_receiver<T, R>()
 where
     T: IGameEvent + Clone + 'static,
-    R: EventReciever<T> + Default + Any + 'static,
+    R: Impulse<T> + Default + Any + 'static,
 {
     let mut reg = RECEIVER_REGISTRY.write().expect("Registry poisoned");
 
@@ -32,11 +32,11 @@ where
         .or_insert_with(Vec::new)
         .push(|| {
             // create concrete receiver R, upcast to Box<dyn EventReciever<T>>, then erase to Any
-            let boxed_receiver: Box<dyn EventReciever<T>> = Box::new(R::default());
+            let boxed_receiver: Box<dyn Impulse<T>> = Box::new(R::default());
             Box::new(boxed_receiver) as Box<dyn Any>
         });
 }
-pub fn get_global_event_receivers<T>() -> Vec<Box<dyn EventReciever<T>>>
+pub fn get_global_event_receivers<T>() -> Vec<Box<dyn Impulse<T>>>
 where
     T: IGameEvent + Clone + 'static,
 {
@@ -48,8 +48,8 @@ where
             .iter()
             .map(|creator| {
                 let boxed_any = creator(); // Box<dyn Any> containing Box<dyn EventReciever<T>>
-                let boxed_receiver: Box<dyn EventReciever<T>> = *boxed_any
-                    .downcast::<Box<dyn EventReciever<T>>>()
+                let boxed_receiver: Box<dyn Impulse<T>> = *boxed_any
+                    .downcast::<Box<dyn Impulse<T>>>()
                     .expect("Type downcast failed for EventReciever<T>");
                 boxed_receiver
             })

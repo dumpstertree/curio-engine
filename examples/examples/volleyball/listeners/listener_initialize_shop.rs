@@ -5,7 +5,7 @@ use core::{
 
 use ecs_event::global_ecs_system_event_reciever;
 use system_component_default_gameplay::{
-    traits::{event_reciever::EventReciever, instance_scope::InstanceLimiter},
+    traits::{impulse::Impulse, scope::Scope},
     world_context::WorldContext,
 };
 
@@ -16,7 +16,7 @@ use crate::{game_events::GameEvents, state::host::state_shop::StateShop};
 pub struct Listener {}
 
 // Impl - Instance
-impl InstanceLimiter for Listener {
+impl Scope for Listener {
     fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
         true
     }
@@ -25,7 +25,7 @@ impl InstanceLimiter for Listener {
     }
 }
 // Impl - Listener
-impl EventReciever<GameEvents> for Listener {
+impl Impulse<GameEvents> for Listener {
     fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::InitializeShop(shop) => {

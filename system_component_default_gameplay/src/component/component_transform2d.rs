@@ -4,7 +4,7 @@ use std::cell::RefMut;
 use hecs::World;
 
 use crate::{
-    field_override::FieldDeserialize,
+    traits::field_override::FieldOverride,
     world_context::{GameObject, WorldContext},
 };
 
@@ -17,8 +17,8 @@ pub struct Transform2D {
     ws_matrix: Matrix4x4,
     render_order: i32,
 }
-impl FieldDeserialize for Transform2D {
-    fn override_field(&mut self, field: &str, val: &str) {
+impl FieldOverride for Transform2D {
+    fn apply(&mut self, field: &str, val: &str) {
         match field {
             "position" => self.position = val.parse().unwrap_or_default(),
             "rotation" => self.rotation = Quaternion::from_euler(val.parse().unwrap_or_default()),
