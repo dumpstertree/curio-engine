@@ -21,14 +21,12 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
-use system_component_default_gameplay::component::component_renderer_animated::RendererAnimated;
-use system_component_default_gameplay::component::component_renderer_static::Renderer;
-use system_component_default_gameplay::component::component_transform::Transform;
+use system_component_default_gameplay::built_in::facet::facet_renderer::component_renderer_animated::RendererAnimated;
+use system_component_default_gameplay::built_in::facet::facet_renderer::component_renderer_static::Renderer;
+use system_component_default_gameplay::built_in::facet::facet_transform::component_transform::Transform;
+use system_component_default_gameplay::built_in::impulse::ui_events::UIEvents;
+use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
 use system_component_default_gameplay::world_context_3d::WorldContext;
-use system_component_default_gameplay::{
-    UIEvents,
-    traits::{impulse::Impulse, scope::Scope},
-};
 
 #[derive(Default)]
 #[impulse(GameEvents)]
@@ -60,13 +58,13 @@ impl Impulse<GameEvents> for Listener {
 
                 // change ui
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::Encounter));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterBallMode));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterEnergy));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterScore));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterTurn));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudPreviouslyPlayed));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HUDHeat));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Open(UIViewTypes::HudEncounterCards));
+                event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudEncounterBallMode));
+                event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudEncounterEnergy));
+                event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudEncounterScore));
+                event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudEncounterTurn));
+                event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudPreviouslyPlayed));
+                event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HUDHeat));
+                event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudEncounterCards));
             }
             _ => {}
         }

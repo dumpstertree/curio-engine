@@ -7,11 +7,9 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
+use system_component_default_gameplay::built_in::impulse::ui_events::UIEvents;
+use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
 use system_component_default_gameplay::world_context_3d::WorldContext;
-use system_component_default_gameplay::{
-    UIEvents,
-    traits::{impulse::Impulse, scope::Scope},
-};
 
 #[derive(Default)]
 #[impulse(GameEvents)]
@@ -40,14 +38,14 @@ impl Impulse<GameEvents> for Listener {
                 // change ui
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::None));
 
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterBallMode));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterTurn));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterScore));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterEnergy));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudPreviouslyPlayed));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::PanelRewards));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HUDHeat));
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::HudEncounterCards));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::HudEncounterBallMode));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::HudEncounterTurn));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::HudEncounterScore));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::HudEncounterEnergy));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::HudPreviouslyPlayed));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::PanelRewards));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::HUDHeat));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::HudEncounterCards));
             }
             _ => {}
         }

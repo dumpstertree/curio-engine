@@ -1,9 +1,9 @@
 use built_in_state::state_time::TimeState;
 use ecs_system::habit;
 use system_component_default_gameplay::{
-    component::{component_camera::Camera, component_transform::Transform},
+    built_in::facet::{component_camera::Camera, facet_transform::component_transform::Transform},
     traits::{habit::Habit, scope::Scope},
-    world_context_common::WorldContextCommon,
+    traits_internal::world_context_common::WorldContextCommon,
     world_context_3d::WorldContext,
 };
 

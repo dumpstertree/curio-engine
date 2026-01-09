@@ -1,4 +1,4 @@
-use crate::{component::component_renderer_text::RendererCommon, gameobject::GameObject, traits::field_override::FieldOverride};
+use crate::{built_in::facet::facet_renderer::component_renderer_text::RendererCommon, gameobject::GameObject, traits::field_override::FieldOverride};
 use core::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset},

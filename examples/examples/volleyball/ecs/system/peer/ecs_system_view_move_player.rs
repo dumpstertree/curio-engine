@@ -10,11 +10,11 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::habit;
-use system_component_default_gameplay::component::component_renderer_animated::RendererAnimated;
-use system_component_default_gameplay::component::component_transform::Transform;
+use system_component_default_gameplay::built_in::facet::facet_renderer::component_renderer_animated::RendererAnimated;
+use system_component_default_gameplay::built_in::facet::facet_transform::component_transform::Transform;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::world_context_common::WorldContextCommon;
+use system_component_default_gameplay::traits_internal::world_context_common::WorldContextCommon;
 use system_component_default_gameplay::world_context_3d::WorldContext;
 
 #[habit]

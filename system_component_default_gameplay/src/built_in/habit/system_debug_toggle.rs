@@ -1,12 +1,12 @@
-use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug, state_time::TimeState};
+use built_in_state::{state_debug::StateDebug, state_input::InputState};
 use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
+    input::key_code::ButtonCode,
 };
 
 use crate::{
     traits::{habit::Habit, scope::Scope},
-    world_context_common::WorldContextCommon,
     world_context_3d::WorldContext,
 };
 
@@ -22,19 +22,21 @@ impl Scope for Instance {
         game_state.get::<StateDebug>().is_inspecting
     }
     fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
-        NetworkModes::all()
+        NetworkModes::all_host()
     }
 }
 impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
         // get state
-        let state_time = game_state.get::<TimeState>();
+        let state_input = game_state.get::<InputState>();
 
-        game_state.edit::<GUIStateDebug>(|x| {
-            x.append(format!("FPS: {} / Target FPS: {}", state_time.average_fps, state_time.target_frame_rate));
-            x.append(format!("Scaled Time: {}", state_time.scaled_time));
-            x.append(format!("Unscaled Time: {}", state_time.unscaled_time));
-            x.append(format!("Frame Num: {}", state_time.frame_num));
-        });
+        // get input button
+        let debug_button = state_input.raw.get_button(&ButtonCode::Backquote);
+        if debug_button.went_up {
+            // flip the toggle
+            game_state.edit::<StateDebug>(|x| {
+                x.is_inspecting = !x.is_inspecting;
+            });
+        }
     }
 }

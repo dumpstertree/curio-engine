@@ -1,13 +1,17 @@
 use crate::{
-    component::{
-        component_renderer_animated::RendererAnimated,
-        component_renderer_static::Renderer,
-        component_renderer_text::{ComponentRendererText, RendererCommon, update},
-        component_transform::{Transform, update_transform},
-        component_transform2d::Transform2D,
+    built_in::facet::{
+        facet_renderer::{
+            component_renderer_animated::RendererAnimated,
+            component_renderer_static::Renderer,
+            component_renderer_text::{ComponentRendererText, RendererCommon, update},
+        },
+        facet_transform::{
+            component_transform::{Transform, update_transform},
+            component_transform2d::Transform2D,
+        },
     },
     traits::{habit::Habit, scope::Scope},
-    world_context_common::WorldContextCommon,
+    traits_internal::world_context_common::WorldContextCommon,
     world_context_3d::WorldContext,
 };
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};

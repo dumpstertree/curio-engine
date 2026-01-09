@@ -12,13 +12,8 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
-use ecs_system::habit;
-use system_component_default_gameplay::traits::habit::Habit;
+use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
 use system_component_default_gameplay::world_context_3d::WorldContext;
-use system_component_default_gameplay::{
-    UIEvents,
-    traits::{impulse::Impulse, scope::Scope},
-};
 
 #[derive(Default)]
 #[impulse(GameEvents)]

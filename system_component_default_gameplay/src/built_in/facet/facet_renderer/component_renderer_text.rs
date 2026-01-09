@@ -10,7 +10,7 @@ use std::{cell::RefMut, sync::Arc};
 use hecs::World;
 
 use crate::{
-    component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer},
+    built_in::facet::facet_renderer::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer},
     gameobject::GameObject,
     traits::field_override::FieldOverride,
     world_context_3d::WorldContext,

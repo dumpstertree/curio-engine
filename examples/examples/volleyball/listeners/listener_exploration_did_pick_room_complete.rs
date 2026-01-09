@@ -8,7 +8,7 @@ use core::{
 use ecs_event::impulse;
 use system_component_default_gameplay::world_context_3d::WorldContext;
 use system_component_default_gameplay::{
-    UIEvents,
+    built_in::impulse::ui_events::UIEvents,
     traits::{impulse::Impulse, scope::Scope},
 };
 
@@ -34,7 +34,7 @@ impl Impulse<GameEvents> for Listener {
                 });
 
                 // turn off ui
-                event_queue.enqueue_event(system_component_default_gameplay::UIEvents::Close(UIViewTypes::PanelExploration));
+                event_queue.enqueue_event(UIEvents::Close(UIViewTypes::PanelExploration));
             }
             _ => {}
         }

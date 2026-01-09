@@ -1,6 +1,6 @@
-use crate::component::component_transform::Transform;
+use crate::built_in::facet::facet_transform::component_transform::Transform;
 use crate::gameobject::GameObject;
-use crate::world_context_common::WorldContextCommon;
+use crate::traits_internal::world_context_common::WorldContextCommon;
 use hecs::World;
 use std::cell::RefCell;
 use std::rc::Rc;

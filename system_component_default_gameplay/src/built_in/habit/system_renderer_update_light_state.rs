@@ -6,7 +6,6 @@ use core::{
 
 use crate::{
     traits::{habit::Habit, scope::Scope},
-    world_context_common::WorldContextCommon,
     world_context_3d::WorldContext,
 };
 

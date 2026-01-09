@@ -2,9 +2,10 @@ use core::collections::{event_queue::EventQueue, game_state::GameState, vector2:
 
 use built_in_state::state_input::InputState;
 use system_component_default_gameplay::{
-    UI, UIPanel,
-    component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D},
+    built_in::facet::{facet_renderer::component_renderer_text::ComponentRendererText, facet_transform::component_transform2d::Transform2D},
     gameobject::GameObject,
+    traits::ui_panel::UIPanel,
+    traits_internal::ui_common::UICommon,
     world_context_2d::WorldContext2D,
 };
 
@@ -24,7 +25,7 @@ impl UIPanel for UIPanelInstance {
 
     fn input_axis(&mut self, axis: core::input::axis_code::AxisCode, state: core::collections::input_cursor::InputAxisState) {}
 }
-impl UI for UIPanelInstance {
+impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {

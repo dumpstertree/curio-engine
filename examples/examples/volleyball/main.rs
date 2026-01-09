@@ -220,7 +220,10 @@ use core::{
 };
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
-use system_component_default_gameplay::{IUIEvent, SystemComponentDefaultGameplay};
+use system_component_default_gameplay::{
+    SystemComponentDefaultGameplay,
+    traits::{ui_events::IUIEvent, ui_panel::UIPanel},
+};
 use system_component_default_input::SystemComponentDefaultInput;
 use system_component_default_networking::SystemComponentDefaultNetworking;
 use system_component_default_physics::SystemComponentDefaultPhysics;
@@ -340,7 +343,7 @@ enum UIViewTypes {
     HudPreviouslyPlayed,
 }
 impl IUIEvent for UIViewTypes {
-    fn new_instance(&self) -> Box<dyn system_component_default_gameplay::UIPanel> {
+    fn new_instance(&self) -> Box<dyn UIPanel> {
         match self {
             UIViewTypes::HudEncounterCards => ui_hud_encounter_cards::UIHUDInstance::new(),
             UIViewTypes::PanelMedic => ui_panel_medic::UIPanelMedic::new(),

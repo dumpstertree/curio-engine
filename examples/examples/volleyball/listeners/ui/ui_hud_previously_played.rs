@@ -6,13 +6,16 @@ use std::sync::Arc;
 
 use built_in_state::state_time::TimeState;
 use system_component_default_gameplay::{
-    UI, UIPanel,
-    component::{
-        component_renderer_static::Renderer,
-        component_renderer_text::{ComponentRendererText, RendererCommon},
-        component_transform2d::Transform2D,
+    built_in::facet::{
+        facet_renderer::{
+            component_renderer_static::Renderer,
+            component_renderer_text::{ComponentRendererText, RendererCommon},
+        },
+        facet_transform::component_transform2d::Transform2D,
     },
     gameobject::GameObject,
+    traits::ui_panel::UIPanel,
+    traits_internal::ui_common::UICommon,
     world_context_2d::WorldContext2D,
 };
 
@@ -37,7 +40,7 @@ impl UIPanel for UIHUD {
     fn input_button(&mut self, _button: core::input::key_code::ButtonCode, _state: core::collections::key_state::KeyState) {}
     fn input_axis(&mut self, _axis: core::input::axis_code::AxisCode, _state: core::collections::input_cursor::InputAxisState) {}
 }
-impl UI for UIHUD {
+impl UICommon for UIHUD {
     fn init(&mut self) {}
     fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {}
     fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {}

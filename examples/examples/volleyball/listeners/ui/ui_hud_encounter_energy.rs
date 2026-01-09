@@ -5,9 +5,10 @@ use core::{
 use std::collections::HashMap;
 
 use system_component_default_gameplay::{
-    UI, UIPanel,
-    component::{component_renderer_animated::RendererAnimated, component_transform2d::Transform2D},
+    built_in::facet::{facet_renderer::component_renderer_animated::RendererAnimated, facet_transform::component_transform2d::Transform2D},
     gameobject::GameObject,
+    traits::ui_panel::UIPanel,
+    traits_internal::ui_common::UICommon,
     world_context_2d::WorldContext2D,
 };
 
@@ -32,7 +33,7 @@ impl UIPanel for UIHUD {
     fn input_button(&mut self, button: core::input::key_code::ButtonCode, state: core::collections::key_state::KeyState) {}
     fn input_axis(&mut self, axis: core::input::axis_code::AxisCode, state: core::collections::input_cursor::InputAxisState) {}
 }
-impl UI for UIHUD {
+impl UICommon for UIHUD {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
