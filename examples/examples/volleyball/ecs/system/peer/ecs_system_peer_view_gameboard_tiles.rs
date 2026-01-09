@@ -20,15 +20,17 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_system::global_ecs_system;
+use system_component_default_gameplay::world_context_3d::WorldContext;
+
+use ecs_system::habit;
 use system_component_default_gameplay::component::component_renderer_static::Renderer;
 use system_component_default_gameplay::component::component_renderer_text::RendererCommon;
 use system_component_default_gameplay::component::component_transform::Transform;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::world_context::{WorldContext, WorldContextCommon};
+use system_component_default_gameplay::world_context_common::WorldContextCommon;
 
-#[global_ecs_system]
+#[habit]
 pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, game_state: &mut GameState) -> bool {

@@ -11,8 +11,9 @@ use hecs::World;
 
 use crate::{
     component::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer},
+    gameobject::GameObject,
     traits::field_override::FieldOverride,
-    world_context::{GameObject, WorldContext},
+    world_context_3d::WorldContext,
 };
 
 pub fn update(world: &mut WorldContext) {

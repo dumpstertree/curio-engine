@@ -1,15 +1,15 @@
 use core::{
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-        vector2::Vector2,
-        vector3::Vector3,
-    },
+    collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2, vector3::Vector3},
     io::asset_loader::AssetLoader,
 };
 use std::collections::HashMap;
 
-use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_animated::RendererAnimated, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
+use system_component_default_gameplay::{
+    UI, UIPanel,
+    component::{component_renderer_animated::RendererAnimated, component_transform2d::Transform2D},
+    gameobject::GameObject,
+    world_context_2d::WorldContext2D,
+};
 
 use crate::{
     AssetMappingUIDs,

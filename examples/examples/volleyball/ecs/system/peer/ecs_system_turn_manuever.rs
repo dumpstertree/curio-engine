@@ -18,11 +18,11 @@ use built_in_state::state_input::InputState;
 use core::collections::{event_queue::EventQueue, game_state::GameState};
 use core::dumpster_engine::NetworkModes;
 use core::extensions::extensions_i32::ExtensionsI32;
-use ecs_system::global_ecs_system;
+use ecs_system::habit;
 use std::sync::Arc;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::world_context::WorldContext;
+use system_component_default_gameplay::world_context_3d::WorldContext;
 
 pub struct ResponseBuilder {
     card_instance: Arc<CardInstance>,
@@ -172,7 +172,7 @@ impl AttributeBuilder {
         }
     }
 }
-#[global_ecs_system]
+#[habit]
 pub struct Instance {
     builder: Option<ResponseBuilder>,
 }

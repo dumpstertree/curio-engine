@@ -27,19 +27,18 @@ use core::{
     dumpster_engine::NetworkModes,
     system::system_game_state::IState,
 };
-use ecs_event::global_ecs_system_event_reciever;
-use ecs_system::global_ecs_system;
+use ecs_event::impulse;
+use ecs_system::habit;
 use std::vec;
 use system_component_default_gameplay::{
-    traits::habit::Habit,
-    traits::{impulse::Impulse, scope::Scope},
-    world_context::WorldContext,
+    traits::{habit::Habit, impulse::Impulse, scope::Scope},
+    world_context_3d::WorldContext,
 };
 
 use crate::state::state_teams::StateTeamAssignments;
 
-#[global_ecs_system]
-#[global_ecs_system_event_reciever(GameEvents)]
+#[habit]
+#[impulse(GameEvents)]
 pub struct Instance {
     lastmove: f64,
     move_time: f64,

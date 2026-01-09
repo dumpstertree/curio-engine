@@ -1,10 +1,18 @@
-
 use core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
-use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_static::Renderer, component_renderer_text::{ComponentRendererText, RendererCommon}, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
+use system_component_default_gameplay::{
+    UI, UIPanel,
+    component::{
+        component_renderer_static::Renderer,
+        component_renderer_text::{ComponentRendererText, RendererCommon},
+        component_transform2d::Transform2D,
+    },
+    gameobject::GameObject,
+    world_context_2d::WorldContext2D,
+};
 
 use crate::{
     AssetMappingUIDs,

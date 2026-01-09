@@ -3,12 +3,13 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-// use ecs_system::global_ecs_system;
+// use ecs_system::habit;
 
 use crate::{
     component::{component_camera::Camera, component_transform::Transform},
     traits::{habit::Habit, scope::Scope},
-    world_context::{WorldContext, WorldContextCommon},
+    world_context_common::WorldContextCommon,
+    world_context_3d::WorldContext,
 };
 
 // #[global_ecs_system]

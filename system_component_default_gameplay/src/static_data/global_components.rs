@@ -4,7 +4,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use crate::{traits::field_override::FieldOverride, world_context::GameObject};
+use crate::{gameobject::GameObject, traits::field_override::FieldOverride};
 
 /// Function that creates a boxed untyped value (what register stores)
 type AddComponentFn = fn(&mut GameObject, &Vec<String>) -> bool;

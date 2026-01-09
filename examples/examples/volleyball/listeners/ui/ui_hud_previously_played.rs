@@ -1,12 +1,5 @@
 use core::{
-    collections::{
-        color::Color,
-        event_queue::EventQueue,
-        game_state::GameState,
-        quaternion::Quaternion,
-        vector2::Vector2,
-        vector3::Vector3,
-    },
+    collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
@@ -19,17 +12,15 @@ use system_component_default_gameplay::{
         component_renderer_text::{ComponentRendererText, RendererCommon},
         component_transform2d::Transform2D,
     },
-    world_context::{GameObject, WorldContext2D},
+    gameobject::GameObject,
+    world_context_2d::WorldContext2D,
 };
 
 use crate::{
     AssetMappingUIDs,
     cards::card_instance::CardInstance,
     ecs::components::component_card::ComponentCard,
-    state::{
-        host::state_play_history::StatePlayHistory,
-        state_deck::CardTypes,
-    },
+    state::{host::state_play_history::StatePlayHistory, state_deck::CardTypes},
 };
 
 pub struct UIHUD {

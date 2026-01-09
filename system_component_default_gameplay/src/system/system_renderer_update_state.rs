@@ -7,7 +7,8 @@ use crate::{
         component_transform2d::Transform2D,
     },
     traits::{habit::Habit, scope::Scope},
-    world_context::{WorldContext, WorldContextCommon},
+    world_context_common::WorldContextCommon,
+    world_context_3d::WorldContext,
 };
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
 use core::{

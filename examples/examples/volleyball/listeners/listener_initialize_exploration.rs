@@ -3,10 +3,10 @@ use core::{
     dumpster_engine::NetworkModes,
     random::Random,
 };
-use ecs_event::global_ecs_system_event_reciever;
+use ecs_event::impulse;
 use system_component_default_gameplay::{
     traits::{impulse::Impulse, scope::Scope},
-    world_context::WorldContext,
+    world_context_3d::WorldContext,
 };
 
 use crate::{
@@ -24,7 +24,7 @@ use crate::{
 };
 
 #[derive(Default)]
-#[global_ecs_system_event_reciever(GameEvents)]
+#[impulse(GameEvents)]
 pub struct Listener {}
 
 // Impl - Instance

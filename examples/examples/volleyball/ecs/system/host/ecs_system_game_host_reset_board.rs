@@ -11,17 +11,17 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_event::global_ecs_system_event_reciever;
-use ecs_system::global_ecs_system;
+use ecs_event::impulse;
+use ecs_system::habit;
 use system_component_default_gameplay::traits::habit::Habit;
-use system_component_default_gameplay::world_context::WorldContext;
+use system_component_default_gameplay::world_context_3d::WorldContext;
 use system_component_default_gameplay::{
     UIEvents,
     traits::{impulse::Impulse, scope::Scope},
 };
 
 #[derive(Default)]
-#[global_ecs_system_event_reciever(GameEvents)]
+#[impulse(GameEvents)]
 pub struct ECSSystemGameResetBoard {}
 impl Scope for ECSSystemGameResetBoard {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {

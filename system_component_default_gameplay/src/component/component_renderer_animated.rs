@@ -4,7 +4,7 @@ use core::{
 };
 use std::sync::Arc;
 
-use crate::{component::component_renderer_text::RendererCommon, traits::field_override::FieldOverride, world_context::GameObject};
+use crate::{component::component_renderer_text::RendererCommon, gameobject::GameObject, traits::field_override::FieldOverride};
 
 unsafe impl Send for RendererAnimated {}
 unsafe impl Sync for RendererAnimated {}

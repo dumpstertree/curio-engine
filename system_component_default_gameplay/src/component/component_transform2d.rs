@@ -3,10 +3,7 @@ use std::cell::RefMut;
 
 use hecs::World;
 
-use crate::{
-    traits::field_override::FieldOverride,
-    world_context::{GameObject, WorldContext},
-};
+use crate::{gameobject::GameObject, traits::field_override::FieldOverride, world_context_3d::WorldContext};
 
 #[derive(Clone)]
 pub struct Transform2D {

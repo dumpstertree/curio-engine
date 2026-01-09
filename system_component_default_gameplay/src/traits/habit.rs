@@ -1,7 +1,7 @@
 use core::collections::{event_queue::EventQueue, game_state::GameState};
 use hecs::World;
 
-use crate::{traits::scope::Scope, world_context::WorldContext};
+use crate::{traits::scope::Scope, world_context_3d::WorldContext};
 
 pub trait Habit: Scope {
     // data

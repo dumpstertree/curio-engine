@@ -1,6 +1,6 @@
 use core::collections::{event_queue::EventQueue, game_state::GameState};
 
-use crate::{traits::scope::Scope, world_context::WorldContext};
+use crate::{traits::scope::Scope, world_context_3d::WorldContext};
 
 pub trait Impulse<T>: Scope
 where

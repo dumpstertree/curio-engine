@@ -20,18 +20,18 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_event::global_ecs_system_event_reciever;
+use ecs_event::impulse;
 use system_component_default_gameplay::component::component_renderer_animated::RendererAnimated;
 use system_component_default_gameplay::component::component_renderer_static::Renderer;
 use system_component_default_gameplay::component::component_transform::Transform;
-use system_component_default_gameplay::world_context::{WorldContext, WorldContextCommon};
+use system_component_default_gameplay::world_context_3d::WorldContext;
 use system_component_default_gameplay::{
     UIEvents,
     traits::{impulse::Impulse, scope::Scope},
 };
 
 #[derive(Default)]
-#[global_ecs_system_event_reciever(GameEvents)]
+#[impulse(GameEvents)]
 pub struct Listener {}
 
 impl Scope for Listener {

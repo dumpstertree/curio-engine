@@ -1,17 +1,18 @@
 use core::collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2};
 
-use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
+use system_component_default_gameplay::{
+    UI, UIPanel,
+    component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D},
+    gameobject::GameObject,
+    world_context_2d::WorldContext2D,
+};
 
-use crate::state::host::{
-        state_currency::StateCurrency,
-        state_deck_exploration::StateDeckExploration,
-        state_health_exploration::StateHealthExploration,
-    };
+use crate::state::host::{state_currency::StateCurrency, state_deck_exploration::StateDeckExploration, state_health_exploration::StateHealthExploration};
 
 pub struct UIHUD {
     go_health: Option<GameObject>,
     go_gold: Option<GameObject>,
-    go_cards_cnt: Option<GameObject>
+    go_cards_cnt: Option<GameObject>,
 }
 impl UIHUD {
     pub fn new() -> Box<UIHUD> {

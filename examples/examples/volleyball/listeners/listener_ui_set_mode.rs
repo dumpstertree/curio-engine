@@ -2,17 +2,17 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_event::global_ecs_system_event_reciever;
+use ecs_event::impulse;
 use serde::{Deserialize, Serialize};
 use system_component_default_gameplay::{
     traits::{impulse::Impulse, scope::Scope},
-    world_context::WorldContext,
+    world_context_3d::WorldContext,
 };
 
 use crate::game_events::GameEvents;
 
 #[derive(Default)]
-#[global_ecs_system_event_reciever(GameEvents)]
+#[impulse(GameEvents)]
 pub struct Listener {
     uimode: UITypes,
 }

@@ -1,8 +1,8 @@
 use built_in_state::state_input::InputState;
-use ecs_system::global_ecs_system;
+use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, scope::Scope},
-    world_context::WorldContext,
+    world_context_3d::WorldContext,
 };
 
 use core::{
@@ -26,7 +26,7 @@ use crate::{
     },
 };
 
-#[global_ecs_system]
+#[habit]
 pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, game_state: &mut GameState) -> bool {

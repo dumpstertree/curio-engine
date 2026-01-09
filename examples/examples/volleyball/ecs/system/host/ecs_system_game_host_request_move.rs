@@ -7,15 +7,15 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
 };
-use ecs_event::global_ecs_system_event_reciever;
-use ecs_system::global_ecs_system;
+use ecs_event::impulse;
+use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
-    world_context::WorldContext,
+    world_context_3d::WorldContext,
 };
 
 #[derive(Default)]
-#[global_ecs_system_event_reciever(GameEvents)]
+#[impulse(GameEvents)]
 pub struct ECSSystemGameRequestMove {}
 impl ECSSystemGameRequestMove {
     fn check_energy(game_state: &mut GameState, id: i32) -> bool {

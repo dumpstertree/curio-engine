@@ -1,9 +1,10 @@
 use built_in_state::state_time::TimeState;
-use ecs_system::global_ecs_system;
+use ecs_system::habit;
 use system_component_default_gameplay::{
     component::{component_camera::Camera, component_transform::Transform},
     traits::{habit::Habit, scope::Scope},
-    world_context::{WorldContext, WorldContextCommon},
+    world_context_common::WorldContextCommon,
+    world_context_3d::WorldContext,
 };
 
 use core::{
@@ -16,7 +17,7 @@ use crate::{
     state::{peer::state_peer_select_targets::StatePeerSelectTargets, state_position_ball::StatePositionBall, state_position_player::StatePositionEntities, state_teams::Teams, state_turn::StateTurn},
 };
 
-#[global_ecs_system]
+#[habit]
 pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, game_state: &mut GameState) -> bool {

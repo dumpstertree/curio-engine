@@ -1,4 +1,7 @@
-pub mod world_context;
+pub mod gameobject;
+pub mod world_context_2d;
+pub mod world_context_3d;
+pub mod world_context_common;
 
 pub mod traits {
     pub mod field_override;
@@ -62,7 +65,8 @@ use crate::{
         system_renderer_update_state,
     },
     traits::{habit::Habit, impulse::Impulse},
-    world_context::{WorldContext, WorldContext2D},
+    world_context_2d::WorldContext2D,
+    world_context_3d::WorldContext,
 };
 
 pub struct GameplayInstance<T, U>

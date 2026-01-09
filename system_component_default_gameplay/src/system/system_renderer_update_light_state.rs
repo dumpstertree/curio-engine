@@ -6,7 +6,8 @@ use core::{
 
 use crate::{
     traits::{habit::Habit, scope::Scope},
-    world_context::WorldContext,
+    world_context_common::WorldContextCommon,
+    world_context_3d::WorldContext,
 };
 
 #[derive(Default)]
@@ -82,7 +83,7 @@ impl Habit for Instance {
 //     },
 //     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 // };
-// use ecs_system::global_ecs_system;
+// use ecs_system::habit;
 // use hecs::World;
 
 // #[global_ecs_system]

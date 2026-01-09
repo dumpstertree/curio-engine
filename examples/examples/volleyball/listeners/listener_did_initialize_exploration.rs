@@ -4,15 +4,15 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_event::global_ecs_system_event_reciever;
-use system_component_default_gameplay::world_context::WorldContext;
+use ecs_event::impulse;
+use system_component_default_gameplay::world_context_3d::WorldContext;
 use system_component_default_gameplay::{
     UIEvents,
     traits::{impulse::Impulse, scope::Scope},
 };
 
 #[derive(Default)]
-#[global_ecs_system_event_reciever(GameEvents)]
+#[impulse(GameEvents)]
 pub struct ECSSystemGamePointScored {}
 
 impl Scope for ECSSystemGamePointScored {

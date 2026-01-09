@@ -2,7 +2,7 @@ use core::{collections::state_ownerships::StateOwnerships, system::system_game_s
 use std::{collections::HashMap, hash::Hash};
 
 use macro_state::global_state;
-use system_component_default_gameplay::world_context::GameObject;
+use system_component_default_gameplay::gameobject::GameObject;
 
 #[global_state]
 pub struct StateEntityIDs {

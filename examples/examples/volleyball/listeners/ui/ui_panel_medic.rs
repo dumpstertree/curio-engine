@@ -1,7 +1,12 @@
 use core::collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2, vector3::Vector3};
 
 use built_in_state::{state_input::InputState, state_time::TimeState};
-use system_component_default_gameplay::{UI, UIPanel, component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D}, world_context::{GameObject, WorldContext2D}};
+use system_component_default_gameplay::{
+    UI, UIPanel,
+    component::{component_renderer_text::ComponentRendererText, component_transform2d::Transform2D},
+    gameobject::GameObject,
+    world_context_2d::WorldContext2D,
+};
 
 use crate::{game_events::GameEvents, state::host::state_currency::StateCurrency};
 

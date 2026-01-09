@@ -15,7 +15,7 @@ impl Camera {
 
 impl FieldOverride for Camera {
     fn apply(&mut self, key: &str, value: &str) {
-        match value {
+        match key {
             "fov" => self.fov = value.parse().unwrap_or_default(),
             _ => {}
         }

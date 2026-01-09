@@ -63,12 +63,13 @@
 
 //     TokenStream::from(expanded)
 // }
+
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, DeriveInput, Path};
 
 #[proc_macro_attribute]
-pub fn global_ecs_system_event_reciever(attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn impulse(attr: TokenStream, item: TokenStream) -> TokenStream {
     // Parse the input struct
     let input = parse_macro_input!(item as DeriveInput);
 

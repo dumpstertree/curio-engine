@@ -1,9 +1,4 @@
-use core::collections::{
-    event_queue::EventQueue,
-    game_state::GameState,
-    vector2::Vector2,
-    vector3::Vector3,
-};
+use core::collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2, vector3::Vector3};
 
 use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{
@@ -12,7 +7,8 @@ use system_component_default_gameplay::{
         component_renderer_text::{AligmentHorizontal, AligmentVertical, ComponentRendererText},
         component_transform2d::Transform2D,
     },
-    world_context::{GameObject, WorldContext2D},
+    gameobject::GameObject,
+    world_context_2d::WorldContext2D,
 };
 
 use crate::{
