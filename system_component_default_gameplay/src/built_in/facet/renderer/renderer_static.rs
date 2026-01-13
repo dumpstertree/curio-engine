@@ -1,7 +1,7 @@
 use crate::{
     built_in::facet::renderer_common::RendererCommon,
-    form::{FacetCommon, Form},
-    traits::field_override::FieldOverride,
+    form::Form,
+    traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
 use core::{
     collections::color::Color,
@@ -22,7 +22,7 @@ pub struct RendererStatic {
 impl FieldOverride for RendererStatic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.asset = Some(AssetLoader::load_model_static_from_database(value.to_string())),
+            "asset" => self.asset = Some(AssetLoader::load_model_static_from_database(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}

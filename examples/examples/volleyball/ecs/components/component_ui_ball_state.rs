@@ -1,7 +1,7 @@
-use macro_component::global_component;
+use macro_component::facet;
 use system_component_default_gameplay::traits::field_override::FieldOverride;
 
-#[global_component]
+#[facet]
 pub struct ComponentUIBallState {}
 impl FieldOverride for ComponentUIBallState {
     fn apply(&mut self, _field: &str, _val: &str) {}

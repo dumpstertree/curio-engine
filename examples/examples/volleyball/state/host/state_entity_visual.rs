@@ -3,12 +3,12 @@ use std::{collections::HashMap, hash::Hash};
 
 use macro_state_serialize::global_state_serialize;
 
-use crate::AssetMappingUIDs;
+use crate::Assets;
 
 #[derive(PartialEq, Eq)]
 #[global_state_serialize]
 pub struct StateVisualEntity {
-    pub all: HashMap<i32, AssetMappingUIDs>,
+    pub all: HashMap<i32, Assets>,
 }
 impl IState for StateVisualEntity {
     fn id() -> i32 {

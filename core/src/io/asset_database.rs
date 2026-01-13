@@ -20,21 +20,35 @@ const STALE_HOURS: f32 = 1.0;
 const STALE_MIN: f32 = 0.0;
 const STALE_SEC: f32 = 0.0;
 pub struct AssetDatabase {
-    listings: HashMap<String, AssetDatabaseListing>,
+    lookup: HashMap<String, i16>,
+    listings: HashMap<i16, AssetDatabaseListing>,
 }
 impl AssetDatabase {
+    pub fn append(&mut self, listings: Vec<(i16, AssetDatabaseListing)>) {
+        self.listings.extend(listings);
+    }
+    pub fn try_lookup_key_for_name(&self, name: &str) -> Option<i16> {
+        self.lookup.get(name).cloned()
+    }
+
     /// Create a new AssetDatabase from explicitly stated connections
-    pub fn new_from_explicit(listings: Vec<(String, AssetDatabaseListing)>) -> AssetDatabase {
+    pub fn new_from_explicit(listings: Vec<(&str, i16, AssetDatabaseListing)>) -> AssetDatabase {
+        let mut lookup = HashMap::new();
+        for x in &listings {
+            lookup.insert(x.0.to_string(), x.1);
+        }
+
         let mut hashmap = HashMap::new();
         for x in listings {
-            hashmap.insert(x.0, x.1);
+            hashmap.insert(x.1, x.2);
         }
-        AssetDatabase { listings: hashmap }
+
+        AssetDatabase { lookup, listings: hashmap }
     }
 
     /// Fetch an asset for the `uid`.
     /// If uid is not mapped returns and empty Vec<u8>
-    pub fn fetch_asset(&self, uid: String) -> Vec<u8> {
+    pub fn fetch_asset(&self, uid: &i16) -> Vec<u8> {
         if let Some(listing) = self.listings.get(&uid) {
             return listing.fetch_asset(false);
         } else {

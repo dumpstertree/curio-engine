@@ -13,7 +13,7 @@ use system_component_default_gameplay::{
 };
 
 use crate::{
-    AssetMappingUIDs,
+    Assets,
     state::{
         state_energy::StateEnergy,
         state_teams::{StateTeamAssignments, Teams},
@@ -38,7 +38,7 @@ impl UICommon for UIHUD {
 
     fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         println!("present hud encounter");
-        let asset = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::EnergyToken.uid());
+        let asset = AssetLoader::load_model_animated_from_database(Assets::EnergyToken.uid());
         // let x_offset = 0.15;
         let y_start = 0.75;
         let y_spacing = -0.05;

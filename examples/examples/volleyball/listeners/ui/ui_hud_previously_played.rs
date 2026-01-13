@@ -18,7 +18,7 @@ use system_component_default_gameplay::{
 };
 
 use crate::{
-    AssetMappingUIDs,
+    Assets,
     cards::card_instance::CardInstance,
     ecs::components::component_card::ComponentCard,
     state::{host::state_play_history::StatePlayHistory, state_deck::CardTypes},
@@ -89,7 +89,7 @@ impl UICommon for UIHUD {
 impl UIHUD {
     fn spawn_card(game_state: &GameState, world: &mut Context2D, x: Arc<CardInstance>) -> (Form, Vec<Form>) {
         // card asset
-        let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
+        let asset = AssetLoader::load_model_static_from_database(Assets::Card.uid());
 
         // parent
 
@@ -115,7 +115,7 @@ impl UIHUD {
         // (parent.clone(), vec![parent, text])
 
         // create description
-        let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
+        let asset = AssetLoader::load_model_static_from_database(Assets::Card.uid());
         let parent = world
             .spawn("", Transform2D::default())
             .add_facet(RendererStatic::default().set_asset(Some(asset.clone())))

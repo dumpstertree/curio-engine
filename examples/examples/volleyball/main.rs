@@ -209,6 +209,7 @@ use crate::{
     game_events::GameEvents,
     listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_cards, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_heat, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
+extern crate core as rust_core;
 use core::{
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
@@ -220,6 +221,7 @@ use core::{
 };
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
+use strum::{AsRefStr, EnumString};
 use system_component_default_gameplay::{
     system_component_default_gameplay::SystemComponentDefaultGameplay,
     traits::{ui_events::IUIEvent, ui_panel::UIPanel},
@@ -229,49 +231,84 @@ use system_component_default_networking::SystemComponentDefaultNetworking;
 use system_component_default_physics::SystemComponentDefaultPhysics;
 use system_component_default_rendering::SystemComponentDefaultGraphics;
 use system_component_default_time::SystemComponentDefaultTime;
-
-#[derive(Default, Hash, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub enum AssetMappingUIDs {
+#[repr(u16)]
+#[derive(Default, Hash, PartialEq, Eq, Serialize, Deserialize, Debug, Copy, Clone, AsRefStr, EnumString)]
+#[strum(serialize_all = "snake_case")]
+pub enum Assets {
     #[default]
-    Invald,
+    Invald = 0,
     // animated
-    Ball,
-    Goblin,
-    CharCrab,
-    CharGrunt,
-    EnergyToken,
+    Ball = 1,
+    Goblin = 2,
+    CharCrab = 3,
+    CharGrunt = 4,
+    EnergyToken = 5,
     // static
-    Court,
-    Card,
-    GameBoardTileActive,
+    Court = 6,
+    Card = 7,
+    GameBoardTileActive = 8,
+
+    // prefabs - world
+    PrefabCamera = 9,
+    // prefab - ui component
+    PrefabUICard = 10,
+    // prefab - hud
+    PrefabUIPanelShop = 11,
+    PrefabUIPanelMedic = 12,
+    PrefabUIPanelReward = 13,
 }
-impl AssetMappingUIDs {
+impl Into<u16> for Assets {
+    fn into(self) -> u16 {
+        self as u16
+    }
+}
+impl Into<String> for Assets {
+    fn into(self) -> String {
+        self.as_ref().to_owned()
+    }
+}
+impl Assets {
+    pub fn parse() {}
     pub fn uid(&self) -> String {
         match self {
-            AssetMappingUIDs::GameBoardTileActive => String::from("mesh_static_gameboard_tile_active"),
-            AssetMappingUIDs::Ball => String::from("mesh_animated_ball"),
-            AssetMappingUIDs::Goblin => String::from("mesh_animated_goblin"),
-            AssetMappingUIDs::EnergyToken => String::from("mesh_animated_energy"),
-            AssetMappingUIDs::CharCrab => String::from("mesh_animated_crab"),
-            AssetMappingUIDs::CharGrunt => String::from("mesh_animated_grunt"),
-            AssetMappingUIDs::Court => String::from("mesh_static_court"),
-            AssetMappingUIDs::Card => String::from("mesh_static_card"),
-            AssetMappingUIDs::Invald => String::from(""),
+            Assets::GameBoardTileActive => String::from("mesh_static_gameboard_tile_active"),
+            Assets::Ball => String::from("mesh_animated_ball"),
+            Assets::Goblin => String::from("mesh_animated_goblin"),
+            Assets::EnergyToken => String::from("mesh_animated_energy"),
+            Assets::CharCrab => String::from("mesh_animated_crab"),
+            Assets::CharGrunt => String::from("mesh_animated_grunt"),
+            Assets::Court => String::from("mesh_static_court"),
+            Assets::Card => String::from("mesh_static_card"),
+            Assets::Invald => String::from(""),
+            Assets::PrefabCamera => todo!(),
+            Assets::PrefabUICard => todo!(),
+            Assets::PrefabUIPanelShop => todo!(),
+            Assets::PrefabUIPanelMedic => todo!(),
+            Assets::PrefabUIPanelReward => todo!(),
         }
     }
 }
 fn main() {
     AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
         // remote
-        (AssetMappingUIDs::Goblin.uid(), AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/z-P4xIan"))),
-        (AssetMappingUIDs::EnergyToken.uid(), AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu"))),
-        (AssetMappingUIDs::CharCrab.uid(), AssetDatabaseListing::Local(String::from("mesh/char_crab.asset"))),
-        (AssetMappingUIDs::CharGrunt.uid(), AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset"))),
-        (AssetMappingUIDs::GameBoardTileActive.uid(), AssetDatabaseListing::Local(String::from("mesh/gameboard_tile_available.glb"))),
+        (
+            Assets::Goblin.into(),
+            Assets::Goblin.into(),
+            AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/z-P4xIan")),
+        ),
+        (
+            Assets::EnergyToken.into(),
+            Assets::EnergyToken.into(),
+            AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu")),
+        ),
+        (Assets::CharCrab.into(), Assets::CharCrab.into(), AssetDatabaseListing::Local(String::from("mesh/char_crab.asset"))),
+        (Assets::CharGrunt.into(), Assets::CharGrunt.into(), AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset"))),
+        (Assets::GameBoardTileActive.into(), Assets::GameBoardTileActive.into(), AssetDatabaseListing::Local(String::from("mesh/gameboard_tile_available.glb"))),
         // local
-        (AssetMappingUIDs::Court.uid(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
-        (AssetMappingUIDs::Card.uid(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
-        (AssetMappingUIDs::Ball.uid(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
+        (Assets::Court.into(), Assets::Court.into(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
+        (Assets::Card.into(), Assets::Card.into(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
+        (Assets::Ball.into(), Assets::Ball.into(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
+        (Assets::Ball.into(), Assets::Ball.into(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
     ]));
     // create instance
     CurioCabinet::display_curio(

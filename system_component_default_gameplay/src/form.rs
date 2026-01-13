@@ -1,4 +1,4 @@
-use crate::form_ref::FormRef;
+use crate::{form_ref::FormRef, traits::facet_common::FacetCommon};
 use hecs::{Component, Entity};
 use std::{cell::RefCell, hash::Hash, rc::Rc};
 
@@ -82,8 +82,4 @@ impl Form {
     pub fn entity(&self) -> Entity {
         self.form_ref.borrow().entity()
     }
-}
-pub trait FacetCommon: Component {
-    fn set_ownership(&mut self, owner: Form);
-    fn form(&self) -> Form;
 }

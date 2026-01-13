@@ -78,12 +78,13 @@
 
 //     TokenStream::from(expanded)
 // }
+
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{parse_macro_input, Fields, ItemStruct};
 
 #[proc_macro_attribute]
-pub fn global_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn facet(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(item as ItemStruct);
 
     let struct_name = &input.ident;
@@ -152,7 +153,7 @@ pub fn global_component(_attr: TokenStream, item: TokenStream) -> TokenStream {
         unsafe impl #impl_generics Send for #struct_name #ty_generics #where_clause {}
         unsafe impl #impl_generics Sync for #struct_name #ty_generics #where_clause {}
 
-        impl #impl_generics system_component_default_gameplay::form::FacetCommon
+        impl #impl_generics system_component_default_gameplay::traits::facet_common::FacetCommon
             for #struct_name #ty_generics #where_clause
         {
             fn set_ownership(

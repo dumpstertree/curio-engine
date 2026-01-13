@@ -4,8 +4,8 @@ use std::collections::{HashMap, VecDeque};
 use crate::{
     built_in::facet::transform::transform2d::Transform2D,
     context_3d::Context3D,
-    form::{FacetCommon, Form},
-    traits::field_override::FieldOverride,
+    form::Form,
+    traits::{facet_common::FacetCommon, field_override::FieldOverride},
     traits_internal::world_context_common::ContextCommon,
 };
 

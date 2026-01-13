@@ -1,8 +1,8 @@
-use macro_component::global_component;
+use macro_component::facet;
 use system_component_default_gameplay::traits::field_override::FieldOverride;
 
 // #[derive(Debug, Clone, Serialize, RegisterComponent)]
-#[global_component]
+#[facet]
 
 pub struct ComponentPlayer {
     pub player_id: i32,

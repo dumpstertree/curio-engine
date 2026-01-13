@@ -5,8 +5,8 @@ use std::{
 };
 
 use crate::{
-    form::{FacetCommon, Form},
-    traits::field_override::FieldOverride,
+    form::Form,
+    traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
 
 /// Function that creates a boxed untyped value (what register stores)

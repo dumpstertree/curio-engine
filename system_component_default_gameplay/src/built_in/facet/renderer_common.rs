@@ -1,18 +1,12 @@
-use core::collections::color::Color;
-use std::{
-    cell::RefMut,
-    collections::{HashMap, VecDeque},
-    hash::Hash,
-};
-
-use hecs::World;
-
 use crate::{
     built_in::facet::renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic, renderer_text::RendererText},
     context_3d::Context3D,
-    form::{self, FacetCommon, Form},
+    form::Form,
+    traits::facet_common::FacetCommon,
     traits_internal::world_context_common::ContextCommon,
 };
+use core::collections::color::Color;
+use std::collections::{HashMap, VecDeque};
 
 pub trait RendererCommon: FacetCommon {
     fn set_cached_enabled_in_hierarchy(&mut self, val: bool);

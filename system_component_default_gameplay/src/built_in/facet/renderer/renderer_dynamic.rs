@@ -4,11 +4,7 @@ use core::{
 };
 use std::sync::Arc;
 
-use crate::{
-    built_in::facet::renderer_common::RendererCommon,
-    form::{FacetCommon, Form},
-    traits::field_override::FieldOverride,
-};
+use crate::{built_in::facet::renderer_common::RendererCommon, form::Form, traits::facet_common::FacetCommon, traits::field_override::FieldOverride};
 
 unsafe impl Send for RendererDynamic {}
 unsafe impl Sync for RendererDynamic {}
@@ -49,7 +45,7 @@ impl Default for RendererDynamic {
 impl FieldOverride for RendererDynamic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.asset = Some(AssetLoader::load_model_animated_from_database(value.to_string())),
+            "asset" => self.asset = Some(AssetLoader::load_model_animated_from_database(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             "animation" => self.animation = value.to_string(),

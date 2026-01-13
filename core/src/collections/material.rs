@@ -231,7 +231,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     collections::color::Color,
-    io::{asset_loader::AssetLoader, texture_asset::TextureAsset},
+    io::{
+        asset_loader::{AssetLoader, ASSET_UID_SHADER_LIT},
+        texture_asset::TextureAsset,
+    },
     random::Random,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
@@ -300,7 +303,9 @@ impl Material {
 
     pub fn shader(&self) -> Arc<ShaderModule> {
         let device = &SystemGPU::get_device();
-        AssetLoader::load_shader_module(device, &self.shader_desc.shader_module_path)
+        // AssetLoader::load_shader_module(device, Builtin &self.shader_desc.shader_module_path)
+        println!("ISSUE HERE");
+        AssetLoader::load_shader_module(device, &ASSET_UID_SHADER_LIT)
     }
     pub fn instantiate(&self, name: &str) -> Material {
         Material {

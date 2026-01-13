@@ -1,12 +1,8 @@
-use core::collections::{color::Color, light_uniform::LightType, vector3::Vector3};
-
-// use macro_component::global_component;
-use serde::Deserialize;
-
 use crate::{
-    form::{FacetCommon, Form},
-    traits::field_override::FieldOverride,
+    form::Form,
+    traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
+use core::collections::{color::Color, light_uniform::LightType, vector3::Vector3};
 
 #[derive(Default)]
 pub struct Light {

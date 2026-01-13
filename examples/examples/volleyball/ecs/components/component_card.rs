@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use macro_component::global_component;
+use macro_component::facet;
 use system_component_default_gameplay::traits::field_override::FieldOverride;
 
 use crate::cards::card_instance::CardInstance;
 
-#[global_component]
+#[facet]
 pub struct ComponentCard {
     pub card_instance: Option<Arc<CardInstance>>,
 }

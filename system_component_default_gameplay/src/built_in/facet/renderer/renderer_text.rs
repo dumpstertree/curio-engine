@@ -13,8 +13,8 @@ use crate::{
         renderer_common::RendererCommon,
     },
     context_3d::Context3D,
-    form::{FacetCommon, Form},
-    traits::field_override::FieldOverride,
+    form::Form,
+    traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
 
 // pub fn update(world: &mut Context3D) {
@@ -63,7 +63,8 @@ impl FacetCommon for RendererText {
 impl FieldOverride for RendererText {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
+            // "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
+            "asset" => self.font_asset = Some(AssetLoader::load_font_asset(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
             "contents" => self.contents = value.to_string(),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "font_size" => self.font_size = value.parse().unwrap_or_default(),
@@ -198,7 +199,7 @@ impl RendererText {
         //     .unwrap_or_else(|| AssetLoader::load_font_asset("assets/default.font"));
 
         if self.font_asset.is_none() {
-            self.font_asset = Some(AssetLoader::load_font_asset("assets/default.font"));
+            self.font_asset = Some(AssetLoader::load_font_asset(&AssetLoader::try_lookup_key_for_name("default.font").unwrap()));
         }
         let Some(font_asset) = &self.font_asset else {
             return;

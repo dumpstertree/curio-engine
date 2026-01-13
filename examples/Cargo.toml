@@ -34,3 +34,5 @@ system_component_default_rendering = { path = "../system_component_default_rende
 system_component_default_time = { path = "../system_component_default_time" }
 winit = { version = "0.30", features = ["android-native-activity"] }
 ctor = "0.2"
+strum = "0.26"
+strum_macros = "0.26"

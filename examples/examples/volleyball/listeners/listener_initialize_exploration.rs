@@ -5,12 +5,12 @@ use core::{
 };
 use ecs_event::impulse;
 use system_component_default_gameplay::{
-    traits::{impulse::Impulse, scope::Scope},
     context_3d::Context3D,
+    traits::{impulse::Impulse, scope::Scope},
 };
 
 use crate::{
-    AssetMappingUIDs,
+    Assets,
     game_events::GameEvents,
     listeners::listener_initialize_encounter::{Encounter, Participant, TeamController},
     state::{
@@ -160,7 +160,7 @@ impl OpponentLibrary {
     pub fn get_opponent_grunt() -> Participant {
         Participant {
             deck_id: "wild".to_string(),
-            visual: AssetMappingUIDs::CharGrunt,
+            visual: Assets::CharGrunt,
             energy: 3,
             health: 1,
         }
@@ -168,7 +168,7 @@ impl OpponentLibrary {
     pub fn get_opponent_crab() -> Participant {
         Participant {
             deck_id: "crab".to_string(),
-            visual: AssetMappingUIDs::CharCrab,
+            visual: Assets::CharCrab,
             energy: 6,
             health: 1,
         }
@@ -176,7 +176,7 @@ impl OpponentLibrary {
     pub fn get_opponent_human() -> Participant {
         Participant {
             deck_id: "".to_string(),
-            visual: AssetMappingUIDs::Goblin,
+            visual: Assets::Goblin,
             energy: 4,
             health: 3,
         }

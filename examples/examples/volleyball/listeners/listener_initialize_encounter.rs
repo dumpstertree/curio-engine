@@ -13,7 +13,7 @@ use system_component_default_gameplay::{
 };
 
 use crate::{
-    AssetMappingUIDs,
+    Assets,
     cards::deck_library::DeckLibrary,
     game_events::GameEvents,
     state::{
@@ -296,7 +296,7 @@ pub struct Encounter {
 #[derive(PartialEq, Eq, Hash, Default, Clone, Deserialize, Serialize)]
 pub struct Participant {
     pub deck_id: String,
-    pub visual: AssetMappingUIDs,
+    pub visual: Assets,
     pub energy: i32,
     pub health: i32,
 }

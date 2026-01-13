@@ -2,7 +2,7 @@ use core::random::Random;
 use hecs::{Entity, World};
 use std::{any::type_name, cell::RefCell, hash::Hash, rc::Rc};
 
-use crate::form::{FacetCommon, Form};
+use crate::{form::Form, traits::facet_common::FacetCommon};
 
 /// Representation of an object in the world
 pub struct FormRef {

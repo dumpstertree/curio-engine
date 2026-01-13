@@ -7,7 +7,10 @@ use crate::collections::mesh::Mesh;
 use crate::collections::mesh::Vertex;
 use crate::io::asset_cache;
 use crate::io::asset_cache::AssetCache;
+use crate::io::asset_database;
 use crate::io::asset_database::AssetDatabase;
+use crate::io::asset_database::AssetDatabaseListing;
+use crate::io::asset_loader;
 use crate::io::file::File;
 use crate::io::font_asset::FontDesc;
 use crate::io::model_asset_animated::ModelAssetAnimated;
@@ -34,9 +37,38 @@ use zip::ZipArchive;
 static mut ASSET_DATABASE: Option<Mutex<AssetDatabase>> = None;
 static mut ASSET_CACHE: Option<Mutex<AssetCache>> = None;
 
+// Built in Shaders
+pub static ASSET_UID_SHADER_UNLIT: i16 = -100;
+pub static ASSET_UID_SHADER_LIT: i16 = -101;
+
+// Built in Textures
+pub static ASSET_UID_TEXTURE_FONT_ATLAS: i16 = -200;
+
+pub struct BuiltInAssets {}
+impl BuiltInAssets {
+    pub fn try_parse_shader_module(name: &str) -> Option<i16> {
+        match name {
+            "lit" => Some(ASSET_UID_SHADER_LIT),
+            "unlit" => Some(ASSET_UID_SHADER_UNLIT),
+            _ => None,
+        }
+    }
+}
 pub struct AssetLoader {}
 // private
 impl AssetLoader {
+    pub fn try_lookup_key_for_name(name: &str) -> Option<i16> {
+        unsafe {
+            let Some(asset_database) = &ASSET_DATABASE else {
+                panic!();
+            };
+            let Ok(asset_database) = asset_database.lock() else {
+                panic!();
+            };
+
+            asset_database.try_lookup_key_for_name(name)
+        }
+    }
     pub fn preload_remote_assets(force: bool) {
         unsafe {
             let Some(asset_database) = &ASSET_DATABASE else {
@@ -52,22 +84,59 @@ impl AssetLoader {
     }
     // set database
     pub fn set_database(database: AssetDatabase) {
+        let mut database = database;
+        database.append(vec![
+            // shaders
+            (ASSET_UID_SHADER_LIT, AssetDatabaseListing::Local("assets/shader/my_shader.shader".to_string())),
+            (ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Local("assets/shader/unlit_shader.shader".to_string())),
+            // textures
+            (ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Local("".to_string())),
+        ]);
         unsafe {
             ASSET_DATABASE = Some(Mutex::new(database));
             ASSET_CACHE = Some(Mutex::new(AssetCache::new()))
         }
     }
-    pub fn load_prefab() -> PrefabGameObject {
+    pub fn load_prefab(uid: &i16) -> Arc<PrefabGameObject> {
         unsafe {
-            if let Ok(asset) = serde_yaml::from_slice::<PrefabGameObject>(&File::read("assets/test.yml")) {
-                return asset;
-            }
-        }
+            let Some(asset_cache) = &ASSET_CACHE else {
+                panic!();
+            };
+            let Some(asset_database) = &ASSET_DATABASE else {
+                panic!();
+            };
+            let Ok(asset_database) = asset_database.lock() else {
+                panic!();
+            };
+            let Ok(mut asset_cache) = asset_cache.lock() else {
+                panic!();
+            };
 
-        panic!();
+            if let Some(cached_asset) = asset_cache.try_get_asset_prefab(&uid) {
+                return cached_asset;
+            }
+
+            // not in cache so fetch the asset
+            let data = asset_database.fetch_asset(uid);
+            if data.len() == 0 {
+                panic!("No data for {}!", uid);
+            }
+
+            let Ok(asset) = serde_yaml::from_slice::<PrefabGameObject>(&data) else {
+                panic!("Failed to unwrap for {}!", uid);
+            };
+
+            let arc_asset = Arc::new(asset);
+
+            // add the new data to the cache
+            asset_cache.try_store_asset_prefab_asset(&uid, arc_asset.clone());
+
+            // return the asset
+            return arc_asset;
+        }
     }
     // load - from path
-    pub fn load_texture_from_path(path: &str) -> Arc<TextureAsset> {
+    pub fn load_texture_from_path(path: &i16) -> Arc<TextureAsset> {
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
                 panic!();
@@ -84,16 +153,17 @@ impl AssetLoader {
             };
 
             // try to get the asset from the cache
-            if let Some(cached_asset) = asset_cache.try_get_asset_texture(&path) {
+            if let Some(cached_asset) = asset_cache.try_get_asset_texture(path) {
                 return cached_asset;
             }
 
-            let data = File::read(path);
-            if data.len() == 0 {
-                eprintln!("Something went wrong and data came back as empty for path {}", path);
-                panic!();
-            }
+            // let data = File::read(path);
+            // if data.len() == 0 {
+            //     eprintln!("Something went wrong and data came back as empty for path {}", path);
+            //     panic!();
+            // }
 
+            let data = asset_database.fetch_asset(path);
             let result = Self::unwrap_texture(&data);
             let Ok(result) = result else {
                 eprintln!("Something went wrong: {}", result.err().unwrap());
@@ -109,10 +179,10 @@ impl AssetLoader {
     }
 
     // load - from database
-    pub fn load_model_static_from_database(uid: String) -> Arc<ModelAsset> {
+    pub fn load_model_static_from_database(uid: &i16) -> Arc<ModelAsset> {
         let mut all_shaders = HashMap::new();
-        all_shaders.insert("assets/shader/my_shader.shader".to_string(), AssetLoader::load_shader_desc("assets/shader/my_shader.shader"));
-        all_shaders.insert("assets/shader/unlit_shader.shader".to_string(), AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader"));
+        all_shaders.insert("assets/shader/my_shader.shader".to_string(), AssetLoader::load_shader_desc(&ASSET_UID_SHADER_LIT));
+        all_shaders.insert("assets/shader/unlit_shader.shader".to_string(), AssetLoader::load_shader_desc(&ASSET_UID_SHADER_UNLIT));
 
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
@@ -134,7 +204,7 @@ impl AssetLoader {
             }
 
             // not in cache so fetch the asset
-            let data = asset_database.fetch_asset(uid.clone());
+            let data = asset_database.fetch_asset(uid);
             if data.len() == 0 {
                 panic!("No data for {}!", uid);
             }
@@ -150,11 +220,11 @@ impl AssetLoader {
             return asset;
         }
     }
-    pub fn load_model_animated_from_database(uid: String) -> Arc<ModelAssetAnimated> {
+    pub fn load_model_animated_from_database(uid: &i16) -> Arc<ModelAssetAnimated> {
         let shader_desc: Arc<ShaderDesc>;
         {
             //create a material
-            shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
+            shader_desc = AssetLoader::load_shader_desc(&ASSET_UID_SHADER_LIT);
         }
         unsafe {
             let Some(asset_database) = &ASSET_DATABASE else {
@@ -165,13 +235,14 @@ impl AssetLoader {
                 panic!();
             };
 
-            let data = asset_database.fetch_asset(uid.clone());
+            // let data = asset_database.fetch_asset(uid.clone());
+            let data = asset_database.fetch_asset(uid);
             let spine_data = Self::unwrap_spine(data.as_slice());
             let Ok(spine_data) = spine_data else {
                 panic!("Err {}", spine_data.err().unwrap());
             };
 
-            let mut material = Material::new(&uid, shader_desc.clone(), false);
+            let mut material = Material::new("Mat", shader_desc.clone(), false);
             material.set_texture_with_label(Some(Arc::new(spine_data.2)), "diffuse");
             material.finalize();
             // create the asset
@@ -180,30 +251,32 @@ impl AssetLoader {
             return x;
         }
     }
-    pub fn load_font_asset(uid: &str) -> Arc<FontAsset> {
-        unsafe {
-            let Some(asset_cache) = &ASSET_CACHE else {
-                panic!();
-            };
-            let Ok(mut asset_cache) = asset_cache.lock() else {
-                panic!();
-            };
-
-            // try to get the asset from the cache
-            if let Some(cached_asset) = asset_cache.try_get_asset_font_asset(&uid) {
-                return cached_asset;
-            }
-        }
-
+    pub fn load_font_asset(uid: &i16) -> Arc<FontAsset> {
         let font_asset: Arc<FontAsset>;
 
         {
-            let file = File::read(uid);
-            let json: serde_json::Value = serde_json::from_slice(file.as_slice()).expect("file should be proper JSON");
-            let my_struct: FontDesc = serde_json::from_str(&json.to_string()).unwrap();
-            font_asset = Arc::new(FontAsset::new(Arc::new(my_struct)));
-        }
+            unsafe {
+                let Some(asset_cache) = &ASSET_CACHE else {
+                    panic!();
+                };
+                let Ok(mut asset_cache) = asset_cache.lock() else {
+                    panic!();
+                };
+                let Some(asset_database) = &ASSET_DATABASE else {
+                    panic!();
+                };
 
+                let Ok(asset_database) = asset_database.lock() else {
+                    panic!();
+                };
+
+                // let file = File::read(uid);
+                let file = asset_database.fetch_asset(uid);
+                let json: serde_json::Value = serde_json::from_slice(file.as_slice()).expect("file should be proper JSON");
+                let my_struct: FontDesc = serde_json::from_str(&json.to_string()).unwrap();
+                font_asset = Arc::new(FontAsset::new(Arc::new(my_struct)));
+            }
+        }
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
                 panic!();
@@ -383,7 +456,7 @@ impl AssetLoader {
     }
 
     // load
-    pub fn load_shader_module(device: &Device, path: &str) -> Arc<ShaderModule> {
+    pub fn load_shader_module(device: &Device, path: &i16) -> Arc<ShaderModule> {
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
                 panic!();
@@ -391,16 +464,31 @@ impl AssetLoader {
             let Ok(mut asset_cache) = asset_cache.lock() else {
                 panic!();
             };
+            let Some(asset_database) = &ASSET_DATABASE else {
+                panic!();
+            };
+
+            let Ok(asset_database) = asset_database.lock() else {
+                panic!();
+            };
 
             // try to get the asset from the cache
             if let Some(cached_asset) = asset_cache.try_get_asset_shader_module(&path) {
                 return cached_asset;
             }
-            let contents = fs::read_to_string(path).expect("Should have been able to read the file");
+
+            let data = asset_database.fetch_asset(path);
+            let string = String::from_utf8(data).unwrap();
+            // assetd
+            // let contents = fs::read_to_string(path).expect("Should have been able to read the file");
             let module = device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
-                label: Some(path),
-                source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
+                label: Some("Shader"),
+                source: egui_wgpu::wgpu::ShaderSource::Wgsl(string.into()),
             });
+            //  let module = device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
+            //     label: Some(path),
+            //     source: egui_wgpu::wgpu::ShaderSource::Wgsl(contents.into()),
+            // });
 
             let asset = Arc::new(module);
 
@@ -409,7 +497,7 @@ impl AssetLoader {
             return asset;
         }
     }
-    pub fn load_shader_desc(path: &str) -> Arc<ShaderDesc> {
+    pub fn load_shader_desc(path: &i16) -> Arc<ShaderDesc> {
         unsafe {
             let Some(asset_cache) = &ASSET_CACHE else {
                 panic!();
@@ -426,13 +514,17 @@ impl AssetLoader {
             };
 
             // try to get the asset from the cache
-            if let Some(cached_asset) = asset_cache.try_get_asset_shader_desc(&path) {
+            if let Some(cached_asset) = asset_cache.try_get_asset_shader_desc(path) {
                 return cached_asset;
             }
 
+            let data = &asset_database.fetch_asset(path);
+
             // load
-            let file = fs::File::open(path).expect("file should open read only");
-            let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+            // let file = fs::File::open(path).expect("file should open read only");
+            // let json: serde_json::Value = serde_json::from_reader(file).expect("file should be proper JSON");
+
+            let json: serde_json::Value = serde_json::from_slice(data).expect("file should be proper JSON");
             let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
 
             let asset = Arc::new(my_struct);
@@ -464,8 +556,12 @@ impl FontAsset {
         // }
 
         println!("NEW FONT");
-        let texture = AssetLoader::load_texture_from_path(&File::join_path(&File::get_built_in_asset_path(), &desc.texture_path));
-        let shader = AssetLoader::load_shader_desc(&File::join_path(&File::get_built_in_asset_path(), &desc.shader_path));
+
+        // let texture = AssetLoader::load_texture_from_path(&File::join_path(&File::get_built_in_asset_path(), &desc.texture_path));
+        // let shader = AssetLoader::load_shader_desc(&File::join_path(&File::get_built_in_asset_path(), &desc.shader_path));
+
+        let texture = AssetLoader::load_texture_from_path(&ASSET_UID_TEXTURE_FONT_ATLAS);
+        let shader = AssetLoader::load_shader_desc(&ASSET_UID_SHADER_UNLIT);
 
         let w = texture.texture.width() as f32;
         let h = texture.texture.height() as f32;

@@ -39,6 +39,7 @@ pub mod built_in {
     }
 }
 pub mod traits {
+    pub mod facet_common;
     pub mod field_override;
     pub mod habit;
     pub mod impulse;
