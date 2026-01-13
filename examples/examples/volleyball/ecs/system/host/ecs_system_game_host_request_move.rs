@@ -11,7 +11,7 @@ use ecs_event::impulse;
 use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 #[derive(Default)]
@@ -62,7 +62,7 @@ impl Scope for ECSSystemGameRequestMove {
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameRequestMove {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestMoveZPos(id) => {
                 if !ECSSystemGameRequestMove::check_player_id(game_state, *id) {

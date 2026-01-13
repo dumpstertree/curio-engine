@@ -32,7 +32,7 @@ use ecs_system::habit;
 use std::vec;
 use system_component_default_gameplay::{
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 use crate::state::state_teams::StateTeamAssignments;
@@ -70,12 +70,12 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
-    fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
+    fn init(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {}
+    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
         self.move_time = 3.0;
         self.lastmove = game_state.get::<TimeState>().scaled_time;
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
         let state_score = game_state.get::<StateScore>();
         if state_score.all_scores.iter().any(|x| *x.1 <= 0) {
             return;
@@ -157,7 +157,7 @@ impl Habit for Instance {
 //     }
 // }
 impl Impulse<GameEvents> for Instance {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidTurnBegin(id) => {}
             _ => {

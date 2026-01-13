@@ -1,18 +1,15 @@
 use crate::{
     built_in::facet::{
-        facet_renderer::{
-            component_renderer_animated::RendererAnimated,
-            component_renderer_static::Renderer,
-            component_renderer_text::{ComponentRendererText, RendererCommon, update},
-        },
-        facet_transform::{
-            component_transform::{Transform, update_transform},
-            component_transform2d::Transform2D,
+        renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic, renderer_text::RendererText},
+        renderer_common::{RendererCommon, update_enabled},
+        transform::{
+            transform2d::{Transform2D, update_transform2d},
+            transform3d::{Transform3D, update_transform3d},
         },
     },
+    context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
-    traits_internal::world_context_common::WorldContextCommon,
-    world_context_3d::WorldContext,
+    traits_internal::world_context_common::ContextCommon,
 };
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
 use core::{
@@ -36,13 +33,14 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn did_tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
         let state_camera = state.get::<CameraState>();
 
         let time = state.get::<TimeState>().scaled_time;
         //edit draw call states
-        update(world);
-        update_transform(world);
+        update_enabled(world);
+        update_transform2d(world);
+        update_transform3d(world);
         // for x in world.get::<Renderer>() {
         //     x.update_enabled_in_heirarchy();
         //     x.update_tint_in_heirarchy();
@@ -70,7 +68,7 @@ impl Habit for Instance {
             // iterate over each renderer
 
             // for (_entity, (transform, _camera)) in q {
-            world.query_mut::<(&Renderer, &Transform2D)>(|query| {
+            world.edit::<(&RendererStatic, &Transform2D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
@@ -97,7 +95,7 @@ impl Habit for Instance {
                     }
                 }
             });
-            world.query_mut::<(&Renderer, &Transform)>(|query| {
+            world.edit::<(&RendererStatic, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // println!( "update {}" ,renderer.asset.clone().unwrap().instance_id);
                     // if !renderer.enabled_in_hierarchy(&world) {
@@ -118,7 +116,7 @@ impl Habit for Instance {
                     }
                 }
             });
-            world.query_mut::<(&mut RendererAnimated, &Transform)>(|query| {
+            world.edit::<(&mut RendererDynamic, &Transform3D)>(|query| {
                 let mut i = 0;
                 for (_, (renderer, _)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
@@ -135,7 +133,7 @@ impl Habit for Instance {
                 }
             });
 
-            world.query_mut::<(&mut RendererAnimated, &Transform2D)>(|query| {
+            world.edit::<(&mut RendererDynamic, &Transform2D)>(|query| {
                 for (_, (renderer, _)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
@@ -148,7 +146,7 @@ impl Habit for Instance {
                 }
             });
 
-            world.query_mut::<(&RendererAnimated, &Transform)>(|query| {
+            world.edit::<(&RendererDynamic, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
@@ -173,7 +171,7 @@ impl Habit for Instance {
                 }
             });
 
-            world.query_mut::<(&mut ComponentRendererText, &Transform)>(|query| {
+            world.edit::<(&mut RendererText, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
@@ -200,7 +198,7 @@ impl Habit for Instance {
                 }
             });
 
-            world.query_mut::<(&mut RendererAnimated, &Transform2D)>(|query| {
+            world.edit::<(&mut RendererDynamic, &Transform2D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
@@ -235,7 +233,7 @@ impl Habit for Instance {
                     }
                 }
             });
-            world.query_mut::<(&mut ComponentRendererText, &Transform2D)>(|query| {
+            world.edit::<(&mut RendererText, &Transform2D)>(|query| {
                 // let z = 1.0;
 
                 for (_, (renderer, transform)) in query {
@@ -249,6 +247,7 @@ impl Habit for Instance {
                     if !renderer.get_cached_enabled_in_hierarchy() {
                         continue;
                     }
+
                     renderer.rebuild();
                     for asset_for_matricies in &renderer.asset {
                         for arc_mesh in &asset_for_matricies.0.mesh {
@@ -262,7 +261,6 @@ impl Habit for Instance {
                             //     x.draw_calls
                             //         .push(DrawCall::draw_mesh_single(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matrix));
                             // }
-
                             x.draw_calls
                                 .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint(), false));
                         }

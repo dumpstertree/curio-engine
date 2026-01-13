@@ -20,11 +20,11 @@ use core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use system_component_default_gameplay::built_in::facet::facet_renderer::component_renderer_static::Renderer;
-use system_component_default_gameplay::built_in::facet::facet_renderer::component_renderer_text::RendererCommon;
-use system_component_default_gameplay::built_in::facet::facet_transform::component_transform::Transform;
-use system_component_default_gameplay::traits_internal::world_context_common::WorldContextCommon;
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
+use system_component_default_gameplay::built_in::facet::renderer_common::RendererCommon;
+use system_component_default_gameplay::built_in::facet::transform::transform3d::Transform3D;
+use system_component_default_gameplay::context_3d::Context3D;
+use system_component_default_gameplay::traits_internal::world_context_common::ContextCommon;
 
 use ecs_system::habit;
 use system_component_default_gameplay::traits::habit::Habit;
@@ -42,19 +42,19 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, events: &mut EventQueue) {
         let state_mode = game_state.get::<StatePeerInputMode>();
         let state_deck = game_state.get::<StateDeck>();
         let state_index = game_state.get::<StatePeerSelectedCards>();
         if state_mode.mode != InputModes::Manuever && game_state.get::<StatePeerSelectTargets>().enabled.is_none() {
-            world.query_mut::<(&mut Transform, &ComponentGameBoardTile, &mut Renderer)>(|query| {
+            world.edit::<(&mut Transform3D, &ComponentGameBoardTile, &mut RendererStatic)>(|query| {
                 for (_, (transform, gameboard_tile, renderer)) in query {
                     renderer.set_enabled(false);
                 }
             });
             return;
         }
-        world.query_mut::<(&mut Transform, &ComponentGameBoardTile, &mut Renderer)>(|query| {
+        world.edit::<(&mut Transform3D, &ComponentGameBoardTile, &mut RendererStatic)>(|query| {
             for (_, (transform, gameboard_tile, renderer)) in query {
                 let Some(deck) = state_deck.deck.get(&game_state.instance_id) else {
                     return;

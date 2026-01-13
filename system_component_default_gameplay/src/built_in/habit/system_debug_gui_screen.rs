@@ -7,7 +7,7 @@ use core::{
 
 use crate::{
     traits::{habit::Habit, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 #[derive(Default)]
@@ -26,7 +26,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
         // get gpu data
         let sys_config = SystemGPU::get_config();
         let sys_window = SystemGPU::get_window();

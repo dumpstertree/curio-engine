@@ -1,10 +1,10 @@
 use built_in_state::{state_camera::CameraState, state_sun::StateSun};
 use ecs_system::habit;
 use system_component_default_gameplay::{
-    built_in::facet::{component_camera::Camera, facet_transform::component_transform::Transform},
+    built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
+    context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
-    traits_internal::world_context_common::WorldContextCommon,
-    world_context_3d::WorldContext,
+    traits_internal::world_context_common::ContextCommon,
 };
 
 use core::{
@@ -26,16 +26,16 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
+    fn init(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
         println!("Instance: {}. Peer Init", game_state.instance_id);
     }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 
         // load any remote assets now
         AssetLoader::preload_remote_assets(false);
 
-        let p = world.instantiate_prefab(&AssetLoader::load_prefab());
+        let p = world.spawn_prefab_recursive(&AssetLoader::load_prefab());
 
         // set resolution
         game_state.edit::<CameraState>(|x| {
@@ -56,45 +56,52 @@ impl Habit for Instance {
         else {
             // fallback camera
 
-            let a = world.instantiate(
-                "camera",
-                Transform::default()
-                    .set_position(Vector3::new(0.0, 6.0, -14.0))
-                    .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
-            );
+            world
+                .spawn(
+                    "camera",
+                    Transform3D::default()
+                        .set_position(Vector3::new(0.0, 6.0, -14.0))
+                        .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
+                )
+                .add_facet(
+                    // add camera
+                    Camera::default(),
+                );
 
-            a.add_component_value(
-                // add camera
-                Camera::default(),
-            );
+            println!("Spawned Fallback Camera");
 
             return;
         };
 
         match team {
             Teams::Red => {
-                let a = world.instantiate(
-                    "camera",
-                    Transform::default()
-                        .set_position(Vector3::new(0.0, 6.0, -14.0))
-                        .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
-                );
-                a.add_component_value(
-                    // add camera
-                    Camera::default(),
-                );
+                world
+                    .spawn(
+                        "camera",
+                        Transform3D::default()
+                            .set_position(Vector3::new(0.0, 6.0, -14.0))
+                            .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
+                    )
+                    .add_facet(
+                        // add camera
+                        Camera::default(),
+                    );
+
+                println!("Spawned Red Camera");
             }
             Teams::Blue => {
-                let a = world.instantiate(
-                    "camera",
-                    Transform::default()
-                        .set_position(Vector3::new(0.0, 6.0, 14.0))
-                        .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 180.0, 0.0))),
-                );
-                a.add_component_value(
-                    // add camera
-                    Camera::default(),
-                );
+                world
+                    .spawn(
+                        "camera",
+                        Transform3D::default()
+                            .set_position(Vector3::new(0.0, 6.0, 14.0))
+                            .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 180.0, 0.0))),
+                    )
+                    .add_facet(
+                        // add camera
+                        Camera::default(),
+                    );
+                println!("Spawned Blue Camera");
             }
         }
     }

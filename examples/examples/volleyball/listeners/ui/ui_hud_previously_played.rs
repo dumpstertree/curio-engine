@@ -7,16 +7,14 @@ use std::sync::Arc;
 use built_in_state::state_time::TimeState;
 use system_component_default_gameplay::{
     built_in::facet::{
-        facet_renderer::{
-            component_renderer_static::Renderer,
-            component_renderer_text::{ComponentRendererText, RendererCommon},
-        },
-        facet_transform::component_transform2d::Transform2D,
+        renderer::{renderer_static::RendererStatic, renderer_text::RendererText},
+        renderer_common::RendererCommon,
+        transform::transform2d::Transform2D,
     },
-    gameobject::GameObject,
+    context_2d::Context2D,
+    form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
-    world_context_2d::WorldContext2D,
 };
 
 use crate::{
@@ -28,7 +26,7 @@ use crate::{
 
 pub struct UIHUD {
     history_len: i32,
-    open_gos: Option<(GameObject, Vec<GameObject>)>,
+    open_gos: Option<(Form, Vec<Form>)>,
     last_open: f64,
 }
 impl UIHUD {
@@ -42,12 +40,12 @@ impl UIPanel for UIHUD {
 }
 impl UICommon for UIHUD {
     fn init(&mut self) {}
-    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {}
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {}
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         if let Some(open_gos) = &self.open_gos {
             let dt = game_state.get::<TimeState>().unscaled_time - self.last_open;
-            open_gos.0.edit_component::<Transform2D>(|x| {
+            open_gos.0.edit_facet::<Transform2D>(|x| {
                 x.position = Vector2::new(0.75, Self::remap(Self::ease_in_hold_ease_out(dt as f32 / 2.5), 0.0, 1.0, -0.35, 1.35));
             });
 
@@ -89,7 +87,7 @@ impl UICommon for UIHUD {
     }
 }
 impl UIHUD {
-    fn spawn_card(game_state: &GameState, world: &mut WorldContext2D, x: Arc<CardInstance>) -> (GameObject, Vec<GameObject>) {
+    fn spawn_card(game_state: &GameState, world: &mut Context2D, x: Arc<CardInstance>) -> (Form, Vec<Form>) {
         // card asset
         let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
 
@@ -119,9 +117,9 @@ impl UIHUD {
         // create description
         let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
         let parent = world
-            .instantiate("", Transform2D::default())
-            .add_component_value(Renderer::default().set_asset(Some(asset.clone())))
-            .add_component_value(ComponentCard::default().set_instance(x.clone()));
+            .spawn("", Transform2D::default())
+            .add_facet(RendererStatic::default().set_asset(Some(asset.clone())))
+            .add_facet(ComponentCard::default().set_instance(x.clone()));
 
         let mut desc = x.get_master().description.clone();
         for life in x.get_attributes_lifecycle() {
@@ -138,12 +136,12 @@ impl UIHUD {
                 crate::state::state_deck::CardAttributeLifecycle::Consume => desc = desc + ".CONSUME. ",
             }
         }
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&desc);
-        let e0: GameObject = world
-            .instantiate(
+        let e0: Form = world
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -151,17 +149,17 @@ impl UIHUD {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
 
         // r.set_parent(Some(parent.clone()));
         // create title
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.5, 0.2));
         r.set_font_size(0.03);
         r.set_contents(&x.get_title());
         // r.set_parent(Some(parent.clone()));
         let e1 = world
-            .instantiate(
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -169,15 +167,15 @@ impl UIHUD {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
         // create type
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&format!("{}", x.get_manuever_type()));
         // r.set_parent(Some(parent.clone()));
         let e2 = world
-            .instantiate(
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -185,16 +183,16 @@ impl UIHUD {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
         // create cost
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.03);
         r.set_contents(&x.get_cost(&game_state, game_state.instance_id).to_string());
         // r.set_contents("0");
         // r.set_parent(Some(parent.clone()));
         let e3 = world
-            .instantiate(
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -202,9 +200,9 @@ impl UIHUD {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
 
-        parent.edit_component::<Renderer>(|rend| {
+        parent.edit_facet::<RendererStatic>(|rend| {
             let col_spell = Color::new_hex("#f7a5f3");
             let col_persistent = Color::new_hex("#f7c8a5");
             let col_bump = Color::new_hex("#4efff9");

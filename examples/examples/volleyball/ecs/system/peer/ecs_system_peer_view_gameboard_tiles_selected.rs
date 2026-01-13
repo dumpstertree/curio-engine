@@ -10,13 +10,10 @@ use core::{
 };
 use ecs_system::habit;
 use system_component_default_gameplay::{
-    built_in::facet::{
-        facet_renderer::{component_renderer_static::Renderer, component_renderer_text::RendererCommon},
-        facet_transform::component_transform::Transform,
-    },
+    built_in::facet::{renderer::renderer_static::RendererStatic, renderer_common::RendererCommon, transform::transform3d::Transform3D},
+    context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
-    traits_internal::world_context_common::WorldContextCommon,
-    world_context_3d::WorldContext,
+    traits_internal::world_context_common::ContextCommon,
 };
 
 #[habit]
@@ -31,10 +28,10 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, events: &mut EventQueue) {
         let state_selection = game_state.get::<StatePeerSelectTargets>();
 
-        world.query_mut::<(&mut Transform, &ComponentGameBoardSelection, &mut Renderer)>(|query| {
+        world.edit::<(&mut Transform3D, &ComponentGameBoardSelection, &mut RendererStatic)>(|query| {
             for (_, (transform, _, renderer)) in query {
                 let pos = GameBoard::get_world_position(state_selection.selected_index.x, state_selection.selected_index.y);
                 transform.position = pos;

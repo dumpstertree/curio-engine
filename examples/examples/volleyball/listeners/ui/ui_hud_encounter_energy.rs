@@ -5,11 +5,11 @@ use core::{
 use std::collections::HashMap;
 
 use system_component_default_gameplay::{
-    built_in::facet::{facet_renderer::component_renderer_animated::RendererAnimated, facet_transform::component_transform2d::Transform2D},
-    gameobject::GameObject,
+    built_in::facet::{renderer::renderer_dynamic::RendererDynamic, transform::transform2d::Transform2D},
+    context_2d::Context2D,
+    form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
-    world_context_2d::WorldContext2D,
 };
 
 use crate::{
@@ -21,7 +21,7 @@ use crate::{
 };
 
 pub struct UIHUD {
-    go_energy_0: HashMap<i32, Vec<GameObject>>,
+    go_energy_0: HashMap<i32, Vec<Form>>,
     // go_energy_1: Vec<GameObject>,
 }
 impl UIHUD {
@@ -36,7 +36,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         println!("present hud encounter");
         let asset = AssetLoader::load_model_animated_from_database(AssetMappingUIDs::EnergyToken.uid());
         // let x_offset = 0.15;
@@ -57,23 +57,23 @@ impl UICommon for UIHUD {
                 }
                 // iterate over total number of energy
                 for j in 0..10 {
-                    let mut r = RendererAnimated::default();
+                    let mut r = RendererDynamic::default();
                     r.set_asset(Some(asset.clone()));
                     r.set_animation("add", false);
 
-                    let mut rr = RendererAnimated::default();
+                    let mut rr = RendererDynamic::default();
                     rr.set_asset(Some(asset.clone()));
                     rr.set_animation("add", false);
 
                     //create
                     let go_0 = context
-                        .instantiate(
+                        .spawn(
                             &format!("animated.energy_0_{}", j),
                             Transform2D::default()
                                 .set_scale(Vector3::one() * 0.05)
                                 .set_position_01(Vector2::new(x_pos, y_start + j as f32 * y_spacing)),
                         )
-                        .add_component_value(r);
+                        .add_facet(r);
 
                     //collect
 
@@ -90,7 +90,7 @@ impl UICommon for UIHUD {
         }
     }
 
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         for x in &self.go_energy_0 {
             for go in x.1 {
                 go.destroy();
@@ -100,7 +100,7 @@ impl UICommon for UIHUD {
         self.go_energy_0.clear();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         let state_energy = game_state.get::<StateEnergy>();
 
         for user_uid in state_energy.all_players {
@@ -110,7 +110,7 @@ impl UICommon for UIHUD {
 
             for i in 0..user_gos.len() {
                 let is_enabled = (i as i32) < user_uid.1.0;
-                user_gos[i].edit_component::<RendererAnimated>(|x| {
+                user_gos[i].edit_facet::<RendererDynamic>(|x| {
                     x.set_animation(if is_enabled { "add" } else { "remove" }, false);
                 })
             }

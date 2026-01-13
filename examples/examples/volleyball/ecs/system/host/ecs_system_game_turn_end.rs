@@ -2,7 +2,7 @@ use ecs_event::impulse;
 use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 use core::{
@@ -28,7 +28,7 @@ impl Scope for ECSSystemGameEndTurn {
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameEndTurn {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnEnd(team) => {
                 // end this turn

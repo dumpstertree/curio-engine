@@ -1,18 +1,18 @@
 use crate::{
     built_in::facet::{
-        component_camera::Camera,
-        component_light::ComponentLight,
-        facet_renderer::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_renderer_text::ComponentRendererText},
-        facet_transform::{component_transform::Transform, component_transform2d::Transform2D},
+        camera::Camera,
+        light::Light,
+        renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic, renderer_text::RendererText},
+        transform::{transform2d::Transform2D, transform3d::Transform3D},
     },
     static_data::global_components::register_global_component,
 };
 pub fn register_built_in_component() {
-    register_global_component::<Transform>();
+    register_global_component::<Transform3D>();
     register_global_component::<Transform2D>();
+    register_global_component::<RendererStatic>();
+    register_global_component::<RendererDynamic>();
+    register_global_component::<RendererText>();
     register_global_component::<Camera>();
-    register_global_component::<ComponentLight>();
-    register_global_component::<Renderer>();
-    register_global_component::<RendererAnimated>();
-    register_global_component::<ComponentRendererText>();
+    register_global_component::<Light>();
 }

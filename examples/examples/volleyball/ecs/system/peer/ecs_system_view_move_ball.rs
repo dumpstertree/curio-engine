@@ -8,12 +8,12 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::habit;
-use system_component_default_gameplay::built_in::facet::facet_renderer::component_renderer_static::Renderer;
-use system_component_default_gameplay::built_in::facet::facet_transform::component_transform::Transform;
+use system_component_default_gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
+use system_component_default_gameplay::built_in::facet::transform::transform3d::Transform3D;
+use system_component_default_gameplay::context_3d::Context3D;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::traits_internal::world_context_common::WorldContextCommon;
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::traits_internal::world_context_common::ContextCommon;
 
 #[habit]
 pub struct Instance {}
@@ -26,11 +26,11 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, _events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, _events: &mut EventQueue) {
         let state_position_ball = game_state.get::<StatePositionBall>();
         let state_time = game_state.get::<TimeState>();
 
-        world.query_mut::<(&mut Transform, &ComponentBall, &mut Renderer)>(|q| {
+        world.edit::<(&mut Transform3D, &ComponentBall, &mut RendererStatic)>(|q| {
             for (_, (transform, _ball, _renderer)) in q {
                 let loc = (state_position_ball.column, state_position_ball.row);
 

@@ -5,7 +5,7 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::context_3d::Context3D;
 use system_component_default_gameplay::{
     built_in::impulse::ui_events::UIEvents,
     traits::{impulse::Impulse, scope::Scope},
@@ -24,7 +24,7 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomEnterShop(_, _) => {
                 println!("enter Shop room");

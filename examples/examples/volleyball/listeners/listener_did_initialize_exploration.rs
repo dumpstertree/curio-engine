@@ -5,7 +5,7 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::context_3d::Context3D;
 use system_component_default_gameplay::{
     built_in::impulse::ui_events::UIEvents,
     traits::{impulse::Impulse, scope::Scope},
@@ -24,7 +24,7 @@ impl Scope for ECSSystemGamePointScored {
     }
 }
 impl Impulse<GameEvents> for ECSSystemGamePointScored {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidInitializeExploration(_) => {
                 event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudStatus));

@@ -2,11 +2,11 @@ use core::collections::{event_queue::EventQueue, game_state::GameState, vector2:
 use std::collections::HashMap;
 
 use system_component_default_gameplay::{
-    built_in::facet::{facet_renderer::component_renderer_text::ComponentRendererText, facet_transform::component_transform2d::Transform2D},
-    gameobject::GameObject,
+    built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
+    context_2d::Context2D,
+    form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
-    world_context_2d::WorldContext2D,
 };
 
 use crate::state::{
@@ -15,7 +15,7 @@ use crate::state::{
 };
 
 pub struct UIHUD {
-    go_text: HashMap<i32, GameObject>,
+    go_text: HashMap<i32, Form>,
 }
 impl UIHUD {
     pub fn new() -> Box<UIHUD> {
@@ -29,7 +29,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get cur turn
         let cur_heat = game_state.get::<StateTeamAssignments>();
 
@@ -43,20 +43,20 @@ impl UICommon for UIHUD {
                         x_pos += 0.05;
                     }
                 }
-                let mut r = ComponentRendererText::default();
+                let mut r = RendererText::default();
                 r.set_font_size(0.03);
                 let guid = user_guid_heat.1[i];
                 self.go_text.insert(
                     guid,
                     context
-                        .instantiate("", Transform2D::default().set_position_01(Vector2::new(x_pos, 0.8)))
-                        .add_component_value(r),
+                        .spawn("", Transform2D::default().set_position_01(Vector2::new(x_pos, 0.8)))
+                        .add_facet(r),
                 );
             }
         }
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         for x in &self.go_text {
             x.1.destroy();
         }
@@ -64,14 +64,14 @@ impl UICommon for UIHUD {
         self.go_text.clear();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {
+    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // get cur turn
         let cur_heat = game_state.get::<StateHeat>().all_players;
 
         // edit the text
         for user_guid_heat in &cur_heat {
             if let Some(go) = self.go_text.get(&user_guid_heat.0) {
-                go.edit_component::<ComponentRendererText>(|x| {
+                go.edit_facet::<RendererText>(|x| {
                     x.set_contents(&format!("HEAT: {}", user_guid_heat.1));
                 });
             }

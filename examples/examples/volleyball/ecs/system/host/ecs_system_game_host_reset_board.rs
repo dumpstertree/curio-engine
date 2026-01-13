@@ -13,7 +13,7 @@ use core::{
 };
 use ecs_event::impulse;
 use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::context_3d::Context3D;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
@@ -28,7 +28,7 @@ impl Scope for ECSSystemGameResetBoard {
 }
 
 impl Impulse<GameEvents> for ECSSystemGameResetBoard {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ResetBoard(serving_team) => {
                 println!("Board Reset------------------------------------------------");

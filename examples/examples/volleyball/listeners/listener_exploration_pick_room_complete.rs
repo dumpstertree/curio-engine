@@ -7,7 +7,7 @@ use core::{
 use ecs_event::impulse;
 use system_component_default_gameplay::{
     traits::{impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 #[derive(Default)]
@@ -23,7 +23,7 @@ impl Scope for ECSSystemGamePointScored {
     }
 }
 impl Impulse<GameEvents> for ECSSystemGamePointScored {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationPickRoomComplete(room) => {
                 // // edit the encounter state to move to the next room

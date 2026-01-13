@@ -9,7 +9,7 @@ use core::{
 };
 use ecs_system::habit;
 use system_component_default_gameplay::traits::{habit::Habit, scope::Scope};
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::context_3d::Context3D;
 
 #[habit]
 pub struct Instance {}
@@ -34,10 +34,10 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
+    fn enable(&mut self, _: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
         println!("enabled turn end");
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
         // get input
         let state_input = game_state.get::<InputState>();
 

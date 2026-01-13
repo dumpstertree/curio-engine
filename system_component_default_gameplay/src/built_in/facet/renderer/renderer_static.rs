@@ -1,4 +1,8 @@
-use crate::{built_in::facet::facet_renderer::component_renderer_text::RendererCommon, gameobject::GameObject, traits::field_override::FieldOverride};
+use crate::{
+    built_in::facet::renderer_common::RendererCommon,
+    form::{FacetCommon, Form},
+    traits::field_override::FieldOverride,
+};
 use core::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset},
@@ -6,16 +10,16 @@ use core::{
 use std::sync::Arc;
 
 #[derive(Clone, Default)]
-pub struct Renderer {
+pub struct RendererStatic {
     pub asset: Option<Arc<ModelAsset>>,
-    parent: Option<GameObject>,
     enabled: bool,
     tint: Color,
     cached_enabled_in_hierachy: bool,
     cached_tint_in_hierachy: Color,
+    owner: Option<Form>,
 }
 
-impl FieldOverride for Renderer {
+impl FieldOverride for RendererStatic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
             "asset" => self.asset = Some(AssetLoader::load_model_static_from_database(value.to_string())),
@@ -26,18 +30,18 @@ impl FieldOverride for Renderer {
     }
 }
 
-unsafe impl Send for Renderer {}
-unsafe impl Sync for Renderer {}
+unsafe impl Send for RendererStatic {}
+unsafe impl Sync for RendererStatic {}
 
-impl Renderer {
-    pub fn default() -> Renderer {
-        Renderer {
+impl RendererStatic {
+    pub fn default() -> RendererStatic {
+        RendererStatic {
             asset: None,
-            parent: None,
             enabled: true,
             tint: Color::white(),
             cached_enabled_in_hierachy: true,
             cached_tint_in_hierachy: Color::white(),
+            owner: None,
         }
     }
     pub fn set_asset(mut self, asset: Option<Arc<ModelAsset>>) -> Self {
@@ -45,15 +49,15 @@ impl Renderer {
         self
     }
 }
-impl RendererCommon for Renderer {
-    fn set_parent(&mut self, parent: Option<GameObject>) {
-        self.parent = parent;
+impl FacetCommon for RendererStatic {
+    fn set_ownership(&mut self, owner: Form) {
+        self.owner = Some(owner);
     }
-
-    fn get_parent(&self) -> Option<GameObject> {
-        self.parent.clone()
+    fn form(&self) -> Form {
+        self.owner.clone().unwrap()
     }
-
+}
+impl RendererCommon for RendererStatic {
     fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }

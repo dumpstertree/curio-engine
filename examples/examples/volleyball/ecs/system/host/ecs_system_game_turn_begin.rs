@@ -15,7 +15,7 @@ use ecs_event::impulse;
 use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 #[derive(Default)]
@@ -30,7 +30,7 @@ impl Scope for ECSSystemGameTurnBegin {
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameTurnBegin {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, events: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnBegin(id) => {
                 // end this turn

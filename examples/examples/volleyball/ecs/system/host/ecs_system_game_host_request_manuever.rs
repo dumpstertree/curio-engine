@@ -12,7 +12,7 @@ use ecs_system::habit;
 use std::sync::Arc;
 use system_component_default_gameplay::{
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 #[derive(Default)]
@@ -27,7 +27,7 @@ impl Scope for ECSSystemGameRequestManuever {
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event

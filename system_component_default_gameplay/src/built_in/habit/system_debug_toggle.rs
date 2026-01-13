@@ -6,8 +6,8 @@ use core::{
 };
 
 use crate::{
+    context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
-    world_context_3d::WorldContext,
 };
 
 #[derive(Default)]
@@ -18,15 +18,15 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
-        game_state.get::<StateDebug>().is_inspecting
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+        true
     }
     fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
         // get state
         let state_input = game_state.get::<InputState>();
 

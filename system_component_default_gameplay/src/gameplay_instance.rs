@@ -6,12 +6,11 @@ use hecs::World;
 use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, vec};
 
 use crate::{
-    UIPanel,
     built_in::impulse::ui_events::UIEvents,
+    context_2d::Context2D,
+    context_3d::Context3D,
     static_data::{global_ecs::get_global_ecs_instances, global_event_recievers::get_global_event_receivers},
-    traits::{habit::Habit, impulse::Impulse, ui_events::IUIEvent},
-    world_context_2d::WorldContext2D,
-    world_context_3d::WorldContext,
+    traits::{habit::Habit, impulse::Impulse, ui_events::IUIEvent, ui_panel::UIPanel},
 };
 
 pub struct GameplayInstance<T, U>
@@ -20,11 +19,9 @@ where
     U: IUIEvent + Clone + 'static,
 {
     phantom_u: PhantomData<U>,
-    // network_mode: NetworkModes,
     has_been_init: bool,
-    // game_state: GameState,
-    world: WorldContext,
-    world_2d: WorldContext2D,
+    context_32: Context3D,
+    context_2d: Context2D,
     ecs_systems: Vec<(Box<dyn Habit>, bool)>,
     event_recievers: Vec<Box<dyn Impulse<T>>>,
 
@@ -37,11 +34,12 @@ where
     U: IUIEvent + Clone + 'static,
 {
     pub fn new() -> GameplayInstance<T, U> {
-        //
-        let w = Rc::new(RefCell::new(World::new()));
+        // create the base world for our contexts
+        let hecs_world = Rc::new(RefCell::new(World::new()));
+
         //create the world everything is in
-        let world = WorldContext::new(w.clone());
-        let world_2d = WorldContext2D::new(w.clone());
+        let context_3d = Context3D::new(hecs_world.clone());
+        let context_2d = Context2D::new(hecs_world.clone());
 
         // get all ecs instances
         let mut ecs_systems = vec![];
@@ -57,8 +55,8 @@ where
 
         // create the instance
         GameplayInstance::<T, U> {
-            world,
-            world_2d,
+            context_32: context_3d,
+            context_2d,
             ecs_systems,
             event_recievers,
             has_been_init: false,
@@ -74,7 +72,7 @@ where
 
             // initialize each
             for x in self.ecs_systems.iter_mut() {
-                x.0.init(game_state, &mut self.world, event_queue);
+                x.0.init(game_state, &mut self.context_32, event_queue);
             }
         }
 
@@ -97,14 +95,14 @@ where
             if should_be_enabled && !is_enabled {
                 ecs_system
                     .0
-                    .enable(game_state, &mut self.world, event_queue);
+                    .enable(game_state, &mut self.context_32, event_queue);
             }
 
             // disable
             if !should_be_enabled && is_enabled {
                 ecs_system
                     .0
-                    .disable(game_state, &mut self.world, event_queue);
+                    .disable(game_state, &mut self.context_32, event_queue);
             }
 
             // save the new value
@@ -122,13 +120,13 @@ where
                 UIEvents::Open(x) => {
                     let mut i = x.new_instance();
                     i.init();
-                    i.present(game_state, event_queue, &mut self.world_2d);
+                    i.present(game_state, event_queue, &mut self.context_2d);
                     //
                     self.ui.insert(x, i);
                 }
                 UIEvents::Close(u) => {
                     if let Some(mut x) = self.ui.remove(&u) {
-                        x.dismiss(game_state, event_queue, &mut self.world_2d);
+                        x.dismiss(game_state, event_queue, &mut self.context_2d);
                     }
                 }
             }
@@ -159,7 +157,7 @@ where
                 }
 
                 // apply the event to the reciever
-                event_reciever.dequeue_event(game_state, &mut self.world, event_queue, this_event);
+                event_reciever.dequeue_event(game_state, &mut self.context_32, event_queue, this_event);
             }
 
             // remove
@@ -189,19 +187,23 @@ where
                 continue;
             }
             // debug
-            ecs_system.0.debug(game_state, &mut self.world, event_queue);
+            ecs_system
+                .0
+                .debug(game_state, &mut self.context_32, event_queue);
             // tick
             ecs_system
                 .0
-                .will_tick(game_state, &mut self.world, event_queue);
-            ecs_system.0.tick(game_state, &mut self.world, event_queue);
+                .will_tick(game_state, &mut self.context_32, event_queue);
             ecs_system
                 .0
-                .did_tick(game_state, &mut self.world, event_queue);
+                .tick(game_state, &mut self.context_32, event_queue);
+            ecs_system
+                .0
+                .did_tick(game_state, &mut self.context_32, event_queue);
         }
 
         for x in self.ui.iter_mut() {
-            x.1.tick(game_state, event_queue, &mut self.world_2d);
+            x.1.tick(game_state, event_queue, &mut self.context_2d);
         }
         // dequeue events
     }

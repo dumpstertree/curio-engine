@@ -22,7 +22,7 @@ use ecs_system::habit;
 use std::sync::Arc;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::context_3d::Context3D;
 
 pub struct ResponseBuilder {
     card_instance: Arc<CardInstance>,
@@ -186,7 +186,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue) {
         let team = game_state
             .get::<StateTeamAssignments>()
             .team_for(&game_state.instance_id);

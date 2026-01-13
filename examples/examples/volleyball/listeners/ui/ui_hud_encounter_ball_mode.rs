@@ -1,16 +1,16 @@
 use core::collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2};
 use system_component_default_gameplay::{
-    built_in::facet::{facet_renderer::component_renderer_text::ComponentRendererText, facet_transform::component_transform2d::Transform2D},
-    gameobject::GameObject,
+    built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
+    context_2d::Context2D,
+    form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
-    world_context_2d::WorldContext2D,
 };
 
 use crate::state::state_ball_mode::{BallModes, StateBallMode};
 
 pub struct UIHUD {
-    go_text: Option<GameObject>,
+    go_text: Option<Form>,
 }
 impl UIHUD {
     pub fn new() -> Box<UIHUD> {
@@ -24,21 +24,21 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // create obj
         let go_text = context
-            .instantiate("text.ball_mode", Transform2D::default().set_position_01(Vector2::new(0.5, 0.7)))
-            .add_component_default::<ComponentRendererText>();
+            .spawn("text.ball_mode", Transform2D::default().set_position_01(Vector2::new(0.5, 0.7)))
+            .add_facet_default::<RendererText>();
 
         // save
         self.go_text = Some(go_text);
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         self.go_text.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut WorldContext2D) {
+    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // try to unwrap
         let Some(go_text) = &self.go_text else {
             return;
@@ -48,7 +48,7 @@ impl UICommon for UIHUD {
         let cur_mode = game_state.get::<StateBallMode>().mode;
 
         // edit the text
-        go_text.edit_component::<ComponentRendererText>(|x| {
+        go_text.edit_facet::<RendererText>(|x| {
             match cur_mode {
                 BallModes::Serve => x.set_contents("SERVE"),
                 BallModes::Bump => x.set_contents("BUMP"),

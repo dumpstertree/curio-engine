@@ -1,21 +1,23 @@
-use crate::gameobject::GameObject;
+use crate::form::Form;
+use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
 use core::io::asset_loader::PrefabGameObject;
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub trait WorldContextCommon {
+pub trait ContextCommon {
     /// Removes all entities and components.
     fn clear(&mut self) {
-        self.get_world().borrow_mut().clear();
+        self.hecs_world().borrow_mut().clear();
     }
 
+    /// Get Facets-Form combinations in context
     fn get<Q>(&self) -> Vec<Q>
     where
         Q: hecs::Component + Clone,
     {
-        let world_ref = self.get_world();
+        let world_ref = self.hecs_world();
         let world = world_ref.borrow(); // Immutable borrow
         let mut out = Vec::new();
 
@@ -25,67 +27,55 @@ pub trait WorldContextCommon {
 
         out
     }
-    fn instantiate_prefab(&mut self, prefab: &PrefabGameObject) -> GameObject {
-        // create entity
-        let entity = {
-            let world = self.get_world();
-            let mut world = world.borrow_mut();
-            world.spawn(())
-        };
 
-        println!("instantiated {}", prefab.name);
-
-        let mut go = GameObject::new(
-            &prefab.name,
-            self.get_world().clone(),
-            entity,
-            prefab
-                .children
-                .iter()
-                .map(|x| self.instantiate_prefab(x))
-                .collect(),
-        );
-        for component in &prefab.components {
-            let x = get_global_ecs_instances(&component.r#type);
-            x(&mut go, &component.fields);
-        }
-
-        go
-    }
-
-    // /// Collect query results into an owned Vec so the borrow ends inside the fn.
-    // fn query<Q>(&self) -> Vec<(Entity, <Q as Query>::Item<'static>)>
-    // where
-    //     Q: hecs::Query + Clone,
-    // {
-    //     let world = self.get_world();
-    //     let world_ref = world.borrow();
-
-    //     let mut out: Vec<(Entity, <Q as Query>::Item<'_>)> = Vec::new();
-
-    //     // iterate produces Q::Item<'a>
-    //     for item in world_ref.query::<Q>().iter() {
-    //         out.push(item.clone());
-    //     }
-
-    //     out
-    // }
-
-    /// Borrow a query from the world.
-    fn query_mut<Q>(&self, f: impl FnOnce(QueryMut<Q>))
+    /// Edit Facets-Form combinations in context
+    fn edit<Q>(&self, f: impl FnOnce(QueryMut<Q>))
     where
         Q: hecs::Query,
     {
-        let w = self.get_world();
+        let w = self.hecs_world();
         let mut world_ref = w.borrow_mut();
         let q = world_ref.query_mut::<Q>();
         f(q);
     }
 
-    /// Destroy a GameObject (Unity-style "Destroy").
-    fn destroy(&mut self, go: GameObject) {
-        let _ = self.get_world().borrow_mut().despawn(go.entity);
+    /// instantiate a prefab into the context
+    fn spawn_prefab_recursive(&mut self, prefab: &PrefabGameObject) -> Form {
+        let hecs_world = self.hecs_world();
+        // create entity
+        let entity = {
+            // spawn the entity
+            let mut world = hecs_world.borrow_mut();
+            // spawn
+            world.spawn(())
+        };
+
+        // create children forms
+        let child_forms: Vec<Form> = prefab
+            .children
+            .iter()
+            .map(|x| self.spawn_prefab_recursive(x))
+            .collect();
+        println!("SPAWN PREFAB RECURSIVE CHILDREN LEN {}", child_forms.len());
+        //
+        let mut parent_form = FormRef::new(&prefab.name, hecs_world, entity);
+
+        // create parent child relationship
+        for mut child in child_forms {
+            child.set_parent(Some(parent_form.clone()));
+        }
+
+        // add all facets
+        for facet in &prefab.components {
+            // get fn from global
+            let facet_fn = get_global_ecs_instances(&facet.r#type);
+            // create facet
+            facet_fn(&mut parent_form, &facet.fields);
+        }
+
+        // return the parent form
+        parent_form
     }
 
-    fn get_world(&self) -> Rc<RefCell<World>>;
+    fn hecs_world(&self) -> Rc<RefCell<World>>;
 }

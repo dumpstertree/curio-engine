@@ -6,7 +6,7 @@ use core::{
 
 use crate::{
     traits::{habit::Habit, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 #[derive(Default)]
@@ -25,14 +25,14 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
         // game_state.edit::<StateSun>(|x| {
         //     x.cast_shadows = true;
         //     x.color = Color::green();
         //     x.direction = (Vector3::down() + Vector3::forward()).normalize_and_copy()
         // });
     }
-    fn did_tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
         //edit draw call states
         let t = state.get::<TimeState>().scaled_time;
         // state.edit::<StateLights>(|x| {

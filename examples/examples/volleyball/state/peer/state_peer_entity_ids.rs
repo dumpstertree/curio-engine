@@ -2,14 +2,14 @@ use core::{collections::state_ownerships::StateOwnerships, system::system_game_s
 use std::{collections::HashMap, hash::Hash};
 
 use macro_state::global_state;
-use system_component_default_gameplay::gameobject::GameObject;
+use system_component_default_gameplay::form::Form;
 
 #[global_state]
 pub struct StateEntityIDs {
-    ids: HashMap<EntityIDTypes, Vec<GameObject>>,
+    ids: HashMap<EntityIDTypes, Vec<Form>>,
 }
 impl StateEntityIDs {
-    pub fn add(&mut self, id_type: EntityIDTypes, id: GameObject) {
+    pub fn add(&mut self, id_type: EntityIDTypes, id: Form) {
         if !self.ids.contains_key(&id_type) {
             self.ids.insert(id_type.clone(), Vec::new());
         }
@@ -18,7 +18,7 @@ impl StateEntityIDs {
             val.push(id);
         };
     }
-    pub fn get(&self, id_type: EntityIDTypes) -> Vec<GameObject> {
+    pub fn get(&self, id_type: EntityIDTypes) -> Vec<Form> {
         if let Some(val) = self.ids.get(&id_type) {
             return val.clone();
         };

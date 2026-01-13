@@ -1,10 +1,10 @@
 use built_in_state::state_time::TimeState;
 use ecs_system::habit;
 use system_component_default_gameplay::{
-    built_in::facet::{component_camera::Camera, facet_transform::component_transform::Transform},
+    built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
+    context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
-    traits_internal::world_context_common::WorldContextCommon,
-    world_context_3d::WorldContext,
+    traits_internal::world_context_common::ContextCommon,
 };
 
 use core::{
@@ -28,9 +28,9 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
-    fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue) {}
-    fn did_tick(&mut self, game_state: &mut GameState, context: &mut WorldContext, _: &mut EventQueue) {
+    fn init(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {}
+    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue) {}
+    fn did_tick(&mut self, game_state: &mut GameState, context: &mut Context3D, _: &mut EventQueue) {
         // get state
         let state_select_target = game_state.get::<StatePeerSelectTargets>();
         let state_time = game_state.get::<TimeState>();
@@ -62,7 +62,7 @@ impl Habit for Instance {
         // let focus_pos = (pos_player + pos_ball) / 2.0;
         let focus_pos = t / i;
 
-        context.query_mut::<(&Camera, &mut Transform)>(|x| {
+        context.edit::<(&Camera, &mut Transform3D)>(|x| {
             for (_, (_, t)) in x {
                 let mut tar: Vector3;
                 let rot: Quaternion;

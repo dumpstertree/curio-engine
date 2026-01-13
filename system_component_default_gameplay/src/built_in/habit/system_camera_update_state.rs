@@ -6,10 +6,10 @@ use core::{
 // use ecs_system::habit;
 
 use crate::{
-    built_in::facet::{component_camera::Camera, facet_transform::component_transform::Transform},
+    built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
+    context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
-    traits_internal::world_context_common::WorldContextCommon,
-    world_context_3d::WorldContext,
+    traits_internal::world_context_common::ContextCommon,
 };
 
 // #[global_ecs_system]
@@ -24,11 +24,11 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
+    fn tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
         if state.get::<StateDebug>().is_paused {
             return;
         }
-        world.query_mut::<(&mut Transform, &Camera)>(|q| {
+        world.edit::<(&mut Transform3D, &Camera)>(|q| {
             //
             for (_entity, (transform, _camera)) in q {
                 state.edit::<CameraState>(|x| {

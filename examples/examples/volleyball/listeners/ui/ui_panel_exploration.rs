@@ -3,13 +3,13 @@ use core::collections::{event_queue::EventQueue, game_state::GameState, vector2:
 use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{
     built_in::facet::{
-        facet_renderer::component_renderer_text::{AligmentHorizontal, AligmentVertical, ComponentRendererText},
-        facet_transform::component_transform2d::Transform2D,
+        renderer::renderer_text::{AligmentHorizontal, AligmentVertical, RendererText},
+        transform::transform2d::Transform2D,
     },
-    gameobject::GameObject,
+    context_2d::Context2D,
+    form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
-    world_context_2d::WorldContext2D,
 };
 
 use crate::{
@@ -20,8 +20,8 @@ use crate::{
 
 pub struct UIPanelInstance {
     selected_index: i32,
-    go_desc: Option<GameObject>,
-    go_opts: Vec<GameObject>,
+    go_desc: Option<Form>,
+    go_opts: Vec<Form>,
     rooms: Vec<Room>,
 }
 impl UIPanelInstance {
@@ -42,13 +42,13 @@ impl UIPanel for UIPanelInstance {
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
-        let mut rend = ComponentRendererText::default();
+    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+        let mut rend = RendererText::default();
         rend.set_contents("Where to go next?");
         // create obj
         let go_desc = context
-            .instantiate("text.description", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
-            .add_component_value(rend);
+            .spawn("text.description", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
+            .add_facet(rend);
 
         let next_rooms = game_state
             .get::<StateExploration>()
@@ -68,7 +68,7 @@ impl UICommon for UIPanelInstance {
                 RoomTypes::Boss => "boss",
             };
 
-            let mut rend = ComponentRendererText::default();
+            let mut rend = RendererText::default();
             rend.set_contents(rt);
             rend.set_horizontal_alignment(AligmentHorizontal::Center);
             rend.set_vertical_alignment(AligmentVertical::Center);
@@ -76,8 +76,8 @@ impl UICommon for UIPanelInstance {
 
             println!("room {} ", rt);
             let go_opt_0 = context
-                .instantiate("text.option_0", Transform2D::default().set_position_01(Vector2::new(x_pos, 0.4)))
-                .add_component_value(rend);
+                .spawn("text.option_0", Transform2D::default().set_position_01(Vector2::new(x_pos, 0.4)))
+                .add_facet(rend);
             self.go_opts.push(go_opt_0);
         }
 
@@ -85,7 +85,7 @@ impl UICommon for UIPanelInstance {
         self.go_desc = Some(go_desc);
     }
 
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         self.go_desc.clone().unwrap().destroy();
         for x in &self.go_opts {
             x.destroy();
@@ -95,7 +95,7 @@ impl UICommon for UIPanelInstance {
         // self.go_opt_1.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         let input_state = game_state.get::<InputState>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
@@ -128,7 +128,7 @@ impl UICommon for UIPanelInstance {
         let sin = f32::sin(game_state.get::<TimeState>().unscaled_time as f32 * 5.0);
         for i in 0..self.go_opts.len() {
             let go = &self.go_opts[i];
-            go.edit_component::<Transform2D>(|x| {
+            go.edit_facet::<Transform2D>(|x| {
                 if i as i32 == self.selected_index {
                     x.scale = Vector3::one() * 0.5 + Vector3::one() * 0.1 * sin;
                     // x.position = Vector2::new(0.5, 0.5);

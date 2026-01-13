@@ -10,12 +10,12 @@ use core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::habit;
-use system_component_default_gameplay::built_in::facet::facet_renderer::component_renderer_animated::RendererAnimated;
-use system_component_default_gameplay::built_in::facet::facet_transform::component_transform::Transform;
+use system_component_default_gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
+use system_component_default_gameplay::built_in::facet::transform::transform3d::Transform3D;
+use system_component_default_gameplay::context_3d::Context3D;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::traits_internal::world_context_common::WorldContextCommon;
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::traits_internal::world_context_common::ContextCommon;
 
 #[habit]
 pub struct Instance {}
@@ -28,11 +28,11 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, events: &mut EventQueue) {
         let state_position_player = game_state.get::<StatePositionEntities>();
         let state_time = game_state.get::<TimeState>();
 
-        world.query_mut::<(&mut Transform, &ComponentPlayer, &ComponentViewPlayer, &mut RendererAnimated)>(|query| {
+        world.edit::<(&mut Transform3D, &ComponentPlayer, &ComponentViewPlayer, &mut RendererDynamic)>(|query| {
             for (_, (transform, player, _, renderer)) in query {
                 let Some(loc) = state_position_player.positions.get(&player.player_id) else {
                     continue;

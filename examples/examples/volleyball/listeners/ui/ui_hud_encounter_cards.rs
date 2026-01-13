@@ -5,16 +5,14 @@ use core::{
 use std::sync::Arc;
 use system_component_default_gameplay::{
     built_in::facet::{
-        facet_renderer::{
-            component_renderer_static::Renderer,
-            component_renderer_text::{ComponentRendererText, RendererCommon},
-        },
-        facet_transform::component_transform2d::Transform2D,
+        renderer::{renderer_static::RendererStatic, renderer_text::RendererText},
+        renderer_common::RendererCommon,
+        transform::transform2d::Transform2D,
     },
-    gameobject::GameObject,
+    context_2d::Context2D,
+    form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
-    world_context_2d::WorldContext2D,
 };
 
 use crate::{
@@ -35,7 +33,7 @@ use crate::{
 
 #[derive(Default)]
 pub struct UIHUDInstance {
-    open_gos: Option<Vec<GameObject>>,
+    open_gos: Option<Vec<Form>>,
 }
 impl UIHUDInstance {
     pub fn new() -> Box<UIHUDInstance> {
@@ -48,13 +46,13 @@ impl UIPanel for UIHUDInstance {
 }
 impl UICommon for UIHUDInstance {
     fn init(&mut self) {}
-    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         self.open_gos = Some(Self::spawn_ui_cards(game_state, context));
     }
-    fn dismiss(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn dismiss(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         Self::despawn_ui_cards(game_state, context);
     }
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         let Some(open_gos) = &self.open_gos else {
             return;
         };
@@ -69,27 +67,27 @@ impl UICommon for UIHUDInstance {
         let pos_out_of_play = Vector3::new(0.95, 0.9, 0.0);
 
         for go in open_gos {
-            let c = go.get_component::<ComponentCard>().unwrap();
+            let c = go.get_facet::<ComponentCard>().unwrap();
             let card = c.card_instance.unwrap();
             let location = deck
                 .get_location(card.clone(), |x| x.get_manuever_type() != CardTypes::Move)
                 .unwrap();
             match location {
                 crate::state::state_deck::CardLocation::Deck(i) => {
-                    go.edit_component::<Transform2D>(|x| {
+                    go.edit_facet::<Transform2D>(|x| {
                         x.position = Vector3::lerp(x.position.to_vector3(0.0), pos_deck, 0.2).to_vector2();
                         x.scale = Vector3::one() * 0.25;
                     });
-                    go.edit_component::<Renderer>(|x| {
+                    go.edit_facet::<RendererStatic>(|x| {
                         x.set_enabled(i == 0);
                     });
                 }
                 crate::state::state_deck::CardLocation::Discard(i) => {
-                    go.edit_component::<Transform2D>(|x| {
+                    go.edit_facet::<Transform2D>(|x| {
                         x.position = Vector3::lerp(x.position.to_vector3(0.0), pos_discard, 0.2).to_vector2();
                         x.scale = Vector3::one() * 0.25;
                     });
-                    go.edit_component::<Renderer>(|x| {
+                    go.edit_facet::<RendererStatic>(|x| {
                         x.set_enabled(i == 0);
                     });
                 }
@@ -109,7 +107,7 @@ impl UICommon for UIHUDInstance {
 
                     let xx = 0.5 + (i - index) as f32 * 0.2;
 
-                    go.edit_component::<Renderer>(|renderer: &mut Renderer| {
+                    go.edit_facet::<RendererStatic>(|renderer: &mut RendererStatic| {
                         let is_met = card.has_statement(game_state, game_state.instance_id);
                         let col_spell = Color::new_hex("#f7a5f3");
                         let col_persistent = Color::new_hex("#f7c8a5");
@@ -141,17 +139,17 @@ impl UICommon for UIHUDInstance {
                             }
                         }
                     });
-                    go.edit_component::<Transform2D>(|x| {
+                    go.edit_facet::<Transform2D>(|x| {
                         x.position = Vector3::lerp(x.position.to_vector3(0.0), Vector3::new(xx, y, 0.0), 0.2).to_vector2();
                         x.scale = Vector3::one() * 0.75;
                     });
                 }
                 crate::state::state_deck::CardLocation::OutOfPlay(i) => {
-                    go.edit_component::<Transform2D>(|x| {
+                    go.edit_facet::<Transform2D>(|x| {
                         x.position = Vector3::lerp(x.position.to_vector3(0.0), pos_out_of_play, 0.2).to_vector2();
                         x.scale = Vector3::one() * 0.25;
                     });
-                    go.edit_component::<Renderer>(|x| {
+                    go.edit_facet::<RendererStatic>(|x| {
                         x.set_enabled(i == 0);
                     });
                 }
@@ -160,7 +158,7 @@ impl UICommon for UIHUDInstance {
     }
 }
 impl UIHUDInstance {
-    fn spawn_card(game_state: &mut GameState, world: &mut WorldContext2D, x: Arc<CardInstance>) -> (GameObject, Vec<GameObject>) {
+    fn spawn_card(game_state: &mut GameState, world: &mut Context2D, x: Arc<CardInstance>) -> (Form, Vec<Form>) {
         // card asset
         let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
 
@@ -190,9 +188,9 @@ impl UIHUDInstance {
         // create description
         let asset = AssetLoader::load_model_static_from_database(AssetMappingUIDs::Card.uid());
         let parent = world
-            .instantiate("", Transform2D::default())
-            .add_component_value(Renderer::default().set_asset(Some(asset.clone())))
-            .add_component_value(ComponentCard::default().set_instance(x.clone()));
+            .spawn("", Transform2D::default())
+            .add_facet(RendererStatic::default().set_asset(Some(asset.clone())))
+            .add_facet(ComponentCard::default().set_instance(x.clone()));
 
         let mut desc = x.get_master().description.clone();
         for life in x.get_attributes_lifecycle() {
@@ -209,13 +207,13 @@ impl UIHUDInstance {
                 crate::state::state_deck::CardAttributeLifecycle::Consume => desc = desc + ".CONSUME. ",
             }
         }
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&desc);
-        r.set_parent(Some(parent.clone()));
-        let e0: GameObject = world
-            .instantiate(
+        // r.set_parent(Some(parent.clone()));
+        let mut e0: Form = world
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -223,17 +221,17 @@ impl UIHUDInstance {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
 
         // r.set_parent(Some(parent.clone()));
         // create title
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.5, 0.2));
         r.set_font_size(0.03);
         r.set_contents(&x.get_title());
-        r.set_parent(Some(parent.clone()));
-        let e1 = world
-            .instantiate(
+        // r.set_parent(Some(parent.clone()));
+        let mut e1 = world
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -241,15 +239,15 @@ impl UIHUDInstance {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
         // create type
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
         r.set_contents(&format!("{}", x.get_manuever_type()));
-        r.set_parent(Some(parent.clone()));
-        let e2 = world
-            .instantiate(
+        // r.set_parent(Some(parent.clone()));
+        let mut e2 = world
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -257,16 +255,16 @@ impl UIHUDInstance {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
         // create cost
-        let mut r = ComponentRendererText::default();
+        let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.03);
         r.set_contents(&x.get_cost(&game_state, game_state.instance_id).to_string());
         // r.set_contents("0");
-        r.set_parent(Some(parent.clone()));
-        let e3 = world
-            .instantiate(
+        // r.set_parent(Some(parent.clone()));
+        let mut e3 = world
+            .spawn(
                 "",
                 Transform2D::default()
                     .set_render_order(1)
@@ -274,9 +272,9 @@ impl UIHUDInstance {
                     .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
                     .set_parent(Some(parent.clone())),
             )
-            .add_component_value(r);
+            .add_facet(r);
 
-        parent.edit_component::<Renderer>(|rend| {
+        parent.edit_facet::<RendererStatic>(|rend| {
             let col_spell = Color::new_hex("#f7a5f3");
             let col_persistent = Color::new_hex("#f7c8a5");
             let col_bump = Color::new_hex("#4efff9");
@@ -298,9 +296,14 @@ impl UIHUDInstance {
             }
         });
 
+        e0.set_parent(Some(parent.clone()));
+        e1.set_parent(Some(parent.clone()));
+        e2.set_parent(Some(parent.clone()));
+        e3.set_parent(Some(parent.clone()));
+
         (parent.clone(), vec![parent, e0, e1, e2, e3])
     }
-    fn despawn_ui_cards(game_state: &mut GameState, world: &mut WorldContext2D) {
+    fn despawn_ui_cards(game_state: &mut GameState, world: &mut Context2D) {
         let id = EntityIDTypes::UICards;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
@@ -308,7 +311,7 @@ impl UIHUDInstance {
         }
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
-    pub fn spawn_ui_cards(game_state: &mut GameState, world: &mut WorldContext2D) -> Vec<GameObject> {
+    pub fn spawn_ui_cards(game_state: &mut GameState, world: &mut Context2D) -> Vec<Form> {
         let state_deck = game_state.get::<StateDeck>();
         let state_teams = game_state.get::<StateTeamAssignments>();
 

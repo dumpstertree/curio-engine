@@ -8,7 +8,7 @@ use core::{
 };
 use ecs_event::impulse;
 use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::context_3d::Context3D;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
@@ -23,7 +23,7 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestHeal(user_guid) => {
                 let state_currency = game_state.get::<StateCurrency>();

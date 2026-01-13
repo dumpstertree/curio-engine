@@ -1,4 +1,4 @@
-use crate::world_context_2d::WorldContext2D;
+use crate::context_2d::Context2D;
 use core::collections::{event_queue::EventQueue, game_state::GameState};
 
 pub trait UICommon {
@@ -13,7 +13,7 @@ pub trait UICommon {
         obj.destroy()
 
     */
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D);
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D);
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D);
+    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D);
+    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D);
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D);
 }

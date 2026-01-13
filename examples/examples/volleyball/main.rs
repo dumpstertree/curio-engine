@@ -221,7 +221,7 @@ use core::{
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use system_component_default_gameplay::{
-    SystemComponentDefaultGameplay,
+    system_component_default_gameplay::SystemComponentDefaultGameplay,
     traits::{ui_events::IUIEvent, ui_panel::UIPanel},
 };
 use system_component_default_input::SystemComponentDefaultInput;

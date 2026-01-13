@@ -2,7 +2,7 @@ use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 use core::{
@@ -29,7 +29,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue) {
         println!("Instance: {}. Host Startup", game_state.instance_id);
 
         // set resolution

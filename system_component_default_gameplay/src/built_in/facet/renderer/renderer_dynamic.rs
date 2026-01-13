@@ -4,25 +4,30 @@ use core::{
 };
 use std::sync::Arc;
 
-use crate::{built_in::facet::facet_renderer::component_renderer_text::RendererCommon, gameobject::GameObject, traits::field_override::FieldOverride};
+use crate::{
+    built_in::facet::renderer_common::RendererCommon,
+    form::{FacetCommon, Form},
+    traits::field_override::FieldOverride,
+};
 
-unsafe impl Send for RendererAnimated {}
-unsafe impl Sync for RendererAnimated {}
+unsafe impl Send for RendererDynamic {}
+unsafe impl Sync for RendererDynamic {}
 
-pub struct RendererAnimated {
+pub struct RendererDynamic {
     cached_enabled_in_hierachy: bool,
     cached_tint_in_hierachy: Color,
     pub asset: Option<Arc<ModelAssetAnimated>>,
     pub mesh: Vec<Arc<ModelAsset>>,
     animation: String,
-    parent: Option<GameObject>,
+    parent: Option<Form>,
     enabled: bool,
     tint: Color,
     looping: bool,
     last_anim: String,
     last_frame_index: i32,
+    owner: Option<Form>,
 }
-impl Default for RendererAnimated {
+impl Default for RendererDynamic {
     fn default() -> Self {
         Self {
             cached_enabled_in_hierachy: Default::default(),
@@ -36,11 +41,12 @@ impl Default for RendererAnimated {
             looping: Default::default(),
             last_anim: Default::default(),
             last_frame_index: Default::default(),
+            owner: None,
         }
     }
 }
 
-impl FieldOverride for RendererAnimated {
+impl FieldOverride for RendererDynamic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
             "asset" => self.asset = Some(AssetLoader::load_model_animated_from_database(value.to_string())),
@@ -53,7 +59,7 @@ impl FieldOverride for RendererAnimated {
         }
     }
 }
-impl Clone for RendererAnimated {
+impl Clone for RendererDynamic {
     fn clone(&self) -> Self {
         Self {
             last_anim: String::new(),
@@ -67,11 +73,12 @@ impl Clone for RendererAnimated {
             cached_enabled_in_hierachy: false,
             cached_tint_in_hierachy: Color::white(),
             looping: false,
+            owner: self.owner.clone(),
         }
     }
 }
 
-impl RendererCommon for RendererAnimated {
+impl RendererCommon for RendererDynamic {
     fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
         self.cached_enabled_in_hierachy = val;
     }
@@ -87,13 +94,13 @@ impl RendererCommon for RendererAnimated {
     fn get_cached_tint_in_hierarchy(&self) -> Color {
         self.cached_tint_in_hierachy
     }
-    fn set_parent(&mut self, parent: Option<GameObject>) {
-        self.parent = parent;
-    }
+    // fn set_parent(&mut self, parent: Option<Form>) {
+    //     self.parent = parent;
+    // }
 
-    fn get_parent(&self) -> Option<GameObject> {
-        self.parent.clone()
-    }
+    // fn get_parent(&self) -> Option<Form> {
+    //     self.parent.clone()
+    // }
 
     fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
@@ -111,10 +118,17 @@ impl RendererCommon for RendererAnimated {
         self.tint
     }
 }
-
-impl RendererAnimated {
-    pub fn default() -> RendererAnimated {
-        RendererAnimated {
+impl FacetCommon for RendererDynamic {
+    fn set_ownership(&mut self, owner: Form) {
+        self.owner = Some(owner);
+    }
+    fn form(&self) -> Form {
+        self.owner.clone().unwrap()
+    }
+}
+impl RendererDynamic {
+    pub fn default() -> RendererDynamic {
+        RendererDynamic {
             last_anim: String::new(),
             last_frame_index: -1,
             asset: None,
@@ -126,6 +140,7 @@ impl RendererAnimated {
             cached_enabled_in_hierachy: false,
             cached_tint_in_hierachy: Color::white(),
             looping: false,
+            owner: None,
         }
     }
 

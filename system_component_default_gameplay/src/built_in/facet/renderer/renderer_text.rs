@@ -5,175 +5,38 @@ use core::{
         model_asset::ModelAsset,
     },
 };
-use std::{cell::RefMut, sync::Arc};
-
-use hecs::World;
+use std::sync::Arc;
 
 use crate::{
-    built_in::facet::facet_renderer::{component_renderer_animated::RendererAnimated, component_renderer_static::Renderer},
-    gameobject::GameObject,
+    built_in::facet::{
+        renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic},
+        renderer_common::RendererCommon,
+    },
+    context_3d::Context3D,
+    form::{FacetCommon, Form},
     traits::field_override::FieldOverride,
-    world_context_3d::WorldContext,
 };
 
-pub fn update(world: &mut WorldContext) {
-    let borrow = world.world.borrow_mut();
-    for w in borrow.iter() {
-        if let Some(mut x) = w.get::<&mut ComponentRendererText>() {
-            _ = x.update_enabled_in_heirarchy(&borrow);
-        }
-        if let Some(mut x) = w.get::<&mut RendererAnimated>() {
-            _ = x.update_enabled_in_heirarchy(&borrow);
-        }
-        if let Some(mut x) = w.get::<&mut Renderer>() {
-            _ = x.update_enabled_in_heirarchy(&borrow);
-        }
-    }
-}
+// pub fn update(world: &mut Context3D) {
+//     let borrow = world.world.borrow_mut();
+//     for w in borrow.iter() {
+//         if let Some(mut x) = w.get::<&mut RendererText>() {
+//             _ = x.update_enabled_in_heirarchy(&borrow);
+//         }
+//         if let Some(mut x) = w.get::<&mut RendererDynamic>() {
+//             _ = x.update_enabled_in_heirarchy(&borrow);
+//         }
+//         if let Some(mut x) = w.get::<&mut RendererStatic>() {
+//             _ = x.update_enabled_in_heirarchy(&borrow);
+//         }
+//     }
+// }
 
-pub trait RendererCommon {
-    fn set_cached_enabled_in_hierarchy(&mut self, val: bool);
-    fn get_cached_enabled_in_hierarchy(&self) -> bool;
-
-    fn set_cached_tint_in_hierarchy(&mut self, val: Color);
-    fn get_cached_tint_in_hierarchy(&self) -> Color;
-
-    // hierachy
-    fn set_parent(&mut self, parent: Option<GameObject>);
-    fn get_parent(&self) -> Option<GameObject>;
-    // tint
-    fn set_tint(&mut self, tint: Color);
-    fn get_tint(&self) -> Color;
-    // enabled
-    fn set_enabled(&mut self, enabled: bool);
-    fn get_enabled(&self) -> bool;
-    //
-    // fn tint_in_hierachy(&self, world: &World) -> Color {
-    //     let mut tint = self.get_tint();
-    //     let mut current = self.get_parent();
-    //     while let Some(parent_entity) = &current {
-    //         // if let Some(parent_renderer) = parent_entity.get_component::<&ComponentRendererText>() {
-    //         //     tint = tint * parent_renderer.get_tint();
-    //         //     current = parent_renderer.get_parent();
-    //         // } else if let Some(parent_renderer) = parent_entity.get_component::<&Renderer>() {
-    //         //     tint = tint * parent_renderer.get_tint();
-    //         //     current = parent_renderer.get_parent();
-    //         // } else if let Some(parent_renderer) = parent_entity.get_component::<&RendererAnimated>() {
-    //         //     tint = tint * parent_renderer.get_tint();
-    //         //     current = parent_renderer.get_parent();
-    //         // }
-    //         if let Some(parent_renderer) = parent_entity.get_component::<ComponentRendererText>() {
-    //             tint = tint * parent_renderer.get_tint();
-    //             current = parent_renderer.get_parent();
-    //         } else if let Some(parent_renderer) = parent_entity.get_component::<Renderer>() {
-    //             tint = tint * parent_renderer.get_tint();
-    //             current = parent_renderer.get_parent();
-    //         } else if let Some(parent_renderer) = parent_entity.get_component::<RendererAnimated>() {
-    //             tint = tint * parent_renderer.get_tint();
-    //             current = parent_renderer.get_parent();
-    //         }
-    //     }
-
-    //     return tint;
-    // }
-
-    fn update_tint_in_heirarchy(&self, w: WorldContext) {
-        // let b = w.world.borrow();
-
-        // let x = b.get::<&ComponentRendererText>(self.get_parent().unwrap().entity);
-
-        // let mut tint = self.get_tint();
-        // let mut current = self.get_parent();
-        // while let Some(parent_entity) = &current {
-        //     if let Some(parent_renderer) = parent_entity.get_component::<ComponentRendererText>() {
-        //         tint = tint * parent_renderer.get_cached_tint_in_hierarchy();
-        //         current = parent_renderer.get_parent();
-        //     } else if let Some(parent_renderer) = parent_entity.get_component::<Renderer>() {
-        //         tint = tint * parent_renderer.get_cached_tint_in_hierarchy();
-        //         current = parent_renderer.get_parent();
-        //     } else if let Some(parent_renderer) = parent_entity.get_component::<RendererAnimated>() {
-        //         tint = tint * parent_renderer.get_cached_tint_in_hierarchy();
-        //         current = parent_renderer.get_parent();
-        //     }
-        // }
-
-        // self.set_cached_tint_in_hierarchy(tint);
-    }
-    fn update(world: &mut WorldContext) {
-        let borrow = world.world.borrow_mut();
-        for w in borrow.iter() {
-            if let Some(mut x) = w.get::<&mut ComponentRendererText>() {
-                _ = x.update_enabled_in_heirarchy(&borrow);
-            }
-            if let Some(mut x) = w.get::<&mut RendererAnimated>() {
-                _ = x.update_enabled_in_heirarchy(&borrow);
-            }
-            if let Some(mut x) = w.get::<&mut Renderer>() {
-                _ = x.update_enabled_in_heirarchy(&borrow);
-            }
-        }
-    }
-    fn update_enabled_in_heirarchy(&mut self, world: &RefMut<'_, World>) -> bool {
-        let is_enabled = self.get_enabled();
-
-        if let Some(parent_entity) = &self.get_parent() {
-            let mut parent_is_enabled = false;
-            if let Ok(mut parent_renderer) = world.get::<&mut ComponentRendererText>(parent_entity.entity) {
-                parent_is_enabled = parent_renderer.update_enabled_in_heirarchy(world);
-            }
-            if let Ok(mut parent_renderer) = world.get::<&mut Renderer>(parent_entity.entity) {
-                parent_is_enabled = parent_renderer.update_enabled_in_heirarchy(world);
-            }
-            if let Ok(mut parent_renderer) = world.get::<&mut RendererAnimated>(parent_entity.entity) {
-                parent_is_enabled = parent_renderer.update_enabled_in_heirarchy(world);
-            }
-
-            self.set_cached_enabled_in_hierarchy(is_enabled && parent_is_enabled);
-            return is_enabled && parent_is_enabled;
-        } else {
-            self.set_cached_enabled_in_hierarchy(is_enabled);
-            return is_enabled;
-        }
-    }
-    // fn enabled_in_hierarchy(&self, world: &WorldContext) -> bool {
-    //     if !self.get_enabled() {
-    //         return false;
-    //     }
-
-    //     let mut current = self.get_parent();
-    //     while let Some(parent_entity) = &current {
-    //         if let Some(parent_renderer) = parent_entity.get_component::<ComponentRendererText>() {
-    //             if !parent_renderer.get_enabled() {
-    //                 return false;
-    //             } else {
-    //                 current = parent_renderer.get_parent();
-    //             }
-    //         } else if let Some(parent_renderer) = parent_entity.get_component::<Renderer>() {
-    //             if !parent_renderer.get_enabled() {
-    //                 return false;
-    //             } else {
-    //                 current = parent_renderer.get_parent();
-    //             }
-    //         } else if let Some(parent_renderer) = parent_entity.get_component::<RendererAnimated>() {
-    //             if !parent_renderer.get_enabled() {
-    //                 return false;
-    //             } else {
-    //                 current = parent_renderer.get_parent();
-    //             }
-    //         } else {
-    //             current = None;
-    //         }
-    //     }
-
-    //     return true;
-    // }
-}
-
-unsafe impl Sync for ComponentRendererText {}
-unsafe impl Send for ComponentRendererText {}
+unsafe impl Sync for RendererText {}
+unsafe impl Send for RendererText {}
 
 #[derive(Clone)]
-pub struct ComponentRendererText {
+pub struct RendererText {
     cached_enabled_in_hierachy: bool,
     cached_tint_in_hierachy: Color,
 
@@ -186,10 +49,18 @@ pub struct ComponentRendererText {
     bounds: Vector2,
     is_dirty: bool,
     enabled: bool,
-    parent: Option<GameObject>,
     tint: Color,
+    owner: Option<Form>,
 }
-impl FieldOverride for ComponentRendererText {
+impl FacetCommon for RendererText {
+    fn set_ownership(&mut self, owner: Form) {
+        self.owner = Some(owner);
+    }
+    fn form(&self) -> Form {
+        self.owner.clone().unwrap()
+    }
+}
+impl FieldOverride for RendererText {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
             "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
@@ -202,15 +73,7 @@ impl FieldOverride for ComponentRendererText {
     }
 }
 
-impl RendererCommon for ComponentRendererText {
-    fn set_parent(&mut self, parent: Option<GameObject>) {
-        self.parent = parent;
-    }
-
-    fn get_parent(&self) -> Option<GameObject> {
-        self.parent.clone()
-    }
-
+impl RendererCommon for RendererText {
     fn set_enabled(&mut self, enabled: bool) {
         self.enabled = enabled;
     }
@@ -244,9 +107,9 @@ impl RendererCommon for ComponentRendererText {
     }
 }
 
-impl Default for ComponentRendererText {
-    fn default() -> ComponentRendererText {
-        ComponentRendererText {
+impl Default for RendererText {
+    fn default() -> RendererText {
+        RendererText {
             cached_enabled_in_hierachy: false,
             cached_tint_in_hierachy: Color::white(),
             asset: Vec::new(),
@@ -258,12 +121,12 @@ impl Default for ComponentRendererText {
             bounds: Vector2::new(1.0, 1.0),
             is_dirty: true,
             enabled: true,
-            parent: None,
             tint: Color::white(),
+            owner: None,
         }
     }
 }
-impl ComponentRendererText {
+impl RendererText {
     pub fn set_enabled(&mut self, enabled: bool) -> &mut Self {
         if self.enabled == enabled {
             return self;

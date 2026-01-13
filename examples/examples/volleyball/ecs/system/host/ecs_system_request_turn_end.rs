@@ -14,7 +14,7 @@ use ecs_event::impulse;
 use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 #[derive(Default)]
@@ -29,7 +29,7 @@ impl Scope for ECSSystemGameRequestTurnEnd {
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameRequestTurnEnd {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestTurnEnd(id) => {
                 let Some(team) = game_state.get::<StateTeamAssignments>().team_for(id) else {

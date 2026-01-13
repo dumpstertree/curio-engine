@@ -3,28 +3,43 @@ use core::collections::{color::Color, light_uniform::LightType, vector3::Vector3
 // use macro_component::global_component;
 use serde::Deserialize;
 
-use crate::traits::field_override::FieldOverride;
+use crate::{
+    form::{FacetCommon, Form},
+    traits::field_override::FieldOverride,
+};
 
-#[derive(Default, Deserialize)]
-pub struct ComponentLight {
+#[derive(Default)]
+pub struct Light {
     pub asset: LightType,
     pub direction: Vector3,
     pub color: Color,
     pub radius: f32,
     pub intensity: f32,
+    owner: Option<Form>,
 }
-impl ComponentLight {
-    pub fn default() -> ComponentLight {
-        ComponentLight {
+impl Light {
+    pub fn default() -> Light {
+        Light {
             asset: LightType::Point,
             direction: Vector3::zero(),
             color: Color::white(),
             radius: 10.0,
             intensity: 1.0,
+            owner: None,
         }
     }
 }
-impl FieldOverride for ComponentLight {
+unsafe impl Send for Light {}
+unsafe impl Sync for Light {}
+impl FacetCommon for Light {
+    fn set_ownership(&mut self, owner: Form) {
+        self.owner = Some(owner);
+    }
+    fn form(&self) -> Form {
+        self.owner.clone().unwrap()
+    }
+}
+impl FieldOverride for Light {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
             // "type" => self.asset = value.parse().unwrap_or_default(),

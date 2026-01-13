@@ -2,20 +2,20 @@ use core::collections::{event_queue::EventQueue, game_state::GameState, vector2:
 
 use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{
-    built_in::facet::{facet_renderer::component_renderer_text::ComponentRendererText, facet_transform::component_transform2d::Transform2D},
-    gameobject::GameObject,
+    built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
+    context_2d::Context2D,
+    form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
-    world_context_2d::WorldContext2D,
 };
 
 use crate::{game_events::GameEvents, state::host::state_currency::StateCurrency};
 
 pub struct UIPanelMedic {
     selected_index: i32,
-    go_desc: Option<GameObject>,
-    go_opt_0: Option<GameObject>,
-    go_opt_1: Option<GameObject>,
+    go_desc: Option<Form>,
+    go_opt_0: Option<Form>,
+    go_opt_1: Option<Form>,
 }
 impl UIPanelMedic {
     pub fn new() -> Box<UIPanelMedic> {
@@ -35,19 +35,19 @@ impl UIPanel for UIPanelMedic {
 impl UICommon for UIPanelMedic {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         // create obj
         let go_desc = context
-            .instantiate("text.description", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
-            .add_component_default::<ComponentRendererText>();
+            .spawn("text.description", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
+            .add_facet_default::<RendererText>();
 
         let go_opt_0 = context
-            .instantiate("text.option_0", Transform2D::default().set_position_01(Vector2::new(0.5, 0.4)))
-            .add_component_default::<ComponentRendererText>();
+            .spawn("text.option_0", Transform2D::default().set_position_01(Vector2::new(0.5, 0.4)))
+            .add_facet_default::<RendererText>();
 
         let go_opt_1 = context
-            .instantiate("text.option_1", Transform2D::default().set_position_01(Vector2::new(0.5, 0.3)))
-            .add_component_default::<ComponentRendererText>();
+            .spawn("text.option_1", Transform2D::default().set_position_01(Vector2::new(0.5, 0.3)))
+            .add_facet_default::<RendererText>();
 
         // save
         self.go_desc = Some(go_desc);
@@ -55,13 +55,13 @@ impl UICommon for UIPanelMedic {
         self.go_opt_1 = Some(go_opt_1);
     }
 
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         self.go_desc.clone().unwrap().destroy();
         self.go_opt_0.clone().unwrap().destroy();
         self.go_opt_1.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut WorldContext2D) {
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         let input_state = game_state.get::<InputState>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
@@ -99,14 +99,14 @@ impl UICommon for UIPanelMedic {
 
         if let Some(a) = &self.go_desc {
             // edit text renderer
-            a.edit_component::<ComponentRendererText>(|x| {
+            a.edit_facet::<RendererText>(|x| {
                 x.set_contents(&format!("Heal? You have {} of {}", 0, 10));
             });
         }
         if let Some(a) = &self.go_opt_0 {
-            a.edit_component::<Transform2D>(|x| x.scale = Vector3::one() * 0.5 + Vector3::one() * if self.selected_index == 0 { sin * 0.1 } else { 0.0 });
+            a.edit_facet::<Transform2D>(|x| x.scale = Vector3::one() * 0.5 + Vector3::one() * if self.selected_index == 0 { sin * 0.1 } else { 0.0 });
             // edit text renderer
-            a.edit_component::<ComponentRendererText>(|x| {
+            a.edit_facet::<RendererText>(|x| {
                 let state_currency = game_state.get::<StateCurrency>();
                 if state_currency.currency >= 100 {
                     x.set_contents(&format!("Heal +1 for 100g"));
@@ -116,9 +116,9 @@ impl UICommon for UIPanelMedic {
             });
         }
         if let Some(a) = &self.go_opt_1 {
-            a.edit_component::<Transform2D>(|x| x.scale = Vector3::one() * 0.5 + Vector3::one() * if self.selected_index == 1 { sin * 0.1 } else { 0.0 });
+            a.edit_facet::<Transform2D>(|x| x.scale = Vector3::one() * 0.5 + Vector3::one() * if self.selected_index == 1 { sin * 0.1 } else { 0.0 });
             // edit text renderer
-            a.edit_component::<ComponentRendererText>(|x| {
+            a.edit_facet::<RendererText>(|x| {
                 x.set_contents("Leave");
             });
         }

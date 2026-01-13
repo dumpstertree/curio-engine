@@ -1,13 +1,23 @@
+use macro_component::global_component;
+use system_component_default_gameplay::traits::field_override::FieldOverride;
+
 // #[derive(Debug, Clone, Serialize, RegisterComponent)]
+#[global_component]
+
 pub struct ComponentPlayer {
     pub player_id: i32,
 }
 impl ComponentPlayer {
-    pub fn default() -> ComponentPlayer {
-        ComponentPlayer { player_id: 0 }
-    }
     pub fn set_player_id(mut self, id: i32) -> Self {
         self.player_id = id;
         self
     }
 }
+impl FieldOverride for ComponentPlayer {
+    fn apply(&mut self, _field: &str, _val: &str) {}
+}
+// impl Default for ComponentPlayer {
+//     fn default() -> Self {
+//         Self { owner: None, player_id: 0 }
+//     }
+// }

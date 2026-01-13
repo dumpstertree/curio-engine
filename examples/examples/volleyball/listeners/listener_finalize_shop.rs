@@ -6,7 +6,7 @@ use core::{
 use ecs_event::impulse;
 use system_component_default_gameplay::{
     traits::{impulse::Impulse, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 use crate::{
@@ -29,7 +29,7 @@ impl Scope for Listener {
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut WorldContext, _: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::FinalizeShop(_) => {
                 // clear shop

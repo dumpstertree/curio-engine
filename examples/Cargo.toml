@@ -21,6 +21,7 @@ hecs = "0.10.5"
 macro_events = { path = "../macro_events" }
 macro_state = { path = "../macro_state" }
 macro_state_serialize = { path = "../macro_state_serialize" }
+macro_component = { path = "../macro_component" }
 mcts = "0.3.0"
 pollster = "0.3"
 rand = "0.9.1"

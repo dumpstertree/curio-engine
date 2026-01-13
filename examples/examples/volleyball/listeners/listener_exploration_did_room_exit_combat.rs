@@ -9,7 +9,7 @@ use core::{
 use ecs_event::impulse;
 use system_component_default_gameplay::built_in::impulse::ui_events::UIEvents;
 use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
-use system_component_default_gameplay::world_context_3d::WorldContext;
+use system_component_default_gameplay::context_3d::Context3D;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
@@ -24,7 +24,7 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut WorldContext, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomExitCombat(_, _) => {
                 println!("exit combat room");
@@ -53,7 +53,7 @@ impl Impulse<GameEvents> for Listener {
 }
 
 impl Listener {
-    fn despawn_entities(game_state: &mut GameState, world: &mut WorldContext) {
+    fn despawn_entities(game_state: &mut GameState, world: &mut Context3D) {
         let id = EntityIDTypes::Entities;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
@@ -61,7 +61,7 @@ impl Listener {
         }
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
-    fn despawn_background(game_state: &mut GameState, world: &mut WorldContext) {
+    fn despawn_background(game_state: &mut GameState, world: &mut Context3D) {
         let id = EntityIDTypes::Background;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
@@ -70,7 +70,7 @@ impl Listener {
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 
-    fn despawn_ball(game_state: &mut GameState, world: &mut WorldContext) {
+    fn despawn_ball(game_state: &mut GameState, world: &mut Context3D) {
         let id = EntityIDTypes::Ball;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);

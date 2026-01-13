@@ -2,7 +2,7 @@ use built_in_state::state_input::InputState;
 use ecs_system::habit;
 use system_component_default_gameplay::{
     traits::{habit::Habit, scope::Scope},
-    world_context_3d::WorldContext,
+    context_3d::Context3D,
 };
 
 use core::{
@@ -45,7 +45,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, _: &mut WorldContext, event_queue: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue) {
         // currently serving and cant move
         let state_ball = game_state.get::<StateBallMode>();
         if state_ball.mode == BallModes::Serve {
