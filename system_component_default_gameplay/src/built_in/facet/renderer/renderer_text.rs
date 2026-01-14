@@ -1,7 +1,7 @@
-use core::{
+use curio_core::{
     collections::{color::Color, matrix4x4::Matrix4x4, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     io::{
-        asset_loader::{AssetLoader, FontAsset},
+        asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader, FontAsset},
         model_asset::ModelAsset,
     },
 };
@@ -199,7 +199,7 @@ impl RendererText {
         //     .unwrap_or_else(|| AssetLoader::load_font_asset("assets/default.font"));
 
         if self.font_asset.is_none() {
-            self.font_asset = Some(AssetLoader::load_font_asset(&AssetLoader::try_lookup_key_for_name("default.font").unwrap()));
+            self.font_asset = Some(AssetLoader::load_font_asset(&ASSET_UID_FONT_ASSET_DEFAULT));
         }
         let Some(font_asset) = &self.font_asset else {
             return;

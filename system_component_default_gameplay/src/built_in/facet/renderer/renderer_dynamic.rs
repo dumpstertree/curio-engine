@@ -1,4 +1,4 @@
-use core::{
+use curio_core::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset, model_asset_animated::ModelAssetAnimated},
 };

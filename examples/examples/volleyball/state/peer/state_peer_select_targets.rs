@@ -1,4 +1,4 @@
-use core::{
+use curio_core::{
     collections::{state_ownerships::StateOwnerships, vector2_int::Vector2Int},
     system::system_game_state::IState,
 };

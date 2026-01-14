@@ -5,7 +5,7 @@ opt-level = 0
 opt-level = 3
 
 [package]
-name = "core"
+name = "curio_core"
 version = "0.1.0"
 authors = ["dumpstertree@gmail.com"]
 edition = "2018"

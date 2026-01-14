@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "core",
+    "curio_core",
     "built_in",
     "examples",
     "ecs_event",
@@ -19,7 +19,7 @@ members = [
 ]
 
 [workspace.dependencies]
-core = { path = "core" }
+curio_core = { path = "curio_core" }
 ecs_event = { path = "macros/ecs_event" }
 ecs_system = { path = "macros/ecs_system" }
 macro_state = { path = "macro_state" }

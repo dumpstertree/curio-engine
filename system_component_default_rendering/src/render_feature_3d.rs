@@ -1,5 +1,5 @@
 use built_in_state::state_camera::CameraState;
-use core::{
+use curio_core::{
     collections::{game_state::GameState, vector2::Vector2},
     graphics::graphics_mapping::GraphicsMapping,
     io::texture_asset::TextureAsset,

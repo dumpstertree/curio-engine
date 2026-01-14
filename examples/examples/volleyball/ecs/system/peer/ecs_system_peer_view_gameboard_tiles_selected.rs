@@ -4,7 +4,7 @@ use crate::game_board::GameBoard;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

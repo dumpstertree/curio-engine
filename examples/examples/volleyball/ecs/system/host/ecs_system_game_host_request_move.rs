@@ -3,15 +3,15 @@ use crate::{
     game_events::GameEvents,
     state::{state_energy::StateEnergy, state_position_player::StatePositionEntities, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
 use ecs_system::habit;
 use system_component_default_gameplay::{
-    traits::{habit::Habit, impulse::Impulse, scope::Scope},
     context_3d::Context3D,
+    traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };
 
 #[derive(Default)]
@@ -57,7 +57,7 @@ impl Scope for ECSSystemGameRequestMove {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }

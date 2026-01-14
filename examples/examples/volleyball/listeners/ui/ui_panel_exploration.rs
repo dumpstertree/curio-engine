@@ -1,4 +1,7 @@
-use core::collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2, vector3::Vector3};
+use curio_core::{
+    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2, vector3::Vector3},
+    input::{axis_code::AxisCode, key_code::ButtonCode},
+};
 
 use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{
@@ -35,9 +38,9 @@ impl UIPanelInstance {
     }
 }
 impl UIPanel for UIPanelInstance {
-    fn input_button(&mut self, button: core::input::key_code::ButtonCode, state: core::collections::key_state::KeyState) {}
+    fn input_button(&mut self, button: ButtonCode, state: KeyState) {}
 
-    fn input_axis(&mut self, axis: core::input::axis_code::AxisCode, state: core::collections::input_cursor::InputAxisState) {}
+    fn input_axis(&mut self, axis: AxisCode, state: InputAxisState) {}
 }
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}

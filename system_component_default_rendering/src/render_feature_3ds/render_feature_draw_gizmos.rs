@@ -1,14 +1,14 @@
 // use crate::render_feature_3d::RenderFeature3D;
-// use core::collections::game_state::GameState;
-// use core::collections::gizmo::Gizmo;
-// use core::collections::material::Material;
-// use core::collections::matrix4x4::Matrix4x4;
-// use core::collections::mesh::Vertex;
-// use core::io::asset_loader::AssetLoader;
-// use core::io::texture_asset::TextureAsset;
+// use curio_core::collections::game_state::GameState;
+// use curio_core::collections::gizmo::Gizmo;
+// use curio_core::collections::material::Material;
+// use curio_core::collections::matrix4x4::Matrix4x4;
+// use curio_core::collections::mesh::Vertex;
+// use curio_core::io::asset_loader::AssetLoader;
+// use curio_core::io::texture_asset::TextureAsset;
 
 // use built_in_state::state_gizmos::GizmosState;
-// use core::system_adapters::adapter_system_gpu::SystemGPU;
+// use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 // use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
 
 // pub struct RenderFeatureDrawGizmo {}

@@ -1,7 +1,7 @@
 use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -20,7 +20,7 @@ impl Scope for Listener {
     fn is_enabled(&mut self, _: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }

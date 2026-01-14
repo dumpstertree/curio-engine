@@ -1,4 +1,4 @@
-use core::collections::{event_runner::EventRunner, game_state::GameState};
+use curio_core::collections::{event_runner::EventRunner, game_state::GameState};
 use std::vec;
 
 use crate::cards::{

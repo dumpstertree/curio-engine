@@ -1,4 +1,4 @@
-// use core::{
+// use curio_core::{
 //     collections::vector3::Vector3,
 //     gameplay::ecs::component::component_collider::{BoxColliderDef, ColliderShape, CollisionSnapshot},
 //     random::Random,

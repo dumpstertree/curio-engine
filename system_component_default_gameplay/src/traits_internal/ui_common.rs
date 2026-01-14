@@ -1,5 +1,5 @@
 use crate::context_2d::Context2D;
-use core::collections::{event_queue::EventQueue, game_state::GameState};
+use curio_core::collections::{event_queue::EventQueue, game_state::GameState};
 
 pub trait UICommon {
     fn init(&mut self);

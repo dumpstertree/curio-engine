@@ -1,4 +1,4 @@
-use core::f32;
+use curio_core::f32;
 use std::hash::Hash;
 
 use crate::{

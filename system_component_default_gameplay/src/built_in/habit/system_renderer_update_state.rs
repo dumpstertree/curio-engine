@@ -12,7 +12,7 @@ use crate::{
     traits_internal::world_context_common::ContextCommon,
 };
 use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
-use core::{
+use curio_core::{
     collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
 };

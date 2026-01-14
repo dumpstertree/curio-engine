@@ -1,4 +1,4 @@
-use core::collections::{
+use curio_core::collections::{
     event_queue::{EventQueue, IGameEvent},
     game_state::GameState,
 };

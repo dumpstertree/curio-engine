@@ -1,5 +1,6 @@
-use core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2, vector3::Vector3},
+use curio_core::{
+    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2, vector3::Vector3},
+    input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
 use std::collections::HashMap;
@@ -30,15 +31,15 @@ impl UIHUD {
     }
 }
 impl UIPanel for UIHUD {
-    fn input_button(&mut self, button: core::input::key_code::ButtonCode, state: core::collections::key_state::KeyState) {}
-    fn input_axis(&mut self, axis: core::input::axis_code::AxisCode, state: core::collections::input_cursor::InputAxisState) {}
+    fn input_button(&mut self, button: ButtonCode, state: KeyState) {}
+    fn input_axis(&mut self, axis: AxisCode, state: InputAxisState) {}
 }
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
         println!("present hud encounter");
-        let asset = AssetLoader::load_model_animated_from_database(Assets::EnergyToken.uid());
+        let asset = AssetLoader::load_model_animated_from_database(&Assets::EnergyToken.into());
         // let x_offset = 0.15;
         let y_start = 0.75;
         let y_spacing = -0.05;

@@ -1,6 +1,6 @@
-use ::core::collections::matrix4x4::Matrix4x4;
-use ::core::system_adapters::adapter_system_gpu::SystemGPU;
-use core::collections::{draw_call::DrawCall, mesh::Vertex, vector3::Vector3};
+use curio_core::collections::matrix4x4::Matrix4x4;
+use curio_core::collections::{draw_call::DrawCall, mesh::Vertex, vector3::Vector3};
+use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 use std::num::NonZeroU64;
 
 use egui_wgpu::wgpu::{

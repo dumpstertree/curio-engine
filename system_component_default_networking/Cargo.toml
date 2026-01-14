@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-core = { path = "../core" }
+curio_core = { path = "../curio_core" }
 built_in_state = { path = "../built_in_state" }
 message-io = "0.19.0"
 serde = { version = "1.0.104", features = ["derive"] }

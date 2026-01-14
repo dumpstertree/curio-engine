@@ -11,7 +11,7 @@ edition = "2024"
 
 
 [dependencies]
-core = { path = "../core" }
+curio_core = { path = "../curio_core" }
 egui = "0.31.1"
 egui-winit = "0.31.1"
 bytemuck = { version = "1.16", features = ["derive"] }

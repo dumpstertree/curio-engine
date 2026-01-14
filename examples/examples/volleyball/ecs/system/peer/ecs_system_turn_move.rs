@@ -5,7 +5,7 @@ use system_component_default_gameplay::{
     context_3d::Context3D,
 };
 
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

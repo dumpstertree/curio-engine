@@ -1,4 +1,4 @@
-use core::panic;
+use curio_core::panic;
 use std::hash::Hash;
 
 use egui_wgpu::wgpu::util::DeviceExt;

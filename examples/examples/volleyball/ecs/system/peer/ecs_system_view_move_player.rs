@@ -3,9 +3,9 @@ use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionEntities;
 use built_in_state::state_time::TimeState;
-use core::collections::quaternion::Quaternion;
-use core::collections::vector3::Vector3;
-use core::{
+use curio_core::collections::quaternion::Quaternion;
+use curio_core::collections::vector3::Vector3;
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

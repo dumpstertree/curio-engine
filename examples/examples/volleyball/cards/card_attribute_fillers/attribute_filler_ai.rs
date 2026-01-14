@@ -1,4 +1,4 @@
-use core::{
+use curio_core::{
     collections::{game_state::GameState, vector2_int::Vector2Int},
     random::Random,
 };

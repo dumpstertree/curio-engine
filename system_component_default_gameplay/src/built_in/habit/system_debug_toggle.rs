@@ -1,5 +1,5 @@
 use built_in_state::{state_debug::StateDebug, state_input::InputState};
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     input::key_code::ButtonCode,

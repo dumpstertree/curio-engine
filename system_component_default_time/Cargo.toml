@@ -5,5 +5,5 @@ edition = "2024"
 
 
 [dependencies]
-core = { path = "../core" }
+curio_core = { path = "../curio_core" }
 built_in_state = { path = "../built_in_state" }

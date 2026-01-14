@@ -1,4 +1,4 @@
-use core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::IState};
 use macro_state_serialize::global_state_serialize;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;

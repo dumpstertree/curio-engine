@@ -3,7 +3,7 @@ use crate::{
     static_fns::{register_built_in_facets::register_built_in_component, register_built_in_habits::register_built_in_ecs},
     traits::ui_events::IUIEvent,
 };
-use core::{
+use curio_core::{
     collections::{
         event_queue::{EventQueue, IGameEvent},
         game_state::GameState,

@@ -9,5 +9,5 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-core = { path = "../core" }
+curio_core = { path = "../curio_core" }
 serde = { version = "1.0.104", features = ["derive"] }

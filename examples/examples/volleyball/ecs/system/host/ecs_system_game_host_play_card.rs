@@ -3,7 +3,7 @@ use crate::{
     game_events::GameEvents,
     state::host::state_play_history::StatePlayHistory,
 };
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

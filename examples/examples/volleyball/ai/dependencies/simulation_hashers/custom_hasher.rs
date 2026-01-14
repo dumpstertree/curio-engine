@@ -5,7 +5,7 @@ use crate::{
         state_turn::StateTurn,
     },
 };
-use core::collections::game_state::GameState;
+use curio_core::collections::game_state::GameState;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub struct CustomHasher {}

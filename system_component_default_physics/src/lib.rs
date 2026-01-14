@@ -4,8 +4,8 @@ use rapier3d::{
     parry::{query, shape::Cuboid},
 };
 
-use core::gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact};
-use core::{
+use curio_core::gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact};
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     gameplay::ecs::component::component_collider::ColliderSnapshot,
     system::{system_component::SystemComponent, system_components::system_component_physics::SystemComponentPhysics},

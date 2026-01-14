@@ -7,7 +7,7 @@ use system_component_default_gameplay::{
     traits_internal::world_context_common::ContextCommon,
 };
 
-use core::{
+use curio_core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
     io::{asset::Asset, asset_database::AssetDatabaseListing, asset_loader::AssetLoader},
@@ -38,7 +38,7 @@ impl Habit for Instance {
         // load any remote assets now
         AssetLoader::preload_remote_assets(false);
 
-        let p = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
+        // let p = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
 
         // set resolution
         game_state.edit::<CameraState>(|x| {

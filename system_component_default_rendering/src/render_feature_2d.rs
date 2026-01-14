@@ -1,5 +1,5 @@
 use crate::{egui_tools::EguiRenderer, render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI};
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     graphics::graphics_mapping::GraphicsMapping,
     system_adapters::adapter_system_gpu::SystemGPU,

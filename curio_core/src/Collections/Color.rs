@@ -1,4 +1,4 @@
-use core::fmt;
+use curio_core::fmt;
 use fmt::Display;
 use serde::Deserialize;
 use serde::Serialize;

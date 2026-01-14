@@ -7,7 +7,7 @@ use system_component_default_gameplay::{
     traits_internal::world_context_common::ContextCommon,
 };
 
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
 };

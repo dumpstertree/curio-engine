@@ -1,4 +1,4 @@
-use core::collections::event_queue::IGameEvent;
+use curio_core::collections::event_queue::IGameEvent;
 use std::{
     any::Any,
     collections::HashMap,

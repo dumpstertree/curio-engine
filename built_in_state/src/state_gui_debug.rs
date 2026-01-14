@@ -1,4 +1,4 @@
-use core::{
+use curio_core::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     extensions::extensions_f32::ExtensionsF32,
     system::system_game_state::IState,

@@ -3,7 +3,7 @@ use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
-use core::{
+use curio_core::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset},
 };

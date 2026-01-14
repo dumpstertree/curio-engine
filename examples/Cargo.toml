@@ -13,7 +13,7 @@ edition = "2024"
 
 [dev-dependencies]
 built_in_state = { path = "../built_in_state" }
-core = { path = "../core" }
+curio_core = { path = "../curio_core" }
 ecs_event = { path = "../ecs_event" }
 ecs_system = { path = "../ecs_system" }
 futures = "0.3"

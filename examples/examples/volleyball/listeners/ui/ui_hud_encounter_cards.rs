@@ -1,5 +1,6 @@
-use core::{
-    collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
+use curio_core::{
+    collections::{color::Color, event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
+    input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
@@ -41,8 +42,8 @@ impl UIHUDInstance {
     }
 }
 impl UIPanel for UIHUDInstance {
-    fn input_button(&mut self, _button: core::input::key_code::ButtonCode, _state: core::collections::key_state::KeyState) {}
-    fn input_axis(&mut self, _axis: core::input::axis_code::AxisCode, _state: core::collections::input_cursor::InputAxisState) {}
+    fn input_button(&mut self, _button: ButtonCode, _state: KeyState) {}
+    fn input_axis(&mut self, _axis: AxisCode, _state: InputAxisState) {}
 }
 impl UICommon for UIHUDInstance {
     fn init(&mut self) {}
@@ -160,7 +161,7 @@ impl UICommon for UIHUDInstance {
 impl UIHUDInstance {
     fn spawn_card(game_state: &mut GameState, world: &mut Context2D, x: Arc<CardInstance>) -> (Form, Vec<Form>) {
         // card asset
-        let asset = AssetLoader::load_model_static_from_database(Assets::Card.uid());
+        let asset = AssetLoader::load_model_static_from_database(&Assets::Card.into());
 
         // parent
 
@@ -186,7 +187,7 @@ impl UIHUDInstance {
         // (parent.clone(), vec![parent, text])
 
         // create description
-        let asset = AssetLoader::load_model_static_from_database(Assets::Card.uid());
+        let asset = AssetLoader::load_model_static_from_database(&Assets::Card.into());
         let parent = world
             .spawn("", Transform2D::default())
             .add_facet(RendererStatic::default().set_asset(Some(asset.clone())))

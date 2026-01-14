@@ -69,20 +69,12 @@ impl Vector3Int {
     }
     /// Returns a vector perpendicular to rhs and lhs
     pub fn cross(lhs: Vector3Int, rhs: Vector3Int) -> Vector3Int {
-        Vector3Int::new(
-            lhs.y * rhs.z - lhs.z * rhs.y,
-            lhs.z * rhs.x - lhs.x * rhs.z,
-            lhs.x * rhs.y - lhs.y * rhs.x,
-        )
+        Vector3Int::new(lhs.y * rhs.z - lhs.z * rhs.y, lhs.z * rhs.x - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x)
     }
     ///
     pub fn reflect(direction: Vector3Int, normal: Vector3Int) -> Vector3Int {
         let factor = Vector3Int::dot(normal, direction) * -2;
-        Vector3Int::new(
-            factor * normal.x + direction.x,
-            factor * normal.y + direction.y,
-            factor * normal.z + direction.z,
-        )
+        Vector3Int::new(factor * normal.x + direction.x, factor * normal.y + direction.y, factor * normal.z + direction.z)
     }
     /// Normalizes all the values from 0-1 of THIS instance
     pub fn normalize(&mut self) {
@@ -166,44 +158,28 @@ impl Vector3Int {
 impl Mul<i32> for Vector3Int {
     type Output = Vector3Int;
     fn mul(self, x: i32) -> Vector3Int {
-        Vector3Int {
-            x: self.x * x,
-            y: self.y * x,
-            z: self.z * x,
-        }
+        Vector3Int { x: self.x * x, y: self.y * x, z: self.z * x }
     }
 }
 // whole num divide
 impl Div<i32> for Vector3Int {
     type Output = Vector3Int;
     fn div(self, x: i32) -> Vector3Int {
-        Vector3Int {
-            x: self.x / x,
-            y: self.y / x,
-            z: self.z / x,
-        }
+        Vector3Int { x: self.x / x, y: self.y / x, z: self.z / x }
     }
 }
 // vector add
 impl Add<Vector3Int> for Vector3Int {
     type Output = Vector3Int;
     fn add(self, x: Vector3Int) -> Vector3Int {
-        Vector3Int {
-            x: self.x + x.x,
-            y: self.y + x.y,
-            z: self.z + x.z,
-        }
+        Vector3Int { x: self.x + x.x, y: self.y + x.y, z: self.z + x.z }
     }
 }
 // vector subtract
 impl Sub<Vector3Int> for Vector3Int {
     type Output = Vector3Int;
     fn sub(self, x: Vector3Int) -> Vector3Int {
-        Vector3Int {
-            x: self.x - x.x,
-            y: self.y - x.y,
-            z: self.z - x.z,
-        }
+        Vector3Int { x: self.x - x.x, y: self.y - x.y, z: self.z - x.z }
     }
 }
 // display

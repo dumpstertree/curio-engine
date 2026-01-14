@@ -1,4 +1,4 @@
-use core::collections::{
+use curio_core::collections::{
     event_queue::{EventScope, IGameEvent},
     vector2_int::Vector2Int,
 };
@@ -95,7 +95,7 @@ impl IGameEvent for GameEvents {
             GameEvents::DiscardCards() => EventScope::Instance,
             GameEvents::MoveEntity(_, _) => EventScope::Instance,
             GameEvents::Begin => EventScope::Instance,
-            GameEvents::TurnEnd(_) => core::collections::event_queue::EventScope::Instance,
+            GameEvents::TurnEnd(_) => EventScope::Instance,
             GameEvents::TurnBegin(_) => EventScope::Instance,
             GameEvents::PlayCard(_, _, _) => EventScope::Instance,
             GameEvents::PointScored(_) => EventScope::Instance,

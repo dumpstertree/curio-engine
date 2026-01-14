@@ -12,7 +12,7 @@ use crate::{
         state_deck::{CardAttributeLifecycle, CardTypes},
     },
 };
-use core::collections::vector2_int::Vector2Int;
+use curio_core::collections::vector2_int::Vector2Int;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},

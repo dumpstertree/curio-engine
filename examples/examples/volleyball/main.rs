@@ -209,8 +209,8 @@ use crate::{
     game_events::GameEvents,
     listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_cards, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_heat, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
-extern crate core as rust_core;
-use core::{
+
+use curio_core::{
     dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
     input::{input_mapping::InputMapping, key_code::ButtonCode},
@@ -257,9 +257,9 @@ pub enum Assets {
     PrefabUIPanelMedic = 12,
     PrefabUIPanelReward = 13,
 }
-impl Into<u16> for Assets {
-    fn into(self) -> u16 {
-        self as u16
+impl Into<i16> for Assets {
+    fn into(self) -> i16 {
+        self as i16
     }
 }
 impl Into<String> for Assets {
@@ -301,14 +301,42 @@ fn main() {
             Assets::EnergyToken.into(),
             AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu")),
         ),
-        (Assets::CharCrab.into(), Assets::CharCrab.into(), AssetDatabaseListing::Local(String::from("mesh/char_crab.asset"))),
-        (Assets::CharGrunt.into(), Assets::CharGrunt.into(), AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset"))),
-        (Assets::GameBoardTileActive.into(), Assets::GameBoardTileActive.into(), AssetDatabaseListing::Local(String::from("mesh/gameboard_tile_available.glb"))),
+        (
+            Assets::CharCrab.into(), //
+            Assets::CharCrab.into(),
+            AssetDatabaseListing::Local(String::from("mesh/char_crab.asset")),
+        ),
+        (
+            Assets::CharGrunt.into(), //
+            Assets::CharGrunt.into(),
+            AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset")),
+        ),
+        (
+            Assets::GameBoardTileActive.into(),
+            Assets::GameBoardTileActive.into(), //
+            AssetDatabaseListing::Local(String::from("mesh/gameboard_tile_available.glb")),
+        ),
         // local
-        (Assets::Court.into(), Assets::Court.into(), AssetDatabaseListing::Local(String::from("mesh/court.glb"))),
-        (Assets::Card.into(), Assets::Card.into(), AssetDatabaseListing::Local(String::from("mesh/card_empty.glb"))),
-        (Assets::Ball.into(), Assets::Ball.into(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
-        (Assets::Ball.into(), Assets::Ball.into(), AssetDatabaseListing::Local(String::from("mesh/ball.glb"))),
+        (
+            Assets::Court.into(),
+            Assets::Court.into(), //
+            AssetDatabaseListing::Local(String::from("mesh/court.glb")),
+        ),
+        (
+            Assets::Card.into(),
+            Assets::Card.into(), //
+            AssetDatabaseListing::Local(String::from("mesh/card_empty.glb")),
+        ),
+        (
+            Assets::Ball.into(),
+            Assets::Ball.into(), //
+            AssetDatabaseListing::Local(String::from("mesh/ball.glb")),
+        ),
+        (
+            Assets::Ball.into(),
+            Assets::Ball.into(), //
+            AssetDatabaseListing::Local(String::from("mesh/ball.glb")),
+        ),
     ]));
     // create instance
     CurioCabinet::display_curio(

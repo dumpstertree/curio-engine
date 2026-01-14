@@ -1,4 +1,4 @@
-use core::collections::game_state::GameState;
+use curio_core::collections::game_state::GameState;
 use mcts::{self, GameState as MCTSGameState, transposition_table::TranspositionHash};
 use std::sync::Arc;
 

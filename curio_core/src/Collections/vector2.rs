@@ -5,7 +5,7 @@ use crate::collections::vector3_int::Vector3Int;
 use crate::collections::vector4::Vector4;
 use crate::collections::vector4_int::Vector4Int;
 use crate::extensions::extensions_f32::ExtensionsF32;
-use core::fmt;
+use curio_core::fmt;
 use fmt::Display;
 use serde::Deserialize;
 use serde::Serialize;

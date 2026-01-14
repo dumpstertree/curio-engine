@@ -7,7 +7,7 @@ use crate::{
     },
     state::state_deck::{CardAttributeLifecycle, CardTypes},
 };
-use core::{collections::game_state::GameState, random::Random};
+use curio_core::{collections::game_state::GameState, random::Random};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 

@@ -1,4 +1,4 @@
-use core::{collections::light_uniform::DrawCallLight, system::system_game_state::IState};
+use curio_core::{collections::light_uniform::DrawCallLight, system::system_game_state::IState};
 
 use macro_state::global_state;
 

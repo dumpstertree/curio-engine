@@ -1,4 +1,4 @@
-use core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
 use std::{collections::HashMap, hash::Hash};
 
 use macro_state::global_state;

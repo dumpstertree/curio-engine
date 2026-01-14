@@ -1,4 +1,4 @@
-use core::{
+use curio_core::{
     input::{input_snapshot_mapped::PlayerInputSnapshot, input_snapshot_raw::RawInputSnapshot},
     system::system_game_state::IState,
 };

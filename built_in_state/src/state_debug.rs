@@ -1,4 +1,4 @@
-use core::system::system_game_state::IState;
+use curio_core::system::system_game_state::IState;
 
 use macro_state::global_state;
 

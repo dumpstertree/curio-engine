@@ -5,7 +5,7 @@ use crate::{
     traits::facet_common::FacetCommon,
     traits_internal::world_context_common::ContextCommon,
 };
-use core::collections::color::Color;
+use curio_core::collections::color::Color;
 use std::collections::{HashMap, VecDeque};
 
 pub trait RendererCommon: FacetCommon {

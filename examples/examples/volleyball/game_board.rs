@@ -1,4 +1,4 @@
-use core::collections::{vector2_int::Vector2Int, vector3::Vector3};
+use curio_core::collections::{vector2_int::Vector2Int, vector3::Vector3};
 use std::fmt::Display;
 
 use crate::state::state_teams::Teams;

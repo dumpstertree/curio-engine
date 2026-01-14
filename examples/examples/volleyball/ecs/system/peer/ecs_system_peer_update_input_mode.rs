@@ -3,7 +3,7 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_input_mode::InputModes;
 use crate::state::peer::state_peer_input_mode::StatePeerInputMode;
 use built_in_state::state_input::InputState;
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

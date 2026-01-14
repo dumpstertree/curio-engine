@@ -1,6 +1,6 @@
 use crate::collections::vector3::Vector3;
 use crate::extensions::extensions_f32::ExtensionsF32;
-use core::fmt;
+use curio_core::fmt;
 use fmt::Display;
 use serde::Deserialize;
 use serde::Serialize;

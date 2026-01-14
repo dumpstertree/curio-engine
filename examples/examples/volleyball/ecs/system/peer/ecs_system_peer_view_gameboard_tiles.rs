@@ -14,9 +14,9 @@ use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::StateTeamAssignments;
 
 use built_in_state::state_time::TimeState;
-use core::collections::vector2_int::Vector2Int;
-use core::collections::vector3::Vector3;
-use core::{
+use curio_core::collections::vector2_int::Vector2Int;
+use curio_core::collections::vector3::Vector3;
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

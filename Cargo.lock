@@ -287,8 +287,8 @@ name = "built_in_state"
 version = "0.1.0"
 dependencies = [
  "cgmath",
- "core",
  "ctor",
+ "curio_core",
  "macro_state",
 ]
 
@@ -495,33 +495,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "245097e9a4535ee1e3e3931fcfcd55a796a44c643e8596ff6566d68f09b87bbc"
 
 [[package]]
-name = "core"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "bytemuck",
- "cgmath",
- "chrono",
- "egui",
- "egui-wgpu",
- "gltf",
- "image 0.24.9",
- "mesh-tools",
- "message-io",
- "pollster",
- "rand 0.9.2",
- "rapier3d",
- "rayon",
- "reqwest",
- "rusty_spine",
- "serde",
- "serde_json",
- "serde_yaml",
- "winit",
- "zip",
-]
-
-[[package]]
 name = "core-foundation"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -675,6 +648,33 @@ checksum = "32a2785755761f3ddc1492979ce1e48d2c00d09311c39e4466429188f3dd6501"
 dependencies = [
  "quote",
  "syn 2.0.104",
+]
+
+[[package]]
+name = "curio_core"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "bytemuck",
+ "cgmath",
+ "chrono",
+ "egui",
+ "egui-wgpu",
+ "gltf",
+ "image 0.24.9",
+ "mesh-tools",
+ "message-io",
+ "pollster",
+ "rand 0.9.2",
+ "rapier3d",
+ "rayon",
+ "reqwest",
+ "rusty_spine",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "winit",
+ "zip",
 ]
 
 [[package]]
@@ -936,8 +936,8 @@ name = "examples"
 version = "0.1.0"
 dependencies = [
  "built_in_state",
- "core",
  "ctor",
+ "curio_core",
  "ecs_event",
  "ecs_system",
  "futures",
@@ -1997,7 +1997,7 @@ dependencies = [
 name = "macro_events"
 version = "0.1.0"
 dependencies = [
- "core",
+ "curio_core",
  "quote",
  "serde",
  "syn 2.0.104",
@@ -2007,7 +2007,7 @@ dependencies = [
 name = "macro_render_feature_driver"
 version = "0.1.0"
 dependencies = [
- "core",
+ "curio_core",
  "quote",
  "syn 2.0.104",
 ]
@@ -2016,7 +2016,7 @@ dependencies = [
 name = "macro_state"
 version = "0.1.0"
 dependencies = [
- "core",
+ "curio_core",
  "quote",
  "syn 2.0.104",
 ]
@@ -2025,7 +2025,7 @@ dependencies = [
 name = "macro_state_serialize"
 version = "0.1.0"
 dependencies = [
- "core",
+ "curio_core",
  "quote",
  "serde",
  "syn 2.0.104",
@@ -3780,7 +3780,7 @@ name = "system_component_default_gameplay"
 version = "0.1.0"
 dependencies = [
  "built_in_state",
- "core",
+ "curio_core",
  "hecs",
  "intertrait",
  "serde",
@@ -3791,7 +3791,7 @@ name = "system_component_default_input"
 version = "0.1.0"
 dependencies = [
  "built_in_state",
- "core",
+ "curio_core",
 ]
 
 [[package]]
@@ -3800,7 +3800,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "built_in_state",
- "core",
+ "curio_core",
  "message-io",
  "serde",
 ]
@@ -3810,7 +3810,7 @@ name = "system_component_default_physics"
 version = "0.1.0"
 dependencies = [
  "built_in_state",
- "core",
+ "curio_core",
  "rapier3d",
 ]
 
@@ -3820,7 +3820,7 @@ version = "0.1.0"
 dependencies = [
  "built_in_state",
  "bytemuck",
- "core",
+ "curio_core",
  "egui",
  "egui-wgpu",
  "egui-winit",
@@ -3832,7 +3832,7 @@ name = "system_component_default_time"
 version = "0.1.0"
 dependencies = [
  "built_in_state",
- "core",
+ "curio_core",
 ]
 
 [[package]]

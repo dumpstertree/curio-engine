@@ -1,6 +1,6 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use built_in_state::{state_draw::DrawCallsState, state_lights::StateLights, state_sun::StateSun};
-use core::{
+use curio_core::{
     collections::{
         game_state::GameState,
         light_uniform::LightSystem,

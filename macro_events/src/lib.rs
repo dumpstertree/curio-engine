@@ -62,7 +62,7 @@ pub fn global_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
         // #[used] // ensure function isn’t discarded
         #[allow(non_snake_case)]
         fn #register_fn() {
-           core::static_data::global_events::register_global_events::<#name>();
+           curio_core::static_data::global_events::register_global_events::<#name>();
         }
     };
 

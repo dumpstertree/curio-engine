@@ -1,4 +1,4 @@
-use core::collections::vector2_int::Vector2Int;
+use curio_core::collections::vector2_int::Vector2Int;
 use macro_component::facet;
 use system_component_default_gameplay::traits::field_override::FieldOverride;
 

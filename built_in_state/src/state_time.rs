@@ -1,4 +1,4 @@
-use core::{
+use curio_core::{
     extensions::{extensions_f32::ExtensionsF32, extensions_f64::ExtensionsF64},
     system::system_game_state::IState,
 };

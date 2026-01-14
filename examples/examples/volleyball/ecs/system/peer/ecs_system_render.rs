@@ -13,17 +13,17 @@
 // use built_in_state::state_camera::CameraState;
 // use built_in_state::state_draw::DrawCallsState;
 // use built_in_state::state_input::InputState;
-// use core::collections::camera_uniform::CameraSnapshot;
-// use core::collections::draw_call::DrawCall;
-// use core::collections::game_state;
-// use core::collections::material::Material;
-// use core::collections::matrix4x4::Matrix4x4;
-// use core::collections::mesh::Mesh;
-// use core::collections::quaternion::Quaternion;
-// use core::collections::vector3::Vector3;
-// use core::io::asset_loader::AssetLoader;
-// use core::io::model_asset::ModelAsset;
-// use core::{
+// use curio_core::collections::camera_uniform::CameraSnapshot;
+// use curio_core::collections::draw_call::DrawCall;
+// use curio_core::collections::game_state;
+// use curio_core::collections::material::Material;
+// use curio_core::collections::matrix4x4::Matrix4x4;
+// use curio_core::collections::mesh::Mesh;
+// use curio_core::collections::quaternion::Quaternion;
+// use curio_core::collections::vector3::Vector3;
+// use curio_core::io::asset_loader::AssetLoader;
+// use curio_core::io::model_asset::ModelAsset;
+// use curio_core::{
 //     collections::{event_queue::EventQueue, game_state::GameState},
 //     dumpster_engine::NetworkModes,
 //     gameplay::ecs::traits::ecs_system::ECSSystemEventless,

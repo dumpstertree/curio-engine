@@ -1,7 +1,7 @@
 use crate::form::Form;
 use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
-use core::io::asset_loader::PrefabGameObject;
+use curio_core::io::asset_loader::PrefabGameObject;
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
 use std::rc::Rc;

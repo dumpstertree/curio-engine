@@ -24,18 +24,23 @@ pub struct AssetDatabase {
     listings: HashMap<i16, AssetDatabaseListing>,
 }
 impl AssetDatabase {
-    pub fn append(&mut self, listings: Vec<(i16, AssetDatabaseListing)>) {
-        self.listings.extend(listings);
+    pub fn append(&mut self, listings: Vec<(String, i16, AssetDatabaseListing)>) {
+        for x in &listings {
+            self.lookup.insert(x.0.clone(), x.1);
+        }
+        for x in listings {
+            self.listings.insert(x.1, x.2);
+        }
     }
     pub fn try_lookup_key_for_name(&self, name: &str) -> Option<i16> {
         self.lookup.get(name).cloned()
     }
 
     /// Create a new AssetDatabase from explicitly stated connections
-    pub fn new_from_explicit(listings: Vec<(&str, i16, AssetDatabaseListing)>) -> AssetDatabase {
+    pub fn new_from_explicit(listings: Vec<(String, i16, AssetDatabaseListing)>) -> AssetDatabase {
         let mut lookup = HashMap::new();
         for x in &listings {
-            lookup.insert(x.0.to_string(), x.1);
+            lookup.insert(x.0.clone(), x.1);
         }
 
         let mut hashmap = HashMap::new();

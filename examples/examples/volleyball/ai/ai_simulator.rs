@@ -1,4 +1,4 @@
-use core::collections::game_state::GameState;
+use curio_core::collections::game_state::GameState;
 use mcts::{MCTSManager, transposition_table::ApproxTable, tree_policy::UCTPolicy};
 use std::sync::Arc;
 

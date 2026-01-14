@@ -1,4 +1,4 @@
-use core::{collections::color::Color, io::texture_asset::TextureAsset, system::system_game_state::IState};
+use curio_core::{collections::color::Color, io::texture_asset::TextureAsset, system::system_game_state::IState};
 use macro_state::global_state;
 use std::sync::Arc;
 

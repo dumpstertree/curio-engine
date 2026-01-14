@@ -1,5 +1,5 @@
 use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug};
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     system_adapters::adapter_system_gpu::SystemGPU,

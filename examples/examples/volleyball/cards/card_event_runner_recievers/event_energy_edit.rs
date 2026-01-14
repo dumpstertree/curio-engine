@@ -1,5 +1,5 @@
 use crate::{cards::enums::card_events::CardEvents, state::state_energy::StateEnergy};
-use core::collections::game_state::GameState;
+use curio_core::collections::game_state::GameState;
 
 pub struct EventReciever {}
 impl EventReciever {

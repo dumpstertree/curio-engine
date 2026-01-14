@@ -1,4 +1,4 @@
-use core::{collections::game_state::GameState, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{collections::game_state::GameState, system_adapters::adapter_system_gpu::SystemGPU};
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::TextureView;

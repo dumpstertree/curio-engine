@@ -1,4 +1,4 @@
-use core::random::Random;
+use curio_core::random::Random;
 use hecs::{Entity, World};
 use std::{any::type_name, cell::RefCell, hash::Hash, rc::Rc};
 

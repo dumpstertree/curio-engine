@@ -24,13 +24,14 @@ use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePost
 use crate::shadow_system::ShadowSystem;
 use built_in_state::state_draw::DrawCallsState;
 use built_in_state::state_sun::StateSun;
-use core::collections::event_queue::EventQueue;
-use core::collections::game_state::GameState;
-use core::collections::matrix4x4::Matrix4x4;
-use core::graphics::graphics_mapping::GraphicsMapping;
-use core::system::system_component::SystemComponent;
-use core::system::system_components::system_component_graphics::SystemComponentGraphics;
-use core::system_adapters::adapter_system_gpu::SystemGPU;
+use curio_core::collections::event_queue::EventQueue;
+use curio_core::collections::game_state::GameState;
+use curio_core::collections::matrix4x4::Matrix4x4;
+use curio_core::dumpster_engine::GameMode;
+use curio_core::graphics::graphics_mapping::GraphicsMapping;
+use curio_core::system::system_component::SystemComponent;
+use curio_core::system::system_components::system_component_graphics::SystemComponentGraphics;
+use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, TextureView};
 use std::iter;
 use winit::event::WindowEvent;
@@ -92,7 +93,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         let window = SystemGPU::get_window();
         // self.egui_renderer.handle_input(&window, &event);
     }
-    fn set_game_mode(&mut self, _: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
+    fn set_game_mode(&mut self, _: &mut Vec<GameState>, game_mode: &GameMode) {
         let mut graphics_mapping = vec![];
         for x in &game_mode.game_instances {
             graphics_mapping.push(x.graphics_mappings.clone());

@@ -1,5 +1,5 @@
 use crate::traits_internal::ui_common::UICommon;
-use core::{
+use curio_core::{
     collections::{input_cursor::InputAxisState, key_state::KeyState},
     input::{axis_code::AxisCode, key_code::ButtonCode},
 };

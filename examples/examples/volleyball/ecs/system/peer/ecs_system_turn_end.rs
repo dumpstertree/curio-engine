@@ -3,18 +3,18 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use built_in_state::state_input::InputState;
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 use ecs_system::habit;
-use system_component_default_gameplay::traits::{habit::Habit, scope::Scope};
 use system_component_default_gameplay::context_3d::Context3D;
+use system_component_default_gameplay::traits::{habit::Habit, scope::Scope};
 
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState) -> bool {

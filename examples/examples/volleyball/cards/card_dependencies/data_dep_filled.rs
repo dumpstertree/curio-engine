@@ -1,4 +1,4 @@
-use core::collections::vector2_int::Vector2Int;
+use curio_core::collections::vector2_int::Vector2Int;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result};
 

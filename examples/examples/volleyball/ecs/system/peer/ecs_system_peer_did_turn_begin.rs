@@ -22,7 +22,7 @@ use crate::{
     },
 };
 use built_in_state::state_time::TimeState;
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     system::system_game_state::IState,
@@ -31,8 +31,8 @@ use ecs_event::impulse;
 use ecs_system::habit;
 use std::vec;
 use system_component_default_gameplay::{
-    traits::{habit::Habit, impulse::Impulse, scope::Scope},
     context_3d::Context3D,
+    traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };
 
 use crate::state::state_teams::StateTeamAssignments;

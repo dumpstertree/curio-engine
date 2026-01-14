@@ -1,4 +1,4 @@
-use core::{
+use curio_core::{
     collections::{
         color::Color,
         light_uniform::{DrawCallLight, LightType},

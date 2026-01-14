@@ -1,4 +1,4 @@
-use core::system::system_game_state::IState;
+use curio_core::system::system_game_state::IState;
 use std::hash::{Hash, Hasher};
 
 #[derive(Clone)]

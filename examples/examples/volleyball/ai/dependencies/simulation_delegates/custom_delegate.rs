@@ -1,4 +1,4 @@
-use core::collections::game_state::GameState;
+use curio_core::collections::game_state::GameState;
 use std::sync::Arc;
 
 use crate::{

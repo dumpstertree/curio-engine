@@ -23,7 +23,7 @@ pub fn global_state_serialize(_attr: TokenStream, item: TokenStream) -> TokenStr
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-           core::static_data::global_states::register_global_state_serializable::<#name>();
+           curio_core::static_data::global_states::register_global_state_serializable::<#name>();
 
             // core::dumpster_engine::DumpsterEngine::register_global_ecs_system::<#name>( );
         }

@@ -3,7 +3,7 @@
 //     component_transform::Transform,
 // };
 // use built_in_state::state_camera::CameraState;
-// use core::{
+// use curio_core::{
 //     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
 //     dumpster_engine::NetworkModes,
 //     gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},

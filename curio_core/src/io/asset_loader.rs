@@ -41,19 +41,15 @@ static mut ASSET_CACHE: Option<Mutex<AssetCache>> = None;
 pub static ASSET_UID_SHADER_UNLIT: i16 = -100;
 pub static ASSET_UID_SHADER_LIT: i16 = -101;
 
-// Built in Textures
-pub static ASSET_UID_TEXTURE_FONT_ATLAS: i16 = -200;
+// Built in Shaders
+pub static ASSET_UID_SHADER_MODULE_UNLIT: i16 = -200;
+pub static ASSET_UID_SHADER_MODULE_LIT: i16 = -201;
 
-pub struct BuiltInAssets {}
-impl BuiltInAssets {
-    pub fn try_parse_shader_module(name: &str) -> Option<i16> {
-        match name {
-            "lit" => Some(ASSET_UID_SHADER_LIT),
-            "unlit" => Some(ASSET_UID_SHADER_UNLIT),
-            _ => None,
-        }
-    }
-}
+// Built in Textures
+pub static ASSET_UID_TEXTURE_FONT_ATLAS: i16 = -300;
+
+// Font Asset
+pub static ASSET_UID_FONT_ASSET_DEFAULT: i16 = -400;
 pub struct AssetLoader {}
 // private
 impl AssetLoader {
@@ -87,10 +83,15 @@ impl AssetLoader {
         let mut database = database;
         database.append(vec![
             // shaders
-            (ASSET_UID_SHADER_LIT, AssetDatabaseListing::Local("assets/shader/my_shader.shader".to_string())),
-            (ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Local("assets/shader/unlit_shader.shader".to_string())),
+            ("shader_lit".to_string(), ASSET_UID_SHADER_LIT, AssetDatabaseListing::Local("shader/my_shader.shader".to_string())),
+            ("shader_unlit".to_string(), ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Local("shader/unlit_shader.shader".to_string())),
+            // shader modules
+            ("shader_module_lit".to_string(), ASSET_UID_SHADER_MODULE_LIT, AssetDatabaseListing::Local("shader/shader.wgsl".to_string())),
+            ("shader_module_unlit".to_string(), ASSET_UID_SHADER_MODULE_UNLIT, AssetDatabaseListing::Local("shader/shader_unlit.wgsl".to_string())),
             // textures
-            (ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Local("".to_string())),
+            ("default_texture_font_atlas".to_string(), ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Local("font.png".to_string())),
+            // font
+            ("default_font_asset".to_string(), ASSET_UID_FONT_ASSET_DEFAULT, AssetDatabaseListing::Local("default.font".to_string())),
         ]);
         unsafe {
             ASSET_DATABASE = Some(Mutex::new(database));
@@ -255,6 +256,7 @@ impl AssetLoader {
         let font_asset: Arc<FontAsset>;
 
         {
+            let my_struct: FontDesc;
             unsafe {
                 let Some(asset_cache) = &ASSET_CACHE else {
                     panic!();
@@ -270,10 +272,17 @@ impl AssetLoader {
                     panic!();
                 };
 
+                if let Some(cached) = asset_cache.try_get_asset_font_asset(uid) {
+                    return cached.clone();
+                }
+
                 // let file = File::read(uid);
                 let file = asset_database.fetch_asset(uid);
-                let json: serde_json::Value = serde_json::from_slice(file.as_slice()).expect("file should be proper JSON");
-                let my_struct: FontDesc = serde_json::from_str(&json.to_string()).unwrap();
+                let file = String::from_utf8(file).unwrap();
+                // let json: serde_json::Value = serde_json::from_str(&file).expect("file should be proper JSON");
+                my_struct = serde_json::from_str::<FontDesc>(&file).unwrap();
+            }
+            {
                 font_asset = Arc::new(FontAsset::new(Arc::new(my_struct)));
             }
         }
@@ -479,6 +488,7 @@ impl AssetLoader {
 
             let data = asset_database.fetch_asset(path);
             let string = String::from_utf8(data).unwrap();
+
             // assetd
             // let contents = fs::read_to_string(path).expect("Should have been able to read the file");
             let module = device.create_shader_module(egui_wgpu::wgpu::ShaderModuleDescriptor {
@@ -554,8 +564,6 @@ impl FontAsset {
         // FontAsset {
         //     desc
         // }
-
-        println!("NEW FONT");
 
         // let texture = AssetLoader::load_texture_from_path(&File::join_path(&File::get_built_in_asset_path(), &desc.texture_path));
         // let shader = AssetLoader::load_shader_desc(&File::join_path(&File::get_built_in_asset_path(), &desc.shader_path));

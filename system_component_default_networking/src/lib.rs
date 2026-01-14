@@ -1,7 +1,7 @@
 use built_in_state::state_network::StateNetwork;
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
-    dumpster_engine::NetworkModes,
+    dumpster_engine::{GameMode, NetworkModes},
     system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
 };
 use message_io::node::NodeEvent;
@@ -253,7 +253,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
 
             for event in events {
                 match event.ownership {
-                    core::collections::event_queue::EventScope::All => {
+                    curio_core::collections::event_queue::EventScope::All => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             if i == j {
@@ -267,7 +267,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
-                    core::collections::event_queue::EventScope::ConnectedHost => {
+                    curio_core::collections::event_queue::EventScope::ConnectedHost => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             if i == j {
@@ -291,7 +291,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
-                    core::collections::event_queue::EventScope::ConnectedPeers => {
+                    curio_core::collections::event_queue::EventScope::ConnectedPeers => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             // if i == j {
@@ -320,7 +320,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
     }
-    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &core::dumpster_engine::GameMode) {
+    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &GameMode) {
         let mut v = vec![];
         for x in game_state.iter() {
             let Some(network_capabilities) = &x.network_capabilities else {
@@ -348,7 +348,6 @@ use std::thread;
 //     GameState(Event),
 //     GameEvent,
 // }
-
 
 use serde::{Deserialize, Serialize};
 

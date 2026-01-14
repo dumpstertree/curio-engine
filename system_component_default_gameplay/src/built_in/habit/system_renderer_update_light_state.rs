@@ -1,5 +1,5 @@
 use built_in_state::state_time::TimeState;
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -71,7 +71,7 @@ impl Habit for Instance {
 
 // use crate::component::{component_light::ComponentLight, component_renderer_animated::RendererAnimated, component_renderer_static::Renderer, component_transform::Transform};
 // use built_in_state::{state_draw::DrawCallsState, state_lights::StateLights, state_sun::StateSun, state_time::TimeState};
-// use core::{
+// use curio_core::{
 //     collections::{
 //         color::Color,
 //         draw_call::DrawCall,

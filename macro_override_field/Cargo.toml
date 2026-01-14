@@ -10,5 +10,5 @@ proc-macro = true
 quote = "1"
 syn = { version = "2", features = ["full"] }
 proc-macro2 = "1"
-core = { path = "../core" }
+curio_core = { path = "../curio_core" }
 serde = { version = "1.0.104", features = ["derive"] }

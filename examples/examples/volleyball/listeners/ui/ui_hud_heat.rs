@@ -1,4 +1,7 @@
-use core::collections::{event_queue::EventQueue, game_state::GameState, vector2::Vector2};
+use curio_core::{
+    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2},
+    input::{axis_code::AxisCode, key_code::ButtonCode},
+};
 use std::collections::HashMap;
 
 use system_component_default_gameplay::{
@@ -23,8 +26,8 @@ impl UIHUD {
     }
 }
 impl UIPanel for UIHUD {
-    fn input_button(&mut self, _button: core::input::key_code::ButtonCode, _state: core::collections::key_state::KeyState) {}
-    fn input_axis(&mut self, _axis: core::input::axis_code::AxisCode, _state: core::collections::input_cursor::InputAxisState) {}
+    fn input_button(&mut self, _button: ButtonCode, _state: KeyState) {}
+    fn input_axis(&mut self, _axis: AxisCode, _state: InputAxisState) {}
 }
 impl UICommon for UIHUD {
     fn init(&mut self) {}

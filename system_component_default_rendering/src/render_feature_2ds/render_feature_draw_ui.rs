@@ -1,7 +1,7 @@
 use crate::egui_tools::EguiRenderer;
 use crate::render_feature_2d::RenderFeature2D;
 use built_in_state::{state_debug::StateDebug, state_gui::GUIState, state_gui_debug::GUIStateDebug};
-use core::{
+use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
