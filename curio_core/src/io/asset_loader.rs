@@ -53,6 +53,7 @@ pub static ASSET_UID_FONT_ASSET_DEFAULT: i16 = -400;
 pub struct AssetLoader {}
 // private
 impl AssetLoader {
+    /// Try to find the key based on the name.
     pub fn try_lookup_key_for_name(name: &str) -> Option<i16> {
         unsafe {
             let Some(asset_database) = &ASSET_DATABASE else {

@@ -23,9 +23,9 @@ impl Hash for StateVisualEntity {
         let mut axis_keys: Vec<&i32> = self.all.keys().collect();
         axis_keys.sort();
         axis_keys.len().hash(state);
-        for k in axis_keys {
-            k.hash(state);
-            self.all.get(k).unwrap().uid().hash(state);
-        }
+        // for k in axis_keys {
+        //     k.hash(state);
+        //     self.all.get(k).unwrap().uid().hash(state);
+        // }
     }
 }

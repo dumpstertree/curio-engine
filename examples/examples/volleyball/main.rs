@@ -267,27 +267,6 @@ impl Into<String> for Assets {
         self.as_ref().to_owned()
     }
 }
-impl Assets {
-    pub fn parse() {}
-    pub fn uid(&self) -> String {
-        match self {
-            Assets::GameBoardTileActive => String::from("mesh_static_gameboard_tile_active"),
-            Assets::Ball => String::from("mesh_animated_ball"),
-            Assets::Goblin => String::from("mesh_animated_goblin"),
-            Assets::EnergyToken => String::from("mesh_animated_energy"),
-            Assets::CharCrab => String::from("mesh_animated_crab"),
-            Assets::CharGrunt => String::from("mesh_animated_grunt"),
-            Assets::Court => String::from("mesh_static_court"),
-            Assets::Card => String::from("mesh_static_card"),
-            Assets::Invald => String::from(""),
-            Assets::PrefabCamera => todo!(),
-            Assets::PrefabUICard => todo!(),
-            Assets::PrefabUIPanelShop => todo!(),
-            Assets::PrefabUIPanelMedic => todo!(),
-            Assets::PrefabUIPanelReward => todo!(),
-        }
-    }
-}
 fn main() {
     AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
         // remote
@@ -336,6 +315,11 @@ fn main() {
             Assets::Ball.into(),
             Assets::Ball.into(), //
             AssetDatabaseListing::Local(String::from("mesh/ball.glb")),
+        ),
+        (
+            Assets::PrefabCamera.into(),
+            Assets::PrefabCamera.into(), //
+            AssetDatabaseListing::Local(String::from("prefabs/camera.prefab")),
         ),
     ]));
     // create instance

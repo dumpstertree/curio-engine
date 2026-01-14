@@ -38,7 +38,7 @@ impl Habit for Instance {
         // load any remote assets now
         AssetLoader::preload_remote_assets(false);
 
-        // let p = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
+        let p = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
 
         // set resolution
         game_state.edit::<CameraState>(|x| {
