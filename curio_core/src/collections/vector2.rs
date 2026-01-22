@@ -80,6 +80,10 @@ impl Vector2 {
 }
 // helpers
 impl Vector2 {
+    /// lerp from one vector to another
+    pub fn lerp(a: Vector2, b: Vector2, t: f32) -> Vector2 {
+        a + (b - a) * t
+    }
     // Returns the size of the vector based on x,y,z
     pub fn magnitude(self) -> f32 {
         ((self.x * self.x + self.y * self.y) as f32).sqrt()

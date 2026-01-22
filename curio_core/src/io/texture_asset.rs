@@ -93,7 +93,7 @@ impl TextureAsset {
         TextureAsset { sampler: sampler, texture: texture, view: view }
     }
     pub fn default() -> TextureAsset {
-        let bytes = include_bytes!("../../../assets/default_texture.jpg");
+        let bytes = include_bytes!("../../../assets/built_in/texture/default.png");
         let img = image::load_from_memory(bytes).unwrap();
         let rgba = img.to_rgba8();
 

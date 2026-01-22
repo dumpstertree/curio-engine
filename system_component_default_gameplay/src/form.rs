@@ -1,5 +1,8 @@
-use crate::{form_ref::FormRef, traits::facet_common::FacetCommon};
-use hecs::{Component, Entity};
+use crate::{
+    form_ref::{self, FormRef, MutQuery},
+    traits::facet_common::FacetCommon,
+};
+use hecs::{Component, Entity, Query};
 use std::{cell::RefCell, hash::Hash, rc::Rc};
 
 /// Representation of an object in the world
@@ -39,6 +42,22 @@ impl Form {
         drop(b);
         p
     }
+    pub fn get_child(&self, path: &str) -> Option<Form> {
+        let split = path.split("/");
+        let mut cur_form = self.clone();
+        for s in split {
+            let mut children = cur_form.children();
+            children.retain(|x| x.name() == s);
+            if children.len() == 0 {
+                panic!("no matches");
+            } else if children.len() > 1 {
+                panic!("too many matches");
+            } else {
+                cur_form = children.first().unwrap().clone();
+            }
+        }
+        Some(cur_form)
+    }
     /// Add a Facet 'T' using its default value.
     pub fn add_facet_default<T: FacetCommon + Default>(self) -> Self {
         FormRef::add_facet_default::<T>(&self);
@@ -49,9 +68,42 @@ impl Form {
         FormRef::add_facet(&self, value);
         self
     }
+    pub fn try_edit_facets_in_child<T>(&self, path: &str, f: impl for<'a> FnOnce(<T::Query<'a> as Query>::Item<'a>))
+    where
+        T: MutQuery,
+    {
+        if let Some(c) = self.get_child(path) {
+            c.form_ref.borrow_mut().try_edit_facet_group::<T>(f);
+        } else {
+            println!("failed");
+        }
+    }
+    pub fn try_edit_facets<T>(&self, f: impl for<'a> FnOnce(<T::Query<'a> as Query>::Item<'a>))
+    where
+        T: MutQuery,
+    {
+        self.form_ref.borrow_mut().try_edit_facet_group::<T>(f);
+    }
+    pub fn edit_facets<T>(&self, f: impl for<'a> FnOnce(<T::Query<'a> as Query>::Item<'a>))
+    where
+        T: MutQuery,
+    {
+        self.form_ref.borrow_mut().edit_facet_group::<T>(f);
+    }
+    pub fn try_edit_facet_in_child<T: FacetCommon + 'static>(&self, path: &str, edit_fn: impl FnOnce(&mut T)) {
+        if let Some(c) = self.get_child(path) {
+            c.form_ref.borrow_mut().try_edit_facet::<T>(edit_fn);
+        } else {
+            println!("failed");
+        }
+    }
     /// Edit facet of type 'T'
     pub fn edit_facet<T: FacetCommon + 'static>(&self, edit_fn: impl FnOnce(&mut T)) {
         self.form_ref.borrow_mut().edit_facet(edit_fn);
+    }
+    /// Edit facet of type 'T'
+    pub fn try_edit_facet<T: FacetCommon + 'static>(&self, edit_fn: impl FnOnce(&mut T)) {
+        self.form_ref.borrow_mut().try_edit_facet(edit_fn);
     }
     /// Get facet of type 'T'
     pub fn get_facet<T: FacetCommon + Clone + 'static>(&self) -> Option<T> {

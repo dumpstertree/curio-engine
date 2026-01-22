@@ -1,5 +1,5 @@
 use curio_core::random::Random;
-use hecs::{Entity, World};
+use hecs::{Entity, Query, QueryMut, World};
 use std::{any::type_name, cell::RefCell, hash::Hash, rc::Rc};
 
 use crate::{form::Form, traits::facet_common::FacetCommon};
@@ -95,12 +95,64 @@ impl FormRef {
     }
 
     /// Modify a component in-place.
+    // pub fn edit_facet_group<T: FacetCommon + 'static>(&self, edit_fn: impl FnOnce(&mut T)) {
+    //     let world = self.world.borrow_mut();
+    //     let mut borrow = world
+    //         .get::<&mut T>(self.entity)
+    //         .unwrap_or_else(|_| panic!("Form '{}' does not contain Facet {}", self.name, type_name::<T>(),));
+    //     edit_fn(&mut *borrow);
+    // }
+
+    /// Edit Facets-Form combinations in context
+    // pub fn edit_facet_group<Q>(&self, f: impl FnOnce(<Q as Query>::Item<'_>))
+    // where
+    //     Q: hecs::Query,
+    // {
+    //     let mut world_ref = self.world.borrow_mut();
+    //     let q: <Q as Query>::Item<'_> = world_ref
+    //         .query_one_mut::<Q>(self.entity)
+    //         .unwrap_or_else(|_| panic!("didnt work"));
+    //     f(q);
+    // }
+    pub fn try_edit_facet_group<T>(&self, f: impl for<'a> FnOnce(<T::Query<'a> as Query>::Item<'a>))
+    where
+        T: MutQuery,
+    {
+        let mut world = self.world.borrow_mut();
+
+        let Ok(item) = world.query_one_mut::<T::Query<'_>>(self.entity) else {
+            return;
+        };
+
+        f(item);
+    }
+    pub fn edit_facet_group<T>(&self, f: impl for<'a> FnOnce(<T::Query<'a> as Query>::Item<'a>))
+    where
+        T: MutQuery,
+    {
+        let mut world = self.world.borrow_mut();
+
+        let item = world
+            .query_one_mut::<T::Query<'_>>(self.entity)
+            .unwrap_or_else(|_| panic!("Form '{}' does not contain required facet group", self.name));
+
+        f(item);
+    }
+    /// Modify a component in-place.
     pub fn edit_facet<T: FacetCommon + 'static>(&self, edit_fn: impl FnOnce(&mut T)) {
         let world = self.world.borrow_mut();
         let mut borrow = world
             .get::<&mut T>(self.entity)
             .unwrap_or_else(|_| panic!("Form '{}' does not contain Facet {}", self.name, type_name::<T>(),));
         edit_fn(&mut *borrow);
+    }
+    /// Modify a component in-place.
+    pub fn try_edit_facet<T: FacetCommon + 'static>(&self, edit_fn: impl FnOnce(&mut T)) {
+        let world = self.world.borrow_mut();
+        let borrow = world.get::<&mut T>(self.entity);
+        if let Ok(mut borrow) = borrow {
+            edit_fn(&mut *borrow);
+        }
     }
 
     /// Get a cloned component value (Unity style).
@@ -123,7 +175,13 @@ impl FormRef {
 
     /// Destroy this form and remove it from the world
     pub fn destroy(&self) {
+        // destroy self
         let _ = self.world.borrow_mut().despawn(self.entity);
+
+        // destroy children
+        for child in &self.children {
+            child.destroy();
+        }
     }
 }
 impl Eq for FormRef {}
@@ -139,3 +197,22 @@ impl Hash for FormRef {
         self.name.hash(state);
     }
 }
+
+pub trait MutQuery {
+    type Query<'a>: Query
+    where
+        Self: 'a;
+}
+
+macro_rules! impl_mut_query {
+    ($($T:ident),+) => {
+        impl<$($T: hecs::Component),+> MutQuery for ($($T,)+) {
+            type Query<'a> = ($(&'a mut $T,)+);
+        }
+    };
+}
+impl_mut_query!(A);
+impl_mut_query!(A, B);
+impl_mut_query!(A, B, C);
+impl_mut_query!(A, B, C, D);
+impl_mut_query!(A, B, C, D, E);

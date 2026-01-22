@@ -2,6 +2,7 @@ use crate::{
     game_events::GameEvents,
     state::{
         host::{state_card_attribute_modifier_stack::StateCardAttributeModifierStack, state_heat::StateHeat},
+        state_deck::StateDeck,
         state_energy::StateEnergy,
         state_teams::StateTeamAssignments,
         state_turn::StateTurn,
@@ -53,6 +54,12 @@ impl Impulse<GameEvents> for ECSSystemGameTurnBegin {
                     let cur_energy = state_energy.all_players.get(guid).unwrap_or(&(0, 0));
 
                     println!("cur energy {}", cur_energy.0);
+
+                    game_state.edit::<StateDeck>(|x| {
+                        if let Some(deck) = x.deck.get_mut(guid) {
+                            deck.draw(1);
+                        }
+                    });
                     game_state.edit::<StateHeat>(|x| {
                         if !x.all_players.contains_key(guid) {
                             x.all_players.insert(*guid, cur_energy.0);

@@ -108,7 +108,7 @@ impl CardLibrary {
                 CardTypes::Rest,
                 vec![CardStatement::new(
                     1, //
-                    vec![],
+                    vec![CardAttributeRequirement::RequireNotBallMode(BallModes::Serve)],
                     vec![CardAttributeModifiers::EditEnergyForEntities(ModifierClearFlag::Game, AttribtuteTargetTypesEntities::User, -1)],
                     vec![CardAttributeEvents::DiscardCards(AttributeTargetTypesCards::AllUser), CardAttributeEvents::DrawCards(5, AttribtuteTargetTypesEntities::User)],
                 )],
@@ -131,6 +131,47 @@ impl CardLibrary {
             )),
         );
         hashmap.insert(
+            String::from("dash"),
+            Arc::new(CardMaster::new(
+                "dash",
+                "Dash with the ball to adjacent tile",
+                CardTypes::Spell,
+                vec![CardStatement::new(
+                    0, //
+                    vec![CardAttributeRequirement::RequireNotBallMode(BallModes::Serve), CardAttributeRequirement::BallRangeLessEqual(0)],
+                    vec![],
+                    vec![CardAttributeEvents::MoveBallAndEntity(
+                        //
+                        AttributeTargetTypesTiles::SelectInRangeLocalToBall(
+                            //
+                            Vector2Int::new(-1, -1),
+                            Vector2Int::new(1, 1),
+                        ),
+                        AttribtuteTargetTypesEntities::User,
+                    )],
+                )],
+                vec![],
+            )),
+        );
+        hashmap.insert(
+            String::from("corner_pocket"),
+            Arc::new(CardMaster::new(
+                "Corner Pocket",
+                "Bump ball into a back corner",
+                CardTypes::Bump,
+                vec![CardStatement::new(
+                    0, //
+                    vec![CardAttributeRequirement::RequireNotBallMode(BallModes::Serve), CardAttributeRequirement::BallRangeLessEqual(0)],
+                    vec![],
+                    vec![CardAttributeEvents::MoveBall(
+                        //
+                        AttributeTargetTypesTiles::SelectOpponentBackCorner,
+                    )],
+                )],
+                vec![],
+            )),
+        );
+        hashmap.insert(
             String::from("bump"),
             Arc::new(CardMaster::new(
                 "bump",
@@ -147,7 +188,7 @@ impl CardLibrary {
                         ),
                         CardAttributeEvents::MoveBall(
                             //
-                            AttributeTargetTypesTiles::RandomInRangeLocalToBall(
+                            AttributeTargetTypesTiles::SelectInRangeLocalToBall(
                                 //
                                 Vector2Int::new(-1, 1),
                                 Vector2Int::new(1, 1),

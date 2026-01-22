@@ -15,15 +15,25 @@ use system_component_default_gameplay::{
     context_2d::Context2D,
     form::Form,
     traits::ui_panel::UIPanel,
-    traits_internal::ui_common::UICommon,
+    traits_internal::{ui_common::UICommon, world_context_common::ContextCommon},
 };
 
 use crate::{
     Assets,
     cards::card_instance::CardInstance,
     ecs::components::component_card::ComponentCard,
-    state::{host::state_play_history::StatePlayHistory, state_deck::CardTypes},
+    state::{
+        host::state_play_history::StatePlayHistory,
+        state_deck::{CardAttributeLifecycle, CardTypes},
+    },
 };
+
+static COLOR_SET: Color = Color::new_hex("#abff4e");
+static COLOR_BUMP: Color = Color::new_hex("#4efff9");
+static COLOR_SPIKE: Color = Color::new_hex("#ff4e85");
+static COLOR_SPELL: Color = Color::new_hex("#f7a5f3");
+static COLOR_PERSISTENT: Color = Color::new_hex("#f7c8a5");
+static COLOR_OTHER: Color = Color::new_hex("#ffffffff");
 
 pub struct UIHUD {
     history_len: i32,
@@ -88,10 +98,58 @@ impl UICommon for UIHUD {
     }
 }
 impl UIHUD {
-    fn spawn_card(game_state: &GameState, world: &mut Context2D, x: Arc<CardInstance>) -> (Form, Vec<Form>) {
-        // card asset
-        let asset = AssetLoader::load_model_static_from_database(&Assets::Card.into());
+    fn spawn_card(game_state: &GameState, world: &mut Context2D, card_inst: Arc<CardInstance>) -> (Form, Vec<Form>) {
+        let mut desc = card_inst.get_master().description.clone();
+        for life in card_inst.get_attributes_lifecycle() {
+            match life {
+                CardAttributeLifecycle::Quick => desc = desc + ".QUICK. ",
+                CardAttributeLifecycle::Exhuast => desc = desc + ".EXHUAST. ",
+                CardAttributeLifecycle::Exile => desc = desc + ".EXILE. ",
+                CardAttributeLifecycle::Linger => desc = desc + ".LINGER. ",
+                CardAttributeLifecycle::Light => desc = desc + ".LIGHT. ",
+                CardAttributeLifecycle::Persistant => desc = desc + ".PERSISTANT. ",
+                CardAttributeLifecycle::Consume => desc = desc + ".CONSUME. ",
+                _ => {}
+            }
+        }
 
+        // spawn prefab
+        let f_card = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabUICard.into()));
+
+        // edit component on child
+        f_card.try_edit_facet_in_child::<RendererText>("description", |x| {
+            x.set_contents(&format!("{}", card_inst.get_description()));
+        });
+        f_card.try_edit_facet_in_child::<RendererText>("type", |x| {
+            x.set_contents(&format!("{}", card_inst.get_manuever_type()));
+        });
+        f_card.try_edit_facet_in_child::<RendererText>("title", |x| {
+            x.set_contents(&format!("{}", card_inst.get_title()));
+        });
+        f_card.try_edit_facet_in_child::<RendererText>("cost", |x| {
+            x.set_contents(&format!("{}", card_inst.get_cost(game_state, game_state.instance_id)));
+        });
+
+        f_card.try_edit_facet_in_child::<RendererStatic>("background", |renderer: &mut RendererStatic| {
+            // match to manuever type
+            match &card_inst.clone().get_manuever_type() {
+                CardTypes::Serve => renderer.set_tint(COLOR_PERSISTENT),
+                CardTypes::Rest => renderer.set_tint(COLOR_PERSISTENT),
+                CardTypes::Bump => renderer.set_tint(COLOR_BUMP),
+                CardTypes::Set => renderer.set_tint(COLOR_SET),
+                CardTypes::Spike => renderer.set_tint(COLOR_SPIKE),
+                CardTypes::Spell => renderer.set_tint(COLOR_SPELL),
+                _ => renderer.set_tint(COLOR_OTHER),
+            }
+        });
+
+        // edit component on self
+        f_card.try_edit_facet::<ComponentCard>(|x| {
+            x.card_instance = Some(card_inst);
+        });
+
+        // pass back
+        return (f_card.clone(), vec![f_card]);
         // parent
 
         // let parent = world
@@ -120,10 +178,10 @@ impl UIHUD {
         let parent = world
             .spawn("", Transform2D::default())
             .add_facet(RendererStatic::default().set_asset(Some(asset.clone())))
-            .add_facet(ComponentCard::default().set_instance(x.clone()));
+            .add_facet(ComponentCard::default().set_instance(card_inst.clone()));
 
-        let mut desc = x.get_master().description.clone();
-        for life in x.get_attributes_lifecycle() {
+        let mut desc = card_inst.get_master().description.clone();
+        for life in card_inst.get_attributes_lifecycle() {
             match life {
                 crate::state::state_deck::CardAttributeLifecycle::Quick => desc = desc + ".QUICK. ",
                 crate::state::state_deck::CardAttributeLifecycle::Exhuast => desc = desc + ".EXHUAST. ",
@@ -157,7 +215,7 @@ impl UIHUD {
         let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.5, 0.2));
         r.set_font_size(0.03);
-        r.set_contents(&x.get_title());
+        r.set_contents(&card_inst.get_title());
         // r.set_parent(Some(parent.clone()));
         let e1 = world
             .spawn(
@@ -173,7 +231,7 @@ impl UIHUD {
         let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.02);
-        r.set_contents(&format!("{}", x.get_manuever_type()));
+        r.set_contents(&format!("{}", card_inst.get_manuever_type()));
         // r.set_parent(Some(parent.clone()));
         let e2 = world
             .spawn(
@@ -189,7 +247,11 @@ impl UIHUD {
         let mut r = RendererText::default();
         r.set_bounds(Vector2::new(0.25, 0.2));
         r.set_font_size(0.03);
-        r.set_contents(&x.get_cost(&game_state, game_state.instance_id).to_string());
+        r.set_contents(
+            &card_inst
+                .get_cost(&game_state, game_state.instance_id)
+                .to_string(),
+        );
         // r.set_contents("0");
         // r.set_parent(Some(parent.clone()));
         let e3 = world
@@ -212,7 +274,7 @@ impl UIHUD {
 
             // let mut cur_tint = renderer.get_tint();
 
-            match &x.clone().get_manuever_type() {
+            match &card_inst.clone().get_manuever_type() {
                 CardTypes::Serve => rend.set_tint(col_persistent),
                 CardTypes::Rest => rend.set_tint(col_persistent),
                 CardTypes::Bump => rend.set_tint(col_bump),

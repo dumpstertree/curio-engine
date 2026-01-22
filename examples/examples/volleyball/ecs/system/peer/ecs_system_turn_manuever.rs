@@ -20,9 +20,9 @@ use curio_core::dumpster_engine::NetworkModes;
 use curio_core::extensions::extensions_i32::ExtensionsI32;
 use ecs_system::habit;
 use std::sync::Arc;
+use system_component_default_gameplay::context_3d::Context3D;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::context_3d::Context3D;
 
 pub struct ResponseBuilder {
     card_instance: Arc<CardInstance>,
@@ -116,7 +116,27 @@ impl AttributeBuilder {
                 // reference is tiles
                 DataDepsEmpty::Tiles(target_type) => match target_type {
                     // if selection wait
-                    AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamOpponent | AttributeTargetTypesTiles::SelectAny => {
+                    AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => {
+                        // get the cur state
+                        let state_select_targets = game_state.get::<StatePeerSelectTargets>();
+
+                        //if we have a selection
+                        let Some(selection_state) = state_select_targets.enabled else {
+                            // try to start waiting on a new selection
+                            self.try_start(game_state, target_type);
+                            return false;
+                        };
+
+                        // try to complete - if completed move on to next else return false and try again next frame
+                        if !self.try_complete(game_state, selection_state) {
+                            return false;
+                        }
+
+                        // complete did succeed - move to next
+                        continue;
+                    }
+                    // if selection wait
+                    AttributeTargetTypesTiles::SelectOpponentBackCorner | AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamOpponent | AttributeTargetTypesTiles::SelectAny => {
                         // get the cur state
                         let state_select_targets = game_state.get::<StatePeerSelectTargets>();
 

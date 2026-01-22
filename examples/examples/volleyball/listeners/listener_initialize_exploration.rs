@@ -113,7 +113,7 @@ impl EncounterLibrary {
             team_red: TeamController::Player,
             team_blue: TeamController::Ai(vec![
                 //
-                OpponentLibrary::get_opponent_human(),
+                OpponentLibrary::get_opponent_grunt(),
             ]),
         }
     }

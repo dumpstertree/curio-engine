@@ -65,6 +65,18 @@ impl GameBoard {
         }
         output
     }
+    pub fn get_back_corners_for_team(team: &Teams) -> Vec<Vector2Int> {
+        match team {
+            Teams::Red => vec![Vector2Int::new(0, 0), Vector2Int::new(3, 0)],
+            Teams::Blue => vec![Vector2Int::new(0, 3), Vector2Int::new(3, 3)],
+        }
+    }
+    pub fn get_front_corners_for_team(team: &Teams) -> Vec<Vector2Int> {
+        match team {
+            Teams::Red => vec![Vector2Int::new(0, 1), Vector2Int::new(3, 1)],
+            Teams::Blue => vec![Vector2Int::new(0, 2), Vector2Int::new(3, 2)],
+        }
+    }
     pub fn get_tiles_for_team(team: &Teams) -> Vec<Vector2Int> {
         let mut output = Vec::new();
         let min = Self::get_bounds_min_for_team(&team);

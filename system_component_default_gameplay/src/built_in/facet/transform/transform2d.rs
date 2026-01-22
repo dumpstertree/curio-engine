@@ -20,7 +20,7 @@ pub struct Transform2D {
     pub rotation: Quaternion,
     pub scale: Vector3,
     pub ws_matrix: Matrix4x4,
-    render_order: i32,
+    pub render_order: i32,
     owner: Option<Form>,
 }
 impl FacetCommon for Transform2D {
@@ -34,9 +34,10 @@ impl FacetCommon for Transform2D {
 impl FieldOverride for Transform2D {
     fn apply(&mut self, field: &str, val: &str) {
         match field {
+            "order" => self.render_order = val.parse().unwrap_or_default(),
             "position" => self.position = val.parse().unwrap_or_default(),
             "rotation" => self.rotation = Quaternion::from_euler(val.parse().unwrap_or_default()),
-            "scale" => self.scale = val.parse().unwrap_or_default(),
+            // "scale" => self.scale = val.parse().unwrap_or_default(),
             _ => {}
         }
     }

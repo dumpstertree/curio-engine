@@ -5,6 +5,7 @@ use crate::game_board::GameBoard;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::SelectStates;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
+use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_teams::StateTeamAssignments;
 use built_in_state::state_input::InputState;
 use curio_core::collections::vector2_int::Vector2Int;
@@ -14,9 +15,9 @@ use curio_core::{
 };
 use ecs_system::habit;
 use std::panic;
+use system_component_default_gameplay::context_3d::Context3D;
 use system_component_default_gameplay::traits::habit::Habit;
 use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::context_3d::Context3D;
 
 #[habit]
 pub struct Instance {}
@@ -47,14 +48,15 @@ impl Habit for Instance {
             SelectStates::Enabled(target, working_state) => {
                 let state_team = game_state.get::<StateTeamAssignments>();
                 let team = state_team.team_for(&game_state.instance_id).unwrap();
-                let all_targets = self.get_all_tiles(game_state, target);
+                let mut all_targets = self.get_all_tiles(game_state, target);
 
                 if all_targets.len() == 0 {
                     panic!("invalid number of targets!");
                 }
 
                 match target {
-                    AttributeTargetTypesTiles::SelectAny | AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamOpponent => {
+                    AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => {
+                        println!("select range local to ball");
                         // get the state of input
                         let input_submit = state_input.mapped[0].get_button_or_default("turn_end");
                         let input_fwd = state_input.mapped[0].get_button_or_default("move_forward");
@@ -86,12 +88,14 @@ impl Habit for Instance {
                         }
                         // edit index -> back
                         if input_back.went_up {
+                            println!("went back");
                             let c = team.convert_dir(0, -1);
                             let new_index = state_select_targets.selected_index + Vector2Int::new(c.0, c.1);
                             if all_targets.contains(&new_index) {
                                 game_state.edit::<StatePeerSelectTargets>(|x| {
                                     x.selected_index = new_index;
                                 });
+                                println!("edit index to {}", new_index);
                             }
                         }
                         // edit index -> left
@@ -115,6 +119,104 @@ impl Habit for Instance {
                             }
                         }
                     }
+                    AttributeTargetTypesTiles::SelectOpponentBackCorner | AttributeTargetTypesTiles::SelectAny | AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamOpponent => {
+                        // get the state of input
+                        let input_submit = state_input.mapped[0].get_button_or_default("turn_end");
+                        let input_fwd = state_input.mapped[0].get_button_or_default("move_forward");
+                        let input_back = state_input.mapped[0].get_button_or_default("move_back");
+                        let input_left = state_input.mapped[0].get_button_or_default("move_left");
+                        let input_right = state_input.mapped[0].get_button_or_default("move_right");
+
+                        // clamp to a tile in our range
+                        if !all_targets.contains(&state_select_targets.selected_index) {
+                            game_state.edit::<StatePeerSelectTargets>(|x| {
+                                x.selected_index = all_targets[0];
+                            });
+                        }
+                        // get submition event
+                        if input_submit.went_up {
+                            game_state.edit::<StatePeerSelectTargets>(|x| x.enabled = Some(SelectStates::Completed(DataDepsFilled::Tiles(vec![x.selected_index]))));
+                            println!("submit");
+                        }
+
+                        match team {
+                            crate::state::state_teams::Teams::Red => {
+                                //edit index -> fwd
+                                if input_fwd.went_up {
+                                    all_targets.retain(|x| x.y > state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> back
+                                if input_back.went_up {
+                                    all_targets.retain(|x| x.y < state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> left
+                                if input_left.went_up {
+                                    all_targets.retain(|x| x.x < state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> right
+                                if input_right.went_up {
+                                    all_targets.retain(|x| x.x > state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                            }
+                            crate::state::state_teams::Teams::Blue => {
+                                //edit index -> fwd
+                                if input_fwd.went_up {
+                                    all_targets.retain(|x| x.y < state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> back
+                                if input_back.went_up {
+                                    all_targets.retain(|x| x.y > state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> left
+                                if input_left.went_up {
+                                    all_targets.retain(|x| x.x > state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> right
+                                if input_right.went_up {
+                                    all_targets.retain(|x| x.x < state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+
+                        let mut dist = 9999;
+                        let mut closest = Vector2Int::zero();
+                        for t in all_targets {
+                            let d = state_select_targets.selected_index - t;
+                            let d = d.x.abs() + d.y.abs();
+                            if d <= dist {
+                                dist = d;
+                                closest = t;
+                            }
+                        }
+                        game_state.edit::<StatePeerSelectTargets>(|x| {
+                            x.selected_index = closest;
+                            println!("try set");
+                        });
+                    }
                     _ => {
                         println!("Trying to select tile with inccorect target type");
                     }
@@ -127,6 +229,36 @@ impl Habit for Instance {
 impl Instance {
     fn get_all_tiles(&self, game_state: &GameState, target_type: AttributeTargetTypesTiles) -> Vec<Vector2Int> {
         match target_type {
+            AttributeTargetTypesTiles::SelectOpponentBackCorner => {
+                let user_uid = game_state.instance_id;
+                let team = game_state
+                    .get::<StateTeamAssignments>()
+                    .team_for(&user_uid)
+                    .unwrap();
+                return GameBoard::get_back_corners_for_team(&team.next_team());
+            }
+
+            AttributeTargetTypesTiles::SelectInRangeLocalToBall(min, max) => {
+                let pos_ball = game_state.get::<StatePositionBall>();
+                let user_uid = game_state.instance_id;
+                let team = game_state
+                    .get::<StateTeamAssignments>()
+                    .team_for(&user_uid)
+                    .unwrap();
+
+                println!("min {}, max {}", min, max);
+                let mut targets = Vec::new();
+                for x in min.x..(max.x + 1) {
+                    for y in min.y..(max.y + 1) {
+                        let c = team.convert_dir(x, y);
+                        targets.push(Vector2Int::new(pos_ball.column + c.0, pos_ball.row + c.1));
+                        println!("add target {}", Vector2Int::new(pos_ball.column + c.0, pos_ball.row + c.1));
+                    }
+                }
+
+                // println!("Faile d unwrap");
+                return targets;
+            }
             AttributeTargetTypesTiles::SelectAny => GameBoard::get_tiles(),
             AttributeTargetTypesTiles::SelectOnTeamUser => {
                 let user_uid = game_state.instance_id;

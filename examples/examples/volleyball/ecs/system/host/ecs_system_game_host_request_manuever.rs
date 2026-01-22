@@ -231,6 +231,14 @@ impl ECSSystemGameRequestManuever {
             return;
         }
 
+        if !card_instance
+            .get_statement(game_state, *id)
+            .requirements
+            .iter()
+            .all(|x| x.is_met(game_state, *id))
+        {
+            return;
+        }
         // spend
         game_state.edit::<StateEnergy>(|x| {
             x.all_players

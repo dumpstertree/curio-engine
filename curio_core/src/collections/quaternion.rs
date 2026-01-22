@@ -131,12 +131,12 @@ impl Quaternion {
     /// `t` should be between 0.0 and 1.0, where:
     /// - 0.0 returns `self`
     /// - 1.0 returns `end`
-    pub fn slerp(&self, end: Quaternion, t: f32) -> Quaternion {
+    pub fn slerp(start: Quaternion, end: Quaternion, t: f32) -> Quaternion {
         // Clamp t to [0, 1]
         let t = t.clamp(0.0, 1.0);
 
         // Compute the cosine of the angle between the two quaternions
-        let mut cos_half_theta = self.w * end.w + self.x * end.x + self.y * end.y + self.z * end.z;
+        let mut cos_half_theta = start.w * end.w + start.x * end.x + start.y * end.y + start.z * end.z;
 
         // If cos is negative, negate end to take the shorter path
         let mut end = end;
@@ -151,10 +151,10 @@ impl Quaternion {
             // Lerp (linear interpolation)
             let inv_t = 1.0 - t;
             let result = Quaternion {
-                x: inv_t * self.x + t * end.x,
-                y: inv_t * self.y + t * end.y,
-                z: inv_t * self.z + t * end.z,
-                w: inv_t * self.w + t * end.w,
+                x: inv_t * start.x + t * end.x,
+                y: inv_t * start.y + t * end.y,
+                z: inv_t * start.z + t * end.z,
+                w: inv_t * start.w + t * end.w,
             };
             return result.normalized();
         }
@@ -169,10 +169,10 @@ impl Quaternion {
 
         // Perform the slerp
         let result = Quaternion {
-            x: self.x * ratio_a + end.x * ratio_b,
-            y: self.y * ratio_a + end.y * ratio_b,
-            z: self.z * ratio_a + end.z * ratio_b,
-            w: self.w * ratio_a + end.w * ratio_b,
+            x: start.x * ratio_a + end.x * ratio_b,
+            y: start.y * ratio_a + end.y * ratio_b,
+            z: start.z * ratio_a + end.z * ratio_b,
+            w: start.w * ratio_a + end.w * ratio_b,
         };
 
         result.normalized()

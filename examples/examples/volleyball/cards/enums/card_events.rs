@@ -18,6 +18,7 @@ pub enum CardEvents {
     EventCardDiscard(DataDepsFilled),
     EventChangeBallMode(BallModes),
     EventMoveBall(DataDepsFilled),
+    EventMoveBallAndEntity(DataDepsFilled, DataDepsFilled),
     // clear
     ClearModifiersForFlag(ModifierClearFlag),
     ClearModifiersAll(),

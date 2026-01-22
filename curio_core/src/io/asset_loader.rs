@@ -84,15 +84,15 @@ impl AssetLoader {
         let mut database = database;
         database.append(vec![
             // shaders
-            ("shader_lit".to_string(), ASSET_UID_SHADER_LIT, AssetDatabaseListing::Local("shader/my_shader.shader".to_string())),
-            ("shader_unlit".to_string(), ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Local("shader/unlit_shader.shader".to_string())),
+            ("shader_lit".to_string(), ASSET_UID_SHADER_LIT, AssetDatabaseListing::Local("built_in/shader/lit.shader".to_string())),
+            ("shader_unlit".to_string(), ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Local("built_in/shader/unlit.shader".to_string())),
             // shader modules
-            ("shader_module_lit".to_string(), ASSET_UID_SHADER_MODULE_LIT, AssetDatabaseListing::Local("shader/shader.wgsl".to_string())),
-            ("shader_module_unlit".to_string(), ASSET_UID_SHADER_MODULE_UNLIT, AssetDatabaseListing::Local("shader/shader_unlit.wgsl".to_string())),
+            ("shader_module_lit".to_string(), ASSET_UID_SHADER_MODULE_LIT, AssetDatabaseListing::Local("built_in/shader_module/lit.wgsl".to_string())),
+            ("shader_module_unlit".to_string(), ASSET_UID_SHADER_MODULE_UNLIT, AssetDatabaseListing::Local("built_in/shader_module/unlit.wgsl".to_string())),
             // textures
-            ("default_texture_font_atlas".to_string(), ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Local("font.png".to_string())),
+            ("default_texture_font_atlas".to_string(), ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Local("built_in/texture/font_black.png".to_string())),
             // font
-            ("default_font_asset".to_string(), ASSET_UID_FONT_ASSET_DEFAULT, AssetDatabaseListing::Local("default.font".to_string())),
+            ("default_font_asset".to_string(), ASSET_UID_FONT_ASSET_DEFAULT, AssetDatabaseListing::Local("built_in/font/default.font".to_string())),
         ]);
         unsafe {
             ASSET_DATABASE = Some(Mutex::new(database));
@@ -124,7 +124,8 @@ impl AssetLoader {
                 panic!("No data for {}!", uid);
             }
 
-            let Ok(asset) = serde_yaml::from_slice::<PrefabGameObject>(&data) else {
+            let string = String::from_utf8(data).unwrap();
+            let Ok(asset) = serde_yaml::from_str::<PrefabGameObject>(&string) else {
                 panic!("Failed to unwrap for {}!", uid);
             };
 

@@ -35,6 +35,9 @@ impl CardAttributeFillerPlayer {
                 AttributeTargetTypesCards::AllOpponent => CardAttributeFillerPlayer::get_card_opponent_all(id, game_state),
             },
             DataDepsEmpty::Tiles(target_types_tiles) => match target_types_tiles {
+                AttributeTargetTypesTiles::SelectOpponentBackCorner => {
+                    todo!()
+                }
                 AttributeTargetTypesTiles::SelectAny => todo!(),
                 AttributeTargetTypesTiles::RandomAny => CardAttributeFillerPlayer::get_tiles_random_any(game_state),
                 AttributeTargetTypesTiles::RandomOnTeamUser => CardAttributeFillerPlayer::get_tiles_random_on_team_user(id, game_state),
@@ -67,6 +70,7 @@ impl CardAttributeFillerPlayer {
                 }
                 AttributeTargetTypesTiles::SelectOnTeamUser => todo!(),
                 AttributeTargetTypesTiles::SelectOnTeamOpponent => todo!(),
+                AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => todo!(),
             },
         }
     }
@@ -89,6 +93,9 @@ impl CardAttributeFillerPlayer {
                     AttributeTargetTypesCards::AllOpponent => filled.push(CardAttributeFillerPlayer::get_card_opponent_all(id, game_state)),
                 },
                 DataDepsEmpty::Tiles(target_types_tiles) => match target_types_tiles {
+                    AttributeTargetTypesTiles::SelectOpponentBackCorner => {
+                        todo!()
+                    }
                     AttributeTargetTypesTiles::SelectAny => filled.push(CardAttributeFillerPlayer::get_tiles_select(game_state)),
                     AttributeTargetTypesTiles::RandomAny => filled.push(CardAttributeFillerPlayer::get_tiles_random_any(game_state)),
                     AttributeTargetTypesTiles::RandomOnTeamUser => filled.push(CardAttributeFillerPlayer::get_tiles_random_on_team_user(id, game_state)),
@@ -121,6 +128,7 @@ impl CardAttributeFillerPlayer {
                     }
                     AttributeTargetTypesTiles::SelectOnTeamUser => todo!(),
                     AttributeTargetTypesTiles::SelectOnTeamOpponent => todo!(),
+                    AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => todo!(),
                 },
             }
         }

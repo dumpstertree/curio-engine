@@ -8,7 +8,12 @@ use system_component_default_gameplay::{
 };
 
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
+    collections::{
+        event_queue::EventQueue,
+        game_state::GameState,
+        quaternion::Quaternion,
+        vector3::{self, Vector3},
+    },
     dumpster_engine::NetworkModes,
 };
 
@@ -93,20 +98,20 @@ impl Habit for Instance {
 
                         let rot2 = rot * Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0));
 
-                        t.rotation = t.rotation.slerp(rot2, 0.05);
+                        t.rotation = Quaternion::slerp(t.rotation, rot2, 0.05);
                         t.position = Vector3::lerp(t.position, tar, 0.05);
                     } else {
                         let pos = GameBoard::get_world_position(state_select_target.selected_index.x, state_select_target.selected_index.y);
                         tar = Vector3::new(0.0, 15.0, 0.0);
                         rot = Quaternion::from_euler(Vector3::new(90.0, 0.0, 0.0));
 
-                        t.rotation = t.rotation.slerp(rot, 0.3);
+                        t.rotation = Quaternion::slerp(t.rotation, rot, 0.3);
                         t.position = Vector3::lerp(t.position, tar, 0.3);
                     }
                 } else {
                     let rot2 = Quaternion::from_euler(Vector3::new(30.0, 90.0, 0.0));
 
-                    t.rotation = t.rotation.slerp(rot2, 0.5);
+                    t.rotation = Quaternion::slerp(t.rotation, rot2, 0.5);
                     t.position = Vector3::lerp(t.position, Vector3::new(-10.0, 6.0, 0.0), 0.5);
                 }
                 // t.position.x = 0.0 + (sin * 0.25) as f32;

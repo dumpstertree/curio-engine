@@ -11,6 +11,7 @@ use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{Assets, UIViewTypes};
 
+use curio_core::collections::color::Color;
 use curio_core::collections::quaternion::Quaternion;
 use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::collections::vector3::Vector3;
@@ -23,6 +24,7 @@ use curio_core::{
 use ecs_event::impulse;
 use system_component_default_gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use system_component_default_gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
+use system_component_default_gameplay::built_in::facet::renderer_common::RendererCommon;
 use system_component_default_gameplay::built_in::facet::transform::transform3d::Transform3D;
 use system_component_default_gameplay::built_in::impulse::ui_events::UIEvents;
 use system_component_default_gameplay::context_3d::Context3D;
@@ -133,6 +135,7 @@ impl Listener {
                     let asset_goblin = AssetLoader::load_model_animated_from_database(&(*asset_id).into());
                     let mut rend = RendererDynamic::default();
                     rend.set_asset(Some(asset_goblin.clone()));
+
                     // players
                     let e = world
                         .spawn(

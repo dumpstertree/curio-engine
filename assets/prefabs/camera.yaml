@@ -2,9 +2,10 @@ name: "Camera"
 components:
   - type: "transform3d"
     fields:
-      - "position: (0.0,100.0)"
+      - "position: (0.0,50.0, 0.0)"
       - "rotation: (0.0, 0.0, 0.0)"
       - "scale: (1,1,1)"
   - type: "camera"
     fields:
       - "fov:60"
+children: []

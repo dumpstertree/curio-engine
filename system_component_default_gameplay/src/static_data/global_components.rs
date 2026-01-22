@@ -33,24 +33,27 @@ where
     println!("TRY ADD component {}", type_name::<T>());
 
     reg.add_component.insert(key, |x, y| {
-        println!("ADD component {}", type_name::<T>());
-        let mut serialized = String::new();
-        for key_val in y {
-            serialized = format!("{}{}\n", serialized, key_val);
+        if x.has_facet::<T>() {
+            x.edit_facet::<T>(|f| {
+                for e in y {
+                    let mut s = e.split(":");
+                    f.apply(s.next().unwrap(), s.next().unwrap());
+                }
+            });
+        } else {
+            let mut val = T::default();
+            for e in y {
+                let mut s = e.split(":");
+                val.apply(s.next().unwrap(), s.next().unwrap());
+            }
+            // let asset = serde_yaml::from_str::<T>(&serialized);
+            // if let Err(e) = asset {
+            //     panic!("{}", e);
+            // }
+
+            x.clone().add_facet::<T>(val);
         }
 
-        println!("ser: {}", serialized);
-        let mut val = T::default();
-        for e in y {
-            let mut s = e.split(":");
-            val.apply(s.next().unwrap(), s.next().unwrap());
-        }
-        // let asset = serde_yaml::from_str::<T>(&serialized);
-        // if let Err(e) = asset {
-        //     panic!("{}", e);
-        // }
-
-        x.clone().add_facet::<T>(val);
         return true;
     });
 }
@@ -59,7 +62,9 @@ where {
     let reg = COMPONENT_REGISTRY.read().expect("Registry poisoned");
     let val = reg.add_component.get(&name.to_lowercase());
 
-    println!("get component {}", name);
+    let Some(val) = val else {
+        panic!("Unknown Habit with name '{}'", name);
+    };
     // take any for testing
-    return *val.unwrap();
+    return *val;
 }

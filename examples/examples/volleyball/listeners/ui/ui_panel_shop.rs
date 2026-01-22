@@ -1,92 +1,99 @@
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2, vector3::Vector3},
     input::{axis_code::AxisCode, key_code::ButtonCode},
+    io::asset_loader::AssetLoader,
 };
 
 use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{
-    built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
+    built_in::facet::{
+        animator::{animator_rotation_sin::AnimatorRotationSin, animator_scale_sin::AnimatorScaleSin},
+        renderer::renderer_text::RendererText,
+        transform::transform2d::Transform2D,
+    },
     context_2d::Context2D,
     form::Form,
     traits::ui_panel::UIPanel,
-    traits_internal::ui_common::UICommon,
+    traits_internal::{ui_common::UICommon, world_context_common::ContextCommon},
 };
 
 use crate::{
+    Assets,
     cards::card_library::CardLibrary,
     game_events::GameEvents,
-    state::host::state_shop::{StateShop, StockItems},
+    state::host::state_shop::{StateShop, Stock, StockItems},
 };
 
 pub struct UIPanelInstance {
     selected_index: i32,
-    go_desc: Option<Form>,
-    go_stock: Vec<Form>,
-    go_leave: Option<Form>,
+    f_ui: Option<Form>,
+    stock: Vec<Stock>,
 }
 impl UIPanelInstance {
     pub fn new() -> Box<UIPanelInstance> {
-        Box::new(UIPanelInstance {
-            selected_index: 0,
-            go_desc: None,
-            go_stock: Vec::new(),
-            go_leave: None,
-        })
+        Box::new(UIPanelInstance { selected_index: 0, f_ui: None, stock: Vec::new() })
     }
 }
 impl UIPanel for UIPanelInstance {
-    fn input_button(&mut self, button: ButtonCode, state: KeyState) {}
-
-    fn input_axis(&mut self, axis: AxisCode, state: InputAxisState) {}
+    fn input_button(&mut self, _button: ButtonCode, _state: KeyState) {}
+    fn input_axis(&mut self, _axis: AxisCode, _state: InputAxisState) {}
 }
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+        //
+        let mut stock_names = Vec::new();
         let state_store = game_state.get::<StateShop>();
         for i in 0..state_store.shop.stock.len() {
-            let mut rend = RendererText::default();
             let stock = state_store.shop.stock.get(i).unwrap();
             match &stock.item {
-                StockItems::Card(card_id) => rend.set_contents(&format!("{} : {} x{}", CardLibrary::get_master_card(&card_id).title, stock.cost, stock.count)),
+                StockItems::Card(card_id) => stock_names.push(format!("{} : {} x{}", CardLibrary::get_master_card(&card_id).title, stock.cost, stock.count)),
                 StockItems::Relic(_) => todo!(),
             };
-
-            let go_opt_0 = context
-                .spawn("text.option_0", Transform2D::default().set_position_01(Vector2::new(0.5, 0.4 - i as f32 * 0.1)))
-                .add_facet(rend);
-
-            self.go_stock.push(go_opt_0);
         }
 
-        let mut rend = RendererText::default();
-        rend.set_contents("Leave");
-        let go_leave = context
-            .spawn("text.leave", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
-            .add_facet(rend);
+        // spawn the prefab
+        let f_ui = context.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabUIPanelShop.into()));
 
-        self.go_leave = Some(go_leave);
+        // edit the description
+        if let Some(f_description) = f_ui.get_child("description") {
+            f_description.edit_facet::<RendererText>(|x| {
+                x.set_contents("Care to buy?");
+            });
+        }
+        // edit the button 0
+        f_ui.try_edit_facet_in_child::<RendererText>("option_0", |x| {
+            x.set_contents(&stock_names[0]);
+        });
+        // edit the button 0
+        f_ui.try_edit_facet_in_child::<RendererText>("option_1", |x| {
+            x.set_contents(&stock_names[1]);
+        });
+        // edit the button 0
+        f_ui.try_edit_facet_in_child::<RendererText>("option_2", |x| {
+            x.set_contents(&stock_names[2]);
+        });
+        // edit the button 0
+        f_ui.try_edit_facet_in_child::<RendererText>("option_3", |x| {
+            x.set_contents("Leave");
+        });
 
-        let mut rend = RendererText::default();
-        rend.set_contents("Care to buy something?");
-        let go_desc = context
-            .spawn("text.leave", Transform2D::default().set_position_01(Vector2::new(0.5, 0.75)))
-            .add_facet(rend);
-
-        self.go_desc = Some(go_desc);
+        self.f_ui = Some(f_ui);
     }
 
     fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
-        self.go_desc.clone().unwrap().destroy();
-        self.go_leave.clone().unwrap().destroy();
-        for x in &self.go_stock {
-            x.destroy();
+        if let Some(f_ui) = &self.f_ui {
+            f_ui.destroy();
         }
     }
     fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+        // no items
         if game_state.get::<StateShop>().shop.stock.len() == 0 {
             return;
         }
+
+        let mut is_dirty = false;
         let input_state = game_state.get::<InputState>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
@@ -94,9 +101,10 @@ impl UICommon for UIPanelInstance {
                 .went_up
             {
                 self.selected_index += 1;
-                if self.selected_index > self.go_stock.len() as i32 {
+                if self.selected_index > 3 as i32 {
                     self.selected_index = 0;
                 }
+                is_dirty = true;
             }
             if input_state.mapped[0]
                 .get_button_or_default("move_forward")
@@ -104,14 +112,15 @@ impl UICommon for UIPanelInstance {
             {
                 self.selected_index -= 1;
                 if self.selected_index < 0 {
-                    self.selected_index = self.go_stock.len() as i32;
+                    self.selected_index = 3 as i32;
                 }
+                is_dirty = true;
             }
             if input_state.mapped[0]
                 .get_button_or_default("turn_end")
                 .went_up
             {
-                if self.selected_index == self.go_stock.len() as i32 {
+                if self.selected_index == 3 as i32 {
                     event_queue.enqueue_event(GameEvents::RequestLeaveExplorationRoom);
                 } else {
                     let state_shop = game_state.get::<StateShop>();
@@ -121,34 +130,52 @@ impl UICommon for UIPanelInstance {
                         event_queue.enqueue_event(GameEvents::RequestPurchase(game_state.instance_id, s.instance_id));
                     }
                 }
+                is_dirty = true;
             }
 
-            let sin = f32::sin(game_state.get::<TimeState>().unscaled_time as f32 * 5.0);
-            let scale_selected = Vector3::one() * 0.5 + Vector3::one() * sin * 0.1;
-            let scale_unselected = Vector3::one() * 0.5;
+            let state_store = game_state.get::<StateShop>();
 
-            // edit selections
-            for i in 0..self.go_stock.len() {
-                if let Some(x) = self.go_stock.get(i) {
-                    let state_shop = game_state.get::<StateShop>();
-                    if state_shop.shop.stock[i].count <= 0 {
-                        x.edit_facet::<RendererText>(|y| {
-                            y.set_contents("Out of Stock");
-                        });
+            //
+            if !is_dirty && self.stock == state_store.shop.stock {
+                return;
+            }
+
+            self.stock = state_store.shop.stock.clone();
+
+            if let Some(f_ui) = &self.f_ui {
+                let mut stock_names = Vec::new();
+                let state_store = game_state.get::<StateShop>();
+
+                for i in 0..state_store.shop.stock.len() {
+                    let stock = state_store.shop.stock.get(i).unwrap();
+                    if stock.count <= 0 {
+                        stock_names.push("OUT OF STOCK".to_string());
+                        continue;
                     }
-                    // x.edit_component::<Transform2D>(|y| {
-                    //     y.scale = if i as i32 == self.selected_index { scale_selected } else { scale_unselected };
-                    // });
-                    x.edit_facet::<Transform2D>(|y| {
-                        y.scale = if i as i32 == self.selected_index { scale_selected } else { scale_unselected };
-                    });
+                    match &stock.item {
+                        StockItems::Card(card_id) => stock_names.push(format!("{} : {} x{}", CardLibrary::get_master_card(&card_id).title, stock.cost, stock.count)),
+                        StockItems::Relic(_) => todo!(),
+                    };
                 }
-            }
 
-            // edit leave
-            if let Some(x) = &self.go_leave {
-                x.edit_facet::<Transform2D>(|y| {
-                    y.scale = if self.go_stock.len() as i32 == self.selected_index { scale_selected } else { scale_unselected };
+                f_ui.try_edit_facets_in_child::<(RendererText, AnimatorScaleSin, AnimatorRotationSin)>("option_0", |(rend, a_scale, a_rot)| {
+                    a_scale.set_enabled(self.selected_index == 0);
+                    a_rot.set_enabled(self.selected_index == 0);
+                    rend.set_contents(&stock_names[0]);
+                });
+                f_ui.try_edit_facets_in_child::<(RendererText, AnimatorScaleSin, AnimatorRotationSin)>("option_1", |(rend, a_scale, a_rot)| {
+                    a_scale.set_enabled(self.selected_index == 1);
+                    a_rot.set_enabled(self.selected_index == 1);
+                    rend.set_contents(&stock_names[1]);
+                });
+                f_ui.try_edit_facets_in_child::<(RendererText, AnimatorScaleSin, AnimatorRotationSin)>("option_2", |(rend, a_scale, a_rot)| {
+                    a_scale.set_enabled(self.selected_index == 2);
+                    a_rot.set_enabled(self.selected_index == 2);
+                    rend.set_contents(&stock_names[2]);
+                });
+                f_ui.try_edit_facets_in_child::<(AnimatorScaleSin, AnimatorRotationSin)>("option_3", |(a_scale, a_rot)| {
+                    a_scale.set_enabled(self.selected_index == 3);
+                    a_rot.set_enabled(self.selected_index == 3);
                 });
             }
         }

@@ -101,9 +101,9 @@ impl Habit for Instance {
                     // if !renderer.enabled_in_hierarchy(&world) {
                     //     continue;
                     // }
-                    // if !renderer.get_cached_enabled_in_hierarchy() {
-                    //     continue;
-                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
+                        continue;
+                    }
                     // guard - no mesh
                     let Some(asset) = &renderer.asset else {
                         continue;
@@ -119,7 +119,7 @@ impl Habit for Instance {
             world.edit::<(&mut RendererDynamic, &Transform3D)>(|query| {
                 let mut i = 0;
                 for (_, (renderer, _)) in query {
-                    // if !renderer.enabled_in_hierarchy(&world) {
+                    // if !renderer.e(&world) {
                     //     continue;
                     // }
 

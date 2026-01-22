@@ -38,8 +38,6 @@ impl Habit for Instance {
         // load any remote assets now
         AssetLoader::preload_remote_assets(false);
 
-        let p = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
-
         // set resolution
         game_state.edit::<CameraState>(|x| {
             x.resolution_width = 1920 / 1;
@@ -57,54 +55,19 @@ impl Habit for Instance {
             .get::<StateTeamAssignments>()
             .team_for(&game_state.instance_id)
         else {
-            // fallback camera
-
-            world
-                .spawn(
-                    "camera",
-                    Transform3D::default()
-                        .set_position(Vector3::new(0.0, 6.0, -14.0))
-                        .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
-                )
-                .add_facet(
-                    // add camera
-                    Camera::default(),
-                );
-
             println!("Spawned Fallback Camera");
-
+            world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
             return;
         };
 
         match team {
             Teams::Red => {
-                world
-                    .spawn(
-                        "camera",
-                        Transform3D::default()
-                            .set_position(Vector3::new(0.0, 6.0, -14.0))
-                            .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 0.0, 0.0))),
-                    )
-                    .add_facet(
-                        // add camera
-                        Camera::default(),
-                    );
-
                 println!("Spawned Red Camera");
+                world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
             }
             Teams::Blue => {
-                world
-                    .spawn(
-                        "camera",
-                        Transform3D::default()
-                            .set_position(Vector3::new(0.0, 6.0, 14.0))
-                            .set_rotation(Quaternion::from_euler(Vector3::new(30.0, 180.0, 0.0))),
-                    )
-                    .add_facet(
-                        // add camera
-                        Camera::default(),
-                    );
                 println!("Spawned Blue Camera");
+                world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
             }
         }
     }

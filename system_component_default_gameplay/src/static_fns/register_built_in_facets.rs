@@ -1,5 +1,6 @@
 use crate::{
     built_in::facet::{
+        animator::{animator_position_sin::AnimatorPositionSin, animator_rotation_sin::AnimatorRotationSin, animator_scale_sin::AnimatorScaleSin},
         camera::Camera,
         light::Light,
         renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic, renderer_text::RendererText},
@@ -13,6 +14,9 @@ pub fn register_built_in_component() {
     register_global_component::<RendererStatic>();
     register_global_component::<RendererDynamic>();
     register_global_component::<RendererText>();
+    register_global_component::<AnimatorScaleSin>();
+    register_global_component::<AnimatorPositionSin>();
+    register_global_component::<AnimatorRotationSin>();
     register_global_component::<Camera>();
     register_global_component::<Light>();
 }

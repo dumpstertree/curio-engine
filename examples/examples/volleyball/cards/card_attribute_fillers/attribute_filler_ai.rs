@@ -26,6 +26,32 @@ impl CardAttributeFillerAI {
 
         // match for empty type
         match empty {
+            AttributeTargetTypesTiles::SelectOpponentBackCorner => {
+                todo!()
+            }
+            AttributeTargetTypesTiles::SelectInRangeLocalToBall(min, max) => {
+                let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
+                let state_turn = game_state.get::<StateTurn>();
+                let state = game_state.get::<StatePositionEntities>();
+                let state_position_ball = state.positions.get(uid).unwrap();
+
+                // get the modifiers for stack
+                let modifier_stack = state_modifiers.get_flat_stack_for_entity(*uid);
+                let team = &state_turn.active_instance_id;
+
+                // get the min and max taking into account any modifiers
+                let min = team.convert_dir(min.x, min.y + modifier_stack.range);
+                let max = team.convert_dir(max.x, max.y + modifier_stack.range);
+
+                // get between min and max in range
+                let random_x = Random::range_int(min.0, max.0);
+                let random_z = Random::range_int(min.1, max.1);
+
+                let col = state_position_ball.0 + random_x;
+                let row = state_position_ball.1 + random_z;
+
+                permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
+            }
             AttributeTargetTypesTiles::RandomOnTeamUser => {
                 // get state
                 let state_team = game_state.get::<StateTeamAssignments>();

@@ -23,6 +23,21 @@ pub struct ModelAssetAnimated {
 }
 
 impl ModelAssetAnimated {
+    pub fn material(&self) -> Arc<Material> {
+        self.material.clone()
+    }
+    pub fn set_material(&mut self, material: Arc<Material>) {
+        self.material = material;
+    }
+    pub fn instantiate(&self) -> ModelAssetAnimated {
+        ModelAssetAnimated {
+            material: self.material.clone(),
+            skeleton_data: self.skeleton_data.clone(),
+            state_data: self.state_data.clone(),
+            cached_animation_frames: self.cached_animation_frames.clone(),
+        }
+    }
+
     pub fn new(material: Arc<Material>, skeleton_data: Arc<SkeletonData>, state_data: Arc<AnimationStateData>) -> ModelAssetAnimated {
         let mut m = ModelAssetAnimated {
             material,

@@ -92,10 +92,27 @@ impl Habit for Instance {
             .iter()
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
 
-        // let is_turn = d == game_state.instance_id;
-        if unsafe { DO_MOVE } && any_ai && game_state.get::<TimeState>().scaled_time - self.lastmove > self.move_time {
-            unsafe { DO_MOVE = false };
+        println!("vals {}, {}", unsafe { DO_MOVE }, any_ai);
 
+        let state_team = game_state.get::<StateTeamAssignments>();
+        let state_turn = game_state.get::<StateTurn>();
+        let state_control = game_state.get::<StateController>();
+        let team = state_team
+            .team_assignments
+            .get(&state_turn.active_instance_id)
+            .unwrap();
+
+        let mut do_move = false;
+        for x in state_control.all_players {
+            if team.contains(&x.0) {
+                match x.1 {
+                    Controller::Ai => do_move = true,
+                    _ => {}
+                }
+            }
+        }
+        // let is_turn = d == game_state.instance_id;
+        if do_move && any_ai && game_state.get::<TimeState>().scaled_time - self.lastmove > self.move_time {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
                 GameState::new_single_instance(vec![
                     // copy these states
@@ -111,6 +128,8 @@ impl Habit for Instance {
                     (StateTerminated::id(), Box::new(StateTerminated { is_terminated: false, is_exhuasted: false })),
                 ])
             });
+
+            // println!("try simulate");
 
             // let uid = current_guids[0];
             let move2 = simulator.simulate(game_state, Fidelity::Medium, Threading::Multi);
@@ -145,6 +164,7 @@ impl Habit for Instance {
                         
                         "
             );
+            unsafe { DO_MOVE = false };
         }
     }
 }

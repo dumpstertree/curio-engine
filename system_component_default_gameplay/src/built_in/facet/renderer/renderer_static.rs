@@ -7,7 +7,7 @@ use curio_core::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset},
 };
-use std::sync::Arc;
+use std::{clone, sync::Arc};
 
 #[derive(Clone, Default)]
 pub struct RendererStatic {
@@ -45,7 +45,7 @@ impl RendererStatic {
         }
     }
     pub fn set_asset(mut self, asset: Option<Arc<ModelAsset>>) -> Self {
-        self.asset = asset;
+        self.asset = Self::get_model_asset(asset, self.tint);
         self
     }
 }
@@ -67,9 +67,9 @@ impl RendererCommon for RendererStatic {
     }
 
     fn set_tint(&mut self, tint: Color) {
+        self.asset = Self::get_model_asset(self.asset.clone(), tint);
         self.tint = tint;
     }
-
     fn get_tint(&self) -> Color {
         self.tint
     }
@@ -88,5 +88,30 @@ impl RendererCommon for RendererStatic {
 
     fn get_cached_tint_in_hierarchy(&self) -> Color {
         self.cached_tint_in_hierachy
+    }
+}
+impl RendererStatic {
+    fn get_model_asset(asset: Option<Arc<ModelAsset>>, tint: Color) -> Option<Arc<ModelAsset>> {
+        // no asset
+        let Some(asset) = asset else {
+            return None;
+        };
+
+        // no tint
+        if tint == Color::white() {
+            return Some(asset);
+        }
+
+        // edit material to include tint
+        let mut mats = Vec::new();
+        for mat in &asset.materials {
+            let mut m = mat.instantiate("new");
+            m.set_color_with_label(tint, "tint");
+            m.finalize();
+            mats.push(Arc::new(m));
+        }
+
+        // return edited
+        Some(Arc::new(ModelAsset::new(asset.mesh.clone(), mats)))
     }
 }

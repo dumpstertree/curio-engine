@@ -107,6 +107,7 @@ impl RendererCommon for RendererDynamic {
     }
 
     fn set_tint(&mut self, tint: Color) {
+        self.asset = Self::get_model_asset(self.asset.clone(), tint);
         self.tint = tint;
     }
 
@@ -180,5 +181,30 @@ impl RendererDynamic {
 
         // assign anim
         self.mesh = frame_asset.mesh().to_vec();
+    }
+    fn get_model_asset(asset: Option<Arc<ModelAssetAnimated>>, tint: Color) -> Option<Arc<ModelAssetAnimated>> {
+        // no asset
+        let Some(asset) = asset else {
+            return None;
+        };
+
+        // no tint
+        if tint == Color::white() {
+            return Some(asset);
+        }
+
+        // edit material to include tint
+
+        let mut a = asset.instantiate();
+
+        let mut m = asset.material().instantiate("new");
+        m.set_color_with_label(tint, "tint");
+        m.finalize();
+        let m = Arc::new(m);
+        a.set_material(m);
+        a.finalize();
+
+        // return edited
+        Some(Arc::new(a))
     }
 }

@@ -41,6 +41,19 @@ impl DeckLibrary {
         deck.add_card_to_deck("blessing", false);
         deck.add_card_to_deck("deep_breath", false);
 
+        // movement
+        deck.add_card_to_deck("dash", false);
+        deck.add_card_to_deck("dash", false);
+        deck.add_card_to_deck("dash", false);
+        deck.add_card_to_deck("dash", false);
+        deck.add_card_to_deck("dash", false);
+
+        deck.add_card_to_deck("corner_pocket", false);
+        deck.add_card_to_deck("corner_pocket", false);
+        deck.add_card_to_deck("corner_pocket", false);
+        deck.add_card_to_deck("corner_pocket", false);
+        deck.add_card_to_deck("corner_pocket", false);
+
         //return
         deck
     }

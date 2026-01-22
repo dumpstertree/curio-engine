@@ -24,6 +24,8 @@ pub enum CardAttributeEvents {
     RefillEnergy(AttribtuteTargetTypesEntities),
     //Set ball mode 0=ball_mode
     SetBallMode(BallModes),
+    //
+    MoveBallAndEntity(AttributeTargetTypesTiles, AttribtuteTargetTypesEntities),
 }
 impl CardAttributeEvents {
     /// get the required dependencies that need to be passed in
@@ -37,6 +39,7 @@ impl CardAttributeEvents {
             CardAttributeEvents::RefillEnergy(t0) => vec![DataDepsEmpty::Entities(*t0)],
             CardAttributeEvents::SetBallMode(_) => vec![],
             CardAttributeEvents::DrainHeat(t0) => vec![DataDepsEmpty::Entities(*t0)],
+            CardAttributeEvents::MoveBallAndEntity(t0, t1) => vec![DataDepsEmpty::Tiles(*t0), DataDepsEmpty::Entities(*t1)],
         }
     }
 }

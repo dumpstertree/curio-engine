@@ -172,7 +172,7 @@ pub fn update_enabled(context: &Context3D) {
         let form = x.form();
         let enabled = x.get_enabled();
 
-        if form.parent().is_none() {
+        if form.parent().is_none() || !form.parent().unwrap().has_facet::<RendererText>() {
             root.push(form.clone());
         }
         all.insert(form, enabled);

@@ -21,6 +21,10 @@ pub enum AttributeTargetTypesTiles {
     RandomInRangeLocalToBall(Vector2Int, Vector2Int),
     /// Random tile at the value. Value is added to current user position but takes into account team rotation
     RandomInRangeLocalToUser(Vector2Int, Vector2Int),
+    /// Select tile between the values of min and max. Value is added to current ball position but takes into account team rotation
+    SelectInRangeLocalToBall(Vector2Int, Vector2Int),
+    // Select
+    SelectOpponentBackCorner,
 }
 impl Display for AttributeTargetTypesTiles {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -34,6 +38,8 @@ impl Display for AttributeTargetTypesTiles {
             AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => f.write_str(&format!("RandomInRangeLocal -> min : {}, max: {}", min, max)),
             AttributeTargetTypesTiles::SelectOnTeamUser => f.write_str("SelectOnTeamUser"),
             AttributeTargetTypesTiles::SelectOnTeamOpponent => f.write_str("SelectOnTeamOpponent"),
+            AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => f.write_str("SelectInRangeLocal"),
+            AttributeTargetTypesTiles::SelectOpponentBackCorner => f.write_str("SelectOpponentBackCorner"),
         }
     }
 }

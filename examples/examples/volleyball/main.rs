@@ -28,6 +28,7 @@ pub mod cards {
         pub(crate) mod event_energy_fill;
         pub(crate) mod event_heat_drain;
         pub(crate) mod event_move_ball;
+        pub(crate) mod event_move_ball_and_self;
         pub(crate) mod event_move_entities;
         pub(crate) mod modifier_cost_for_entities;
         pub(crate) mod modifier_energy_for_entities;
@@ -256,6 +257,8 @@ pub enum Assets {
     PrefabUIPanelShop = 11,
     PrefabUIPanelMedic = 12,
     PrefabUIPanelReward = 13,
+
+    Button,
 }
 impl Into<i16> for Assets {
     fn into(self) -> i16 {
@@ -319,7 +322,22 @@ fn main() {
         (
             Assets::PrefabCamera.into(),
             Assets::PrefabCamera.into(), //
-            AssetDatabaseListing::Local(String::from("prefabs/camera.prefab")),
+            AssetDatabaseListing::Local(String::from("prefabs/camera.yaml")),
+        ),
+        (
+            Assets::PrefabUIPanelShop.into(),
+            Assets::PrefabUIPanelShop.into(), //
+            AssetDatabaseListing::Local(String::from("prefabs/ui_shop.yaml")),
+        ),
+        (
+            Assets::Button.into(),
+            Assets::Button.into(), //
+            AssetDatabaseListing::Local(String::from("prefabs/button.yaml")),
+        ),
+        (
+            Assets::PrefabUICard.into(),
+            Assets::PrefabUICard.into(), //
+            AssetDatabaseListing::Local(String::from("prefabs/ui_card.yaml")),
         ),
     ]));
     // create instance

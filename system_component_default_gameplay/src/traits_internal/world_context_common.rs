@@ -1,7 +1,7 @@
 use crate::form::Form;
 use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
-use curio_core::io::asset_loader::PrefabGameObject;
+use curio_core::io::asset_loader::{AssetLoader, PrefabGameObject};
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -39,8 +39,46 @@ pub trait ContextCommon {
         f(q);
     }
 
-    /// instantiate a prefab into the context
     fn spawn_prefab_recursive(&mut self, prefab: &PrefabGameObject) -> Form {
+        self.spawn_prefab_recursive_internal(prefab, prefab.name.clone())
+    }
+
+    /// instantiate a prefab into the context
+    fn spawn_prefab_recursive_internal(&mut self, prefab: &PrefabGameObject, name: String) -> Form {
+        if name.starts_with("!") {
+            let name = prefab.name.clone();
+            let split: Vec<&str> = name.split("::").into_iter().collect();
+            let name = split[0].replace("!", "");
+
+            let Some(key) = AssetLoader::try_lookup_key_for_name(&name) else {
+                panic!();
+            };
+
+            // create children forms
+            let child_forms: Vec<Form> = prefab
+                .children
+                .iter()
+                .map(|x| self.spawn_prefab_recursive_internal(x, x.name.clone()))
+                .collect();
+
+            let asset = AssetLoader::load_prefab(&key);
+            let mut parent_form = self.spawn_prefab_recursive_internal(&asset, split[1].to_owned());
+
+            // create parent child relationship
+            for mut child in child_forms {
+                child.set_parent(Some(parent_form.clone()));
+            }
+
+            // add all facets
+            for facet in &prefab.components {
+                // get fn from global
+                let facet_fn = get_global_ecs_instances(&facet.r#type);
+                // create facet
+                facet_fn(&mut parent_form, &facet.fields);
+            }
+
+            return parent_form;
+        }
         let hecs_world = self.hecs_world();
         // create entity
         let entity = {
@@ -54,11 +92,10 @@ pub trait ContextCommon {
         let child_forms: Vec<Form> = prefab
             .children
             .iter()
-            .map(|x| self.spawn_prefab_recursive(x))
+            .map(|x| self.spawn_prefab_recursive_internal(x, x.name.clone()))
             .collect();
-        println!("SPAWN PREFAB RECURSIVE CHILDREN LEN {}", child_forms.len());
         //
-        let mut parent_form = FormRef::new(&prefab.name, hecs_world, entity);
+        let mut parent_form = FormRef::new(&name, hecs_world, entity);
 
         // create parent child relationship
         for mut child in child_forms {

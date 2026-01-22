@@ -88,6 +88,14 @@ impl Habit for Instance {
                         match d {
                             DataDepsEmpty::Tiles(attribute_target_types_tiles) => match attribute_target_types_tiles {
                                 // AttributeTargetTypesTiles::Select => todo!(),
+                                AttributeTargetTypesTiles::SelectInRangeLocalToBall(min, max) => {
+                                    for x in min.x..(max.x + 1) {
+                                        for y in min.y..(max.y + 1) {
+                                            let c = team.convert_dir(x, y + s0.range);
+                                            targets.push(Vector2Int::new(pos_ball.column + c.0, pos_ball.row + c.1));
+                                        }
+                                    }
+                                }
                                 AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => {
                                     for x in min.x..(max.x + 1) {
                                         for y in min.y..(max.y + 1) {
