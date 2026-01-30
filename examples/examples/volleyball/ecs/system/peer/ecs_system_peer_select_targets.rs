@@ -56,7 +56,6 @@ impl Habit for Instance {
 
                 match target {
                     AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => {
-                        println!("select range local to ball");
                         // get the state of input
                         let input_submit = state_input.mapped[0].get_button_or_default("turn_end");
                         let input_fwd = state_input.mapped[0].get_button_or_default("move_forward");
@@ -76,49 +75,85 @@ impl Habit for Instance {
                             println!("submit");
                         }
 
-                        //edit index -> fwd
-                        if input_fwd.went_up {
-                            let c = team.convert_dir(0, 1);
-                            let new_index = state_select_targets.selected_index + Vector2Int::new(c.0, c.1);
-                            if all_targets.contains(&new_index) {
-                                game_state.edit::<StatePeerSelectTargets>(|x| {
-                                    x.selected_index = new_index;
-                                });
+                        match team {
+                            crate::state::state_teams::Teams::Red => {
+                                //edit index -> fwd
+                                if input_fwd.went_up {
+                                    all_targets.retain(|x| x.y > state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> back
+                                if input_back.went_up {
+                                    all_targets.retain(|x| x.y < state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> left
+                                if input_left.went_up {
+                                    all_targets.retain(|x| x.x < state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> right
+                                if input_right.went_up {
+                                    all_targets.retain(|x| x.x > state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                            }
+                            crate::state::state_teams::Teams::Blue => {
+                                //edit index -> fwd
+                                if input_fwd.went_up {
+                                    all_targets.retain(|x| x.y < state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> back
+                                if input_back.went_up {
+                                    all_targets.retain(|x| x.y > state_select_targets.selected_index.y);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> left
+                                if input_left.went_up {
+                                    all_targets.retain(|x| x.x > state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
+                                // edit index -> right
+                                if input_right.went_up {
+                                    all_targets.retain(|x| x.x < state_select_targets.selected_index.x);
+                                    if all_targets.len() == 0 {
+                                        return;
+                                    }
+                                }
                             }
                         }
-                        // edit index -> back
-                        if input_back.went_up {
-                            println!("went back");
-                            let c = team.convert_dir(0, -1);
-                            let new_index = state_select_targets.selected_index + Vector2Int::new(c.0, c.1);
-                            if all_targets.contains(&new_index) {
-                                game_state.edit::<StatePeerSelectTargets>(|x| {
-                                    x.selected_index = new_index;
-                                });
-                                println!("edit index to {}", new_index);
+
+                        let mut dist = 9999;
+                        let mut closest = Vector2Int::zero();
+                        for t in all_targets {
+                            let d = state_select_targets.selected_index - t;
+                            let d = d.x.abs() + d.y.abs();
+                            if d <= dist {
+                                dist = d;
+                                closest = t;
                             }
                         }
-                        // edit index -> left
-                        if input_left.went_up {
-                            let c = team.convert_dir(-1, 0);
-                            let new_index = state_select_targets.selected_index + Vector2Int::new(c.0, c.1);
-                            if all_targets.contains(&new_index) {
-                                game_state.edit::<StatePeerSelectTargets>(|x| {
-                                    x.selected_index = new_index;
-                                });
-                            }
-                        }
-                        // edit index -> right
-                        if input_right.went_up {
-                            let c = team.convert_dir(1, 0);
-                            let new_index = state_select_targets.selected_index + Vector2Int::new(c.0, c.1);
-                            if all_targets.contains(&new_index) {
-                                game_state.edit::<StatePeerSelectTargets>(|x| {
-                                    x.selected_index = new_index;
-                                });
-                            }
-                        }
+                        game_state.edit::<StatePeerSelectTargets>(|x| {
+                            x.selected_index = closest;
+                            println!("try set {}", closest);
+                        });
                     }
+
                     AttributeTargetTypesTiles::SelectOpponentBackCorner | AttributeTargetTypesTiles::SelectAny | AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamOpponent => {
                         // get the state of input
                         let input_submit = state_input.mapped[0].get_button_or_default("turn_end");
@@ -214,7 +249,7 @@ impl Habit for Instance {
                         }
                         game_state.edit::<StatePeerSelectTargets>(|x| {
                             x.selected_index = closest;
-                            println!("try set");
+                            println!("try set {}", closest);
                         });
                     }
                     _ => {

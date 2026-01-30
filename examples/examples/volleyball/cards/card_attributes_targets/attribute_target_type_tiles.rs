@@ -23,7 +23,7 @@ pub enum AttributeTargetTypesTiles {
     RandomInRangeLocalToUser(Vector2Int, Vector2Int),
     /// Select tile between the values of min and max. Value is added to current ball position but takes into account team rotation
     SelectInRangeLocalToBall(Vector2Int, Vector2Int),
-    // Select
+    // Select a back line edge on the opponents side
     SelectOpponentBackCorner,
 }
 impl Display for AttributeTargetTypesTiles {

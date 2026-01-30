@@ -72,7 +72,7 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn init(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {}
     fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
-        self.move_time = 3.0;
+        self.move_time = 1.5;
         self.lastmove = game_state.get::<TimeState>().scaled_time;
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
@@ -91,8 +91,6 @@ impl Habit for Instance {
             .all_players
             .iter()
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
-
-        println!("vals {}, {}", unsafe { DO_MOVE }, any_ai);
 
         let state_team = game_state.get::<StateTeamAssignments>();
         let state_turn = game_state.get::<StateTurn>();
@@ -141,7 +139,7 @@ impl Habit for Instance {
                 SimulationManuevers::PlayCard(card_instance, filled_card_response) => {
                     match card_instance.get_manuever_type() {
                         crate::state::state_deck::CardTypes::Move => self.move_time = 0.5,
-                        _ => self.move_time = 3.0,
+                        _ => self.move_time = 1.5,
                     }
                     events.enqueue_event(GameEvents::RequestUseManeuverPersistent(uid, card_instance.instance_id, filled_card_response));
                 }

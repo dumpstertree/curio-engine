@@ -89,10 +89,10 @@ impl GameBoard {
         output
     }
     pub fn get_bounds_min() -> Vector2Int {
-        Vector2Int::new(0, 0)
+        Vector2Int::new(-1, -1)
     }
     pub fn get_bounds_max() -> Vector2Int {
-        Vector2Int::new(3, 3)
+        Vector2Int::new(4, 4)
     }
     pub fn get_bounds_min_for_team(for_team: &Teams) -> Vector2Int {
         match for_team {

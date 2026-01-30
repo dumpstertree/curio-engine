@@ -1,7 +1,12 @@
 use crate::{
-    cards::{card_event_runner::CardEventRunner, enums::attribute_clear_flag::ModifierClearFlag},
-    game_events::GameEvents,
-    state::host::state_play_history::StatePlayHistory,
+    cards::{
+        card_attributes::card_attribute_events::CardAttributeEvents,
+        card_attributes_targets::{attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
+        card_event_runner::CardEventRunner,
+        enums::attribute_clear_flag::ModifierClearFlag,
+    },
+    game_events::{self, GameEvents},
+    state::{host::state_play_history::StatePlayHistory, state_deck::CardTypes, state_position_ball::StatePositionBall, state_position_player::StatePositionEntities},
 };
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -9,11 +14,13 @@ use curio_core::{
 };
 use ecs_event::impulse;
 use ecs_system::habit;
+use hecs::Entity;
 use std::vec;
 use system_component_default_gameplay::{
-    traits::{habit::Habit, impulse::Impulse, scope::Scope},
     context_3d::Context3D,
+    traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };
+use winit::dpi::Position;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
@@ -33,6 +40,8 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
             GameEvents::PlayCard(id, card_instance, data) => {
                 // creates an event runner to all the events on
                 let mut event_runner = CardEventRunner::new();
+
+                let was_state_ball_pos = game_state.get::<StatePositionBall>();
 
                 // get the attributes out of this card
                 let atts_mods = card_instance.get_attributes_modifiers(&game_state, *id);
@@ -60,6 +69,32 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
                     x.history.push((*id, card_instance.clone(), data.clone()));
                 });
 
+                let t = card_instance.get_manuever_type();
+                match t {
+                    CardTypes::Bump => {
+                        let state_pos_ball = game_state.get::<StatePositionBall>();
+                        let delta_x = state_pos_ball.column - was_state_ball_pos.column;
+                        let delta_y = state_pos_ball.row - was_state_ball_pos.row;
+                        game_state.edit::<StatePositionEntities>(|x| {
+                            if let Some(pos) = x.positions.get_mut(id) {
+                                pos.0 = pos.0 - delta_x.clamp(-1, 1);
+                                pos.1 = pos.1 - delta_y.clamp(-1, 1);
+                            }
+                        });
+                    }
+                    CardTypes::Spike => {
+                        let state_pos_ball = game_state.get::<StatePositionBall>();
+                        let delta_x = state_pos_ball.column - was_state_ball_pos.column;
+                        let delta_y = state_pos_ball.row - was_state_ball_pos.row;
+                        game_state.edit::<StatePositionEntities>(|x| {
+                            if let Some(pos) = x.positions.get_mut(id) {
+                                pos.0 = pos.0 + delta_x.clamp(-1, 1);
+                                pos.1 = pos.1 + delta_y.clamp(-1, 1);
+                            }
+                        });
+                    }
+                    _ => {}
+                }
                 // send event that we did play the card
                 event_queue.enqueue_event(GameEvents::DidPlayCard(*id, card_instance.clone(), data.clone()));
             }
