@@ -1,5 +1,5 @@
 use ecs_system::habit;
-use system_component_default_gameplay::{
+use gameplay::{
     built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},

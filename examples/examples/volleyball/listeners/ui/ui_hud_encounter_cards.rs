@@ -16,8 +16,7 @@ use curio_core::{
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
-use std::sync::Arc;
-use system_component_default_gameplay::{
+use gameplay::{
     built_in::facet::{
         animator::animator_rotation_sin::AnimatorRotationSin,
         renderer::{renderer_static::RendererStatic, renderer_text::RendererText},
@@ -29,6 +28,7 @@ use system_component_default_gameplay::{
     traits::ui_panel::UIPanel,
     traits_internal::{ui_common::UICommon, world_context_common::ContextCommon},
 };
+use std::sync::Arc;
 
 static COLOR_SET: Color = Color::new_hex("#abff4e");
 static COLOR_BUMP: Color = Color::new_hex("#4efff9");

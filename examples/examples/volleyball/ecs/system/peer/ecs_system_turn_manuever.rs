@@ -19,10 +19,10 @@ use curio_core::collections::{event_queue::EventQueue, game_state::GameState};
 use curio_core::dumpster_engine::NetworkModes;
 use curio_core::extensions::extensions_i32::ExtensionsI32;
 use ecs_system::habit;
+use gameplay::context_3d::Context3D;
+use gameplay::traits::habit::Habit;
+use gameplay::traits::scope::Scope;
 use std::sync::Arc;
-use system_component_default_gameplay::context_3d::Context3D;
-use system_component_default_gameplay::traits::habit::Habit;
-use system_component_default_gameplay::traits::scope::Scope;
 
 pub struct ResponseBuilder {
     card_instance: Arc<CardInstance>,

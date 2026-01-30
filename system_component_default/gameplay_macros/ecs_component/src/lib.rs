@@ -28,7 +28,7 @@
 // }
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 #[proc_macro_derive(RegisterComponent)]
 pub fn register_component_derive(input: TokenStream) -> TokenStream {
@@ -42,7 +42,7 @@ pub fn register_component_derive(input: TokenStream) -> TokenStream {
 
         #[ctor::ctor]
         fn #register_fn() {
-            system_component_default_gameplay::static_data::register_component::<#name>(stringify!(#name));
+            gameplay::static_data::register_component::<#name>(stringify!(#name));
         }
     };
 

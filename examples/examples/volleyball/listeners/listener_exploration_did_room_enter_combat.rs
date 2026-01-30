@@ -22,13 +22,13 @@ use curio_core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
-use system_component_default_gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
-use system_component_default_gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
-use system_component_default_gameplay::built_in::facet::renderer_common::RendererCommon;
-use system_component_default_gameplay::built_in::facet::transform::transform3d::Transform3D;
-use system_component_default_gameplay::built_in::impulse::ui_events::UIEvents;
-use system_component_default_gameplay::context_3d::Context3D;
-use system_component_default_gameplay::traits::{impulse::Impulse, scope::Scope};
+use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
+use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
+use gameplay::built_in::facet::renderer_common::RendererCommon;
+use gameplay::built_in::facet::transform::transform3d::Transform3D;
+use gameplay::built_in::impulse::ui_events::UIEvents;
+use gameplay::context_3d::Context3D;
+use gameplay::traits::{impulse::Impulse, scope::Scope};
 
 #[derive(Default)]
 #[impulse(GameEvents)]

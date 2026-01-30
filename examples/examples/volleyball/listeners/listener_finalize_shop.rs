@@ -4,9 +4,9 @@ use curio_core::{
 };
 
 use ecs_event::impulse;
-use system_component_default_gameplay::{
-    traits::{impulse::Impulse, scope::Scope},
+use gameplay::{
     context_3d::Context3D,
+    traits::{impulse::Impulse, scope::Scope},
 };
 
 use crate::{

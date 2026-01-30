@@ -14,10 +14,10 @@ use curio_core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::habit;
+use gameplay::context_3d::Context3D;
+use gameplay::traits::habit::Habit;
+use gameplay::traits::scope::Scope;
 use std::panic;
-use system_component_default_gameplay::context_3d::Context3D;
-use system_component_default_gameplay::traits::habit::Habit;
-use system_component_default_gameplay::traits::scope::Scope;
 
 #[habit]
 pub struct Instance {}

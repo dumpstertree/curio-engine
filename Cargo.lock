@@ -926,22 +926,23 @@ dependencies = [
  "ecs_event",
  "ecs_system",
  "futures",
+ "gameplay",
  "hecs",
+ "input",
  "macro_component",
  "macro_events",
  "macro_state",
  "macro_state_serialize",
  "mcts",
+ "networking",
+ "physics",
  "pollster",
  "rand 0.9.2",
+ "rendering",
  "serde",
  "strum 0.26.3",
  "strum_macros 0.26.4",
- "system_component_default_gameplay",
- "system_component_default_input",
- "system_component_default_networking",
- "system_component_default_rendering",
- "system_component_default_time",
+ "time 0.1.0",
  "winit",
 ]
 
@@ -1141,6 +1142,16 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
+]
+
+[[package]]
+name = "gameplay"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
+ "hecs",
+ "intertrait",
+ "serde",
 ]
 
 [[package]]
@@ -1733,6 +1744,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "input"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
+]
+
+[[package]]
 name = "integer-encoding"
 version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2270,6 +2288,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873"
 dependencies = [
  "jni-sys",
+]
+
+[[package]]
+name = "networking"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "curio_core",
+ "message-io",
+ "serde",
 ]
 
 [[package]]
@@ -3161,6 +3189,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
+name = "rendering"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "curio_core",
+ "egui",
+ "egui-wgpu",
+ "egui-winit",
+ "winit",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.12.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3763,52 +3803,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "system_component_default_gameplay"
-version = "0.1.0"
-dependencies = [
- "curio_core",
- "hecs",
- "intertrait",
- "serde",
-]
-
-[[package]]
-name = "system_component_default_input"
-version = "0.1.0"
-dependencies = [
- "curio_core",
-]
-
-[[package]]
-name = "system_component_default_networking"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "curio_core",
- "message-io",
- "serde",
-]
-
-[[package]]
-name = "system_component_default_rendering"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "curio_core",
- "egui",
- "egui-wgpu",
- "egui-winit",
- "winit",
-]
-
-[[package]]
-name = "system_component_default_time"
-version = "0.1.0"
-dependencies = [
- "curio_core",
-]
-
-[[package]]
 name = "tempfile"
 version = "3.23.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3879,6 +3873,13 @@ dependencies = [
  "flate2",
  "jpeg-decoder",
  "weezl",
+]
+
+[[package]]
+name = "time"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
 ]
 
 [[package]]
@@ -5269,7 +5270,7 @@ dependencies = [
  "hmac",
  "pbkdf2",
  "sha1",
- "time",
+ "time 0.3.44",
  "zstd",
 ]
 

@@ -14,12 +14,12 @@ use curio_core::{
 };
 use ecs_event::impulse;
 use ecs_system::habit;
-use hecs::Entity;
-use std::vec;
-use system_component_default_gameplay::{
+use gameplay::{
     context_3d::Context3D,
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };
+use hecs::Entity;
+use std::vec;
 use winit::dpi::Position;
 
 #[derive(Default)]

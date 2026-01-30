@@ -2,7 +2,7 @@ use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2},
     input::{axis_code::AxisCode, key_code::ButtonCode},
 };
-use system_component_default_gameplay::{
+use gameplay::{
     built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
     context_2d::Context2D,
     form::Form,

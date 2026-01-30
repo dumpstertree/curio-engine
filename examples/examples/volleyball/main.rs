@@ -220,17 +220,17 @@ use curio_core::{
         asset_loader::AssetLoader,
     },
 };
-use serde::{Deserialize, Serialize};
-use std::fmt::Display;
-use strum::{AsRefStr, EnumString};
-use system_component_default_gameplay::{
+use gameplay::{
     system_component_default_gameplay::SystemComponentDefaultGameplay,
     traits::{ui_events::IUIEvent, ui_panel::UIPanel},
 };
-use system_component_default_input::SystemComponentDefaultInput;
-use system_component_default_networking::SystemComponentDefaultNetworking;
-use system_component_default_rendering::SystemComponentDefaultGraphics;
-use system_component_default_time::SystemComponentDefaultTime;
+use input::SystemComponentDefaultInput;
+use networking::SystemComponentDefaultNetworking;
+use rendering::SystemComponentDefaultGraphics;
+use serde::{Deserialize, Serialize};
+use std::fmt::Display;
+use strum::{AsRefStr, EnumString};
+use time::SystemComponentDefaultTime;
 #[repr(u16)]
 #[derive(Default, Hash, PartialEq, Eq, Serialize, Deserialize, Debug, Copy, Clone, AsRefStr, EnumString)]
 #[strum(serialize_all = "snake_case")]

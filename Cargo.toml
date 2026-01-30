@@ -2,35 +2,34 @@
 members = [
     "curio_core",
     "examples",
-    "system_component_default_gameplay_macros/macro_events",
-    "system_component_default_gameplay_macros/ecs_event",
-    "system_component_default_gameplay_macros/ecs_system",
-    "system_component_default_gameplay_macros/macro_component",
-    "system_component_default_time",
-    "system_component_default_input",
-    "system_component_default_gameplay",
+    "system_component_default/gameplay_macros/macro_events",
+    "system_component_default/gameplay_macros/ecs_event",
+    "system_component_default/gameplay_macros/ecs_system",
+    "system_component_default/gameplay_macros/macro_component",
+    "system_component_default/gameplay_macros/macro_state",
+    "system_component_default/gameplay_macros/macro_state_serialize",
+    "system_component_default/gameplay",
+    "system_component_default/time",
     "system_component_default/physics",
-    "system_component_default_rendering",
-    "system_component_default_networking",
-    "system_component_default_gameplay_macros/macro_state",
-    "system_component_default_rendering_macros/macro_render_feature_driver",
-    "system_component_default_gameplay_macros/macro_state_serialize",
+    "system_component_default/networking",
+    "system_component_default/rendering",
+    "system_component_default/rendering_macros/macro_render_feature_driver",
 ]
 
 [workspace.dependencies]
 curio_core = { path = "curio_core" }
-ecs_event = { path = "system_component_default_gameplay_macros/ecs_event" }
-ecs_system = { path = "system_component_default_gameplay_macros/ecs_system" }
-macro_component = { path = "system_component_default_gameplay_macros/macro_component"}
-macro_events = { path = "system_component_default_gameplay_macros/macro_events" }
-macro_state = { path = "system_component_default_gameplay_macros/macro_state" }
-macro_state_serialize = { path = "system_component_default_gameplay_macros/macro_state_serialize" }
-system_component_default_time = { path = "system_component_default_time" }
-system_component_default_input = { path = "system_component_default_input" }
-system_component_default_gameplay = { path = "system_component_default_gameplay" }
+ecs_event = { path = "system_component_default/gameplay_macros/ecs_event" }
+ecs_system = { path = "system_component_default/gameplay_macros/ecs_system" }
+macro_component = { path = "system_component_default/gameplay_macros/macro_component" }
+macro_events = { path = "system_component_default/gameplay_macros/macro_events" }
+macro_state = { path = "system_component_default/gameplay_macros/macro_state" }
+macro_state_serialize = { path = "system_component_default/gameplay_macros/macro_state_serialize" }
+gameplay = { path = "system_component_default/gameplay" }
+rendering = { path = "system_component_default/rendering" }
+networking = { path = "system_component_default/networking" }
 physics = { path = "system_component_default/physics" }
-system_component_default_rendering = { path = "system_component_default_rendering" }
-system_component_default_networking = { path = "system_component_default_networking" }
+input = { path = "system_component_default/input" }
+time = { path = "system_component_default/time" }
 
 [workspace.package]
 version = "0.1.0"

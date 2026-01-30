@@ -12,24 +12,25 @@ edition = "2024"
 [dependencies]
 
 [dev-dependencies]
-curio_core = { path = "../curio_core" }
-ecs_event = { path = "../system_component_default_gameplay_macros/ecs_event" }
-ecs_system = { path = "../system_component_default_gameplay_macros/ecs_system" }
-macro_component = { path = "../system_component_default_gameplay_macros/macro_component" }
+ecs_event = { path = "../system_component_default/gameplay_macros/ecs_event" }
+ecs_system = { path = "../system_component_default/gameplay_macros/ecs_system" }
+macro_component = { path = "../system_component_default/gameplay_macros/macro_component" }
 futures = "0.3"
 hecs = "0.10.5"
-macro_events = { path = "../system_component_default_gameplay_macros/macro_events" }
-macro_state = { path = "../system_component_default_gameplay_macros/macro_state" }
-macro_state_serialize = { path = "../system_component_default_gameplay_macros/macro_state_serialize" }
+macro_events = { path = "../system_component_default/gameplay_macros/macro_events" }
+macro_state = { path = "../system_component_default/gameplay_macros/macro_state" }
+macro_state_serialize = { path = "../system_component_default/gameplay_macros/macro_state_serialize" }
 mcts = "0.3.0"
 pollster = "0.3"
 rand = "0.9.1"
 serde = { version = "1.0.104", features = ["derive", "rc"] }
-system_component_default_gameplay = { path = "../system_component_default_gameplay" }
-system_component_default_input = { path = "../system_component_default_input" }
-system_component_default_networking = { path = "../system_component_default_networking" }
-system_component_default_rendering = { path = "../system_component_default_rendering" }
-system_component_default_time = { path = "../system_component_default_time" }
+curio_core = { workspace = true }
+time = { workspace = true }
+input = { workspace = true }
+physics = { workspace = true }
+gameplay = { workspace = true }
+networking = { workspace = true }
+rendering = { workspace = true }
 winit = { version = "0.30", features = ["android-native-activity"] }
 ctor = "0.2"
 strum = "0.26"

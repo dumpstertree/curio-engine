@@ -5,13 +5,13 @@ opt-level = 0
 opt-level = 3
 
 [package]
-name = "system_component_default_rendering"
+name = "rendering"
 version = "0.1.0"
 edition = "2024"
 
 
 [dependencies]
-curio_core = { path = "../curio_core" }
+curio_core = { workspace = true }
 egui = "0.31.1"
 egui-winit = "0.31.1"
 bytemuck = { version = "1.16", features = ["derive"] }

@@ -10,12 +10,12 @@ use curio_core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::habit;
-use system_component_default_gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
-use system_component_default_gameplay::built_in::facet::transform::transform3d::Transform3D;
-use system_component_default_gameplay::context_3d::Context3D;
-use system_component_default_gameplay::traits::habit::Habit;
-use system_component_default_gameplay::traits::scope::Scope;
-use system_component_default_gameplay::traits_internal::world_context_common::ContextCommon;
+use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
+use gameplay::built_in::facet::transform::transform3d::Transform3D;
+use gameplay::context_3d::Context3D;
+use gameplay::traits::habit::Habit;
+use gameplay::traits::scope::Scope;
+use gameplay::traits_internal::world_context_common::ContextCommon;
 
 #[habit]
 pub struct Instance {}

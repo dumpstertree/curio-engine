@@ -107,7 +107,7 @@ pub fn impulse(attr: TokenStream, item: TokenStream) -> TokenStream {
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-            system_component_default_gameplay::static_data::global_event_recievers::register_global_event_receiver::<#event_path,#receiver_name >();
+            gameplay::static_data::global_event_recievers::register_global_event_receiver::<#event_path,#receiver_name >();
         }
     };
 

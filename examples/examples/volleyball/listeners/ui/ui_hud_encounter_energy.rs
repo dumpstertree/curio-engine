@@ -5,7 +5,7 @@ use curio_core::{
 };
 use std::collections::HashMap;
 
-use system_component_default_gameplay::{
+use gameplay::{
     built_in::facet::{renderer::renderer_dynamic::RendererDynamic, transform::transform2d::Transform2D},
     context_2d::Context2D,
     form::Form,

@@ -4,7 +4,7 @@ use curio_core::{
     random::Random,
 };
 use ecs_event::impulse;
-use system_component_default_gameplay::{
+use gameplay::{
     context_3d::Context3D,
     traits::{impulse::Impulse, scope::Scope},
 };

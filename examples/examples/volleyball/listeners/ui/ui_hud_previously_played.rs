@@ -6,7 +6,7 @@ use curio_core::{
 };
 use std::sync::Arc;
 
-use system_component_default_gameplay::{
+use gameplay::{
     built_in::facet::{
         renderer::{renderer_static::RendererStatic, renderer_text::RendererText},
         renderer_common::RendererCommon,

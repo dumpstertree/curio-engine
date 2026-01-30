@@ -24,7 +24,7 @@
 // //         #[ctor::ctor]
 // //         #[allow(non_snake_case)]
 // //         fn #register_fn() {
-// //             system_component_default_gameplay::static_data::global_components::register_global_component::<#name>();
+// //             gameplay::static_data::global_components::register_global_component::<#name>();
 // //         }
 
 // //     };
@@ -42,7 +42,7 @@
 //     match &mut input.fields {
 //         syn::Fields::Named(fields) => {
 //             fields.named.push(syn::parse_quote! {
-//                 owner: Option<system_component_default_gameplay::form::Form>
+//                 owner: Option<gameplay::form::Form>
 //             });
 //         }
 //         _ => {
@@ -58,12 +58,12 @@
 //         unsafe impl Send for #name {}
 //         unsafe impl Sync for #name {}
 
-//         impl system_component_default_gameplay::form::FacetCommon for #name {
-//             fn set_ownership(&mut self, owner: system_component_default_gameplay::form::Form) {
+//         impl gameplay::form::FacetCommon for #name {
+//             fn set_ownership(&mut self, owner: gameplay::form::Form) {
 //                 self.owner = Some(owner);
 //             }
 
-//             fn form(&self) -> system_component_default_gameplay::form::Form {
+//             fn form(&self) -> gameplay::form::Form {
 //                 self.owner.clone().expect("Facet owner not set")
 //             }
 //         }
@@ -71,7 +71,7 @@
 //         #[ctor::ctor]
 //         #[allow(non_snake_case)]
 //         fn #register_fn() {
-//             system_component_default_gameplay::static_data::global_components
+//             gameplay::static_data::global_components
 //                 ::register_global_component::<#name>();
 //         }
 //     };
@@ -103,7 +103,7 @@ pub fn facet(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     // Inject owner field FIRST
     fields_named.named.push(syn::parse_quote! {
-        owner: Option<system_component_default_gameplay::form::Form>
+        owner: Option<gameplay::form::Form>
     });
 
     let fields = &fields_named.named;
@@ -153,17 +153,17 @@ pub fn facet(_attr: TokenStream, item: TokenStream) -> TokenStream {
         unsafe impl #impl_generics Send for #struct_name #ty_generics #where_clause {}
         unsafe impl #impl_generics Sync for #struct_name #ty_generics #where_clause {}
 
-        impl #impl_generics system_component_default_gameplay::traits::facet_common::FacetCommon
+        impl #impl_generics gameplay::traits::facet_common::FacetCommon
             for #struct_name #ty_generics #where_clause
         {
             fn set_ownership(
                 &mut self,
-                owner: system_component_default_gameplay::form::Form,
+                owner: gameplay::form::Form,
             ) {
                 self.owner = Some(owner);
             }
 
-            fn form(&self) -> system_component_default_gameplay::form::Form {
+            fn form(&self) -> gameplay::form::Form {
                 self.owner.clone().expect("Facet owner not set")
             }
         }
@@ -171,7 +171,7 @@ pub fn facet(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-            system_component_default_gameplay::static_data::global_components
+            gameplay::static_data::global_components
                 ::register_global_component::<#struct_name #ty_generics>();
         }
 

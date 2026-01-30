@@ -14,7 +14,7 @@ use curio_core::{
 };
 use ecs_event::impulse;
 use ecs_system::habit;
-use system_component_default_gameplay::{
+use gameplay::{
     context_3d::Context3D,
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };

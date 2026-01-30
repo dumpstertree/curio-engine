@@ -3,11 +3,11 @@ use curio_core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
-use serde::{Deserialize, Serialize};
-use system_component_default_gameplay::{
-    traits::{impulse::Impulse, scope::Scope},
+use gameplay::{
     context_3d::Context3D,
+    traits::{impulse::Impulse, scope::Scope},
 };
+use serde::{Deserialize, Serialize};
 
 use crate::game_events::GameEvents;
 

@@ -4,7 +4,7 @@ use curio_core::{
     input::{axis_code::AxisCode, key_code::ButtonCode},
 };
 
-use system_component_default_gameplay::{
+use gameplay::{
     built_in::facet::{
         renderer::renderer_text::{AligmentHorizontal, AligmentVertical, RendererText},
         transform::transform2d::Transform2D,

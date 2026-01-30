@@ -5,8 +5,8 @@ use curio_core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_event::impulse;
-use system_component_default_gameplay::context_3d::Context3D;
-use system_component_default_gameplay::{
+use gameplay::context_3d::Context3D;
+use gameplay::{
     built_in::impulse::ui_events::UIEvents,
     traits::{impulse::Impulse, scope::Scope},
 };

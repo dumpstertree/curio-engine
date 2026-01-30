@@ -5,7 +5,7 @@ use curio_core::{
     io::asset_loader::AssetLoader,
 };
 
-use system_component_default_gameplay::{
+use gameplay::{
     built_in::facet::{
         animator::{animator_rotation_sin::AnimatorRotationSin, animator_scale_sin::AnimatorScaleSin},
         renderer::renderer_text::RendererText,

@@ -1,8 +1,0 @@
-[package]
-name = "system_component_default_time"
-version = "0.1.0"
-edition = "2024"
-
-
-[dependencies]
-curio_core = { path = "../curio_core" }

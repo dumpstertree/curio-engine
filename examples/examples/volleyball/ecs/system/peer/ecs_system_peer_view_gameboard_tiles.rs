@@ -20,15 +20,15 @@ use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use system_component_default_gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
-use system_component_default_gameplay::built_in::facet::renderer_common::RendererCommon;
-use system_component_default_gameplay::built_in::facet::transform::transform3d::Transform3D;
-use system_component_default_gameplay::context_3d::Context3D;
-use system_component_default_gameplay::traits_internal::world_context_common::ContextCommon;
+use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
+use gameplay::built_in::facet::renderer_common::RendererCommon;
+use gameplay::built_in::facet::transform::transform3d::Transform3D;
+use gameplay::context_3d::Context3D;
+use gameplay::traits_internal::world_context_common::ContextCommon;
 
 use ecs_system::habit;
-use system_component_default_gameplay::traits::habit::Habit;
-use system_component_default_gameplay::traits::scope::Scope;
+use gameplay::traits::habit::Habit;
+use gameplay::traits::scope::Scope;
 
 #[habit]
 pub struct Instance {}

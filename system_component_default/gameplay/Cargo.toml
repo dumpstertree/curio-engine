@@ -1,11 +1,11 @@
 [package]
-name = "system_component_default_gameplay"
+name = "gameplay"
 version = "0.1.0"
 edition = "2024"
 
 
 [dependencies]
-curio_core = { path = "../curio_core" }
+curio_core = { workspace = true }
 hecs = "0.10.5"
 intertrait = "0.2.2"
 serde = { version = "1.0.104", features = ["derive"] }

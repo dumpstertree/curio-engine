@@ -19,10 +19,10 @@ pub fn habit(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-            fn _check_system<T: system_component_default_gameplay::traits::habit::Habit>() {}
+            fn _check_system<T: gameplay::traits::habit::Habit>() {}
             _check_system::<#name>();
 
-           system_component_default_gameplay::static_data::global_ecs::register_global_ecs::<#name>();
+           gameplay::static_data::global_ecs::register_global_ecs::<#name>();
         }
     };
 

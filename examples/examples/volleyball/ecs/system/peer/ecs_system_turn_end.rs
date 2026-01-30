@@ -8,8 +8,8 @@ use curio_core::{
     dumpster_engine::NetworkModes,
 };
 use ecs_system::habit;
-use system_component_default_gameplay::context_3d::Context3D;
-use system_component_default_gameplay::traits::{habit::Habit, scope::Scope};
+use gameplay::context_3d::Context3D;
+use gameplay::traits::{habit::Habit, scope::Scope};
 
 #[habit]
 pub struct Instance {}

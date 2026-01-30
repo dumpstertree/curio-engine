@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use gameplay::traits::field_override::FieldOverride;
 use macro_component::facet;
-use system_component_default_gameplay::traits::field_override::FieldOverride;
 
 use crate::cards::card_instance::CardInstance;
 
