@@ -1,5 +1,5 @@
 [package]
-name = "macro_render_feature_driver"
+name = "macro_state"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,4 +9,3 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-curio_core = { path = "../curio_core" }

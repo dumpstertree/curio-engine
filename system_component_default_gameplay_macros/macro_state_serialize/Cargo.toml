@@ -1,5 +1,5 @@
 [package]
-name = "macro_override_field"
+name = "macro_state_serialize"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,6 +9,4 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-proc-macro2 = "1"
-curio_core = { path = "../curio_core" }
 serde = { version = "1.0.104", features = ["derive"] }

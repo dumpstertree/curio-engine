@@ -5,6 +5,6 @@ edition = "2024"
 
 [dependencies]
 curio_core = { path = "../curio_core" }
-macro_state = { path = "../macro_state" }
+macro_state = { path = "../system_component_default_gameplay_macros/macro_state" }
 cgmath = "0.18.0"
 ctor = "0.2"

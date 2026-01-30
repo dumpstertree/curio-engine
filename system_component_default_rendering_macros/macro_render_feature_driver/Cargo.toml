@@ -1,5 +1,5 @@
 [package]
-name = "macro_events"
+name = "macro_render_feature_driver"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,5 +9,4 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-curio_core = { path = "../curio_core" }
-serde = { version = "1.0.104", features = ["derive"] }
+#curio_core = { path = "../../../curio_core" }

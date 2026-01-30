@@ -279,10 +279,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "built_in"
-version = "0.1.0"
-
-[[package]]
 name = "built_in_state"
 version = "0.1.0"
 dependencies = [
@@ -1990,14 +1986,12 @@ dependencies = [
  "quote",
  "serde",
  "syn 2.0.104",
- "system_component_default_gameplay",
 ]
 
 [[package]]
 name = "macro_events"
 version = "0.1.0"
 dependencies = [
- "curio_core",
  "quote",
  "serde",
  "syn 2.0.104",
@@ -2007,7 +2001,6 @@ dependencies = [
 name = "macro_render_feature_driver"
 version = "0.1.0"
 dependencies = [
- "curio_core",
  "quote",
  "syn 2.0.104",
 ]
@@ -2016,7 +2009,6 @@ dependencies = [
 name = "macro_state"
 version = "0.1.0"
 dependencies = [
- "curio_core",
  "quote",
  "syn 2.0.104",
 ]
@@ -2025,7 +2017,6 @@ dependencies = [
 name = "macro_state_serialize"
 version = "0.1.0"
 dependencies = [
- "curio_core",
  "quote",
  "serde",
  "syn 2.0.104",

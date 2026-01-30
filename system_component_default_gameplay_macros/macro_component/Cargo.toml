@@ -9,5 +9,4 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-system_component_default_gameplay = { path = "../system_component_default_gameplay" }
 serde = { version = "1.0.104", features = ["derive"] }
