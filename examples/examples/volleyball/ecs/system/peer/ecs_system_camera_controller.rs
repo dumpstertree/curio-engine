@@ -1,19 +1,14 @@
-use habit::habit;
 use gameplay::{
     built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
 };
+use habit::habit;
 
 use curio_core::{
     built_in::record::state_time::TimeState,
-    collections::{
-        event_queue::EventQueue,
-        game_state::GameState,
-        quaternion::Quaternion,
-        vector3::{self, Vector3},
-    },
+    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
 };
 
@@ -25,20 +20,20 @@ use crate::{
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {}
-    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue) {}
+    fn init(&mut self, _game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {}
+    fn enable(&mut self, _game_state: &mut GameState, _world: &mut Context3D, _event_queue: &mut EventQueue) {}
     fn did_tick(&mut self, game_state: &mut GameState, context: &mut Context3D, _: &mut EventQueue) {
         // get state
         let state_select_target = game_state.get::<StatePeerSelectTargets>();
-        let state_time = game_state.get::<TimeState>();
+        let _state_time = game_state.get::<TimeState>();
         let state_pos_ball = game_state.get::<StatePositionBall>();
         let state_pos_entity = game_state.get::<StatePositionEntities>();
         let state_turn = game_state.get::<StateTurn>();
@@ -101,7 +96,7 @@ impl Habit for Instance {
                         t.rotation = Quaternion::slerp(t.rotation, rot2, 0.05);
                         t.position = Vector3::lerp(t.position, tar, 0.05);
                     } else {
-                        let pos = GameBoard::get_world_position(state_select_target.selected_index.x, state_select_target.selected_index.y);
+                        let _pos = GameBoard::get_world_position(state_select_target.selected_index.x, state_select_target.selected_index.y);
                         tar = Vector3::new(0.0, 15.0, 0.0);
                         rot = Quaternion::from_euler(Vector3::new(90.0, 0.0, 0.0));
 

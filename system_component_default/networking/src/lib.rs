@@ -94,7 +94,7 @@ impl SystemComponentDefaultNetworking {
         println!("init peer");
 
         // You can change the transport to Udp or Ws (WebSocket).
-        let (server, _) = handler
+        let (_server, _) = handler
             .network()
             .connect(Transport::FramedTcp, "127.0.0.1:3042")
             .unwrap();
@@ -135,7 +135,7 @@ impl SystemComponentDefaultNetworking {
             });
         });
     }
-    fn tick_offline(&mut self, game_state: &mut GameState, _: &mut EventQueue) {}
+    fn tick_offline(&mut self, _game_state: &mut GameState, _: &mut EventQueue) {}
     fn tick_online_host(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
         let Ok(guard) = self.endpoints.lock() else {
             println!("couldnot lock");
@@ -320,7 +320,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
     }
-    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, _game_mode: &GameMode) {
         let mut v = vec![];
         for x in game_state.iter() {
             let Some(network_capabilities) = &x.network_capabilities else {

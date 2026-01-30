@@ -67,12 +67,12 @@ impl UICommon for UIHUDInstance {
                 .push(Self::spawn_card(game_state, context, card.clone()));
         }
     }
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         for f in &self.f_cards {
             f.destroy();
         }
     }
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // get the state
         let state_cards = game_state.get::<StateDeck>();
         let Some(deck) = state_cards.deck.get(&game_state.instance_id) else {

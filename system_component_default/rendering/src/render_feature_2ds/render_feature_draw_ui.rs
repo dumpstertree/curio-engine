@@ -42,7 +42,7 @@ impl RenderFeatureDrawUI {
                         GuiElementTypes::Rectangle => todo!(),
                         GuiElementTypes::Ellipse => todo!(),
                         GuiElementTypes::Label(label_desc) => {
-                            for (_text_style, font_id) in ui.style_mut().text_styles.iter_mut() {
+                            for (_text_style, _font_id) in ui.style_mut().text_styles.iter_mut() {
                                 // font_id.size = label_desc.font_size // whatever size you want here
                             }
                             ui.colored_label(Color32::from_rgb(label_desc.color.as_r_0255() as u8, label_desc.color.as_g_0255() as u8, label_desc.color.as_b_0255() as u8), &label_desc.contents);

@@ -194,7 +194,7 @@ impl Deck {
             .retain(|x| x.instance_id != *instance_id);
     }
     /// Move a card into deck. (unchanged semantics, but explicit)
-    pub fn add_card_to_deck(&mut self, card_uid: &str, is_persistent: bool) {
+    pub fn add_card_to_deck(&mut self, card_uid: &str, _is_persistent: bool) {
         let inst = Arc::new(CardInstance::new(card_uid));
         // println!("add card {} with id {}", inst.card_id, inst.instance_id);
 

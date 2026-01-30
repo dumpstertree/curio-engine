@@ -92,7 +92,7 @@ impl CardEventRunner {
                 self.runner
                     .enqueue(&CardEvents::EventChangeBallMode(mode.clone()));
             }
-            CardAttributeEvents::DrainHeat(mode) => {
+            CardAttributeEvents::DrainHeat(_mode) => {
                 self.runner
                     .enqueue(&&CardEvents::EventHeatDrain(data.filled[0].clone()));
             }

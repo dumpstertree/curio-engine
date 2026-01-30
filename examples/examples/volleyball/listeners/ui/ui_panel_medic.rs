@@ -31,14 +31,14 @@ impl UIPanelMedic {
     }
 }
 impl UIPanel for UIPanelMedic {
-    fn input_button(&mut self, button: ButtonCode, state: KeyState) {}
+    fn input_button(&mut self, _button: ButtonCode, _state: KeyState) {}
 
-    fn input_axis(&mut self, axis: AxisCode, state: InputAxisState) {}
+    fn input_axis(&mut self, _axis: AxisCode, _state: InputAxisState) {}
 }
 impl UICommon for UIPanelMedic {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // create obj
         let go_desc = context
             .spawn("text.description", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
@@ -58,13 +58,13 @@ impl UICommon for UIPanelMedic {
         self.go_opt_1 = Some(go_opt_1);
     }
 
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         self.go_desc.clone().unwrap().destroy();
         self.go_opt_0.clone().unwrap().destroy();
         self.go_opt_1.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
         let input_state = game_state.get::<InputState>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]

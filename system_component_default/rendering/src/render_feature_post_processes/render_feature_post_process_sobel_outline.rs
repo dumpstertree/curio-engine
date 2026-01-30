@@ -192,7 +192,7 @@ impl RenderFeaturePostProcessOutline {
 }
 
 impl RenderFeaturePostProcess for RenderFeaturePostProcessOutline {
-    fn render(&mut self, encoder: &mut wgpu::CommandEncoder, input_view: &wgpu::TextureView, output_view: &wgpu::TextureView, postprocess_source: PostProcessSource) {
+    fn render(&mut self, encoder: &mut wgpu::CommandEncoder, _input_view: &wgpu::TextureView, output_view: &wgpu::TextureView, postprocess_source: PostProcessSource) {
         let bind_group: &BindGroup;
         match postprocess_source {
             PostProcessSource::Offscreen => bind_group = &self.bind_group_input,

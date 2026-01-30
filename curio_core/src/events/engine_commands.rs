@@ -1,9 +1,6 @@
 use std::fmt::Display;
 
-use crate::collections::{
-    event_queue::{EventScope, IGameEvent},
-    vector3::Vector3,
-};
+use crate::collections::{event_queue::EventScope, vector3::Vector3};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -42,7 +39,7 @@ impl EngineCommands {
             EngineCommands::Redraw => 0,
             EngineCommands::Tick => 1,
             EngineCommands::Exit => 2,
-            EngineCommands::Resize(vector3) => 3,
+            EngineCommands::Resize(_vector3) => 3,
             EngineCommands::Fullscreen(_) => 4,
             EngineCommands::Resizable(_) => 5,
             EngineCommands::Cursor(_) => 6,

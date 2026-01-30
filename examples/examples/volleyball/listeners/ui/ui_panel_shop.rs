@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::state_input::InputState,
-    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState},
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
@@ -9,7 +9,6 @@ use gameplay::{
     built_in::facet::{
         animator::{animator_rotation_sin::AnimatorRotationSin, animator_scale_sin::AnimatorScaleSin},
         renderer::renderer_text::RendererText,
-        transform::transform2d::Transform2D,
     },
     context_2d::Context2D,
     form::Form,
@@ -41,7 +40,7 @@ impl UIPanel for UIPanelInstance {
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         //
         let mut stock_names = Vec::new();
         let state_store = game_state.get::<StateShop>();
@@ -82,12 +81,12 @@ impl UICommon for UIPanelInstance {
         self.f_ui = Some(f_ui);
     }
 
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         if let Some(f_ui) = &self.f_ui {
             f_ui.destroy();
         }
     }
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
         // no items
         if game_state.get::<StateShop>().shop.stock.len() == 0 {
             return;

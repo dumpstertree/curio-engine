@@ -17,7 +17,7 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
         true
     }
     fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
@@ -25,16 +25,16 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
+    fn enable(&mut self, _game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
         // game_state.edit::<StateSun>(|x| {
         //     x.cast_shadows = true;
         //     x.color = Color::green();
         //     x.direction = (Vector3::down() + Vector3::forward()).normalize_and_copy()
         // });
     }
-    fn did_tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
         //edit draw call states
-        let t = state.get::<TimeState>().scaled_time;
+        let _t = state.get::<TimeState>().scaled_time;
         // state.edit::<StateLights>(|x| {
         //     for (_, (light, transform)) in world.query::<(&ComponentLight, &Transform)>().iter() {
         //         x.all_lights.push(DrawCallLight {

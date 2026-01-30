@@ -102,12 +102,7 @@ impl Vector4 {
     }
     /// Clamps all values of a NEW instance between min and max inclusively
     pub fn clamp_and_copy(&self, min: Vector4, max: Vector4) -> Vector4 {
-        Vector4::new(
-            self.x.clamp(min.x, max.x),
-            self.y.clamp(min.y, max.y),
-            self.z.clamp(min.z, max.z),
-            self.w.clamp(min.w, max.w),
-        )
+        Vector4::new(self.x.clamp(min.x, max.x), self.y.clamp(min.y, max.y), self.z.clamp(min.z, max.z), self.w.clamp(min.w, max.w))
     }
     /// returns a new instance of Vector2 discarding z and w
     pub fn to_vector2(&self) -> Vector2 {

@@ -54,7 +54,7 @@ pub trait RendererCommon: FacetCommon {
     //     return tint;
     // }
 
-    fn update_tint_in_heirarchy(&self, w: Context3D) {
+    fn update_tint_in_heirarchy(&self, _w: Context3D) {
         // let b = w.world.borrow();
 
         // let x = b.get::<&ComponentRendererText>(self.get_parent().unwrap().entity);

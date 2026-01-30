@@ -65,13 +65,13 @@ impl Scope for Instance {
             == RoomTypes::Combat
             && any_ai
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {}
-    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, _game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {}
+    fn enable(&mut self, game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
         self.move_time = 1.5;
         self.lastmove = game_state.get::<TimeState>().scaled_time;
     }
@@ -175,11 +175,11 @@ impl Habit for Instance {
 //     }
 // }
 impl Impulse<GameEvents> for Instance {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
-            GameEvents::DidTurnBegin(id) => {}
+            GameEvents::DidTurnBegin(_id) => {}
             _ => {
-                let state_time = game_state.get::<TimeState>();
+                let _state_time = game_state.get::<TimeState>();
                 // self.lastmove = game_state.get::<TimeState>().unscaled_time;
                 unsafe { DO_MOVE = true };
             }

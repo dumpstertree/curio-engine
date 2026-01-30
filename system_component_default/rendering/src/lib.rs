@@ -89,8 +89,8 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         Self::finalize_frame(output, encoder);
     }
 
-    fn raw_event(&mut self, event: WindowEvent) {
-        let window = SystemGPU::get_window();
+    fn raw_event(&mut self, _event: WindowEvent) {
+        let _window = SystemGPU::get_window();
         // self.egui_renderer.handle_input(&window, &event);
     }
     fn set_game_mode(&mut self, _: &mut Vec<GameState>, game_mode: &GameMode) {

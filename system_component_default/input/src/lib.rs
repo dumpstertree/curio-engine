@@ -77,7 +77,7 @@ impl SystemComponent for SystemComponentDefaultInput {
     fn input_button(&mut self, _: &mut Vec<GameState>, code: ButtonCode, val: KeyState) {
         self.state_button.insert(code, val == KeyState::Down);
     }
-    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, _game_state: &mut Vec<GameState>, game_mode: &GameMode) {
         let mut active_mappings = vec![];
         for game_instance in &game_mode.game_instances {
             active_mappings.push(game_instance.input_mappings.clone());

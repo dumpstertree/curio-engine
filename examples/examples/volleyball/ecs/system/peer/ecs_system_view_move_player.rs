@@ -20,15 +20,15 @@ use habit::habit;
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, _events: &mut EventQueue) {
         let state_position_player = game_state.get::<StatePositionEntities>();
         let state_time = game_state.get::<TimeState>();
 

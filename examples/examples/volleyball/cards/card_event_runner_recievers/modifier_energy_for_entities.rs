@@ -1,4 +1,4 @@
-use crate::{cards::enums::card_events::CardEvents, cards::card_modifier::CardModifier, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
+use crate::{cards::card_modifier::CardModifier, cards::enums::card_events::CardEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
 use curio_core::collections::game_state::GameState;
 
 pub struct EventReciever {}

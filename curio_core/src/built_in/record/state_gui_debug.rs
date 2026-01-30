@@ -49,7 +49,7 @@ impl GUIStateDebug {
             size: 18.0,
         }
     }
-    fn pause_on_click(game_state: &mut GameState, event_queue: &mut EventQueue) {
+    fn pause_on_click(_game_state: &mut GameState, _event_queue: &mut EventQueue) {
         // event_queue.enqueue_event(EngineCommands::SetPauseMode(!game_state.get::<StateDebug>().is_paused));
     }
 }

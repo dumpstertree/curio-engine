@@ -11,7 +11,6 @@ use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{Assets, UIViewTypes};
 
-use curio_core::collections::color::Color;
 use curio_core::collections::quaternion::Quaternion;
 use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::collections::vector3::Vector3;
@@ -23,7 +22,6 @@ use curio_core::{
 };
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
-use gameplay::built_in::facet::renderer_common::RendererCommon;
 use gameplay::built_in::facet::transform::transform3d::Transform3D;
 use gameplay::built_in::impulse::ui_events::UIEvents;
 use gameplay::context_3d::Context3D;
@@ -73,14 +71,14 @@ impl Impulse<GameEvents> for Listener {
     }
 }
 impl Listener {
-    pub fn spawn_tile_select(game_state: &mut GameState, world: &mut Context3D) {
+    pub fn spawn_tile_select(_game_state: &mut GameState, world: &mut Context3D) {
         let asset = Some(AssetLoader::load_model_static_from_database(&Assets::Ball.into()));
         world
             .spawn("w", Transform3D::default().set_position(Vector3::up() * 0.05))
             .add_facet(ComponentGameBoardSelection::default())
             .add_facet(RendererStatic::default().set_asset(asset.clone()));
     }
-    pub fn spawn_tiles(game_state: &mut GameState, world: &mut Context3D) {
+    pub fn spawn_tiles(_game_state: &mut GameState, world: &mut Context3D) {
         let asset = Some(AssetLoader::load_model_static_from_database(&Assets::GameBoardTileActive.into()));
         for team in Teams::all() {
             let min = GameBoard::get_bounds_min_for_team(&team);

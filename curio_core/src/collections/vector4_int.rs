@@ -101,12 +101,7 @@ impl Vector4Int {
     }
     /// Clamps all values of a NEW instance between min and max inclusively
     pub fn clamp_and_copy(&self, min: Vector4Int, max: Vector4Int) -> Vector4Int {
-        Vector4Int::new(
-            self.x.clamp(min.x, max.x),
-            self.y.clamp(min.y, max.y),
-            self.z.clamp(min.z, max.z),
-            self.w.clamp(min.w, max.w),
-        )
+        Vector4Int::new(self.x.clamp(min.x, max.x), self.y.clamp(min.y, max.y), self.z.clamp(min.z, max.z), self.w.clamp(min.w, max.w))
     }
     /// returns a new instance of Vector2 discarding z and w
     pub fn to_vector2(&self) -> Vector2 {

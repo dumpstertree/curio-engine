@@ -23,13 +23,13 @@ impl Scope for Instance {
             .room_type
             == RoomTypes::Combat
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
     fn enable(&mut self, _: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {}
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _events: &mut EventQueue) {
         let state_input = game_state.get::<InputState>();
 
         game_state.edit::<StatePeerInputMode>(|x| {

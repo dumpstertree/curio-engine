@@ -18,7 +18,7 @@ impl IState for StatePlayHistory {
     }
 }
 impl Hash for StatePlayHistory {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {
         // let mut axis_keys: Vec<&i32> = self.history.keys().collect();
         // axis_keys.sort();
         // axis_keys.len().hash(state);

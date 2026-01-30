@@ -16,7 +16,7 @@ use crate::{
         state_skybox::StateSkybox, state_sun::StateSun, state_time::TimeState,
     },
     collections::{key_state::KeyState, vector3::Vector3},
-    dumpster_engine::{CurioMetadata, GPUInstance, VersionNumber, WindowLayout},
+    dumpster_engine::{CurioMetadata, GPUInstance, WindowLayout},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode},
     static_data,

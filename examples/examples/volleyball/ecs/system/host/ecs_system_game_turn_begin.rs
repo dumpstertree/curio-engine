@@ -14,9 +14,8 @@ use curio_core::{
 };
 use gameplay::{
     context_3d::Context3D,
-    traits::{habit::Habit, impulse::Impulse, scope::Scope},
+    traits::{impulse::Impulse, scope::Scope},
 };
-use habit::habit;
 use impulse::impulse;
 
 #[derive(Default)]

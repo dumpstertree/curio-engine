@@ -226,7 +226,7 @@ use std::{hash::Hash, sync::Arc};
 // pub struct ShaderVec2Desc {}
 // pub struct ShaderVec3Desc {}
 // pub struct ShaderVec4Desc {}
-use egui_wgpu::wgpu::{naga::BuiltIn, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, ShaderModule};
+use egui_wgpu::wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, ShaderModule};
 use serde::{Deserialize, Serialize};
 
 use crate::{

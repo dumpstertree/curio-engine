@@ -40,7 +40,7 @@ impl Scope for Instance {
             && !game_state.get::<StateExploration>().is_selecting_next
             && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }

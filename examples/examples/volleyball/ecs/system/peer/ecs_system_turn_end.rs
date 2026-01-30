@@ -7,14 +7,14 @@ use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use habit::habit;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{habit::Habit, scope::Scope};
+use habit::habit;
 
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
     fn is_enabled(&mut self, game_state: &mut GameState) -> bool {

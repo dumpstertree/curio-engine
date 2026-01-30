@@ -90,7 +90,7 @@ impl Transform2D {
         self.scale = scale;
         self
     }
-    pub fn set_parent(mut self, parent: Option<Form>) -> Transform2D {
+    pub fn set_parent(self, _parent: Option<Form>) -> Transform2D {
         // self.parent = parent;
         self
     }
@@ -120,7 +120,7 @@ impl Transform2D {
         self.ws_matrix = my_matrix;
         return self.ws_matrix.clone();
     }
-    pub fn get_world_matrix(&self, world: &Context3D) -> &Matrix4x4 {
+    pub fn get_world_matrix(&self, _world: &Context3D) -> &Matrix4x4 {
         &self.ws_matrix
     }
 }

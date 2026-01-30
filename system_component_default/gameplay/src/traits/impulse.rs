@@ -1,6 +1,6 @@
 use curio_core::collections::{event_queue::EventQueue, game_state::GameState};
 
-use crate::{traits::scope::Scope, context_3d::Context3D};
+use crate::{context_3d::Context3D, traits::scope::Scope};
 
 pub trait Impulse<T>: Scope
 where

@@ -1,11 +1,6 @@
 use crate::{
-    cards::{
-        card_attributes::card_attribute_events::CardAttributeEvents,
-        card_attributes_targets::{attribute_target_type_entities::AttribtuteTargetTypesEntities, attribute_target_type_tiles::AttributeTargetTypesTiles},
-        card_event_runner::CardEventRunner,
-        enums::attribute_clear_flag::ModifierClearFlag,
-    },
-    game_events::{self, GameEvents},
+    cards::{card_event_runner::CardEventRunner, enums::attribute_clear_flag::ModifierClearFlag},
+    game_events::GameEvents,
     state::{host::state_play_history::StatePlayHistory, state_deck::CardTypes, state_position_ball::StatePositionBall, state_position_player::StatePositionEntities},
 };
 use curio_core::{
@@ -14,13 +9,9 @@ use curio_core::{
 };
 use gameplay::{
     context_3d::Context3D,
-    traits::{habit::Habit, impulse::Impulse, scope::Scope},
+    traits::{impulse::Impulse, scope::Scope},
 };
-use habit::habit;
-use hecs::Entity;
 use impulse::impulse;
-use std::vec;
-use winit::dpi::Position;
 
 #[derive(Default)]
 #[impulse(GameEvents)]

@@ -1,4 +1,4 @@
-use crate::{ cards::card_dependencies::data_dep_filled::DataDepsFilled};
+use crate::cards::card_dependencies::data_dep_filled::DataDepsFilled;
 
 use std::vec;
 pub struct DataDepsFilledAllPermutations {

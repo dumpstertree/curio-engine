@@ -7,7 +7,7 @@ use curio_core::{
     collections::color::Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset},
 };
-use std::{clone, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Clone, Default)]
 pub struct RendererStatic {

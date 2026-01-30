@@ -30,13 +30,13 @@ impl Scope for Instance {
             .room_type
             == RoomTypes::Combat
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
     fn enable(&mut self, _: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {}
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _events: &mut EventQueue) {
         let state_select_targets = game_state.get::<StatePeerSelectTargets>();
         let state_input = game_state.get::<InputState>();
         // mode is currently set to NONE
@@ -45,7 +45,7 @@ impl Habit for Instance {
         };
 
         match mode {
-            SelectStates::Enabled(target, working_state) => {
+            SelectStates::Enabled(target, _working_state) => {
                 let state_team = game_state.get::<StateTeamAssignments>();
                 let team = state_team.team_for(&game_state.instance_id).unwrap();
                 let mut all_targets = self.get_all_tiles(game_state, target);

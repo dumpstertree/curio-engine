@@ -2,7 +2,6 @@ use curio_core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vect
 use std::collections::{HashMap, VecDeque};
 
 use crate::{
-    built_in::facet::transform::transform2d::Transform2D,
     context_3d::Context3D,
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
@@ -109,7 +108,7 @@ impl Transform3D {
         self
     }
 
-    pub fn get_world_matrix(&self, world: &Context3D) -> &Matrix4x4 {
+    pub fn get_world_matrix(&self, _world: &Context3D) -> &Matrix4x4 {
         &self.ws_matrix
     }
 }

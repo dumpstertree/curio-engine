@@ -1,5 +1,5 @@
 use curio_core::random::Random;
-use hecs::{Entity, Query, QueryMut, World};
+use hecs::{Entity, Query, World};
 use std::{any::type_name, cell::RefCell, hash::Hash, rc::Rc};
 
 use crate::{form::Form, traits::facet_common::FacetCommon};

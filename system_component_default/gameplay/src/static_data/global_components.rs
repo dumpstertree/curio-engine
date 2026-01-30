@@ -25,7 +25,7 @@ where
     let key = type_name::<T>()
         .split("::")
         .last()
-        .filter(|x| true)
+        .filter(|_x| true)
         .unwrap()
         .to_lowercase();
     let mut reg: std::sync::RwLockWriteGuard<'_, ReceiverRegistry> = COMPONENT_REGISTRY.write().expect("Registry poisoned");

@@ -4,11 +4,7 @@ use crate::{gameplay::ecs::component::component_collider::CollisionSnapshot, sys
 pub struct StateCollision {
     pub collisions: Vec<CollisionSnapshot>,
 }
-impl StateCollision {
-    fn new() -> StateCollision {
-        StateCollision { collisions: Vec::new() }
-    }
-}
+impl StateCollision {}
 
 impl IState for StateCollision {
     fn id() -> i32 {

@@ -1,6 +1,6 @@
 use curio_core::collections::vector2_int::Vector2Int;
-use gameplay::traits::field_override::FieldOverride;
 use facet::facet;
+use gameplay::traits::field_override::FieldOverride;
 
 #[facet]
 pub struct ComponentGameBoardTile {

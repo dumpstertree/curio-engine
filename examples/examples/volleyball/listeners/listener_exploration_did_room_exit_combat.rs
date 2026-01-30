@@ -53,7 +53,7 @@ impl Impulse<GameEvents> for Listener {
 }
 
 impl Listener {
-    fn despawn_entities(game_state: &mut GameState, world: &mut Context3D) {
+    fn despawn_entities(game_state: &mut GameState, _world: &mut Context3D) {
         let id = EntityIDTypes::Entities;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
@@ -61,7 +61,7 @@ impl Listener {
         }
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
-    fn despawn_background(game_state: &mut GameState, world: &mut Context3D) {
+    fn despawn_background(game_state: &mut GameState, _world: &mut Context3D) {
         let id = EntityIDTypes::Background;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
@@ -70,7 +70,7 @@ impl Listener {
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 
-    fn despawn_ball(game_state: &mut GameState, world: &mut Context3D) {
+    fn despawn_ball(game_state: &mut GameState, _world: &mut Context3D) {
         let id = EntityIDTypes::Ball;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);

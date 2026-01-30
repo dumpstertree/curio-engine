@@ -37,18 +37,18 @@ impl Scope for Instance {
         let state_exploration = game_state.get::<StateExploration>();
         state_exploration.exploration.get_cur_room().room_type == RoomTypes::Combat && !state_exploration.is_selecting_next
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, _events: &mut EventQueue) {
         let state_mode = game_state.get::<StatePeerInputMode>();
         let state_deck = game_state.get::<StateDeck>();
         let state_index = game_state.get::<StatePeerSelectedCards>();
         if state_mode.mode != InputModes::Manuever && game_state.get::<StatePeerSelectTargets>().enabled.is_none() {
             world.edit::<(&mut Transform3D, &ComponentGameBoardTile, &mut RendererStatic)>(|query| {
-                for (_, (transform, gameboard_tile, renderer)) in query {
+                for (_, (_transform, _gameboard_tile, renderer)) in query {
                     renderer.set_enabled(false);
                 }
             });

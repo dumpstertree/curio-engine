@@ -2,7 +2,7 @@ use core::f32;
 use std::hash::Hash;
 
 use crate::{
-    collections::{color::Color, projection::Projection, quaternion::Quaternion, vector3::Vector3},
+    collections::{projection::Projection, quaternion::Quaternion, vector3::Vector3},
     extensions::extensions_f32::ExtensionsF32,
 };
 use cgmath::{prelude::*, Matrix4, Point3};

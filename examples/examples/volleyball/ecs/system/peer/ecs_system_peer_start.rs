@@ -1,5 +1,4 @@
 use gameplay::{
-    built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
@@ -8,9 +7,9 @@ use habit::habit;
 
 use curio_core::{
     built_in::record::{state_camera::CameraState, state_sun::StateSun},
-    collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
+    collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     dumpster_engine::NetworkModes,
-    io::{asset::Asset, asset_database::AssetDatabaseListing, asset_loader::AssetLoader},
+    io::asset_loader::AssetLoader,
 };
 
 use crate::{
@@ -21,18 +20,18 @@ use crate::{
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
         true
     }
-    fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, game_state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
         println!("Instance: {}. Peer Init", game_state.instance_id);
     }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, _event_queue: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 
         // load any remote assets now

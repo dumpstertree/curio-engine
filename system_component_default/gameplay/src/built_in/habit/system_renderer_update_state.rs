@@ -25,7 +25,7 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
         true
     }
     fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
@@ -156,7 +156,7 @@ impl Habit for Instance {
                     }
                     // guard - no mesh
                     if renderer.asset.is_some() {
-                        let Some(asset) = &renderer.asset else {
+                        let Some(_asset) = &renderer.asset else {
                             continue;
                         };
 
@@ -217,7 +217,7 @@ impl Habit for Instance {
                         let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
                         let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz + state_camera.cameras.rotation * Vector3::down() * yy + state_camera.cameras.rotation * Vector3::right() * xx;
 
-                        let Some(asset) = &renderer.asset else {
+                        let Some(_asset) = &renderer.asset else {
                             continue;
                         };
 

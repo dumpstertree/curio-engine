@@ -174,7 +174,7 @@ impl SystemGPU {
         }
         {
             // guard -
-            let Ok(mut guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
+            let Ok(guard) = SYSTEM_GPU_ADAPTER_INSTANCE.lock() else {
                 panic!("Failed to lock GPU Instance");
             };
 

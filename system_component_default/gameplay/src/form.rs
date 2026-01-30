@@ -1,8 +1,8 @@
 use crate::{
-    form_ref::{self, FormRef, MutQuery},
+    form_ref::{FormRef, MutQuery},
     traits::facet_common::FacetCommon,
 };
-use hecs::{Component, Entity, Query};
+use hecs::{Entity, Query};
 use std::{cell::RefCell, hash::Hash, rc::Rc};
 
 /// Representation of an object in the world

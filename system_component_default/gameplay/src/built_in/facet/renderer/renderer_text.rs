@@ -8,11 +8,7 @@ use curio_core::{
 use std::sync::Arc;
 
 use crate::{
-    built_in::facet::{
-        renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic},
-        renderer_common::RendererCommon,
-    },
-    context_3d::Context3D,
+    built_in::facet::renderer_common::RendererCommon,
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };

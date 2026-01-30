@@ -28,7 +28,7 @@ impl RenderFeatureDrawMesh {
         let state_draws = game_state.get::<DrawCallsState>();
         let mut draw_calls = state_draws.draw_calls;
 
-        let was = draw_calls.len();
+        let _was = draw_calls.len();
         let mut batching: HashMap<(Arc<Mesh>, Arc<Material>), Vec<Matrix4x4>> = HashMap::new();
         for draw_call in draw_calls.drain(..) {
             let mesh = draw_call.mesh;

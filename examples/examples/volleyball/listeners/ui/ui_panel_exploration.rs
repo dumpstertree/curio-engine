@@ -38,14 +38,14 @@ impl UIPanelInstance {
     }
 }
 impl UIPanel for UIPanelInstance {
-    fn input_button(&mut self, button: ButtonCode, state: KeyState) {}
+    fn input_button(&mut self, _button: ButtonCode, _state: KeyState) {}
 
-    fn input_axis(&mut self, axis: AxisCode, state: InputAxisState) {}
+    fn input_axis(&mut self, _axis: AxisCode, _state: InputAxisState) {}
 }
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         let mut rend = RendererText::default();
         rend.set_contents("Where to go next?");
         // create obj
@@ -88,7 +88,7 @@ impl UICommon for UIPanelInstance {
         self.go_desc = Some(go_desc);
     }
 
-    fn dismiss(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         self.go_desc.clone().unwrap().destroy();
         for x in &self.go_opts {
             x.destroy();
@@ -98,7 +98,7 @@ impl UICommon for UIPanelInstance {
         // self.go_opt_1.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
         let input_state = game_state.get::<InputState>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]

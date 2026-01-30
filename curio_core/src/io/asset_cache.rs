@@ -203,7 +203,6 @@ impl AssetCache {
     }
 
     fn trim(&mut self) {
-        return;
         // remove old values to meet max
         while self.cache_model.len() > self.max_cache_len {
             let mut oldest_id = None;

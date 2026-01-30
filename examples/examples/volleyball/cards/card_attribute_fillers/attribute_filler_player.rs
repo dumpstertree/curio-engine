@@ -138,7 +138,7 @@ impl CardAttributeFillerPlayer {
 // get -> entity
 impl CardAttributeFillerPlayer {
     fn get_entity_user(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let cur_player_id = game_state.get::<StateTurn>().active_instance_id;
+        let _cur_player_id = game_state.get::<StateTurn>().active_instance_id;
         DataDepsFilled::Entities(vec![*id])
     }
     fn get_entity_select(_game_state: &GameState) -> DataDepsFilled {
@@ -152,7 +152,7 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Entities(vec![*selected])
     }
     fn get_entity_opponent(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
         let opponent_team = state_team_assignment.team_for(&id).unwrap().next_team();
         let opponent_ids = state_team_assignment
@@ -169,7 +169,7 @@ impl CardAttributeFillerPlayer {
         todo!()
     }
     fn get_card_user_random(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
 
         let Some(deck) = state_deck.deck.get(id) else {
@@ -190,7 +190,7 @@ impl CardAttributeFillerPlayer {
         todo!()
     }
     fn get_card_user_all(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
 
         let Some(deck) = state_deck.deck.get(id) else {
@@ -205,7 +205,7 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Cards(result)
     }
     fn get_card_opponent_all(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
         let opponent_team = state_team_assignment.team_for(id).unwrap().next_team();
@@ -227,7 +227,7 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Cards(result)
     }
     fn get_card_opponent_random(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_deck = game_state.get::<StateDeck>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
         let opponent_team = state_team_assignment.team_for(id).unwrap().next_team();
@@ -262,7 +262,7 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(0, 4), Random::range_int(0, 4))])
     }
     pub fn get_tiles_random_on_team_user(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
 
         let Some(cur_team) = state_team_assignment.team_for(id) else {
@@ -275,7 +275,7 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
     }
     pub fn get_tiles_random_on_team_opponent(id: &i32, game_state: &GameState) -> DataDepsFilled {
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_team_assignment = game_state.get::<StateTeamAssignments>();
 
         let Some(cur_team) = state_team_assignment.team_for(id) else {
@@ -289,7 +289,7 @@ impl CardAttributeFillerPlayer {
 
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
     }
-    pub fn get_tiles_random_in_range_global(id: &i32, game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
+    pub fn get_tiles_random_in_range_global(_id: &i32, _game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
         // get between min and max in range
         let random_x = Random::range_int(min.x, max.x);
         let random_z = Random::range_int(min.y, max.y);
@@ -298,7 +298,7 @@ impl CardAttributeFillerPlayer {
     }
     pub fn get_tiles_random_in_range_local(id: &i32, game_state: &GameState, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
         let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
-        let state_turn = game_state.get::<StateTurn>();
+        let _state_turn = game_state.get::<StateTurn>();
         let state_teams = game_state.get::<StateTeamAssignments>();
         let state_position_ball = game_state.get::<StatePositionBall>();
 
