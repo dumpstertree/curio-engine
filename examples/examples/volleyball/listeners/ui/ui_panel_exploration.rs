@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::{state_input::InputState, state_time::TimeState},
+    built_in::record::{sys_record_input::SysRecordInput, sys_record_time::SysRecordTime},
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2, vector3::Vector3},
     input::{axis_code::AxisCode, key_code::ButtonCode},
 };
@@ -99,7 +99,7 @@ impl UICommon for UIPanelInstance {
     }
 
     fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let input_state = game_state.get::<InputState>();
+        let input_state = game_state.get::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
                 .get_button_or_default("move_left")
@@ -128,7 +128,7 @@ impl UICommon for UIPanelInstance {
             }
         }
 
-        let sin = f32::sin(game_state.get::<TimeState>().unscaled_time as f32 * 5.0);
+        let sin = f32::sin(game_state.get::<SysRecordTime>().unscaled_time as f32 * 5.0);
         for i in 0..self.go_opts.len() {
             let go = &self.go_opts[i];
             go.edit_facet::<Transform2D>(|x| {

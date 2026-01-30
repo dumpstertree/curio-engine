@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::{state_camera::CameraState, state_debug::StateDebug},
+    built_in::record::{sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -25,13 +25,13 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
-        if state.get::<StateDebug>().is_paused {
+        if state.get::<SysRecordDebug>().is_paused {
             return;
         }
         world.edit::<(&mut Transform3D, &Camera)>(|q| {
             //
             for (_entity, (transform, _camera)) in q {
-                state.edit::<CameraState>(|x| {
+                state.edit::<SysRecordCamera>(|x| {
                     x.cameras.position = transform.position;
                     x.cameras.rotation = transform.rotation;
                 });

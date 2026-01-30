@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_network::StateNetwork,
+    built_in::record::sys_record_network::SysRecordNetwork,
     collections::{game_state::GameState, vector2_int::Vector2Int},
     random::Random,
 };
@@ -145,7 +145,7 @@ impl CardAttributeFillerPlayer {
         todo!()
     }
     fn get_entity_random(game_state: &GameState) -> DataDepsFilled {
-        let state_peers = game_state.get::<StateNetwork>();
+        let state_peers = game_state.get::<SysRecordNetwork>();
         let peer_instance_ids = state_peers.peer_instance_ids();
         let random_index = Random::range_int(0, peer_instance_ids.len().try_into().unwrap());
         let selected = peer_instance_ids.get(random_index as usize).unwrap();

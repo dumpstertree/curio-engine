@@ -1,15 +1,15 @@
 use crate::{collections::gizmo::Gizmo, system::system_game_state::IState};
 
 #[derive(Default, Hash, Clone)]
-pub struct GizmosState {
+pub struct SysRecordGizmos {
     pub draw_calls: Vec<Gizmo>,
 }
-impl GizmosState {
-    pub fn new<'a>() -> GizmosState {
-        GizmosState { draw_calls: Vec::new() }
+impl SysRecordGizmos {
+    pub fn new<'a>() -> SysRecordGizmos {
+        SysRecordGizmos { draw_calls: Vec::new() }
     }
 }
-impl IState for GizmosState {
+impl IState for SysRecordGizmos {
     fn id() -> i32 {
         9827234
     }

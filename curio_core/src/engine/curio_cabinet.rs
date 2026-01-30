@@ -12,8 +12,8 @@ use winit::{
 
 use crate::{
     built_in::record::{
-        state_camera::CameraState, state_debug::StateDebug, state_draw::DrawCallsState, state_gizmos::GizmosState, state_gui::GUIState, state_gui_debug::GUIStateDebug, state_input::InputState, state_lights::StateLights, state_network::StateNetwork, state_screeen::StateScreen,
-        state_skybox::StateSkybox, state_sun::StateSun, state_time::TimeState,
+        sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_gizmos::SysRecordGizmos, sys_record_gui::SysRecordGui, sys_record_input::SysRecordInput, sys_record_lights::SysRecordLights, sys_record_network::SysRecordNetwork,
+        sys_record_rendering::SysRecordRendering, sys_record_screen::SysRecordScreen, sys_record_skybox::SysRecordSkybox, sys_record_sun::SysRecordSun, sys_record_time::SysRecordTime,
     },
     collections::{key_state::KeyState, vector3::Vector3},
     dumpster_engine::{CurioMetadata, GPUInstance, WindowLayout},
@@ -303,17 +303,17 @@ where
 }
 
 pub fn register_built_in_records() {
-    static_data::global_states::register_global_state::<TimeState>();
-    static_data::global_states::register_global_state::<CameraState>();
-    static_data::global_states::register_global_state::<StateDebug>();
-    static_data::global_states::register_global_state::<DrawCallsState>();
-    static_data::global_states::register_global_state::<GizmosState>();
-    static_data::global_states::register_global_state::<GUIStateDebug>();
-    static_data::global_states::register_global_state::<GUIState>();
-    static_data::global_states::register_global_state::<InputState>();
-    static_data::global_states::register_global_state::<StateLights>();
-    static_data::global_states::register_global_state::<StateNetwork>();
-    static_data::global_states::register_global_state::<StateScreen>();
-    static_data::global_states::register_global_state::<StateSkybox>();
-    static_data::global_states::register_global_state::<StateSun>();
+    static_data::global_states::register_global_state::<SysRecordTime>();
+    static_data::global_states::register_global_state::<SysRecordCamera>();
+    static_data::global_states::register_global_state::<SysRecordDebug>();
+    static_data::global_states::register_global_state::<SysRecordRendering>();
+    static_data::global_states::register_global_state::<SysRecordGizmos>();
+    static_data::global_states::register_global_state::<SysRecordDebugGui>();
+    static_data::global_states::register_global_state::<SysRecordGui>();
+    static_data::global_states::register_global_state::<SysRecordInput>();
+    static_data::global_states::register_global_state::<SysRecordLights>();
+    static_data::global_states::register_global_state::<SysRecordNetwork>();
+    static_data::global_states::register_global_state::<SysRecordScreen>();
+    static_data::global_states::register_global_state::<SysRecordSkybox>();
+    static_data::global_states::register_global_state::<SysRecordSun>();
 }

@@ -6,7 +6,7 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
-    built_in::record::{state_camera::CameraState, state_sun::StateSun},
+    built_in::record::{sys_record_camera::SysRecordCamera, sys_record_sun::SysRecordSun},
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     dumpster_engine::NetworkModes,
     io::asset_loader::AssetLoader,
@@ -38,11 +38,11 @@ impl Habit for Instance {
         AssetLoader::preload_remote_assets(false);
 
         // set resolution
-        game_state.edit::<CameraState>(|x| {
+        game_state.edit::<SysRecordCamera>(|x| {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
         });
-        game_state.edit::<StateSun>(|x| {
+        game_state.edit::<SysRecordSun>(|x| {
             x.cast_shadows = true;
             x.color = Color::white();
             x.direction = (Vector3::forward() + Vector3::down()).normalize_and_copy();

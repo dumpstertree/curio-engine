@@ -3,7 +3,7 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use curio_core::{
-    built_in::record::state_input::InputState,
+    built_in::record::sys_record_input::SysRecordInput,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -39,7 +39,7 @@ impl Habit for Instance {
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
         // get input
-        let state_input = game_state.get::<InputState>();
+        let state_input = game_state.get::<SysRecordInput>();
 
         // guard - input for next turn
         let input_next = state_input.mapped[0]

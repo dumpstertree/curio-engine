@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_camera::CameraState,
+    built_in::record::sys_record_camera::SysRecordCamera,
     collections::{game_state::GameState, vector2::Vector2},
     graphics::graphics_mapping::GraphicsMapping,
     io::texture_asset::TextureAsset,
@@ -59,7 +59,7 @@ impl RenderFeature3DHelper {
         for i in 0..graphics_mappings.len() {
             //
             let game_state = game_state.get_mut(i).unwrap();
-            let state_camera = game_state.get::<CameraState>();
+            let state_camera = game_state.get::<SysRecordCamera>();
 
             // get camera data
             let cur_camera_snapshot = &state_camera.cameras;

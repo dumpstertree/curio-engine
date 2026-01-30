@@ -12,12 +12,7 @@ edition = "2024"
 [dependencies]
 
 [dev-dependencies]
-futures = "0.3"
-hecs = "0.10.5"
-mcts = "0.3.0"
-pollster = "0.3"
-rand = "0.9.1"
-serde = { version = "1.0.104", features = ["derive", "rc"] }
+
 stimulant = { workspace = true }
 record = { workspace = true }
 record_serializable = { workspace = true }
@@ -31,7 +26,14 @@ physics = { workspace = true }
 gameplay = { workspace = true }
 networking = { workspace = true }
 rendering = { workspace = true }
-winit = { version = "0.30", features = ["android-native-activity"] }
+#used by macros
 ctor = "0.2"
+#used for stimulant
 strum = "0.26"
 strum_macros = "0.26"
+#used for ai
+mcts = "0.3.0"
+#used for targeting
+rand = "0.9.1"
+#misc
+serde = { version = "1.0.104", features = ["derive", "rc"] }

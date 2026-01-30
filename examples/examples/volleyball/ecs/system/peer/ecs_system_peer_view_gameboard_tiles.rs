@@ -13,7 +13,7 @@ use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::StateTeamAssignments;
 
-use curio_core::built_in::record::state_time::TimeState;
+use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::collections::vector3::Vector3;
 use curio_core::{
@@ -152,7 +152,7 @@ impl Habit for Instance {
                         }
                     }
                 }
-                let sin = f32::sin(game_state.get::<TimeState>().unscaled_time as f32 * 5.0);
+                let sin = f32::sin(game_state.get::<SysRecordTime>().unscaled_time as f32 * 5.0);
 
                 renderer.set_enabled(targets.contains(&gameboard_tile.tile));
                 transform.scale = Vector3::one() + Vector3::one() * 0.1 * sin;

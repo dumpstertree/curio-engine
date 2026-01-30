@@ -7,7 +7,7 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
-    built_in::record::state_time::TimeState,
+    built_in::record::sys_record_time::SysRecordTime,
     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
 };
@@ -33,7 +33,7 @@ impl Habit for Instance {
     fn did_tick(&mut self, game_state: &mut GameState, context: &mut Context3D, _: &mut EventQueue) {
         // get state
         let state_select_target = game_state.get::<StatePeerSelectTargets>();
-        let _state_time = game_state.get::<TimeState>();
+        let _state_time = game_state.get::<SysRecordTime>();
         let state_pos_ball = game_state.get::<StatePositionBall>();
         let state_pos_entity = game_state.get::<StatePositionEntities>();
         let state_turn = game_state.get::<StateTurn>();

@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::{state_debug::StateDebug, state_gui_debug::GUIStateDebug, state_time::TimeState},
+    built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_time::SysRecordTime},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -18,7 +18,7 @@ impl Instance {
 }
 impl Scope for Instance {
     fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
-        game_state.get::<StateDebug>().is_inspecting
+        game_state.get::<SysRecordDebug>().is_inspecting
     }
     fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all()
@@ -27,9 +27,9 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_time = game_state.get::<TimeState>();
+        let state_time = game_state.get::<SysRecordTime>();
 
-        game_state.edit::<GUIStateDebug>(|x| {
+        game_state.edit::<SysRecordDebugGui>(|x| {
             x.append(format!("FPS: {} / Target FPS: {}", state_time.average_fps, state_time.target_frame_rate));
             x.append(format!("Scaled Time: {}", state_time.scaled_time));
             x.append(format!("Unscaled Time: {}", state_time.unscaled_time));

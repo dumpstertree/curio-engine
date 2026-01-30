@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_time::TimeState,
+    built_in::record::sys_record_time::SysRecordTime,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -34,7 +34,7 @@ impl Habit for Instance {
     }
     fn did_tick(&mut self, state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
         //edit draw call states
-        let _t = state.get::<TimeState>().scaled_time;
+        let _t = state.get::<SysRecordTime>().scaled_time;
         // state.edit::<StateLights>(|x| {
         //     for (_, (light, transform)) in world.query::<(&ComponentLight, &Transform)>().iter() {
         //         x.all_lights.push(DrawCallLight {

@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::{state_debug::StateDebug, state_input::InputState},
+    built_in::record::{sys_record_debug::SysRecordDebug, sys_record_input::SysRecordInput},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     input::key_code::ButtonCode,
@@ -28,13 +28,13 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_input = game_state.get::<InputState>();
+        let state_input = game_state.get::<SysRecordInput>();
 
         // get input button
         let debug_button = state_input.raw.get_button(&ButtonCode::Backquote);
         if debug_button.went_up {
             // flip the toggle
-            game_state.edit::<StateDebug>(|x| {
+            game_state.edit::<SysRecordDebug>(|x| {
                 x.is_inspecting = !x.is_inspecting;
             });
         }

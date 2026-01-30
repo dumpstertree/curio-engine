@@ -1,12 +1,12 @@
 use crate::{gameplay::ecs::component::component_collider::CollisionSnapshot, system::system_game_state::IState};
 
 #[derive(Default, Hash, Clone)]
-pub struct StateCollision {
+pub struct SysRecordCollision {
     pub collisions: Vec<CollisionSnapshot>,
 }
-impl StateCollision {}
+impl SysRecordCollision {}
 
-impl IState for StateCollision {
+impl IState for SysRecordCollision {
     fn id() -> i32 {
         85738
     }

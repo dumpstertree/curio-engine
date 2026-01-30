@@ -1,7 +1,7 @@
 use std::time::Instant;
 
-use curio_core::built_in::record::state_debug::StateDebug;
-use curio_core::built_in::record::state_time::TimeState;
+use curio_core::built_in::record::sys_record_debug::SysRecordDebug;
+use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::events::engine_commands::EngineCommands;
 // ucoreate::system_adapters::adapter_system_gpu::CustomEvents;
@@ -32,7 +32,7 @@ impl SystemComponent for SystemComponentDefaultTime {
     }
     fn init(&mut self, game_state: &mut Vec<GameState>) {
         for game_state in game_state {
-            game_state.edit::<TimeState>(|x| {
+            game_state.edit::<SysRecordTime>(|x| {
                 x.target_frame_rate = 60.0;
             });
         }
@@ -40,11 +40,11 @@ impl SystemComponent for SystemComponentDefaultTime {
 
     fn tick(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) {
         for game_state in game_state {
-            let state_debug = game_state.get::<StateDebug>();
+            let state_debug = game_state.get::<SysRecordDebug>();
 
             let cur_time = self.instant.elapsed().as_secs_f64();
 
-            let fps = 1.0 / (cur_time - game_state.get::<TimeState>().unscaled_time);
+            let fps = 1.0 / (cur_time - game_state.get::<SysRecordTime>().unscaled_time);
             self.fps_average.push(fps);
 
             while self.fps_average.len() > 5 {
@@ -61,7 +61,7 @@ impl SystemComponent for SystemComponentDefaultTime {
             let pause_timescale = self.timescale * if state_debug.is_paused { 0.0 } else { 1.0 };
 
             // edit the state
-            game_state.edit::<TimeState>(|x| {
+            game_state.edit::<SysRecordTime>(|x| {
                 x.frame_num = x.frame_num + 1;
                 x.average_fps = average_fps as i32;
                 // delta time
@@ -77,7 +77,7 @@ impl SystemComponent for SystemComponentDefaultTime {
 
     fn refresh(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
         // get state
-        let state_time = game_state[0].get::<TimeState>();
+        let state_time = game_state[0].get::<SysRecordTime>();
 
         // calculate if we tick this frame
         let cur_time = self.instant.elapsed().as_secs_f64();

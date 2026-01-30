@@ -1,6 +1,6 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use curio_core::{
-    built_in::record::{state_draw::DrawCallsState, state_lights::StateLights, state_sun::StateSun},
+    built_in::record::{sys_record_rendering::SysRecordRendering, sys_record_lights::SysRecordLights, sys_record_sun::SysRecordSun},
     collections::{
         game_state::GameState,
         light_uniform::LightSystem,
@@ -25,7 +25,7 @@ impl RenderFeatureDrawMesh {
     }
 
     fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
-        let state_draws = game_state.get::<DrawCallsState>();
+        let state_draws = game_state.get::<SysRecordRendering>();
         let mut draw_calls = state_draws.draw_calls;
 
         let _was = draw_calls.len();
@@ -185,7 +185,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
-        self.light_system[camera_index].update(&game_state.get::<StateSun>().get_draw_call(), &game_state.get::<StateLights>().all_lights);
+        self.light_system[camera_index].update(&game_state.get::<SysRecordSun>().get_draw_call(), &game_state.get::<SysRecordLights>().all_lights);
 
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();
@@ -194,7 +194,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
     }
 
     fn clear(&mut self, game_state: &mut GameState) {
-        game_state.edit::<DrawCallsState>(|x| x.draw_calls.clear());
-        game_state.edit::<StateLights>(|x| x.all_lights.clear());
+        game_state.edit::<SysRecordRendering>(|x| x.draw_calls.clear());
+        game_state.edit::<SysRecordLights>(|x| x.all_lights.clear());
     }
 }

@@ -7,7 +7,7 @@ use crate::state::peer::state_peer_select_targets::SelectStates;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_teams::StateTeamAssignments;
-use curio_core::built_in::record::state_input::InputState;
+use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -38,7 +38,7 @@ impl Habit for Instance {
     fn enable(&mut self, _: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _events: &mut EventQueue) {
         let state_select_targets = game_state.get::<StatePeerSelectTargets>();
-        let state_input = game_state.get::<InputState>();
+        let state_input = game_state.get::<SysRecordInput>();
         // mode is currently set to NONE
         let Some(mode) = state_select_targets.enabled else {
             return;

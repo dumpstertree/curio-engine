@@ -7,15 +7,15 @@ use crate::{
 };
 
 #[derive(Default, Hash, Clone)]
-pub struct GUIState {
+pub struct SysRecordGui {
     pub guis: Vec<GuiWindow>,
 }
-impl GUIState {
-    pub fn default() -> GUIState {
-        GUIState { guis: Vec::new() }
+impl SysRecordGui {
+    pub fn default() -> SysRecordGui {
+        SysRecordGui { guis: Vec::new() }
     }
 }
-impl IState for GUIState {
+impl IState for SysRecordGui {
     fn id() -> i32 {
         690345
     }

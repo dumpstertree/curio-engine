@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_network::StateNetwork,
+    built_in::record::sys_record_network::SysRecordNetwork,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     random::Random,
@@ -112,7 +112,7 @@ impl Impulse<GameEvents> for Listener {
                         }
                     }
                     TeamController::Player => {
-                        let state_network = game_state.get::<StateNetwork>();
+                        let state_network = game_state.get::<SysRecordNetwork>();
                         let guids = state_network.peer_instance_ids();
                         for guid in guids {
                             // intialize the team
@@ -187,7 +187,7 @@ impl Impulse<GameEvents> for Listener {
                         }
                     }
                     TeamController::Player => {
-                        let state_network = game_state.get::<StateNetwork>();
+                        let state_network = game_state.get::<SysRecordNetwork>();
                         let guids = state_network.peer_instance_ids();
                         for guid in guids {
                             // intialize the team
@@ -222,7 +222,7 @@ impl Impulse<GameEvents> for Listener {
                 }
 
                 // set scores
-                let state_network = game_state.get::<StateNetwork>();
+                let state_network = game_state.get::<SysRecordNetwork>();
                 let state_health_exploration = game_state.get::<StateHealthExploration>();
                 game_state.edit::<StateScore>(|x| {
                     let mut score_red = 0;

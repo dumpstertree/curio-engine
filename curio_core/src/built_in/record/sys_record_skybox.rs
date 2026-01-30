@@ -3,11 +3,11 @@ use std::sync::Arc;
 use crate::{collections::color::Color, io::texture_asset::TextureAsset, system::system_game_state::IState};
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
-pub struct StateSkybox {
+pub struct SysRecordSkybox {
     pub skybox: SkyboxTypes,
 }
-impl StateSkybox {}
-impl IState for StateSkybox {
+impl SysRecordSkybox {}
+impl IState for SysRecordSkybox {
     fn id() -> i32 {
         9806666
     }

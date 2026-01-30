@@ -4,7 +4,7 @@ use rapier3d::{
 };
 
 use curio_core::{
-    built_in::record::{state_colliders::StateCollider, state_collision::StateCollision},
+    built_in::record::{sys_record_colliders::SysRecordCollider, sys_record_collision::SysRecordCollision},
     gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact},
 };
 use curio_core::{
@@ -56,7 +56,7 @@ impl SystemComponent for SystemComponentDefaultPhysics {
             self.buffer_collider_box_cnt = 0;
 
             //
-            let state_collider = game_state.get::<StateCollider>();
+            let state_collider = game_state.get::<SysRecordCollider>();
             for collider in state_collider.colliders {
                 // let isometry = Isometry3::identity();
                 // let mut shape: &dyn Shape;
@@ -76,7 +76,7 @@ impl SystemComponent for SystemComponentDefaultPhysics {
                 }
             }
 
-            let mut s = game_state.get::<StateCollision>();
+            let mut s = game_state.get::<SysRecordCollision>();
             s.collisions.clear();
 
             for x in 0..self.buffer_collider_box_cnt {
@@ -132,10 +132,10 @@ impl SystemComponent for SystemComponentDefaultPhysics {
                 }
             }
 
-            game_state.edit::<StateCollision>(|x| {
+            game_state.edit::<SysRecordCollision>(|x| {
                 x.collisions.clear();
             });
-            game_state.edit::<StateCollider>(|x| {
+            game_state.edit::<SysRecordCollider>(|x| {
                 x.colliders.clear();
             });
         }

@@ -3,11 +3,11 @@ use std::hash::Hash;
 use crate::system::system_game_state::IState;
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
-pub struct StateNetwork {
+pub struct SysRecordNetwork {
     instance_ids_peers: Vec<i32>,
     instance_ids_hosts: Vec<i32>,
 }
-impl StateNetwork {
+impl SysRecordNetwork {
     pub fn peer_instance_ids(&self) -> &[i32] {
         &self.instance_ids_peers.as_slice()
     }
@@ -22,7 +22,7 @@ impl StateNetwork {
     }
 }
 
-impl IState for StateNetwork {
+impl IState for SysRecordNetwork {
     fn id() -> i32 {
         345434
     }

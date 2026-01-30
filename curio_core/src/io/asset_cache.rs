@@ -207,7 +207,7 @@ impl AssetCache {
         while self.cache_model.len() > self.max_cache_len {
             let mut oldest_id = None;
             let mut oldest_time = None;
-            for (id, (x, y)) in &self.cache_model {
+            for (id, (x, _y)) in &self.cache_model {
                 // values are none add them
                 if oldest_id.is_none() || oldest_time.is_none() {
                     oldest_id = Some(id.clone());

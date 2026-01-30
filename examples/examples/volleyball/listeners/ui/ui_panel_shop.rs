@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_input::InputState,
+    built_in::record::sys_record_input::SysRecordInput,
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState},
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
@@ -93,7 +93,7 @@ impl UICommon for UIPanelInstance {
         }
 
         let mut is_dirty = false;
-        let input_state = game_state.get::<InputState>();
+        let input_state = game_state.get::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
                 .get_button_or_default("move_back")

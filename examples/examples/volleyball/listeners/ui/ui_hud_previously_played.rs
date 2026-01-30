@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_time::TimeState,
+    built_in::record::sys_record_time::SysRecordTime,
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
@@ -55,7 +55,7 @@ impl UICommon for UIHUD {
     fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
     fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         if let Some(open_gos) = &self.open_gos {
-            let dt = game_state.get::<TimeState>().unscaled_time - self.last_open;
+            let dt = game_state.get::<SysRecordTime>().unscaled_time - self.last_open;
             open_gos.0.edit_facet::<Transform2D>(|x| {
                 x.position = Vector2::new(0.75, Self::remap(Self::ease_in_hold_ease_out(dt as f32 / 2.5), 0.0, 1.0, -0.35, 1.35));
             });
@@ -90,7 +90,7 @@ impl UICommon for UIHUD {
         };
 
         self.open_gos = Some(Self::spawn_card(&game_state, context, state_play_history.history.last().unwrap().1.clone()));
-        self.last_open = game_state.get::<TimeState>().unscaled_time;
+        self.last_open = game_state.get::<SysRecordTime>().unscaled_time;
 
         self.history_len = state_play_history.history.len() as i32;
 

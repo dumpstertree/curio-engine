@@ -5,7 +5,7 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
-    built_in::record::{state_camera::CameraState, state_network::StateNetwork},
+    built_in::record::{sys_record_camera::SysRecordCamera, sys_record_network::SysRecordNetwork},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -33,7 +33,7 @@ impl Habit for Instance {
         println!("Instance: {}. Host Startup", game_state.instance_id);
 
         // set resolution
-        game_state.edit::<CameraState>(|x| {
+        game_state.edit::<SysRecordCamera>(|x| {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
         });
@@ -43,7 +43,7 @@ impl Habit for Instance {
         });
 
         // get state
-        let state_network = game_state.get::<StateNetwork>();
+        let state_network = game_state.get::<SysRecordNetwork>();
 
         // add starting decks for each player - eventually load this from disc
         game_state.edit::<StateDeckExploration>(|x| {

@@ -4,17 +4,17 @@ use crate::{
 };
 
 #[derive(Default, Hash, Clone, PartialEq, Eq)]
-pub struct InputState {
+pub struct SysRecordInput {
     pub mapped: Vec<PlayerInputSnapshot>,
     pub raw: RawInputSnapshot,
 }
 
-impl InputState {
-    pub fn default() -> InputState {
-        InputState { mapped: Vec::new(), raw: RawInputSnapshot::new() }
+impl SysRecordInput {
+    pub fn default() -> SysRecordInput {
+        SysRecordInput { mapped: Vec::new(), raw: RawInputSnapshot::new() }
     }
 }
-impl IState for InputState {
+impl IState for SysRecordInput {
     fn id() -> i32 {
         290873492
     }

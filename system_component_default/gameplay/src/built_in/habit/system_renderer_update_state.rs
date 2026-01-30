@@ -12,7 +12,7 @@ use crate::{
     traits_internal::world_context_common::ContextCommon,
 };
 use curio_core::{
-    built_in::record::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState},
+    built_in::record::{sys_record_camera::SysRecordCamera, sys_record_rendering::SysRecordRendering, sys_record_time::SysRecordTime},
     collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
 };
@@ -34,9 +34,9 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn did_tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
-        let state_camera = state.get::<CameraState>();
+        let state_camera = state.get::<SysRecordCamera>();
 
-        let time = state.get::<TimeState>().scaled_time;
+        let time = state.get::<SysRecordTime>().scaled_time;
         //edit draw call states
         update_enabled(world);
         update_transform2d(world);
@@ -64,7 +64,7 @@ impl Habit for Instance {
         //     }
         // });
 
-        state.edit::<DrawCallsState>(|x| {
+        state.edit::<SysRecordRendering>(|x| {
             // iterate over each renderer
 
             // for (_entity, (transform, _camera)) in q {

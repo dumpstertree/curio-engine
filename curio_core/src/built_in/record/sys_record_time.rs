@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[derive(Default, PartialEq, Clone)]
-pub struct TimeState {
+pub struct SysRecordTime {
     pub target_frame_rate: f32,
     pub scaled_time: f64,
     pub unscaled_time: f64,
@@ -15,13 +15,13 @@ pub struct TimeState {
     pub scaled_delta_time: f32,
     pub average_fps: i32,
 }
-impl TimeState {}
-impl IState for TimeState {
+impl SysRecordTime {}
+impl IState for SysRecordTime {
     fn id() -> i32 {
         38345
     }
 }
-impl Hash for TimeState {
+impl Hash for SysRecordTime {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.target_frame_rate.hash(state);
         self.scaled_time.hash(state);
@@ -32,4 +32,4 @@ impl Hash for TimeState {
         self.average_fps.hash(state);
     }
 }
-impl Eq for TimeState {}
+impl Eq for SysRecordTime {}

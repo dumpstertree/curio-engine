@@ -2,21 +2,21 @@ pub mod dumpster_engine;
 
 pub mod built_in {
     pub mod record {
-        pub mod state_camera;
-        pub mod state_colliders;
-        pub mod state_collision;
-        pub mod state_debug;
-        pub mod state_draw;
-        pub mod state_gizmos;
-        pub mod state_gui;
-        pub mod state_gui_debug;
-        pub mod state_input;
-        pub mod state_lights;
-        pub mod state_network;
-        pub mod state_screeen;
-        pub mod state_skybox;
-        pub mod state_sun;
-        pub mod state_time;
+        pub mod sys_record_collision;
+        pub mod sys_record_debug;
+        pub mod sys_record_rendering;
+        pub mod sys_record_gizmos;
+        pub mod sys_record_gui;
+        pub mod sys_record_debug_gui;
+        pub mod sys_record_input;
+        pub mod sys_record_lights;
+        pub mod sys_record_network;
+        pub mod sys_record_screen;
+        pub mod sys_record_skybox;
+        pub mod sys_record_sun;
+        pub mod sys_record_time;
+        pub mod sys_record_camera;
+        pub mod sys_record_colliders;
     }
 }
 pub mod engine {

@@ -2,8 +2,8 @@ use std::hash::Hash;
 
 use crate::{
     built_in::record::{
-        state_debug::StateDebug,
-        state_gui::{GuiElement, GuiWindow},
+        sys_record_debug::SysRecordDebug,
+        sys_record_gui::{GuiElement, GuiWindow},
     },
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     extensions::extensions_f32::ExtensionsF32,
@@ -11,28 +11,28 @@ use crate::{
 };
 
 #[derive(Default, PartialEq, Clone)]
-pub struct GUIStateDebug {
+pub struct SysRecordDebugGui {
     pub color: Color,
     pub size: f32,
     contents: Vec<String>,
 }
-impl Hash for GUIStateDebug {
+impl Hash for SysRecordDebugGui {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.color.hash(state);
         self.size.hash(state);
         self.contents.hash(state);
     }
 }
-impl Eq for GUIStateDebug {}
+impl Eq for SysRecordDebugGui {}
 
-impl GUIStateDebug {
+impl SysRecordDebugGui {
     pub fn append(&mut self, content: String) {
         self.contents.push(content);
     }
     pub fn finalize(&self, game_state: &mut GameState) -> GuiWindow {
-        let is_paused = game_state.get::<StateDebug>().is_paused;
+        let is_paused = game_state.get::<SysRecordDebug>().is_paused;
         let mut window = GuiWindow::new("debug".to_string(), Vector3::new(10.0, 10.0, 0.0), Vector3::zero());
-        window.add(GuiElement::new_text_button(if is_paused { "Play" } else { "Pause" }, GUIStateDebug::pause_on_click));
+        window.add(GuiElement::new_text_button(if is_paused { "Play" } else { "Pause" }, SysRecordDebugGui::pause_on_click));
         for x in &self.contents {
             window.add(GuiElement::new_label(x.clone(), self.size, self.color.clone()));
         }
@@ -42,8 +42,8 @@ impl GUIStateDebug {
         self.contents.clear();
     }
 
-    pub fn default() -> GUIStateDebug {
-        GUIStateDebug {
+    pub fn default() -> SysRecordDebugGui {
+        SysRecordDebugGui {
             contents: Vec::new(),
             color: Color::new_hex("#f4ac62"),
             size: 18.0,
@@ -53,7 +53,7 @@ impl GUIStateDebug {
         // event_queue.enqueue_event(EngineCommands::SetPauseMode(!game_state.get::<StateDebug>().is_paused));
     }
 }
-impl IState for GUIStateDebug {
+impl IState for SysRecordDebugGui {
     fn id() -> i32 {
         902945
     }

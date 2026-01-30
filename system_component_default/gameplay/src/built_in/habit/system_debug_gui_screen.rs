@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::{state_debug::StateDebug, state_gui_debug::GUIStateDebug},
+    built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     system_adapters::adapter_system_gpu::SystemGPU,
@@ -19,7 +19,7 @@ impl Instance {
 }
 impl Scope for Instance {
     fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
-        game_state.get::<StateDebug>().is_inspecting
+        game_state.get::<SysRecordDebug>().is_inspecting
     }
     fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
         NetworkModes::all()
@@ -32,7 +32,7 @@ impl Habit for Instance {
         let sys_window = SystemGPU::get_window();
 
         // edit state
-        game_state.edit::<GUIStateDebug>(|x| {
+        game_state.edit::<SysRecordDebugGui>(|x| {
             x.append(format!("Resolution: ({}, {})", sys_config.width, sys_config.height));
             x.append(format!("Screen Size: ({}, {})", sys_window.inner_size().width, sys_window.inner_size().height));
         });

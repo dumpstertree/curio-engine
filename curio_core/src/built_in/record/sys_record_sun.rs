@@ -8,12 +8,12 @@ use crate::{
 };
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
-pub struct StateSun {
+pub struct SysRecordSun {
     pub cast_shadows: bool,
     pub direction: Vector3,
     pub color: Color,
 }
-impl StateSun {
+impl SysRecordSun {
     pub fn get_draw_call(&self) -> DrawCallLight {
         DrawCallLight {
             light_type: LightType::Directional,
@@ -25,7 +25,7 @@ impl StateSun {
         }
     }
 }
-impl IState for StateSun {
+impl IState for SysRecordSun {
     fn id() -> i32 {
         98067666
     }

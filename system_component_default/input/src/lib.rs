@@ -1,4 +1,4 @@
-use curio_core::built_in::record::state_input::InputState;
+use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::game_state::GameState;
 use curio_core::collections::vector2::Vector2;
 use curio_core::collections::vector3::Vector3;
@@ -42,7 +42,7 @@ impl SystemComponent for SystemComponentDefaultInput {
         // iterate over each
         for game_state in game_state {
             //
-            game_state.edit::<InputState>(|x| {
+            game_state.edit::<SysRecordInput>(|x| {
                 // if mismatched map length we need to rebuild - this is actually an issue because what if same amount
                 if self.mappings_is_dirty {
                     // clear old

@@ -1,8 +1,8 @@
 use std::any::type_name;
 use std::vec;
 
-use crate::built_in::record::state_screeen::StateScreen;
-use crate::built_in::record::state_time::TimeState;
+use crate::built_in::record::sys_record_screen::SysRecordScreen;
+use crate::built_in::record::sys_record_time::SysRecordTime;
 use crate::collections::network_capabilities::NetworkCapabilities;
 use crate::collections::state_map::StateMap;
 use crate::collections::state_ownerships::StateOwnerships;
@@ -22,12 +22,12 @@ pub struct GameState {
 
 impl GameState {
     /// A conveince for get<T> that return time
-    pub fn time(&self) -> TimeState {
-        self.get::<TimeState>()
+    pub fn time(&self) -> SysRecordTime {
+        self.get::<SysRecordTime>()
     }
     /// A conveince for get<T> that return time
-    pub fn screen(&self) -> StateScreen {
-        self.get::<StateScreen>()
+    pub fn screen(&self) -> SysRecordScreen {
+        self.get::<SysRecordScreen>()
     }
 
     /// Apply any SyncEvents produced by other GameStates last frame that need to be applied to overwrite the backing data of this GameState

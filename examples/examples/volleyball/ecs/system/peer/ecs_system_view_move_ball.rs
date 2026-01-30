@@ -1,7 +1,7 @@
 use crate::ecs::components::component_ball::ComponentBall;
 use crate::game_board::GameBoard;
 use crate::state::state_position_ball::StatePositionBall;
-use curio_core::built_in::record::state_time::TimeState;
+use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::collections::vector3::Vector3;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
@@ -28,7 +28,7 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, _events: &mut EventQueue) {
         let state_position_ball = game_state.get::<StatePositionBall>();
-        let state_time = game_state.get::<TimeState>();
+        let state_time = game_state.get::<SysRecordTime>();
 
         world.edit::<(&mut Transform3D, &ComponentBall, &mut RendererStatic)>(|q| {
             for (_, (transform, _ball, _renderer)) in q {

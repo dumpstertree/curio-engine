@@ -2,7 +2,7 @@ use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionEntities;
-use curio_core::built_in::record::state_time::TimeState;
+use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::collections::quaternion::Quaternion;
 use curio_core::collections::vector3::Vector3;
 use curio_core::{
@@ -30,7 +30,7 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, _events: &mut EventQueue) {
         let state_position_player = game_state.get::<StatePositionEntities>();
-        let state_time = game_state.get::<TimeState>();
+        let state_time = game_state.get::<SysRecordTime>();
 
         world.edit::<(&mut Transform3D, &ComponentPlayer, &ComponentViewPlayer, &mut RendererDynamic)>(|query| {
             for (_, (transform, player, _, renderer)) in query {

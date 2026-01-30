@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_network::StateNetwork,
+    built_in::record::sys_record_network::SysRecordNetwork,
     collections::{event_queue::EventQueue, game_state::GameState, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
     dumpster_engine::{GameMode, NetworkModes},
     system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
@@ -331,7 +331,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
         for gs in game_state.iter_mut() {
-            gs.edit::<StateNetwork>(|x| x.set_peer_instance_ids(v.clone()));
+            gs.edit::<SysRecordNetwork>(|x| x.set_peer_instance_ids(v.clone()));
         }
     }
 }

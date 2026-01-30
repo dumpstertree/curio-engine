@@ -2,7 +2,7 @@ use crate::exploration::exploration_path::RoomTypes;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_input_mode::InputModes;
 use crate::state::peer::state_peer_input_mode::StatePeerInputMode;
-use curio_core::built_in::record::state_input::InputState;
+use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
@@ -30,7 +30,7 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn enable(&mut self, _: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {}
     fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _events: &mut EventQueue) {
-        let state_input = game_state.get::<InputState>();
+        let state_input = game_state.get::<SysRecordInput>();
 
         game_state.edit::<StatePeerInputMode>(|x| {
             if state_input.mapped[0]

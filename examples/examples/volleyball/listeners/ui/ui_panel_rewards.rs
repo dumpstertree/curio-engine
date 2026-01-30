@@ -1,5 +1,5 @@
 use curio_core::{
-    built_in::record::state_input::InputState,
+    built_in::record::sys_record_input::SysRecordInput,
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2},
     input::{axis_code::AxisCode, key_code::ButtonCode},
 };
@@ -65,7 +65,7 @@ impl UICommon for UIPanelInstance {
     }
 
     fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let state_input = game_state.get::<InputState>();
+        let state_input = game_state.get::<SysRecordInput>();
         if state_input.mapped[0]
             .get_button_or_default("turn_end")
             .went_up

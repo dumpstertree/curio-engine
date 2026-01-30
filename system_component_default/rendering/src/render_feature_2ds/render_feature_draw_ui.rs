@@ -2,9 +2,9 @@ use crate::egui_tools::EguiRenderer;
 use crate::render_feature_2d::RenderFeature2D;
 use curio_core::{
     built_in::record::{
-        state_debug::StateDebug,
-        state_gui::{GUIState, GuiElementTypes},
-        state_gui_debug::GUIStateDebug,
+        sys_record_debug::SysRecordDebug,
+        sys_record_gui::{GuiElementTypes, SysRecordGui},
+        sys_record_debug_gui::SysRecordDebugGui,
     },
     collections::{event_queue::EventQueue, game_state::GameState},
     system_adapters::adapter_system_gpu::SystemGPU,
@@ -26,12 +26,12 @@ impl RenderFeatureDrawUI {
         let queue = SystemGPU::get_queue();
         let device = SystemGPU::get_device();
         let config = SystemGPU::get_config();
-        let state_gui_debug = &game_state.get::<GUIStateDebug>();
+        let state_gui_debug = &game_state.get::<SysRecordDebugGui>();
 
         // start gui
         egui_renderer.begin_frame(&window);
 
-        if game_state.get::<StateDebug>().is_inspecting {
+        if game_state.get::<SysRecordDebug>().is_inspecting {
             //
             let gui_window = &state_gui_debug.finalize(game_state);
 
@@ -84,10 +84,10 @@ impl RenderFeature2D for RenderFeatureDrawUI {
     }
 
     fn clear(&mut self, game_state: &mut GameState) {
-        game_state.edit::<GUIState>(|x| {
+        game_state.edit::<SysRecordGui>(|x| {
             x.guis.clear();
         });
-        game_state.edit::<GUIStateDebug>(|x| {
+        game_state.edit::<SysRecordDebugGui>(|x| {
             x.clear();
         });
     }

@@ -22,7 +22,7 @@ use crate::{
     },
 };
 use curio_core::{
-    built_in::record::state_time::TimeState,
+    built_in::record::sys_record_time::SysRecordTime,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     system::system_game_state::IState,
@@ -73,7 +73,7 @@ impl Habit for Instance {
     fn init(&mut self, _game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {}
     fn enable(&mut self, game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
         self.move_time = 1.5;
-        self.lastmove = game_state.get::<TimeState>().scaled_time;
+        self.lastmove = game_state.get::<SysRecordTime>().scaled_time;
     }
     fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
         let state_score = game_state.get::<StateScore>();
@@ -110,7 +110,7 @@ impl Habit for Instance {
             }
         }
         // let is_turn = d == game_state.instance_id;
-        if do_move && any_ai && game_state.get::<TimeState>().scaled_time - self.lastmove > self.move_time {
+        if do_move && any_ai && game_state.get::<SysRecordTime>().scaled_time - self.lastmove > self.move_time {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
                 GameState::new_single_instance(vec![
                     // copy these states
@@ -154,7 +154,7 @@ impl Habit for Instance {
 
             // let e = run_ai(game_state);
             // events.enqueue_event(e);
-            self.lastmove = game_state.get::<TimeState>().scaled_time;
+            self.lastmove = game_state.get::<SysRecordTime>().scaled_time;
             println!(
                 "did ai
                         
@@ -179,7 +179,7 @@ impl Impulse<GameEvents> for Instance {
         match event {
             GameEvents::DidTurnBegin(_id) => {}
             _ => {
-                let _state_time = game_state.get::<TimeState>();
+                let _state_time = game_state.get::<SysRecordTime>();
                 // self.lastmove = game_state.get::<TimeState>().unscaled_time;
                 unsafe { DO_MOVE = true };
             }

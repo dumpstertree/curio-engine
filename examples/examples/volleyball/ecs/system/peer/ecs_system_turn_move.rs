@@ -5,7 +5,7 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
-    built_in::record::state_input::InputState,
+    built_in::record::sys_record_input::SysRecordInput,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
@@ -62,7 +62,7 @@ impl Habit for Instance {
             .get(&game_state.instance_id)
             .unwrap();
         // get states
-        let state_input = game_state.get::<InputState>();
+        let state_input = game_state.get::<SysRecordInput>();
 
         // get inputs from mapping
         let move_forward = state_input.mapped[0]

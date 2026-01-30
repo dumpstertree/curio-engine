@@ -22,8 +22,8 @@ use crate::render_feature_2d::RenderFeature2DHelper;
 use crate::render_feature_3d::RenderFeature3DHelper;
 use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePostProcessHelper};
 use crate::shadow_system::ShadowSystem;
-use curio_core::built_in::record::state_draw::DrawCallsState;
-use curio_core::built_in::record::state_sun::StateSun;
+use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
+use curio_core::built_in::record::sys_record_sun::SysRecordSun;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::game_state::GameState;
 use curio_core::collections::matrix4x4::Matrix4x4;
@@ -64,12 +64,12 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         self.shadow_system
             .ensure_screens(game_state.len(), Matrix4x4::default());
         for i in 0..game_state.len() {
-            let state_sun = game_state[i].get::<StateSun>();
+            let state_sun = game_state[i].get::<SysRecordSun>();
             if state_sun.cast_shadows {
                 self.shadow_system
                     .update_for_screen(i, &state_sun.direction);
                 self.shadow_system
-                    .render_for_screen(&mut encoder, i, &game_state[i].get::<DrawCallsState>().draw_calls);
+                    .render_for_screen(&mut encoder, i, &game_state[i].get::<SysRecordRendering>().draw_calls);
             }
         }
 

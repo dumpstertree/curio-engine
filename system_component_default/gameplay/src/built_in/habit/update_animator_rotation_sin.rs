@@ -5,7 +5,7 @@ use crate::{
     traits_internal::world_context_common::ContextCommon,
 };
 use curio_core::{
-    built_in::record::state_time::TimeState,
+    built_in::record::sys_record_time::SysRecordTime,
     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion},
     dumpster_engine::NetworkModes,
 };
@@ -28,7 +28,7 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, game_state: &mut GameState, context3d: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_time = game_state.get::<TimeState>();
+        let state_time = game_state.get::<SysRecordTime>();
         let time = state_time.scaled_time as f32;
 
         // edit the forms in context
