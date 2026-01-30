@@ -1,11 +1,11 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
 use std::fmt;
 
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 
 #[derive(Hash, PartialEq, Eq)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StateBallMode {
     pub mode: BallModes,
 }

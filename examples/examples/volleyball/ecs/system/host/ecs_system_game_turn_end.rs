@@ -1,9 +1,9 @@
-use ecs_event::impulse;
-use ecs_system::habit;
 use gameplay::{
     context_3d::Context3D,
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };
+use habit::habit;
+use impulse::impulse;
 
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},

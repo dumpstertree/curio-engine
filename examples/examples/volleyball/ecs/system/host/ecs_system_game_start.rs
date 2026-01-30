@@ -1,8 +1,8 @@
-use ecs_system::habit;
 use gameplay::{
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
 };
+use habit::habit;
 
 use curio_core::{
     built_in::record::{state_camera::CameraState, state_network::StateNetwork},

@@ -27,12 +27,12 @@ use curio_core::{
     dumpster_engine::NetworkModes,
     system::system_game_state::IState,
 };
-use ecs_event::impulse;
-use ecs_system::habit;
 use gameplay::{
     context_3d::Context3D,
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };
+use habit::habit;
+use impulse::impulse;
 use std::vec;
 
 use crate::state::state_teams::StateTeamAssignments;

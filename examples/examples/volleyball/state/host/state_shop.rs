@@ -1,10 +1,10 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::IState};
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 
 #[derive(PartialEq, Eq, Hash)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StateShop {
     pub shop: Shop,
 }

@@ -1,5 +1,5 @@
 [package]
-name = "register_macro"
+name = "record"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,4 +9,3 @@ proc-macro = true
 [dependencies]
 quote = "1"
 syn = { version = "2", features = ["full"] }
-proc-macro2 = "1"

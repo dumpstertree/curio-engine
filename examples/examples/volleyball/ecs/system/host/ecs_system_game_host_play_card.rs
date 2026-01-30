@@ -12,13 +12,13 @@ use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_event::impulse;
-use ecs_system::habit;
 use gameplay::{
     context_3d::Context3D,
     traits::{habit::Habit, impulse::Impulse, scope::Scope},
 };
+use habit::habit;
 use hecs::Entity;
+use impulse::impulse;
 use std::vec;
 use winit::dpi::Position;
 

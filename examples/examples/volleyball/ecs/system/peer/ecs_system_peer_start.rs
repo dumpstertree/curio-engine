@@ -1,10 +1,10 @@
-use ecs_system::habit;
 use gameplay::{
     built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
 };
+use habit::habit;
 
 use curio_core::{
     built_in::record::{state_camera::CameraState, state_sun::StateSun},

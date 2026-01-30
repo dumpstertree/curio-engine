@@ -1,7 +1,7 @@
 // #[derive(Debug, Clone, Serialize, RegisterComponent)]
 
+use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
-use macro_component::facet;
 
 #[facet]
 pub struct ComponentEnergyToken {

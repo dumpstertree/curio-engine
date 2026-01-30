@@ -21,7 +21,6 @@ use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_event::impulse;
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::renderer_common::RendererCommon;
@@ -29,6 +28,7 @@ use gameplay::built_in::facet::transform::transform3d::Transform3D;
 use gameplay::built_in::impulse::ui_events::UIEvents;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
+use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]

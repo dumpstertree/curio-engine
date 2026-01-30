@@ -1,5 +1,5 @@
 use gameplay::traits::field_override::FieldOverride;
-use macro_component::facet;
+use facet::facet;
 
 // #[derive(Debug, Clone, Serialize, RegisterComponent)]
 #[facet]

@@ -3,11 +3,11 @@ use curio_core::{
     dumpster_engine::NetworkModes,
     random::Random,
 };
-use ecs_event::impulse;
 use gameplay::{
     context_3d::Context3D,
     traits::{impulse::Impulse, scope::Scope},
 };
+use impulse::impulse;
 
 use crate::{
     Assets,

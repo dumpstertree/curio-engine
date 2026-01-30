@@ -3,7 +3,7 @@ use quote::{format_ident, quote};
 use syn::{parse_macro_input, parse_quote, ItemStruct};
 
 #[proc_macro_attribute]
-pub fn global_state_serialize(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn record_serializable(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(item as ItemStruct);
     let name = &input.ident;
 

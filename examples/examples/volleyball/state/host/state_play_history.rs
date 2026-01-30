@@ -1,11 +1,11 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 use std::{hash::Hash, sync::Arc};
 
 use crate::cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance};
 
 #[derive(PartialEq, Eq)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StatePlayHistory {
     pub history: Vec<(i32, Arc<CardInstance>, FilledCardResponse)>,
 }

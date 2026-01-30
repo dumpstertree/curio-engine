@@ -2,11 +2,11 @@ use curio_core::collections::{
     event_queue::{EventScope, IGameEvent},
     vector2_int::Vector2Int,
 };
-use macro_events::global_events;
 use std::{
     fmt::{Display, Formatter, Result},
     sync::Arc,
 };
+use stimulant::stimulant;
 
 use crate::{
     cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance},
@@ -15,7 +15,7 @@ use crate::{
     state::{host::state_shop::Shop, state_ball_mode::BallModes, state_teams::Teams},
 };
 
-#[global_events]
+#[stimulant]
 pub enum GameEvents {
     // an invalid default state
     #[default]

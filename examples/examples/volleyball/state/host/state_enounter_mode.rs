@@ -1,14 +1,11 @@
-use curio_core::{
-    collections::state_ownerships::StateOwnerships,
-    system::system_game_state::IState,
-};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
 
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 
 use crate::listeners::listener_initialize_encounter::Encounter;
 
 #[derive(Hash, PartialEq, Eq)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StateEncounter {
     pub encounter: Encounter,
 }

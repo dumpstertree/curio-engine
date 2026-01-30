@@ -1,11 +1,11 @@
 use curio_core::collections::state_ownerships::StateOwnerships;
 use curio_core::{collections::vector2_int::Vector2Int, system::system_game_state::IState};
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, hash::Hash, sync::Arc};
 
 #[derive(PartialEq, Eq)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StateDeck {
     pub deck: HashMap<i32, Deck>,
 }

@@ -12,18 +12,18 @@ edition = "2024"
 [dependencies]
 
 [dev-dependencies]
-ecs_event = { path = "../system_component_default/gameplay_macros/ecs_event" }
-ecs_system = { path = "../system_component_default/gameplay_macros/ecs_system" }
-macro_component = { path = "../system_component_default/gameplay_macros/macro_component" }
 futures = "0.3"
 hecs = "0.10.5"
-macro_events = { path = "../system_component_default/gameplay_macros/macro_events" }
-macro_state = { path = "../system_component_default/gameplay_macros/macro_state" }
-macro_state_serialize = { path = "../system_component_default/gameplay_macros/macro_state_serialize" }
 mcts = "0.3.0"
 pollster = "0.3"
 rand = "0.9.1"
 serde = { version = "1.0.104", features = ["derive", "rc"] }
+stimulant = { workspace = true }
+record = { workspace = true }
+record_serializable = { workspace = true }
+impulse = { workspace = true }
+habit = { workspace = true }
+facet = { workspace = true }
 curio_core = { workspace = true }
 time = { workspace = true }
 input = { workspace = true }

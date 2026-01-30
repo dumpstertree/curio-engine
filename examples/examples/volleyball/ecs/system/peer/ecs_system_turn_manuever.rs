@@ -18,10 +18,10 @@ use curio_core::built_in::record::state_input::InputState;
 use curio_core::collections::{event_queue::EventQueue, game_state::GameState};
 use curio_core::dumpster_engine::NetworkModes;
 use curio_core::extensions::extensions_i32::ExtensionsI32;
-use ecs_system::habit;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
 use gameplay::traits::scope::Scope;
+use habit::habit;
 use std::sync::Arc;
 
 pub struct ResponseBuilder {

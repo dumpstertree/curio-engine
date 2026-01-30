@@ -1,10 +1,10 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use record::record;
 use std::{collections::HashMap, hash::Hash};
 
 use gameplay::form::Form;
-use macro_state::global_state;
 
-#[global_state]
+#[record]
 pub struct StateEntityIDs {
     ids: HashMap<EntityIDTypes, Vec<Form>>,
 }

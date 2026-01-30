@@ -82,7 +82,7 @@ impl Habit for Instance {
 //     },
 //     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 // };
-// use ecs_system::habit;
+// use habit::habit;
 // use hecs::World;
 
 // #[global_ecs_system]

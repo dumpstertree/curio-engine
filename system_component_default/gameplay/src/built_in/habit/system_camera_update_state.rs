@@ -3,7 +3,7 @@ use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-// use ecs_system::habit;
+// use habit::habit;
 
 use crate::{
     built_in::facet::{camera::Camera, transform::transform3d::Transform3D},

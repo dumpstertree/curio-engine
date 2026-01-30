@@ -41,7 +41,7 @@ use quote::{format_ident, quote};
 use syn::{parse_macro_input, parse_quote, DeriveInput};
 
 #[proc_macro_attribute]
-pub fn global_events(_attr: TokenStream, item: TokenStream) -> TokenStream {
+pub fn stimulant(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut input = parse_macro_input!(item as DeriveInput);
     let name = &input.ident;
 

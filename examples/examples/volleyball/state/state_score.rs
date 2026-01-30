@@ -1,12 +1,12 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
 use std::{collections::HashMap, hash::Hash};
 
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 
 use crate::state::state_teams::Teams;
 
 #[derive(PartialEq, Eq)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StateScore {
     pub all_scores: HashMap<Teams, i32>,
 }

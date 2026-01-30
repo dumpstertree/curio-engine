@@ -5,11 +5,11 @@ use curio_core::{
     random::Random,
 };
 
-use ecs_event::impulse;
 use gameplay::{
     context_3d::Context3D,
     traits::{impulse::Impulse, scope::Scope},
 };
+use impulse::impulse;
 use serde::{Deserialize, Serialize};
 
 use crate::{

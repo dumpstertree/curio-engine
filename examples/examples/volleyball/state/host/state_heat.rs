@@ -1,9 +1,9 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 use std::{collections::HashMap, hash::Hash};
 
 #[derive(PartialEq, Eq)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StateHeat {
     pub all_players: HashMap<i32, i32>,
 }

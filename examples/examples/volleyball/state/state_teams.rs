@@ -1,13 +1,13 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::IState};
 use std::{collections::HashMap, fmt::Display, hash::Hash};
 
-use macro_state_serialize::global_state_serialize;
+use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 
 use crate::game_board::GameBoard;
 
 #[derive(PartialEq, Eq)]
-#[global_state_serialize]
+#[record_serializable]
 pub struct StateTeamAssignments {
     pub team_assignments: HashMap<Teams, Vec<i32>>,
 }

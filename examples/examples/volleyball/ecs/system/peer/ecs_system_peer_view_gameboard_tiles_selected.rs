@@ -8,13 +8,13 @@ use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
-use ecs_system::habit;
 use gameplay::{
     built_in::facet::{renderer::renderer_static::RendererStatic, renderer_common::RendererCommon, transform::transform3d::Transform3D},
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
 };
+use habit::habit;
 
 #[habit]
 pub struct Instance {}

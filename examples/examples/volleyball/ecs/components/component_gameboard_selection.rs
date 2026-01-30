@@ -1,5 +1,5 @@
+use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
-use macro_component::facet;
 
 #[facet]
 pub struct ComponentGameBoardSelection {}

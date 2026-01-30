@@ -1,4 +1,4 @@
-use ecs_system::habit;
+use habit::habit;
 use gameplay::{
     built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
     context_3d::Context3D,

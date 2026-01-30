@@ -28,7 +28,7 @@
 //     dumpster_engine::NetworkModes,
 //     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 // };
-// use ecs_system::habit;
+// use habit::habit;
 // use hecs::World;
 // use std::sync::Arc;
 

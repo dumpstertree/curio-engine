@@ -8,7 +8,7 @@
 //     dumpster_engine::NetworkModes,
 //     gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
 // };
-// use ecs_system::habit;
+// use habit::habit;
 // use hecs::World;
 
 // use crate::{
