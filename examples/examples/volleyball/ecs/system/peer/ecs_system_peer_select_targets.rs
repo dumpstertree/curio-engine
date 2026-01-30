@@ -7,7 +7,7 @@ use crate::state::peer::state_peer_select_targets::SelectStates;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_teams::StateTeamAssignments;
-use built_in_state::state_input::InputState;
+use curio_core::built_in::record::state_input::InputState;
 use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},

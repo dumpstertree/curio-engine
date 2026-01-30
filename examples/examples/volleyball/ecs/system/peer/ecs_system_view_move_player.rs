@@ -2,7 +2,7 @@ use crate::ecs::components::component_player::ComponentPlayer;
 use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionEntities;
-use built_in_state::state_time::TimeState;
+use curio_core::built_in::record::state_time::TimeState;
 use curio_core::collections::quaternion::Quaternion;
 use curio_core::collections::vector3::Vector3;
 use curio_core::{

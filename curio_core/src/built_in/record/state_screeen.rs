@@ -1,9 +1,6 @@
-use curio_core::system::system_game_state::IState;
+use crate::system::system_game_state::IState;
 
-use macro_state::global_state;
-
-#[derive(Hash, Eq)]
-#[global_state]
+#[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct StateScreen {
     width: i32,
     height: i32,

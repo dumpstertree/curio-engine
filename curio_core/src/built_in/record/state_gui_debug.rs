@@ -1,18 +1,16 @@
-use curio_core::{
+use std::hash::Hash;
+
+use crate::{
+    built_in::record::{
+        state_debug::StateDebug,
+        state_gui::{GuiElement, GuiWindow},
+    },
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     extensions::extensions_f32::ExtensionsF32,
     system::system_game_state::IState,
 };
-use std::hash::Hash;
 
-use macro_state::global_state;
-
-use crate::{
-    state_debug::StateDebug,
-    state_gui::{GuiElement, GuiWindow},
-};
-
-#[global_state]
+#[derive(Default, PartialEq, Clone)]
 pub struct GUIStateDebug {
     pub color: Color,
     pub size: f32,

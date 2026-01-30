@@ -1,9 +1,6 @@
-use curio_core::system::system_game_state::IState;
+use crate::system::system_game_state::IState;
 
-use macro_state::global_state;
-
-#[derive(Hash)]
-#[global_state]
+#[derive(Default, Hash, Clone)]
 pub struct StateDebug {
     pub is_inspecting: bool,
     pub is_paused: bool,

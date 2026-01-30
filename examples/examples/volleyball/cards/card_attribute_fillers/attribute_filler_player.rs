@@ -1,10 +1,9 @@
 use curio_core::{
+    built_in::record::state_network::StateNetwork,
     collections::{game_state::GameState, vector2_int::Vector2Int},
     random::Random,
 };
 use std::panic;
-
-use built_in_state::state_network::StateNetwork;
 
 use crate::{
     cards::{

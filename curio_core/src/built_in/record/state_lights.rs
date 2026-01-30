@@ -1,9 +1,6 @@
-use curio_core::{collections::light_uniform::DrawCallLight, system::system_game_state::IState};
+use crate::{collections::light_uniform::DrawCallLight, system::system_game_state::IState};
 
-use macro_state::global_state;
-
-#[derive(Hash, Eq)]
-#[global_state]
+#[derive(Default, Hash, Clone, PartialEq, Eq)]
 pub struct StateLights {
     pub all_lights: Vec<DrawCallLight>,
 }

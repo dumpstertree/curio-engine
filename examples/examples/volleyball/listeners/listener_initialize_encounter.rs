@@ -1,15 +1,15 @@
 use curio_core::{
+    built_in::record::state_network::StateNetwork,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     random::Random,
 };
 
-use built_in_state::state_network::StateNetwork;
 use ecs_event::impulse;
 use serde::{Deserialize, Serialize};
 use system_component_default_gameplay::{
-    traits::{impulse::Impulse, scope::Scope},
     context_3d::Context3D,
+    traits::{impulse::Impulse, scope::Scope},
 };
 
 use crate::{

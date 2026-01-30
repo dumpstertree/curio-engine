@@ -1,4 +1,4 @@
-use curio_core::{
+use crate::{
     collections::{
         color::Color,
         light_uniform::{DrawCallLight, LightType},
@@ -6,10 +6,8 @@ use curio_core::{
     },
     system::system_game_state::IState,
 };
-use macro_state::global_state;
 
-#[derive(Hash, Eq)]
-#[global_state]
+#[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct StateSun {
     pub cast_shadows: bool,
     pub direction: Vector3,

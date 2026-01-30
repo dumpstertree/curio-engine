@@ -6,7 +6,6 @@ edition = "2024"
 
 [dependencies]
 curio_core = { path = "../curio_core" }
-built_in_state = { path = "../built_in_state" }
 hecs = "0.10.5"
 intertrait = "0.2.2"
 serde = { version = "1.0.104", features = ["derive"] }

@@ -1,14 +1,12 @@
-use curio_core::{
+use std::hash::{self, Hash};
+
+use crate::{
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     extensions::extensions_f32::ExtensionsF32,
     system::system_game_state::IState,
 };
-use std::hash::{self, Hash};
 
-use macro_state::global_state;
-
-#[derive(Hash)]
-#[global_state]
+#[derive(Default, Hash, Clone)]
 pub struct GUIState {
     pub guis: Vec<GuiWindow>,
 }
@@ -22,7 +20,7 @@ impl IState for GUIState {
         690345
     }
 }
-#[derive(Clone, PartialEq)]
+#[derive(Default, Clone, PartialEq)]
 pub struct LabelDesc {
     pub contents: String,
     pub font_size: f32,

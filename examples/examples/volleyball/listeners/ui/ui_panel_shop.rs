@@ -1,10 +1,10 @@
 use curio_core::{
+    built_in::record::state_input::InputState,
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2, vector3::Vector3},
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
 
-use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{
     built_in::facet::{
         animator::{animator_rotation_sin::AnimatorRotationSin, animator_scale_sin::AnimatorScaleSin},

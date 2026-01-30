@@ -11,8 +11,8 @@ use crate::{
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
 };
-use built_in_state::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState};
 use curio_core::{
+    built_in::record::{state_camera::CameraState, state_draw::DrawCallsState, state_time::TimeState},
     collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
 };

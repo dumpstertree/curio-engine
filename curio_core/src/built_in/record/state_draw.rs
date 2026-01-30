@@ -1,9 +1,6 @@
-use curio_core::{collections::draw_call::DrawCall, system::system_game_state::IState};
+use crate::{collections::draw_call::DrawCall, system::system_game_state::IState};
 
-use macro_state::global_state;
-
-#[derive(Hash)]
-#[global_state]
+#[derive(Default, Hash, Clone)]
 pub struct DrawCallsState {
     pub draw_calls: Vec<DrawCall>,
 }

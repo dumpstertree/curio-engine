@@ -1,4 +1,3 @@
-use built_in_state::{state_camera::CameraState, state_sun::StateSun};
 use ecs_system::habit;
 use system_component_default_gameplay::{
     built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
@@ -8,6 +7,7 @@ use system_component_default_gameplay::{
 };
 
 use curio_core::{
+    built_in::record::{state_camera::CameraState, state_sun::StateSun},
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
     dumpster_engine::NetworkModes,
     io::{asset::Asset, asset_database::AssetDatabaseListing, asset_loader::AssetLoader},

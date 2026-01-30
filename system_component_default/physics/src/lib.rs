@@ -1,10 +1,12 @@
-use built_in_state::{state_colliders::StateCollider, state_collision::StateCollision};
 use rapier3d::{
     na::Isometry3,
     parry::{query, shape::Cuboid},
 };
 
-use curio_core::gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact};
+use curio_core::{
+    built_in::record::{state_colliders::StateCollider, state_collision::StateCollision},
+    gameplay::ecs::component::component_collider::{ColliderShape, CollisionSnapshot, Contact},
+};
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState, vector3::Vector3},
     gameplay::ecs::component::component_collider::ColliderSnapshot,

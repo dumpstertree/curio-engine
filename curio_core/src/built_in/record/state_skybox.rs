@@ -1,9 +1,8 @@
-use curio_core::{collections::color::Color, io::texture_asset::TextureAsset, system::system_game_state::IState};
-use macro_state::global_state;
 use std::sync::Arc;
 
-#[derive(Hash, Eq)]
-#[global_state]
+use crate::{collections::color::Color, io::texture_asset::TextureAsset, system::system_game_state::IState};
+
+#[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct StateSkybox {
     pub skybox: SkyboxTypes,
 }

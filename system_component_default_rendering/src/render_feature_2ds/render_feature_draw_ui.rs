@@ -1,7 +1,11 @@
 use crate::egui_tools::EguiRenderer;
 use crate::render_feature_2d::RenderFeature2D;
-use built_in_state::{state_debug::StateDebug, state_gui::GUIState, state_gui_debug::GUIStateDebug};
 use curio_core::{
+    built_in::record::{
+        state_debug::StateDebug,
+        state_gui::{GUIState, GuiElementTypes},
+        state_gui_debug::GUIStateDebug,
+    },
     collections::{event_queue::EventQueue, game_state::GameState},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
@@ -35,16 +39,16 @@ impl RenderFeatureDrawUI {
             let mut x = |ui: &mut Ui| {
                 for element in &gui_window.children {
                     match &element.gui_type {
-                        built_in_state::state_gui::GuiElementTypes::Rectangle => todo!(),
-                        built_in_state::state_gui::GuiElementTypes::Ellipse => todo!(),
-                        built_in_state::state_gui::GuiElementTypes::Label(label_desc) => {
+                        GuiElementTypes::Rectangle => todo!(),
+                        GuiElementTypes::Ellipse => todo!(),
+                        GuiElementTypes::Label(label_desc) => {
                             for (_text_style, font_id) in ui.style_mut().text_styles.iter_mut() {
                                 // font_id.size = label_desc.font_size // whatever size you want here
                             }
                             ui.colored_label(Color32::from_rgb(label_desc.color.as_r_0255() as u8, label_desc.color.as_g_0255() as u8, label_desc.color.as_b_0255() as u8), &label_desc.contents);
                             // ui.colored_label(Color32::from_rgb(255, 255, 255), "TEST");
                         }
-                        built_in_state::state_gui::GuiElementTypes::Button(button_desc) => {
+                        GuiElementTypes::Button(button_desc) => {
                             let b = ui.button(&button_desc.contents);
                             if b.clicked() {
                                 (button_desc.on_click)(game_state, system_event_queue);

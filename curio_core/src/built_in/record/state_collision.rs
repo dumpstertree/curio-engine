@@ -1,9 +1,6 @@
-use curio_core::{gameplay::ecs::component::component_collider::CollisionSnapshot, system::system_game_state::IState};
+use crate::{gameplay::ecs::component::component_collider::CollisionSnapshot, system::system_game_state::IState};
 
-use macro_state::global_state;
-
-#[derive(Hash)]
-#[global_state]
+#[derive(Default, Hash, Clone)]
 pub struct StateCollision {
     pub collisions: Vec<CollisionSnapshot>,
 }

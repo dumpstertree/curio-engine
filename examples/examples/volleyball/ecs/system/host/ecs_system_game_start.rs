@@ -1,11 +1,11 @@
-use built_in_state::{state_camera::CameraState, state_network::StateNetwork};
 use ecs_system::habit;
 use system_component_default_gameplay::{
-    traits::{habit::Habit, scope::Scope},
     context_3d::Context3D,
+    traits::{habit::Habit, scope::Scope},
 };
 
 use curio_core::{
+    built_in::record::{state_camera::CameraState, state_network::StateNetwork},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

@@ -1,13 +1,12 @@
 use std::time::Instant;
 
+use curio_core::built_in::record::state_debug::StateDebug;
+use curio_core::built_in::record::state_time::TimeState;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::events::engine_commands::EngineCommands;
 // ucoreate::system_adapters::adapter_system_gpu::CustomEvents;
 use curio_core::collections::game_state::GameState;
 use curio_core::system::{system_component::SystemComponent, system_components::system_component_time::SystemComponentTime};
-
-use built_in_state::state_debug::StateDebug;
-use built_in_state::state_time::TimeState;
 
 pub struct SystemComponentDefaultTime {
     instant: Instant,

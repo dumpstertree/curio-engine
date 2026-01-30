@@ -1,12 +1,12 @@
-use built_in_state::state_time::TimeState;
 use curio_core::{
+    built_in::record::state_time::TimeState,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
 
 use crate::{
-    traits::{habit::Habit, scope::Scope},
     context_3d::Context3D,
+    traits::{habit::Habit, scope::Scope},
 };
 
 #[derive(Default)]

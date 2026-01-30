@@ -1,9 +1,9 @@
 use curio_core::{
+    built_in::record::{state_input::InputState, state_time::TimeState},
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, vector2::Vector2, vector3::Vector3},
     input::{axis_code::AxisCode, key_code::ButtonCode},
 };
 
-use built_in_state::{state_input::InputState, state_time::TimeState};
 use system_component_default_gameplay::{
     built_in::facet::{
         renderer::renderer_text::{AligmentHorizontal, AligmentVertical, RendererText},

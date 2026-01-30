@@ -1,13 +1,13 @@
-use built_in_state::{state_debug::StateDebug, state_gui_debug::GUIStateDebug};
 use curio_core::{
+    built_in::record::{state_debug::StateDebug, state_gui_debug::GUIStateDebug},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 
 use crate::{
-    traits::{habit::Habit, scope::Scope},
     context_3d::Context3D,
+    traits::{habit::Habit, scope::Scope},
 };
 
 #[derive(Default)]

@@ -1,12 +1,11 @@
-use curio_core::{
+use std::hash::Hash;
+
+use crate::{
     extensions::{extensions_f32::ExtensionsF32, extensions_f64::ExtensionsF64},
     system::system_game_state::IState,
 };
-use std::hash::Hash;
 
-use macro_state::global_state;
-
-#[global_state]
+#[derive(Default, PartialEq, Clone)]
 pub struct TimeState {
     pub target_frame_rate: f32,
     pub scaled_time: f64,

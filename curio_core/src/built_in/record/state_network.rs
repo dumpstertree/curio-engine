@@ -1,10 +1,8 @@
-use curio_core::system::system_game_state::IState;
 use std::hash::Hash;
 
-use macro_state::global_state;
+use crate::system::system_game_state::IState;
 
-#[derive(Hash, Eq)]
-#[global_state]
+#[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct StateNetwork {
     instance_ids_peers: Vec<i32>,
     instance_ids_hosts: Vec<i32>,

@@ -279,16 +279,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "built_in_state"
-version = "0.1.0"
-dependencies = [
- "cgmath",
- "ctor",
- "curio_core",
- "macro_state",
-]
-
-[[package]]
 name = "bumpalo"
 version = "3.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -931,7 +921,6 @@ checksum = "dea2df4cf52843e0452895c455a1a2cfbb842a1e7329671acf418fdc53ed4c59"
 name = "examples"
 version = "0.1.0"
 dependencies = [
- "built_in_state",
  "ctor",
  "curio_core",
  "ecs_event",
@@ -951,7 +940,6 @@ dependencies = [
  "system_component_default_gameplay",
  "system_component_default_input",
  "system_component_default_networking",
- "system_component_default_physics",
  "system_component_default_rendering",
  "system_component_default_time",
  "winit",
@@ -2848,6 +2836,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3148f5046208a5d56bcfc03053e3ca6334e51da8dfb19b6cdc8b306fae3283e"
 
 [[package]]
+name = "physics"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
+ "rapier3d",
+]
+
+[[package]]
 name = "pin-project"
 version = "1.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3770,7 +3766,6 @@ dependencies = [
 name = "system_component_default_gameplay"
 version = "0.1.0"
 dependencies = [
- "built_in_state",
  "curio_core",
  "hecs",
  "intertrait",
@@ -3781,7 +3776,6 @@ dependencies = [
 name = "system_component_default_input"
 version = "0.1.0"
 dependencies = [
- "built_in_state",
  "curio_core",
 ]
 
@@ -3790,26 +3784,15 @@ name = "system_component_default_networking"
 version = "0.1.0"
 dependencies = [
  "bincode",
- "built_in_state",
  "curio_core",
  "message-io",
  "serde",
 ]
 
 [[package]]
-name = "system_component_default_physics"
-version = "0.1.0"
-dependencies = [
- "built_in_state",
- "curio_core",
- "rapier3d",
-]
-
-[[package]]
 name = "system_component_default_rendering"
 version = "0.1.0"
 dependencies = [
- "built_in_state",
  "bytemuck",
  "curio_core",
  "egui",
@@ -3822,7 +3805,6 @@ dependencies = [
 name = "system_component_default_time"
 version = "0.1.0"
 dependencies = [
- "built_in_state",
  "curio_core",
 ]
 

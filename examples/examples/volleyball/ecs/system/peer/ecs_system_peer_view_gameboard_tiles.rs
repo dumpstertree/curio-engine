@@ -13,7 +13,7 @@ use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::StateTeamAssignments;
 
-use built_in_state::state_time::TimeState;
+use curio_core::built_in::record::state_time::TimeState;
 use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::collections::vector3::Vector3;
 use curio_core::{

@@ -1,4 +1,3 @@
-use built_in_state::state_time::TimeState;
 use ecs_system::habit;
 use system_component_default_gameplay::{
     built_in::facet::{camera::Camera, transform::transform3d::Transform3D},
@@ -8,6 +7,7 @@ use system_component_default_gameplay::{
 };
 
 use curio_core::{
+    built_in::record::state_time::TimeState,
     collections::{
         event_queue::EventQueue,
         game_state::GameState,

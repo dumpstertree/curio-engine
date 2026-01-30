@@ -1,11 +1,11 @@
 use curio_core::{
+    built_in::record::state_time::TimeState,
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
 
-use built_in_state::state_time::TimeState;
 use system_component_default_gameplay::{
     built_in::facet::{
         renderer::{renderer_static::RendererStatic, renderer_text::RendererText},

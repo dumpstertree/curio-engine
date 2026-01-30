@@ -21,8 +21,8 @@ use crate::{
         state_turn::StateTurn,
     },
 };
-use built_in_state::state_time::TimeState;
 use curio_core::{
+    built_in::record::state_time::TimeState,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
     system::system_game_state::IState,

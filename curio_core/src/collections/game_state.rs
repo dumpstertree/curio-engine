@@ -1,6 +1,8 @@
 use std::any::type_name;
 use std::vec;
 
+use crate::built_in::record::state_screeen::StateScreen;
+use crate::built_in::record::state_time::TimeState;
 use crate::collections::network_capabilities::NetworkCapabilities;
 use crate::collections::state_map::StateMap;
 use crate::collections::state_ownerships::StateOwnerships;
@@ -19,6 +21,15 @@ pub struct GameState {
 }
 
 impl GameState {
+    /// A conveince for get<T> that return time
+    pub fn time(&self) -> TimeState {
+        self.get::<TimeState>()
+    }
+    /// A conveince for get<T> that return time
+    pub fn screen(&self) -> StateScreen {
+        self.get::<StateScreen>()
+    }
+
     /// Apply any SyncEvents produced by other GameStates last frame that need to be applied to overwrite the backing data of this GameState
     pub fn try_apply_network_sync_events(&mut self, sync: &[StateSyncEvent]) {
         // if we dont have networking we can guard

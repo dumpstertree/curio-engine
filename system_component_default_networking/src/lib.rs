@@ -1,5 +1,5 @@
-use built_in_state::state_network::StateNetwork;
 use curio_core::{
+    built_in::record::state_network::StateNetwork,
     collections::{event_queue::EventQueue, game_state::GameState, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
     dumpster_engine::{GameMode, NetworkModes},
     system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},

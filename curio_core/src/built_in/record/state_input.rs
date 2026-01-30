@@ -1,12 +1,9 @@
-use curio_core::{
+use crate::{
     input::{input_snapshot_mapped::PlayerInputSnapshot, input_snapshot_raw::RawInputSnapshot},
     system::system_game_state::IState,
 };
 
-use macro_state::global_state;
-
-#[derive(Hash, Eq)]
-#[global_state]
+#[derive(Default, Hash, Clone, PartialEq, Eq)]
 pub struct InputState {
     pub mapped: Vec<PlayerInputSnapshot>,
     pub raw: RawInputSnapshot,

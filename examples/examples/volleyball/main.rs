@@ -229,7 +229,6 @@ use system_component_default_gameplay::{
 };
 use system_component_default_input::SystemComponentDefaultInput;
 use system_component_default_networking::SystemComponentDefaultNetworking;
-use system_component_default_physics::SystemComponentDefaultPhysics;
 use system_component_default_rendering::SystemComponentDefaultGraphics;
 use system_component_default_time::SystemComponentDefaultTime;
 #[repr(u16)]
@@ -353,7 +352,7 @@ fn main() {
                     // components
                     SystemComponentDefaultTime::new(),
                     SystemComponentDefaultInput::new(),
-                    SystemComponentDefaultPhysics::new(),
+                    // SystemComponentDefaultPhysics::new(),
                     SystemComponentDefaultGameplay::<GameEvents, UIViewTypes>::new(),
                     SystemComponentDefaultGraphics::new(),
                     SystemComponentDefaultNetworking::new(),

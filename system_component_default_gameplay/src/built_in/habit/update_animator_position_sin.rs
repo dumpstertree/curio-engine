@@ -4,8 +4,8 @@ use crate::{
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
 };
-use built_in_state::state_time::TimeState;
 use curio_core::{
+    built_in::record::state_time::TimeState,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

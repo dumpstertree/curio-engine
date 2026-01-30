@@ -1,3 +1,4 @@
+use curio_core::built_in::record::state_input::InputState;
 use curio_core::collections::game_state::GameState;
 use curio_core::collections::vector2::Vector2;
 use curio_core::collections::vector3::Vector3;
@@ -12,8 +13,6 @@ use curio_core::{
     collections::key_state::KeyState,
     system::{system_component::SystemComponent, system_components::system_component_input::SystemComponentInput},
 };
-
-use built_in_state::state_input::InputState;
 
 pub struct SystemComponentDefaultInput {
     mappings_is_dirty: bool,

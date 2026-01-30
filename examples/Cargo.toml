@@ -12,7 +12,6 @@ edition = "2024"
 [dependencies]
 
 [dev-dependencies]
-built_in_state = { path = "../built_in_state" }
 curio_core = { path = "../curio_core" }
 ecs_event = { path = "../system_component_default_gameplay_macros/ecs_event" }
 ecs_system = { path = "../system_component_default_gameplay_macros/ecs_system" }
@@ -29,7 +28,6 @@ serde = { version = "1.0.104", features = ["derive", "rc"] }
 system_component_default_gameplay = { path = "../system_component_default_gameplay" }
 system_component_default_input = { path = "../system_component_default_input" }
 system_component_default_networking = { path = "../system_component_default_networking" }
-system_component_default_physics = { path = "../system_component_default_physics" }
 system_component_default_rendering = { path = "../system_component_default_rendering" }
 system_component_default_time = { path = "../system_component_default_time" }
 winit = { version = "0.30", features = ["android-native-activity"] }

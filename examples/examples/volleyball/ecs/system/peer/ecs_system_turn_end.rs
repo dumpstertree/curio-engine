@@ -2,8 +2,8 @@ use crate::exploration::exploration_path::RoomTypes;
 use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
-use built_in_state::state_input::InputState;
 use curio_core::{
+    built_in::record::state_input::InputState,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

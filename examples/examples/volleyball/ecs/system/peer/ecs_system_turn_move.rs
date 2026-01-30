@@ -1,11 +1,11 @@
-use built_in_state::state_input::InputState;
 use ecs_system::habit;
 use system_component_default_gameplay::{
-    traits::{habit::Habit, scope::Scope},
     context_3d::Context3D,
+    traits::{habit::Habit, scope::Scope},
 };
 
 use curio_core::{
+    built_in::record::state_input::InputState,
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };

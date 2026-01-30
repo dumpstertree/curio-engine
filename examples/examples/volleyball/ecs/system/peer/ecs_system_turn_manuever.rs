@@ -14,7 +14,7 @@ use crate::state::peer::state_peer_selected_card::StatePeerSelectedCards;
 use crate::state::state_deck::CardTypes;
 use crate::state::state_teams::StateTeamAssignments;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
-use built_in_state::state_input::InputState;
+use curio_core::built_in::record::state_input::InputState;
 use curio_core::collections::{event_queue::EventQueue, game_state::GameState};
 use curio_core::dumpster_engine::NetworkModes;
 use curio_core::extensions::extensions_i32::ExtensionsI32;

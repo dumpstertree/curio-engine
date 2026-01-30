@@ -1,5 +1,5 @@
-use built_in_state::{state_camera::CameraState, state_debug::StateDebug};
 use curio_core::{
+    built_in::record::{state_camera::CameraState, state_debug::StateDebug},
     collections::{event_queue::EventQueue, game_state::GameState},
     dumpster_engine::NetworkModes,
 };
