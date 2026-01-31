@@ -4,10 +4,10 @@ use std::vec;
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
 use crate::collections::network_capabilities::NetworkCapabilities;
+use crate::collections::network_modes::NetworkModes;
 use crate::collections::state_map::StateMap;
 use crate::collections::state_ownerships::StateOwnerships;
 use crate::collections::state_sync_event::StateSyncEvent;
-use crate::dumpster_engine::NetworkModes;
 use crate::static_data::global_states::get_global_state_constructor_all;
 use crate::system::system_game_state::IState;
 

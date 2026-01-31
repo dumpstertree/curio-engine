@@ -11,7 +11,7 @@ use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;

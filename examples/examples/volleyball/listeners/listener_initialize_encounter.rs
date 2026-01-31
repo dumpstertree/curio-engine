@@ -1,7 +1,6 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
     random::Random,
 };
 

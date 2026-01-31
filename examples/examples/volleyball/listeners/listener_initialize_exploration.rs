@@ -1,6 +1,6 @@
 use curio_core::{
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
     random::Random,
 };
 use gameplay::{

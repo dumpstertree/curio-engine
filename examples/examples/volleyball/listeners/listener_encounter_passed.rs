@@ -2,7 +2,7 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_currency::StateCurrency;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};

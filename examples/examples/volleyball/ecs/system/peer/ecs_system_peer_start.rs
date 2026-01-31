@@ -7,8 +7,8 @@ use habit::habit;
 
 use curio_core::{
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_sun::SysRecordSun},
+    collections::network_modes::NetworkModes,
     collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
-    dumpster_engine::NetworkModes,
     io::asset_loader::AssetLoader,
 };
 

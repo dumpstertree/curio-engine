@@ -18,7 +18,7 @@ use curio_core::collections::vector2_int::Vector2Int;
 use curio_core::collections::vector3::Vector3;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::renderer_common::RendererCommon;

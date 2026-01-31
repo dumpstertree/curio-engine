@@ -4,7 +4,7 @@ use egui_wgpu::wgpu::{Adapter, Device, Queue, Surface, SurfaceConfiguration};
 use winit::dpi::PhysicalSize;
 use winit::window::{Fullscreen, Window};
 
-use crate::dumpster_engine::GPUInstance;
+use crate::collections::gpu_instance::GPUInstance;
 use crate::io::texture_asset::TextureAsset;
 pub static SYSTEM_GPU_ADAPTER_INSTANCE: Mutex<SystemGPU> = Mutex::new(SystemGPU {
     device: None,

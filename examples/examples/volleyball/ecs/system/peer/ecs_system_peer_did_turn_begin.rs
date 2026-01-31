@@ -23,8 +23,8 @@ use crate::{
 };
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
     system::system_game_state::IState,
 };
 use gameplay::{

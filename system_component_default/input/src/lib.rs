@@ -1,8 +1,8 @@
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
+use curio_core::collections::game_mode::GameMode;
 use curio_core::collections::game_state::GameState;
 use curio_core::collections::vector2::Vector2;
 use curio_core::collections::vector3::Vector3;
-use curio_core::dumpster_engine::GameMode;
 use curio_core::input::axis_code::AxisCode;
 use curio_core::input::input_snapshot_mapped::PlayerInputSnapshot;
 use curio_core::input::key_code::ButtonCode;

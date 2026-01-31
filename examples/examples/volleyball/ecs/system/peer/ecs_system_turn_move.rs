@@ -7,7 +7,7 @@ use habit::habit;
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 
 use crate::{

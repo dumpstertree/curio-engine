@@ -4,7 +4,7 @@ use crate::state::host::state_enounter_mode::StateEncounter;
 use crate::state::host::state_shop::StateShop;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 use gameplay::{
     context_3d::Context3D,

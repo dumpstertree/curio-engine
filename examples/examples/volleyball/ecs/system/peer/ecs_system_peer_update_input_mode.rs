@@ -5,7 +5,7 @@ use crate::state::peer::state_peer_input_mode::StatePeerInputMode;
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;

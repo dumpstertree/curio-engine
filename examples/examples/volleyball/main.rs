@@ -212,7 +212,7 @@ use crate::{
 };
 
 use curio_core::{
-    dumpster_engine::{CurioMetadata, GameMode, VersionNumber, WindowLayout},
+    collections::{curio_metadata::CurioMetadata, game_mode::GameMode, version_number::VersionNumber, window_layout::WindowLayout},
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
     input::{input_mapping::InputMapping, key_code::ButtonCode},
     io::{

@@ -25,7 +25,7 @@
 // use curio_core::io::model_asset::ModelAsset;
 // use curio_core::{
 //     collections::{event_queue::EventQueue, game_state::GameState},
-//     dumpster_engine::NetworkModes,
+//     collections::network_modes::NetworkModes
 //     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
 // };
 // use habit::habit;

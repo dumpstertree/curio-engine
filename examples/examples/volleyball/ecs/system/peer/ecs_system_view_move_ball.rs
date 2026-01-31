@@ -5,7 +5,7 @@ use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::collections::vector3::Vector3;
 use curio_core::{
     collections::{event_queue::EventQueue, game_state::GameState},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::transform::transform3d::Transform3D;

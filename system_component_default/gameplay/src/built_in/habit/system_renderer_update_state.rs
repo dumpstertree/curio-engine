@@ -14,7 +14,7 @@ use crate::{
 use curio_core::{
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_rendering::SysRecordRendering, sys_record_time::SysRecordTime},
     collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 
 #[derive(Default)]

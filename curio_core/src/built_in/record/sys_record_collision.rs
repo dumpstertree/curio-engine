@@ -1,4 +1,4 @@
-use crate::{gameplay::ecs::component::component_collider::CollisionSnapshot, system::system_game_state::IState};
+use crate::{built_in::facet::component_collider::CollisionSnapshot, system::system_game_state::IState};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordCollision {

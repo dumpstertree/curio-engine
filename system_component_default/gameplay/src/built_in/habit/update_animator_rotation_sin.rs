@@ -7,7 +7,7 @@ use crate::{
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion},
-    dumpster_engine::NetworkModes,
+    collections::network_modes::NetworkModes
 };
 
 #[derive(Default)]

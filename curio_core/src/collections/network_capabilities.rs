@@ -1,6 +1,6 @@
+use crate::collections::network_modes::NetworkModes;
 use crate::collections::state_ownerships::StateOwnerships;
 use crate::collections::state_sync_event::StateSyncEvent;
-use crate::dumpster_engine::NetworkModes;
 
 #[derive(Clone)]
 pub struct NetworkCapabilities {

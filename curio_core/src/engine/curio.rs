@@ -1,8 +1,7 @@
 use crate::{
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState, vector3::Vector3},
-    dumpster_engine::GameMode,
+    built_in::stimulant::engine_commands::EngineCommands,
+    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::GameState, key_state::KeyState, vector3::Vector3},
     engine::curio_common::CurioCommon,
-    events::engine_commands::EngineCommands,
     input::{axis_code::AxisCode, key_code::ButtonCode},
     random::Random,
     system::system_component::SystemComponent,

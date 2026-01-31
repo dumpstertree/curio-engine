@@ -1,22 +1,26 @@
-pub mod dumpster_engine;
-
 pub mod built_in {
+    pub mod stimulant {
+        pub mod engine_commands;
+    }
+    pub mod facet {
+        pub mod component_collider;
+    }
     pub mod record {
+        pub mod sys_record_camera;
+        pub mod sys_record_colliders;
         pub mod sys_record_collision;
         pub mod sys_record_debug;
-        pub mod sys_record_rendering;
+        pub mod sys_record_debug_gui;
         pub mod sys_record_gizmos;
         pub mod sys_record_gui;
-        pub mod sys_record_debug_gui;
         pub mod sys_record_input;
         pub mod sys_record_lights;
         pub mod sys_record_network;
+        pub mod sys_record_rendering;
         pub mod sys_record_screen;
         pub mod sys_record_skybox;
         pub mod sys_record_sun;
         pub mod sys_record_time;
-        pub mod sys_record_camera;
-        pub mod sys_record_colliders;
     }
 }
 pub mod engine {
@@ -54,12 +58,16 @@ pub mod collections {
     pub mod any_map;
     pub mod camera_uniform;
     pub mod color;
+    pub mod curio_metadata;
     pub mod draw_call;
     pub mod event_queue;
     pub mod event_runner;
     pub mod f32;
+    pub mod game_instance;
+    pub mod game_mode;
     pub mod game_state;
     pub mod gizmo;
+    pub mod gpu_instance;
     pub mod input_button;
     pub mod input_cursor;
     pub mod key_state;
@@ -68,6 +76,7 @@ pub mod collections {
     pub mod matrix4x4;
     pub mod mesh;
     pub mod network_capabilities;
+    pub mod network_modes;
     pub mod projection;
     pub mod quaternion;
     pub mod state_map;
@@ -80,53 +89,18 @@ pub mod collections {
     pub mod vector3_int;
     pub mod vector4;
     pub mod vector4_int;
+    pub mod version_number;
+    pub mod window_layout;
 }
-// pub mod prefab;
 pub mod random;
 
-mod window {
-    pub(crate) mod system_window;
-}
-pub mod gameplay {
-    // pub mod world_context;
-    pub mod ecs {
-        pub mod traits {
-            // pub mod ecs_event_reciever;
-            // pub mod ecs_system;
-        }
-        pub mod component {
-            pub mod component_collider;
-            // pub mod component_transform;
-            // pub mod component_transform2d;
-        }
-    }
-}
 pub mod static_data {
-    // pub mod global_components;
-    // pub mod global_ecs;
-    // pub mod global_event_recievers;
     pub mod global_events;
     pub mod global_states;
 }
-pub mod events {
-    pub mod engine_commands;
-}
 pub mod system {
-    pub mod system_game_state;
-    // pub mod system_game_states {
-    //     pub mod state_camera;
-    //     pub mod state_colliders;
-    //     pub mod state_collision;
-    //     pub mod state_debug;
-    //     pub mod state_draw;
-    //     pub mod state_gizmos;
-    //     pub mod state_gui;
-    //     pub mod state_gui_debug;
-    //     pub mod state_input;
-    //     pub mod state_screeen;
-    //     pub mod state_time;
-    // }
     pub mod system_component;
+    pub mod system_game_state;
     pub mod system_components {
         pub mod system_component_gameplay;
         pub mod system_component_graphics;
@@ -138,45 +112,4 @@ pub mod system {
 }
 pub mod system_adapters {
     pub mod adapter_system_gpu;
-}
-
-// pub fn main() {}
-
-use message_io::network::{NetEvent, Transport};
-use message_io::node::{self};
-
-pub fn main() {
-    // Create a node, the main message-io entity. It is divided in 2 parts:
-    // The 'handler', used to make actions (connect, send messages, signals, stop the node...)
-    // The 'listener', used to read events from the network or signals.
-    let (handler, listener) = node::split::<()>();
-
-    // Listen for TCP, UDP and WebSocket messages at the same time.
-    handler
-        .network()
-        .listen(Transport::FramedTcp, "0.0.0.0:3042")
-        .unwrap();
-    handler
-        .network()
-        .listen(Transport::Udp, "0.0.0.0:3043")
-        .unwrap();
-    handler
-        .network()
-        .listen(Transport::Ws, "0.0.0.0:3044")
-        .unwrap();
-
-    // Read incoming network events.
-    listener.for_each(move |event| match event.network() {
-        NetEvent::Connected(_, _) => unreachable!(),                              // Used for explicit connections.
-        NetEvent::Accepted(_endpoint, _listener) => println!("Client connected"), // Tcp or Ws
-        NetEvent::Message(endpoint, data) => {
-            println!("Received: {}", String::from_utf8_lossy(data));
-            handler.network().send(endpoint, data);
-        }
-        NetEvent::Disconnected(_endpoint) => println!("Client disconnected"), //Tcp or Ws
-    });
-}
-
-pub trait PrefabOverridable {
-    fn apply_override(&mut self, key: &str, value: &str);
 }
