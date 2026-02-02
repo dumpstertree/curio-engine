@@ -175,5 +175,59 @@ impl Habit for Instance {
 }
 ```
 
-   
+### Creating Custom Facets 
+
+
+### Stimulants and Impulses
+
+Stimulants are events that can be sent through your Curio and recieved by Impulses. Your stimulants are required as part of the startup of your Curio so all events are firmly typed. Stimulants are sent during a frame and then picked up and acted upon at the beggining of the next frame before anything else. If a Stimulant results in another Stimulant the chain will continue before progressing to the Tick phase.
+
+
+Lets create the object that will hold all our Stimulants. Enums work great for this.
+
+```rust
+// all out stimulants in the Curio
+#[stimulant]
+pub enum MyStimulant {
+    #[default]
+    Invalid,
+    Create,
+    Destroy
+}
+
+```
+
+Great now we know what all the Stimulants can be we can send some from a Habit.
+
+```rust
+// ... 
+impl Habit for HabitInstance {
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+        event_queue.enqueue_event( MyStimulant::Create );
+    }
+    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+        event_queue.enqueue_event( MyStimulant::Destroy );
+    }
+}
+```
+
+Let's now create the Impluse that will react to the Stimulant
+
+```rust
+// reciever the stimulant 
+#[impulse(MyStimulant)]
+pub struct ImpulseInstance {}
+impl Impulse<MyStimulant> for ImpulseInstance {
+    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
+      match event {
+          MyStimulant::Create => println1( "Stimulant Recieved: Created!");
+          MyStimulant::Destroy => println1( "Stimulant Recieved: Destroyed!");
+      }
+    }
+}
+```
+
+
+
+
 
