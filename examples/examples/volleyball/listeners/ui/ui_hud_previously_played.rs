@@ -4,7 +4,7 @@ use curio_core::{
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
-use std::sync::Arc;
+use std::{sync::Arc, time::Instant};
 
 use gameplay::{
     built_in::facet::{
@@ -37,12 +37,11 @@ static COLOR_OTHER: Color = Color::new_hex("#ffffffff");
 
 pub struct UIHUD {
     history_len: i32,
-    open_gos: Option<(Form, Vec<Form>)>,
-    last_open: f64,
+    open_gos: Vec<(Form, f64)>,
 }
 impl UIHUD {
     pub fn new() -> Box<UIHUD> {
-        Box::new(UIHUD { history_len: 0, open_gos: None, last_open: 0.0 })
+        Box::new(UIHUD { history_len: 0, open_gos: Vec::new() })
     }
 }
 impl UIPanel for UIHUD {
@@ -54,18 +53,17 @@ impl UICommon for UIHUD {
     fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
     fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
     fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
-        if let Some(open_gos) = &self.open_gos {
-            let dt = game_state.get::<SysRecordTime>().unscaled_time - self.last_open;
-            open_gos.0.edit_facet::<Transform2D>(|x| {
-                x.position = Vector2::new(0.75, Self::remap(Self::ease_in_hold_ease_out(dt as f32 / 2.5), 0.0, 1.0, -0.35, 1.35));
+        for i in (0..self.open_gos.len()).rev() {
+            let f = &self.open_gos[i].0;
+            let t = &self.open_gos[i].1;
+            let dt = game_state.time().scaled_time - t;
+            f.edit_facet::<Transform2D>(|x| {
+                x.position = Vector2::new(0.75, Self::remap(Self::ease_in_hold_ease_out(dt as f32 / 2.0), 0.0, 1.0, -0.35, 1.35));
             });
 
-            if dt >= 2.5 {
-                for x in &open_gos.1 {
-                    x.destroy();
-                }
-                println!("destroy");
-                self.open_gos = None;
+            if game_state.time().scaled_time - t > 2.0 {
+                let f = self.open_gos.remove(i);
+                f.0.destroy();
             }
         }
 
@@ -89,8 +87,11 @@ impl UICommon for UIHUD {
             return;
         };
 
-        self.open_gos = Some(Self::spawn_card(&game_state, context, state_play_history.history.last().unwrap().1.clone()));
-        self.last_open = game_state.get::<SysRecordTime>().unscaled_time;
+        let x = Self::spawn_card(&game_state, context, state_play_history.history.last().unwrap().1.clone());
+        x.try_edit_facet::<Transform2D>(|x| {
+            x.position = Vector2::new(-100.0, 100.0);
+        });
+        self.open_gos.push((x, game_state.time().scaled_time));
 
         self.history_len = state_play_history.history.len() as i32;
 
@@ -98,7 +99,7 @@ impl UICommon for UIHUD {
     }
 }
 impl UIHUD {
-    fn spawn_card(game_state: &GameState, world: &mut Context2D, card_inst: Arc<CardInstance>) -> (Form, Vec<Form>) {
+    fn spawn_card(game_state: &GameState, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
         let mut desc = card_inst.get_master().description.clone();
         for life in card_inst.get_attributes_lifecycle() {
             match life {
@@ -148,146 +149,7 @@ impl UIHUD {
             x.card_instance = Some(card_inst);
         });
 
-        // pass back
-        return (f_card.clone(), vec![f_card]);
-        // parent
-
-        // let parent = world
-        //     .instantiate(
-        //         "",
-        //         Transform2D::default()
-        //             .set_render_order(0)
-        //             .set_position_01(Vector2::new(-1.0, -1.0)),
-        //     )
-        //     .add_component_value(Renderer::default().set_asset(Some(asset.clone())));
-
-        // let text = world
-        //     .instantiate(
-        //         "",
-        //         Transform2D::default()
-        //             .set_parent(Some(parent.clone()))
-        //             .set_render_order(1)
-        //             .set_position_01(Vector2::new(0.5, 0.5)),
-        //     )
-        //     .add_component_value(ComponentRendererText::default());
-
-        // (parent.clone(), vec![parent, text])
-
-        // create description
-        let asset = AssetLoader::load_model_static_from_database(&Assets::Card.into());
-        let parent = world
-            .spawn("", Transform2D::default())
-            .add_facet(RendererStatic::default().set_asset(Some(asset.clone())))
-            .add_facet(ComponentCard::default().set_instance(card_inst.clone()));
-
-        let mut desc = card_inst.get_master().description.clone();
-        for life in card_inst.get_attributes_lifecycle() {
-            match life {
-                crate::state::state_deck::CardAttributeLifecycle::Quick => desc = desc + ".QUICK. ",
-                crate::state::state_deck::CardAttributeLifecycle::Exhuast => desc = desc + ".EXHUAST. ",
-                crate::state::state_deck::CardAttributeLifecycle::Exile => desc = desc + ".EXILE. ",
-                crate::state::state_deck::CardAttributeLifecycle::Linger => desc = desc + ".LINGER. ",
-                crate::state::state_deck::CardAttributeLifecycle::Light => desc = desc + ".LIGHT. ",
-                crate::state::state_deck::CardAttributeLifecycle::Persistant => desc = desc + ".PERSISTANT. ",
-                crate::state::state_deck::CardAttributeLifecycle::Reliable(_) => {}
-                crate::state::state_deck::CardAttributeLifecycle::Light => {}
-                crate::state::state_deck::CardAttributeLifecycle::Heavy => {}
-                crate::state::state_deck::CardAttributeLifecycle::Consume => desc = desc + ".CONSUME. ",
-            }
-        }
-        let mut r = RendererText::default();
-        r.set_bounds(Vector2::new(0.25, 0.2));
-        r.set_font_size(0.02);
-        r.set_contents(&desc);
-        let e0: Form = world
-            .spawn(
-                "",
-                Transform2D::default()
-                    .set_render_order(1)
-                    .set_position_01(Vector2::new(0.5, 0.375))
-                    .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
-                    .set_parent(Some(parent.clone())),
-            )
-            .add_facet(r);
-
-        // r.set_parent(Some(parent.clone()));
-        // create title
-        let mut r = RendererText::default();
-        r.set_bounds(Vector2::new(0.5, 0.2));
-        r.set_font_size(0.03);
-        r.set_contents(&card_inst.get_title());
-        // r.set_parent(Some(parent.clone()));
-        let e1 = world
-            .spawn(
-                "",
-                Transform2D::default()
-                    .set_render_order(1)
-                    .set_position_01(Vector2::new(0.5, 0.69))
-                    .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
-                    .set_parent(Some(parent.clone())),
-            )
-            .add_facet(r);
-        // create type
-        let mut r = RendererText::default();
-        r.set_bounds(Vector2::new(0.25, 0.2));
-        r.set_font_size(0.02);
-        r.set_contents(&format!("{}", card_inst.get_manuever_type()));
-        // r.set_parent(Some(parent.clone()));
-        let e2 = world
-            .spawn(
-                "",
-                Transform2D::default()
-                    .set_render_order(1)
-                    .set_position_01(Vector2::new(0.5, 0.45))
-                    .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
-                    .set_parent(Some(parent.clone())),
-            )
-            .add_facet(r);
-        // create cost
-        let mut r = RendererText::default();
-        r.set_bounds(Vector2::new(0.25, 0.2));
-        r.set_font_size(0.03);
-        r.set_contents(
-            &card_inst
-                .get_cost(&game_state, game_state.instance_id)
-                .to_string(),
-        );
-        // r.set_contents("0");
-        // r.set_parent(Some(parent.clone()));
-        let e3 = world
-            .spawn(
-                "",
-                Transform2D::default()
-                    .set_render_order(1)
-                    .set_position_01(Vector2::new(0.58, 0.27))
-                    .set_rotation(Quaternion::from_euler(Vector3::new(0.0, 0.0, 0.0)))
-                    .set_parent(Some(parent.clone())),
-            )
-            .add_facet(r);
-
-        parent.edit_facet::<RendererStatic>(|rend| {
-            let col_spell = Color::new_hex("#f7a5f3");
-            let col_persistent = Color::new_hex("#f7c8a5");
-            let col_bump = Color::new_hex("#4efff9");
-            let col_set = Color::new_hex("#abff4e");
-            let col_spike = Color::new_hex("#ff4e85");
-
-            // let mut cur_tint = renderer.get_tint();
-
-            match &card_inst.clone().get_manuever_type() {
-                CardTypes::Serve => rend.set_tint(col_persistent),
-                CardTypes::Rest => rend.set_tint(col_persistent),
-                CardTypes::Bump => rend.set_tint(col_bump),
-                CardTypes::Set => rend.set_tint(col_set),
-                CardTypes::Spike => rend.set_tint(col_spike),
-                CardTypes::Move => rend.set_tint(Color::white()),
-                CardTypes::Spell => rend.set_tint(col_spell),
-                CardTypes::Food => rend.set_tint(Color::white()),
-                // renderer.set_tint(cur_tint);
-            }
-        });
-
-        (parent.clone(), vec![parent, e0, e1, e2, e3])
+        return f_card;
     }
     pub fn remap(value: f32, from_min: f32, from_max: f32, to_min: f32, to_max: f32) -> f32 {
         (value - from_min) / (from_max - from_min) * (to_max - to_min) + to_min

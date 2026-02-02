@@ -26,9 +26,6 @@ impl CardAttributeFillerAI {
 
         // match for empty type
         match empty {
-            AttributeTargetTypesTiles::SelectOpponentBackCorner => {
-                todo!()
-            }
             AttributeTargetTypesTiles::SelectInRangeLocalToBall(min, max) => {
                 let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
                 let state_turn = game_state.get::<StateTurn>();
@@ -52,7 +49,7 @@ impl CardAttributeFillerAI {
 
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
             }
-            AttributeTargetTypesTiles::RandomOnTeamUser => {
+            AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::RandomOnTeamUser => {
                 // get state
                 let state_team = game_state.get::<StateTeamAssignments>();
 
@@ -70,7 +67,7 @@ impl CardAttributeFillerAI {
 
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)]));
             }
-            AttributeTargetTypesTiles::RandomOnTeamOpponent => {
+            AttributeTargetTypesTiles::SelectOnTeamOpponent | AttributeTargetTypesTiles::RandomOnTeamOpponent => {
                 // get state
                 let state_team = game_state.get::<StateTeamAssignments>();
 
@@ -143,8 +140,7 @@ impl CardAttributeFillerAI {
             }
             AttributeTargetTypesTiles::SelectAny => todo!(),
             AttributeTargetTypesTiles::RandomAny => todo!(),
-            AttributeTargetTypesTiles::SelectOnTeamUser => todo!(),
-            AttributeTargetTypesTiles::SelectOnTeamOpponent => todo!(),
+            AttributeTargetTypesTiles::SelectOpponentBackCorner => todo!(),
         }
 
         // return the now filled permutations
