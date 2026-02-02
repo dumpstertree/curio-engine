@@ -107,17 +107,35 @@ Habits a reoccuring loop that happen every "frame". They are not tied to the exi
 ```rust
 #[habit]
 pub struct Instance {}
+
+// Defines the scope of the habit (Prereq for Habit). This controls when the habit should startup and stop.
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+
+    //
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
-        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    fn run_on_instance(&mut self, ledger: &mut Ledger) -> Vec<NetworkModes> {
+        NetworkModes::all()
     }
 }
+
+// Defines the logic for the habit
 impl Habit for Instance {
-    fn enable(&mut self, _ledger: &mut Ledger, _context: &mut Context3D, event_queue: &mut EventQueue) {
+
+    // triggered when a habit changes from disabled -> enabled or on the first frame of being enabled if always enabled.
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
       println!("Hello World!");
+    }
+
+    // triggered when a habit changes from enabled -> disabled
+    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+      println!("Goodbye World!");
+    }
+
+    // triggered every frame a habit is enabled 
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+      println!("I'm Thriving!");
     }
 }
 ```
