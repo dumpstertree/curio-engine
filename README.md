@@ -239,7 +239,7 @@ Lets create a record to keep track of if we are "alive" or "dead"
 pub struct MyRecAliveOrDead {
   is_alive: bool
 }
-impl Record for RecordInstance {
+impl Record for MyRecAliveOrDead {
     fn ownership() -> StateOwnerships {
         StateOwnerships::Instance
     }
@@ -263,4 +263,18 @@ impl Impulse<MyStimulant> for ImpulseInstance {
     }
 }
 
+```
+If we want we can go a step further and check the value was changed in the Habit.
+
+```rust
+// ... 
+impl Habit for HabitInstance {
+
+    /// ...
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+         if ledger.get::<MyRecAliveOrDead>().is_alive {
+          println!("I'm Alive");
+        }
+    }
+}
 ```
