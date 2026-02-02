@@ -283,8 +283,10 @@ Some values are built in and populated by the Curio for use and edit such as Sys
 
 ```rust
 
-ledger.time().delta_time
-ledger.camera().fov
-ledger.screen().width
+let x = ledger.time().delta_time;
+or 
+let x = ledger.camera().fov;
+or
+let x = ledger.screen().width;
 
 ```
