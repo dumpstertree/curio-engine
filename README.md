@@ -1,4 +1,4 @@
-#🔮 Curio Engine 
+# 🔮 Curio Engine 
 
 **Curio Engine** is a 3D ECS–hybrid game engine written in **Rust**, designed for building **small, multiplayer-first games** with a strong emphasis on *usability*, *runtime flexibility*, and *transparent systems*.
 
@@ -55,11 +55,11 @@ Curio is built around a few core ideas:
 
 ## Getting Started
 
-### Creating a World
+### Creating a Curio
+
+Curios are an application that you are building. You take a lame Curio, imbue it with logic and put it on display.
 
 ```rust
-// TODO: simple example showing how to create a world
-  // create instance
     CurioCabinet::display_curio(
         CurioMetadata::new(
             "Volleyball", //
@@ -97,4 +97,28 @@ Curio is built around a few core ideas:
         WindowLayout::fullscreen_1080(),
     );
 }
+```
+
+
+### Creating a Habit
+
+Habits a reoccuring loop that happen every "frame". They are not tied to the existance of any object or lifecycle aside from the start of the Curio.
+
+```rust
+#[habit]
+pub struct Instance {}
+impl Scope for Instance {
+    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+        true
+    }
+    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+        vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
+    }
+}
+impl Habit for Instance {
+    fn enable(&mut self, _ledger: &mut Ledger, _context: &mut Context3D, event_queue: &mut EventQueue) {
+      println!("Hello World!");
+    }
+}
+```
 
