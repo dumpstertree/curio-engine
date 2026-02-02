@@ -218,16 +218,49 @@ Let's now create the Impluse that will react to the Stimulant
 #[impulse(MyStimulant)]
 pub struct ImpulseInstance {}
 impl Impulse<MyStimulant> for ImpulseInstance {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
       match event {
-          MyStimulant::Create => println1( "Stimulant Recieved: Created!");
-          MyStimulant::Destroy => println1( "Stimulant Recieved: Destroyed!");
+          MyStimulant::Create => println1( "Stimulant Recieved: Alive!");
+          MyStimulant::Destroy => println1( "Stimulant Recieved: Dead!");
       }
     }
 }
 ```
 
+### Ledger and Records
 
+Records are objects that represent the current state of the Curio. A Ledger is where all those records are kept. Records can be edited but never added or removed as all available records are created when the Curio is created.
 
+Lets create a record to keep track of if we are "alive" or "dead"
 
+```rust
 
+#[record]
+pub struct MyRecAliveOrDead {
+  is_alive: bool
+}
+impl Record for RecordInstance {
+    fn ownership() -> StateOwnerships {
+        StateOwnerships::Instance
+    }
+}
+
+```
+Now that we have a record that will be picked up with the curio we can edit the Stimulant to edit it. 
+
+```rust
+
+impl Impulse<MyStimulant> for ImpulseInstance {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+      match event {
+          MyStimulant::Create => {
+            ledger.edit::<MyRecAliveOrDead>( |rec| { rec.is_alive = true });
+          }
+          MyStimulant::Destroy => {
+            ledger.edit::<MyRecAliveOrDead>( |rec| { rec.is_alive = false });
+          }
+      }
+    }
+}
+
+```
