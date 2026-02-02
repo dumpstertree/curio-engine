@@ -278,3 +278,13 @@ impl Habit for HabitInstance {
     }
 }
 ```
+
+Some values are built in and populated by the Curio for use and edit such as SysRecordTime, SysRecordInput, SysRecordCamera, SysRecordScreen, etc. Many of these have convience wrappers from the Ledger. For example...
+
+```rust
+
+ledger.time().delta_time
+ledger.camera().fov
+ledger.screen().width
+
+```
