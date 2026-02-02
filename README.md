@@ -102,7 +102,7 @@ Curios are an application that you are building. You take a lame Curio, imbue it
 
 ### Creating a Habit
 
-Habits a reoccuring loop that happen every "frame". They are not tied to the existance of any object or lifecycle aside from the start of the Curio.
+Habits a reoccuring loop that happen every "frame". They are not tied to the existance of any object or lifecycle aside from the start and end of the Curio. Habits are automatically picked up by using the [habit] macro. 
 
 ```rust
 #[habit]
@@ -111,12 +111,13 @@ pub struct Instance {}
 // Defines the scope of the habit (Prereq for Habit). This controls when the habit should startup and stop.
 impl Scope for Instance {
 
-    //
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        true
+      // always run
+      true 
     }
     fn run_on_instance(&mut self, ledger: &mut Ledger) -> Vec<NetworkModes> {
-        NetworkModes::all()
+      // on all instances
+      NetworkModes::all()
     }
 }
 
@@ -139,4 +140,40 @@ impl Habit for Instance {
     }
 }
 ```
+### Creating a Form and Facets
+
+Forms represent objects that persist in the world (Context) and Facets are the properties that make up that Form. These Forms and Facets are a usability wrapper for HECS ecs to allow the user easier control of objects.
+
+```rust
+#[habit]
+pub struct Instance {
+  camera: Form
+}
+impl Scope for Instance {
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+      true 
+    }
+    fn run_on_instance(&mut self, ledger: &mut Ledger) -> Vec<NetworkModes> {
+      NetworkModes::all()
+    }
+}
+impl Habit for Instance {
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+      // create a camera to view the world
+      self.camera = context.spawn( "My Camera", Transform3D::default()).add_facet_default::<Camera>();
+    }
+    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+      // destroy out camera
+      self.camera.destroy();
+    }
+    fn tick (&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+      // edit the camera position to move up and down
+      self.camera.edit_facet::<Transform3D>( |t| {
+        // update position
+      });
+    }
+}
+```
+
+   
 
