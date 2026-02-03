@@ -168,7 +168,7 @@ pub enum MyStimulant {
 Great now we know what all the Stimulants can be we can send some from a Habit.
 
 ```rust
-// ... 
+... 
 impl Habit for HabitInstance {
     fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
         event_queue.enqueue_event( MyStimulant::Create );
@@ -279,21 +279,29 @@ facets:
     fields:
       - "position: (0.0,0.0)"
       - "scale: (1,1,1)"
-  - type: "RendererText"
+  - type: "renderertext"
     fields:
       - "contents:"My Prefab"
       - "font_size:0.055"
       - "bounds:(5,5)"
-  - type: "AnimatorRotationSin"
-    fields:
-      - "enabled:true"
-      - "min:(0.0,0.0,-50.0)"
-      - "max:(0.0,0.0,50.0)"
-      - "speed:4.0"
+  - type: "rotate"
+    fields: []
 children: []
 ```
 
-Now that we have an asset we can load them into the context. Lets spawn this as well at the start of the Habit.
+Now that we have an asset we can load them into the context. Lets spawn this as well at the start of the Habit. This prefab though is missing a Facet in our project, "Rotate". Lets define that now
+
+```rust
+#[facet]
+pub struct Rotate {}
+impl FieldOverride for Rotate {
+    fn apply(&mut self, _field: &str, _val: &str) {
+      // if we want to override a field from the prefab we do so here
+    }
+}
+
+```
+Now that we have all the dependencies can spawn our prefab.
 
 ```rust
 ... 
@@ -316,6 +324,34 @@ impl Habit for HabitInstance {
         }
     }
 }
+```
+Just having the Rotate Facet doesn't DO anything though. It needs a Habit to edit it. This habbit is going to be a bit different. It doesn't need references to any Forms and instead will search and edit all Forms in bulk.
 
+```rust
+#[habit]
+pub struct RotateHabit {}
+impl Scope for RotateHabit {
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+      true 
+    }
+    fn run_on_instance(&mut self, ledger: &mut Ledger) -> Vec<NetworkModes> {
+      NetworkModes::all()
+    }
+}
+impl Habit for RotateHabit {
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+        // query the context for all matches
+        context.edit::<(Transform3D, Rotate)>( |query| {
+          // iterate over each match in the query
+          for (_, (t,r) in query {
+            // rotate the transform
+            t.rotation *= Quaternion::from_euler( 0.0, 1.0, 0.0 );
+        }
+    }
+}
+    
+```
+
+Now we should have 1000 prefab objects all rotating in place.
 
 
