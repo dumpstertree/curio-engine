@@ -17,8 +17,8 @@ use curio_core::collections::vector3::Vector3;
 
 use curio_core::io::asset_loader::AssetLoader;
 use curio_core::{
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, game_state::GameState},
-    collections::network_modes::NetworkModes
 };
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
@@ -80,20 +80,22 @@ impl Listener {
     }
     pub fn spawn_tiles(_game_state: &mut GameState, world: &mut Context3D) {
         let asset = Some(AssetLoader::load_model_static_from_database(&Assets::GameBoardTileActive.into()));
-        for team in Teams::all() {
-            let min = GameBoard::get_bounds_min_for_team(&team);
-            let max = GameBoard::get_bounds_max_for_team(&team);
+        // for team in Teams::all() {
+        // let min = GameBoard::get_bounds_min_for_team(&team);
+        // let max = GameBoard::get_bounds_max_for_team(&team);
+        let min = GameBoard::get_bounds_min();
+        let max = GameBoard::get_bounds_max();
 
-            for x in min.x..(max.x + 1) {
-                for z in min.y..(max.y + 1) {
-                    let pos = GameBoard::get_world_position(x, z);
-                    world
-                        .spawn("w", Transform3D::default().set_position(pos + Vector3::up() * 0.05))
-                        .add_facet(ComponentGameBoardTile::default().set_tile(Vector2Int::new(x, z)))
-                        .add_facet(RendererStatic::default().set_asset(asset.clone()));
-                }
+        for x in min.x..(max.x + 1) {
+            for z in min.y..(max.y + 1) {
+                let pos = GameBoard::get_world_position(x, z);
+                world
+                    .spawn("w", Transform3D::default().set_position(pos + Vector3::up() * 0.05))
+                    .add_facet(ComponentGameBoardTile::default().set_tile(Vector2Int::new(x, z)))
+                    .add_facet(RendererStatic::default().set_asset(asset.clone()));
             }
         }
+        // }
     }
     pub fn spawn_ball(game_state: &mut GameState, world: &mut Context3D) {
         let mut r = RendererStatic::default();

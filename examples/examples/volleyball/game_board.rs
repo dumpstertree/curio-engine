@@ -109,21 +109,29 @@ impl GameBoard {
     pub fn get_world_position(x: i32, z: i32) -> Vector3 {
         let fl_z = 3.0;
         let bl_z = 7.0;
+        let ob_z = 11.0;
+        let row_00 = 6.8;
         let row_0 = 3.8;
         let row_1 = 1.4;
         let row_2 = -1.4;
         let row_3 = -3.8;
+        let row_33 = -6.8;
         let p = [
-            [(row_0, -bl_z), (row_1, -bl_z), (row_2, -bl_z), (row_3, -bl_z)], // red_back
-            [(row_0, -fl_z), (row_1, -fl_z), (row_2, -fl_z), (row_3, -fl_z)], // red_front
-            [(row_0, fl_z), (row_1, fl_z), (row_2, fl_z), (row_3, fl_z)],     // blue_front
-            [(row_0, bl_z), (row_1, bl_z), (row_2, bl_z), (row_3, bl_z)],     // blue_back
+            [(row_00, -ob_z), (row_0, -ob_z), (row_1, -ob_z), (row_2, -ob_z), (row_3, -ob_z), (row_33, -ob_z)], // out of bounds
+            [(row_00, -bl_z), (row_0, -bl_z), (row_1, -bl_z), (row_2, -bl_z), (row_3, -bl_z), (row_33, -bl_z)], // red_back
+            [(row_00, -fl_z), (row_0, -fl_z), (row_1, -fl_z), (row_2, -fl_z), (row_3, -fl_z), (row_33, -fl_z)], // red_front
+            [(row_00, fl_z), (row_0, fl_z), (row_1, fl_z), (row_2, fl_z), (row_3, fl_z), (row_33, fl_z)],       // blue_front
+            [(row_00, bl_z), (row_0, bl_z), (row_1, bl_z), (row_2, bl_z), (row_3, bl_z), (row_33, bl_z)],       // blue_back
+            [(row_00, ob_z), (row_0, ob_z), (row_1, ob_z), (row_2, ob_z), (row_3, ob_z), (row_33, ob_z)],       // blue out of bounds
         ];
 
+        let x = x + 1;
+        let z = z + 1;
+
         let x = x.max(0);
+        let x = x.min(6);
         let z = z.max(0);
-        let x = x.min(3);
-        let z = z.min(3);
+        let z = z.min(6);
         Vector3::new(p[z as usize][x as usize].0, 0.0, p[z as usize][x as usize].1)
     }
 }

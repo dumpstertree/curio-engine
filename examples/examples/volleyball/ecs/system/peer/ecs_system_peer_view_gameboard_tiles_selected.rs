@@ -5,8 +5,8 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 
 use curio_core::{
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, game_state::GameState},
-    collections::network_modes::NetworkModes
 };
 use gameplay::{
     built_in::facet::{renderer::renderer_static::RendererStatic, renderer_common::RendererCommon, transform::transform3d::Transform3D},
@@ -34,6 +34,8 @@ impl Habit for Instance {
         world.edit::<(&mut Transform3D, &ComponentGameBoardSelection, &mut RendererStatic)>(|query| {
             for (_, (transform, _, renderer)) in query {
                 let pos = GameBoard::get_world_position(state_selection.selected_index.x, state_selection.selected_index.y);
+                println!("loc {}", pos);
+
                 transform.position = pos;
                 renderer.set_enabled(state_selection.enabled.is_some());
             }
