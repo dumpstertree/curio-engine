@@ -34,38 +34,22 @@ Curios are an application that you are building. You take a lame Curio, imbue it
 ```rust
     CurioCabinet::display_curio(
         CurioMetadata::new(
-            "Volleyball", //
-            "icon.png",
-            VersionNumber::new(0, 1, 0),
+            "My Curio", "icon.png", VersionNumber::new(0, 1, 0),
         ),
         || {
             Curio::imbue(
-                vec![
-                    SystemComponentDefaultTime::new(),
-                    SystemComponentDefaultInput::new(),
-                    SystemComponentDefaultPhysics::new(),
-                    SystemComponentDefaultGraphics::new(),
-                    SystemComponentDefaultNetworking::new(),
-                    SystemComponentDefaultGameplay::<GameEvents, UIViewTypes>::new(),
-                ],
+                // we can edit this to override with our own custom systems
+                default_systems(),
+
+                // game modes dictate the number of game instances running, their privilege levels and if/how they render to screen. This is using a built in single player version
                 GameMode::new_local_single(
-                    InputMapping::new(
-                        vec![
-                            (String::from("card_mode"), ButtonCode::ShiftLeft),
-                            (String::from("move_forward"), ButtonCode::KeyW),
-                            (String::from("move_back"), ButtonCode::KeyS),
-                            (String::from("move_left"), ButtonCode::KeyA),
-                            (String::from("move_right"), ButtonCode::KeyD),
-                            (String::from("turn_end"), ButtonCode::KeyP),
-                            (String::from("card_left"), ButtonCode::KeyA),
-                            (String::from("card_right"), ButtonCode::KeyD),
-                            (String::from("card_submit"), ButtonCode::ArrowUp),
-                        ],
-                        vec![],
-                    )
+                  // we can override this to create our own custom input mapping
+                  default_input(),
                 ),
             )
         },
+
+        // this is the default graphics settings the curio will launch with
         WindowLayout::fullscreen_1080(),
     );
 }
