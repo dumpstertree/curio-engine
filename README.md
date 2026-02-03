@@ -53,6 +53,10 @@ Curios are an application that you are building. You take a lame Curio, imbue it
 
         // this is the default graphics settings the curio will launch with
         WindowLayout::fullscreen_1080(),
+
+        // this is where any assets we want to include are stored.
+        // we will go into more detail on this later.
+        AssetDatabase::new(),
     );
 }
 ```
@@ -259,12 +263,17 @@ let x = ledger.screen().width;
 
 Like Stimulants assets and their locations are defined when the Curio is constructed. Assets can be Local or Remote. Local assets are pulled from the local asset folder/$asset_type and remote assets are stored in a cache. When assets are loaded they are stored in memory and added to an asset cache until a memory quota is hit and less used assets are released.
 
-Lets add some entries to the AssetDatabase
+Lets add some entries to the AssetDatabase that we created at the start.
 
 ```rust
- AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
-        (001, "my_prefab", AssetDatabaseListing::Local(String::from("prefab/my_prefab.prefab")),
-)]);
+    CurioCabinet::display_curio(
+
+        //...
+        AssetDatabase::new_from_explicit(vec![
+          (001, "my_prefab", AssetDatabaseListing::Local(String::from("prefab/my_prefab.prefab")))
+        ])
+    );
+}
 ```
 
 Lets now look at that the contents of prefab/myprefab.prefab.
@@ -346,7 +355,7 @@ impl Habit for RotateHabit {
           for (_, (t,r) in query {
 
             // rotate the transform
-            t.rotation *= Quaternion::from_euler( 0.0, 1.0, 0.0 );
+            t.rotation *= Quaternion::from_euler( 0.0, 5.0 * ledger.time().delta_time, 0.0 );
         }
     }
 }
