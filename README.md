@@ -293,6 +293,7 @@ facets:
     fields: []
 children: []
 ```
+Prefabs can load other prefabs recursively by formating the name like so `!prefab_id::name_of_form_instance`. This is great for complex structures like a scene.
 
 Now that we have an asset we can load them into the context. Lets spawn this as well at the start of the Habit. This prefab though is missing a Facet in our project, "Rotate". Lets define that now
 
