@@ -6,7 +6,7 @@
 
 ## Philosophy
 
-Rather than chasing maximum theoretical performance, Curio prioritizes **approachability and clarity**, even when that means making deliberate trade-offs. The goal is to make engine behavior understandable, quick, and adaptable.
+Rather than chasing maximum theoretical performance, Curio Engine prioritizes **approachability and clarity**, even when that means making deliberate trade-offs. The goal is to make engine behavior understandable, quick to implement, and adaptable.
 
 - **Usability first**  
   APIs are designed to be readable and explicit. Engine behavior should be easy to reason about, inspect, and modify.
