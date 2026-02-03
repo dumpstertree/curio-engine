@@ -18,8 +18,7 @@ Rather than chasing maximum theoretical performance, Curio prioritizes **approac
   Most engine systems can be swapped out or replaced with custom implementations to fit your specific needs.
 ---
 
-## Engine Overview
-# Backing Libraries
+## Backing Tech
 - **ECS:**         `hecs`
 - **Rendering:**   `wgpu`
 - **Audio**        `tbd`
@@ -62,7 +61,6 @@ Curios are an application that you are building. You take a lame Curio, imbue it
 ```
 
 And thats all it takes to initialize a new Curio.
-
 
 ### Creating a Habit
 
