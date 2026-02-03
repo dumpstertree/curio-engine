@@ -301,8 +301,15 @@ impl Habit for HabitInstance {
 
     ...
     fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
-         for i in 0..1000 {
+      event_queue.enqueue_event( MyStimulant::Create );
+
+      // lets create a bunch of these
+      for i in 0..1000 {
+
+            // spawn the prefab using its id 
             let form = context.spawn_prefab( AssetDatabase.fetch( 001 ) );
+
+            // we'll edit each transform to all sit side by side
             form.edit::<Transform3D>( |t| {
               t.position = Vector3::new( i , 0.0, 0.0 );
             });
