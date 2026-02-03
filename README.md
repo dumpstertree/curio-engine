@@ -38,12 +38,14 @@ Curios are an application that you are building. You take a lame Curio, imbue it
         ),
         || {
             Curio::imbue(
-                // we can edit this to override with our own custom systems
-                default_systems(),
+                // here we can edit this to override with our own custom systems. We will talk about MyStimulant later.
+                default_systems::<MyStimulant>(),
 
-                // game modes dictate the number of game instances running, their privilege levels and if/how they render to screen. This is using a built in single player version
+                // game modes dictate the number of game instances running, their privilege levels and if/how they render to screen.
+                // for now we are using a built in single player version
                 GameMode::new_local_single(
-                  // we can override this to create our own custom input mapping
+
+                  // here we can override this to create our own custom input mapping
                   default_input(),
                 ),
             )
@@ -54,6 +56,8 @@ Curios are an application that you are building. You take a lame Curio, imbue it
     );
 }
 ```
+
+And thats all it takes to initialize a new Curio.
 
 
 ### Creating a Habit
