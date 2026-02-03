@@ -6,7 +6,7 @@
 
 ## Philosophy
 
-Rather than chasing maximum theoretical performance, Curio prioritizes **approachability and clarity**, even when that means making deliberate trade-offs. The goal is to make engine behavior understandable, debuggable, and adaptable—especially for experimental and procedural game designs.
+Rather than chasing maximum theoretical performance, Curio prioritizes **approachability and clarity**, even when that means making deliberate trade-offs. The goal is to make engine behavior understandable, quick, and adaptable.
 
 - **Usability first**  
   APIs are designed to be readable and explicit. Engine behavior should be easy to reason about, inspect, and modify.
@@ -89,17 +89,17 @@ impl Scope for HabitInstance {
 impl Habit for Instance {
 
     // triggered when a habit changes from disabled -> enabled or on the first frame of being enabled if always enabled.
-    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
       println!("Hello World!");
     }
 
     // triggered when a habit changes from enabled -> disabled
-    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
+    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
       println!("Goodbye World!");
     }
 
     // triggered every frame a habit is enabled 
-    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
       println!("I'm Thriving!");
     }
 }
@@ -125,7 +125,7 @@ impl Scope for HabitInstance {
 }
 impl Habit for HabitInstance {
 
-    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
       // create a camera to view the world
       self.camera = context.spawn( "My Camera", Transform3D::default()).add_facet_default::<Camera>();
 
@@ -135,7 +135,7 @@ impl Habit for HabitInstance {
       });
     }
 
-    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
+    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
       // destroy out camera
       self.camera.destroy();
     }
@@ -166,12 +166,12 @@ Great now we know what all the Stimulants can be we can send some from a Habit.
 ... 
 impl Habit for HabitInstance {
 
-    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
-        afferent.stimulate( MyStimulant::Create );
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
+        nerve.stimulate( MyStimulant::Create );
     }
 
-    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
-        afferent.stimulate( MyStimulant::Destroy );
+    fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
+        nerve.stimulate( MyStimulant::Destroy );
     }
 }
 ```
@@ -183,7 +183,7 @@ Let's now create the Impluse that will react to the Stimulant
 pub struct ImpulseInstance {}
 impl Impulse<MyStimulant> for ImpulseInstance {
 
-  fn stimulate(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent, stimulant: &MyStimulant) {
+  fn stimulate(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve, stimulant: &MyStimulant) {
       
       match stimulant {
           MyStimulant::Create => println!( "Stimulant Recieved: Alive!");
@@ -218,7 +218,7 @@ Now that we have a record that will be picked up with the curio we can edit the 
 
 impl Impulse<MyStimulant> for ImpulseInstance 
     
-    fn stimulate(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent, stimulant: &MyStimulant) {
+    fn stimulate(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve, stimulant: &MyStimulant) {
       match stimulant {
           MyStimulant::Create => {
             ledger.edit::<MyRecAliveOrDead>( |rec| { rec.is_alive = true; });
@@ -238,7 +238,7 @@ If we want we can go a step further and check the value was changed in the Habit
 impl Habit for HabitInstance {
 
     /// ...
-    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
 
         // When using ledger.get<T> a readonly value of Arc<T> is returned.
         if ledger.get::<MyRecAliveOrDead>().is_alive {
@@ -315,8 +315,8 @@ Now that we have all the dependencies can spawn our prefab.
 impl Habit for HabitInstance {
 
     //...
-    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
-      afferent.stimulate( MyStimulant::Create );
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
+      nerve.stimulate( MyStimulant::Create );
 
       // lets create a bunch of these
       for i in 0..1000 {
@@ -346,7 +346,7 @@ impl Scope for RotateHabit {
     }
 }
 impl Habit for RotateHabit {
-    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, afferent: &mut Afferent) {
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, nerve: &mut Nerve) {
 
         // query the context for all matches
         context.edit::<(Transform3D, Rotate)>( |query| {
