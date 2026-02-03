@@ -78,10 +78,10 @@ Habits a reoccuring loop that happen every "frame". They are not tied to the exi
 
 ```rust
 #[habit]
-pub struct Instance {}
+pub struct HabitInstance {}
 
 // Defines the scope of the habit (Prereq for Habit). This controls when the habit should startup and stop.
-impl Scope for Instance {
+impl Scope for HabitInstance {
 
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
       // always run
@@ -118,18 +118,21 @@ Forms represent objects that persist in the world (Context) and Facets are the p
 
 ```rust
 #[habit]
-pub struct Instance {
+pub struct HabitInstance {
   camera: Form
 }
-impl Scope for Instance {
-    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+impl Scope for HabitInstance {
+
+   fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
       true 
     }
+
     fn run_on_instance(&mut self, ledger: &mut Ledger) -> Vec<NetworkModes> {
       NetworkModes::all()
     }
 }
-impl Habit for Instance {
+impl Habit for HabitInstance {
+
     fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
       // create a camera to view the world
       self.camera = context.spawn( "My Camera", Transform3D::default()).add_facet_default::<Camera>();
@@ -139,6 +142,7 @@ impl Habit for Instance {
         t.position = Vector3::new( 0.0, 10.0, 0.0);
       });
     }
+
     fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
       // destroy out camera
       self.camera.destroy();
@@ -154,7 +158,6 @@ Stimulants are events that can be sent through your Curio and recieved by Impuls
 Lets create the object that will hold all our Stimulants. Enums work great for this.
 
 ```rust
-// all out stimulants in the Curio
 #[stimulant]
 pub enum MyStimulant {
     #[default]
@@ -170,9 +173,11 @@ Great now we know what all the Stimulants can be we can send some from a Habit.
 ```rust
 ... 
 impl Habit for HabitInstance {
+
     fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
         event_queue.enqueue_event( MyStimulant::Create );
     }
+
     fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
         event_queue.enqueue_event( MyStimulant::Destroy );
     }
@@ -182,14 +187,15 @@ impl Habit for HabitInstance {
 Let's now create the Impluse that will react to the Stimulant
 
 ```rust
-// reciever the stimulant 
 #[impulse(MyStimulant)]
 pub struct ImpulseInstance {}
 impl Impulse<MyStimulant> for ImpulseInstance {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
-      match event {
-          MyStimulant::Create => println1( "Stimulant Recieved: Alive!");
-          MyStimulant::Destroy => println1( "Stimulant Recieved: Dead!");
+
+  fn stimulate(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue, stimulant: &MyStimulant) {
+      
+      match stimulant {
+          MyStimulant::Create => println!( "Stimulant Recieved: Alive!");
+          MyStimulant::Destroy => println!( "Stimulant Recieved: Dead!");
       }
     }
 }
@@ -205,11 +211,11 @@ Lets create a record to keep track of if we are "alive" or "dead"
 
 #[record]
 pub struct MyRecAliveOrDead {
-  is_alive: bool
+  pub is_alive: bool
 }
 impl Record for MyRecAliveOrDead {
     fn ownership() -> StateOwnerships {
-        StateOwnerships::Instance
+        RecordOwnerships::Instance
     }
 }
 
@@ -218,14 +224,15 @@ Now that we have a record that will be picked up with the curio we can edit the 
 
 ```rust
 
-impl Impulse<MyStimulant> for ImpulseInstance {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
-      match event {
+impl Impulse<MyStimulant> for ImpulseInstance 
+    
+    fn stimulate(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue, stimulant: &MyStimulant) {
+      match stimulant {
           MyStimulant::Create => {
-            ledger.edit::<MyRecAliveOrDead>( |rec| { rec.is_alive = true });
+            ledger.edit::<MyRecAliveOrDead>( |rec| { rec.is_alive = true; });
           }
           MyStimulant::Destroy => {
-            ledger.edit::<MyRecAliveOrDead>( |rec| { rec.is_alive = false });
+            ledger.edit::<MyRecAliveOrDead>( |rec| { rec.is_alive = false; });
           }
       }
     }
@@ -240,7 +247,9 @@ impl Habit for HabitInstance {
 
     /// ...
     fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
-         if ledger.get::<MyRecAliveOrDead>().is_alive {
+
+        // When using ledger.get<T> a readonly value of Arc<T> is returned.
+        if ledger.get::<MyRecAliveOrDead>().is_alive {
           println!("I'm Alive");
         }
     }
@@ -296,6 +305,7 @@ Now that we have an asset we can load them into the context. Lets spawn this as 
 pub struct Rotate {}
 impl FieldOverride for Rotate {
     fn apply(&mut self, _field: &str, _val: &str) {
+
       // if we want to override a field from the prefab we do so here
     }
 }
@@ -304,10 +314,10 @@ impl FieldOverride for Rotate {
 Now that we have all the dependencies can spawn our prefab.
 
 ```rust
-... 
+//... 
 impl Habit for HabitInstance {
 
-    ...
+    //...
     fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
       event_queue.enqueue_event( MyStimulant::Create );
 
@@ -315,9 +325,9 @@ impl Habit for HabitInstance {
       for i in 0..1000 {
 
             // spawn the prefab using its id 
-            let form = context.spawn_prefab( AssetDatabase.fetch( 001 ) );
+            let form = context.spawn_prefab( &AssetLoader::load::<Prefab>(001) );
 
-            // we'll edit each transform to all sit side by side
+            // we'll edit each transform to all sit side by side.
             form.edit::<Transform3D>( |t| {
               t.position = Vector3::new( i , 0.0, 0.0 );
             });
@@ -340,10 +350,13 @@ impl Scope for RotateHabit {
 }
 impl Habit for RotateHabit {
     fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+
         // query the context for all matches
         context.edit::<(Transform3D, Rotate)>( |query| {
+
           // iterate over each match in the query
           for (_, (t,r) in query {
+
             // rotate the transform
             t.rotation *= Quaternion::from_euler( 0.0, 1.0, 0.0 );
         }
