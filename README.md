@@ -1,6 +1,6 @@
 # 🔮 Curio Engine 
 
-**Curio Engine** is a 3D ECS–hybrid game engine written in **Rust**, designed for building **small, multiplayer-first games** with a strong emphasis on *usability*, *runtime flexibility*, and *modular systems*.
+**Curio Engine** is a 3D data driven ECS–hybrid game engine written in **Rust**, designed for building **small, multiplayer-first games** with a strong emphasis on *usability*, *runtime flexibility*, and *modular systems*.
 
 ---
 
