@@ -22,6 +22,7 @@ Rather than chasing maximum theoretical performance, Curio Engine prioritizes **
 - **ECS:**         `hecs`
 - **Rendering:**   `wgpu`
 - **Audio**        `tbd`
+- **Animations**   `Spine2D`
 ---
 
 ## Getting Started
