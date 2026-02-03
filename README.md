@@ -8,8 +8,6 @@
 
 Rather than chasing maximum theoretical performance, Curio prioritizes **approachability and clarity**, even when that means making deliberate trade-offs. The goal is to make engine behavior understandable, debuggable, and adaptable—especially for experimental and procedural game designs.
 
-Curio is built around a few core ideas:
-
 - **Usability first**  
   APIs are designed to be readable and explicit. Engine behavior should be easy to reason about, inspect, and modify.
 
@@ -21,11 +19,10 @@ Curio is built around a few core ideas:
 ---
 
 ## Engine Overview
-
 # Backing Libraries
 - **ECS:**         `hecs`
 - **Rendering:**   `wgpu`
-- **Audio**:       `tbd`
+- **Audio**        `tbd`
 ---
 
 ## Getting Started
@@ -136,22 +133,18 @@ impl Habit for Instance {
     fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
       // create a camera to view the world
       self.camera = context.spawn( "My Camera", Transform3D::default()).add_facet_default::<Camera>();
+
+      // update camera position
+      self.camera.edit_facet::<Transform3D>( |t| {
+        t.position = Vector3::new( 0.0, 10.0, 0.0);
+      });
     }
     fn disable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
       // destroy out camera
       self.camera.destroy();
     }
-    fn tick (&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
-      // edit the camera position to move up and down
-      self.camera.edit_facet::<Transform3D>( |t| {
-        // update position
-      });
-    }
 }
 ```
-
-### Creating Custom Facets 
-
 
 ### Stimulants and Impulses
 
@@ -263,5 +256,59 @@ or
 let x = ledger.camera().fov;
 or
 let x = ledger.screen().width;
-
 ```
+
+### Loading Assets and Prefabs
+
+Like Stimulants assets and their locations are defined when the Curio is constructed. Assets can be Local or Remote. Local assets are pulled from the local asset folder/$asset_type and remote assets are stored in a cache. When assets are loaded they are stored in memory and added to an asset cache until a memory quota is hit and less used assets are released.
+
+Lets add some entries to the AssetDatabase
+
+```rust
+ AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
+        (001, "my_prefab", AssetDatabaseListing::Local(String::from("prefab/my_prefab.prefab")),
+)]);
+```
+
+Lets now look at that the contents of prefab/myprefab.prefab.
+
+```yaml
+name: "My Prefab"
+facets:
+  - type: "transform3d"
+    fields:
+      - "position: (0.0,0.0)"
+      - "scale: (1,1,1)"
+  - type: "RendererText"
+    fields:
+      - "contents:"My Prefab"
+      - "font_size:0.055"
+      - "bounds:(5,5)"
+  - type: "AnimatorRotationSin"
+    fields:
+      - "enabled:true"
+      - "min:(0.0,0.0,-50.0)"
+      - "max:(0.0,0.0,50.0)"
+      - "speed:4.0"
+children: []
+```
+
+Now that we have an asset we can load them into the context. Lets spawn this as well at the start of the Habit.
+
+```rust
+... 
+impl Habit for HabitInstance {
+
+    ...
+    fn enable(&mut self, ledger: &mut Ledger, context: &mut Context3D, event_queue: &mut EventQueue) {
+         for i in 0..1000 {
+            let form = context.spawn_prefab( AssetDatabase.fetch( 001 ) );
+            form.edit::<Transform3D>( |t| {
+              t.position = Vector3::new( i , 0.0, 0.0 );
+            });
+        }
+    }
+}
+
+
+
