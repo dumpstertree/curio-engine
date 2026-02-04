@@ -39,12 +39,12 @@ impl Impulse<GameEvents> for ECSSystemGameEndTurn {
                 let ball_is_on_side = team.is_on_side(state_position_ball.column, state_position_ball.row);
 
                 if ball_is_on_side {
-                    if !out_of_bounds {
-                        println!("Point scored for {}!", team.next_team());
-                        event_queue.enqueue_event(GameEvents::PointScored(team.next_team()));
-                    } else {
+                    if out_of_bounds {
                         println!("Point scored for {}!", *team);
                         event_queue.enqueue_event(GameEvents::PointScored(*team));
+                    } else {
+                        println!("Point scored for {}!", team.next_team());
+                        event_queue.enqueue_event(GameEvents::PointScored(team.next_team()));
                     }
 
                     return;

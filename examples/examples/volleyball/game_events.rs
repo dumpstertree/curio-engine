@@ -79,6 +79,7 @@ pub enum GameEvents {
     RequestMoveXNeg(i32),
     RequestUseManeuverPersistent(i32, i32, FilledCardResponse),
     RequestUseManeuverConsumable(i32, i32, FilledCardResponse),
+    RequestBurnCard(i32, i32),
 }
 
 impl IGameEvent for GameEvents {
@@ -144,6 +145,7 @@ impl IGameEvent for GameEvents {
             GameEvents::FinalizeEncounter(_) => EventScope::ConnectedHost,
             GameEvents::FinalizeShop(_) => EventScope::ConnectedHost,
             GameEvents::DidPlayCard(_, _, _) => EventScope::All,
+            GameEvents::RequestBurnCard(_, _) => EventScope::ConnectedHost,
         }
     }
 }
@@ -205,6 +207,7 @@ impl Display for GameEvents {
             GameEvents::FinalizeEncounter(_encounter) => todo!(),
             GameEvents::FinalizeShop(_shop) => todo!(),
             GameEvents::DidPlayCard(_, _card_instance, _filled_card_response) => todo!(),
+            GameEvents::RequestBurnCard(_, _) => todo!(),
         }
     }
 }

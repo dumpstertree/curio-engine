@@ -210,6 +210,11 @@ use crate::{
     game_events::GameEvents,
     listeners::ui::{ui_hud_encounter_ball_mode, ui_hud_encounter_cards, ui_hud_encounter_energy, ui_hud_encounter_score, ui_hud_encounter_turn, ui_hud_heat, ui_hud_previously_played, ui_hud_status, ui_panel_exploration, ui_panel_medic, ui_panel_rewards, ui_panel_shop},
 };
+pub mod impulse {
+    pub mod host {
+        pub mod impulse_request_burn_card;
+    }
+}
 
 use curio_core::{
     collections::{curio_metadata::CurioMetadata, game_mode::GameMode, version_number::VersionNumber, window_layout::WindowLayout},
@@ -369,6 +374,7 @@ fn main() {
                             (String::from("card_left"), ButtonCode::KeyA),
                             (String::from("card_right"), ButtonCode::KeyD),
                             (String::from("card_submit"), ButtonCode::ArrowUp),
+                            (String::from("card_burn"), ButtonCode::KeyB),
                         ],
                         vec![],
                     ),

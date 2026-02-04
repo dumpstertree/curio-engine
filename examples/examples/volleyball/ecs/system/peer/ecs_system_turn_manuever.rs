@@ -22,6 +22,7 @@ use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
 use gameplay::traits::scope::Scope;
 use habit::habit;
+use rand::seq::index;
 use std::sync::Arc;
 
 pub struct ResponseBuilder {
@@ -249,8 +250,23 @@ impl Habit for Instance {
             // new bounds for looping
             let bounds_min = 0;
             let bounds_max = my_cards_in_hand.len() as i32;
-            // let bounds_max = (my_deck.hand_persistent.len() + my_deck.hand_consumable.len()) as i32;
 
+            let input_card_burn = state_input.mapped[0]
+                .get_button_or_default("card_burn")
+                .went_up;
+
+            if input_card_burn {
+                let state_index = game_state.get::<StatePeerSelectedCards>();
+
+                let card = my_cards_in_hand[state_index.index as usize].clone();
+                if !card.get_burnable() {
+                    return;
+                }
+
+                event_queue.enqueue_event(GameEvents::RequestBurnCard(game_state.instance_id, card.instance_id));
+
+                println!("card burned");
+            }
             // move left or right
             if input_card_left || input_card_right {
                 // edit the selected cards
@@ -298,88 +314,5 @@ impl Habit for Instance {
         if did_finalize {
             self.builder = None;
         }
-
-        // // try to submit card
-        // if input_card_submit && self.fill_future.is_none() {
-        //     let index = game_state.get::<StatePeerSelectedCards>().index;
-
-        //     let is_met = my_cards_in_hand[index as usize].has_statement(&game_state, game_state.instance_id);
-        //     if !is_met {
-        //         println!("Requirements not met");
-        //         return;
-        //     }
-
-        //     println!("try start");
-
-        //     // self.fill_future = Some(Box::pin(Self::fill_all_attributes_async(game_state, my_cards_in_hand[index as usize].clone())));
-
-        //     // let mut evnt_filled = vec![];
-        //     // for evnt in &my_cards_in_hand[index as usize].get_attributes_events(&game_state, game_state.instance_id) {
-        //     //     evnt_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &game_state.instance_id, &evnt.get_data_dependencies_empty())));
-        //     // }
-        //     // let mut mod_filled = vec![];
-        //     // for evnt in &my_cards_in_hand[index as usize].get_attributes_modifiers(&game_state, game_state.instance_id) {
-        //     //     mod_filled.push(FilledCardAttribute::new(CardAttributeFillerPlayer::fill_events(game_state, &game_state.instance_id, &evnt.get_data_dependencies_empty())));
-        //     // }
-
-        //     // event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, my_cards_in_hand[index as usize].instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
-        //     // }
-        // }
-
-        // if self.fill_future.is_some() {
-        //     // Poll once per tick
-        //     if let Some(fut) = &mut self.fill_future {
-        //         let waker = noop_waker_ref();
-        //         let mut cx = Context::from_waker(waker);
-
-        //         if let Poll::Ready(result) = fut.as_mut().poll(&mut cx) {
-        //             self.fill_future = None;
-        //             event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, result.0.instance_id, result.1));
-        //         }
-        //     }
-        // }
-    }
-}
-
-impl Instance {
-    async fn fill_all_attributes_async(game_state: GameState, card: Arc<CardInstance>) -> (Arc<CardInstance>, FilledCardResponse) {
-        println!("did start");
-        // set flag -> true
-        // self.is_selecting = true;
-
-        // get value we are populating
-        let mut out_mod = Vec::new();
-        let mut out_evnt = Vec::new();
-
-        let user_uid = game_state.instance_id;
-        // populate modifiers
-        let mods = card.get_attributes_modifiers(&game_state, user_uid);
-        for evnt in mods {
-            let filled = CardAttributeFillerPlayer::fill_events(&game_state, &user_uid, &evnt.get_data_dependencies_empty()).await;
-            out_mod.push(FilledCardAttribute::new(filled));
-        }
-        // // populate events
-        for evnt in card.get_attributes_events(&game_state, user_uid) {
-            for x in evnt.get_data_dependencies_empty() {
-                match x {
-                    // DataDepsEmpty::Entities(attribtute_target_types_entities) => todo!(),
-                    // DataDepsEmpty::Cards(attribute_target_types_cards) => todo!(),
-                    DataDepsEmpty::Tiles(t) => match t {
-                        AttributeTargetTypesTiles::SelectAny => todo!(),
-                        _ => {}
-                    },
-                    _ => {}
-                }
-            }
-            let filled = CardAttributeFillerPlayer::fill_events(&game_state, &user_uid, &evnt.get_data_dependencies_empty()).await;
-            out_evnt.push(FilledCardAttribute::new(filled));
-        }
-
-        // set flag -> false
-        // self.is_selecting = false;
-        // event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, card.instance_id, FilledCardResponse::new(mod_filled, evnt_filled)));
-
-        (card.clone(), FilledCardResponse::new(out_mod, out_evnt))
-        // out
     }
 }

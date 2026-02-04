@@ -65,6 +65,16 @@ impl Deck {
 
     //     self.all_cards.push(inst);
     // }
+    pub fn burn_card(&mut self, card_instance: &Arc<CardInstance>) {
+        if let Some(pos) = self
+            .hand_consumable
+            .iter()
+            .position(|c| c.instance_id == card_instance.instance_id)
+        {
+            let r = self.hand_consumable.remove(pos);
+            self.pile_exile.push(card_instance.clone());
+        }
+    }
     pub fn get_cards_from_all(&self, predicate: fn(&Arc<CardInstance>) -> bool) -> Vec<Arc<CardInstance>> {
         let mut cards = Vec::new();
         for card in &self.all_cards {

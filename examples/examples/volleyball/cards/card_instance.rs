@@ -36,6 +36,9 @@ impl CardInstance {
     pub fn get_description(&self) -> String {
         self.get_master().description.clone()
     }
+    pub fn get_burnable(&self) -> bool {
+        self.get_master().burnable.clone()
+    }
 
     // get values provided by statement
     pub fn get_cost(&self, game_state: &GameState, user_id: i32) -> i32 {
