@@ -30,6 +30,7 @@ impl UICommon for UIHUD {
     fn init(&mut self) {}
 
     fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+        return;
         // create obj
         let go_text = context
             .spawn("text.turn", Transform2D::default().set_position_01(Vector2::new(0.5, 0.8)))

@@ -34,7 +34,7 @@ impl ColliderSnapshot {
         ColliderSnapshot {
             shape: ColliderShape::Sphere(SphereColliderDef { diameter: 1.0 }),
             guid: 0,
-            matrix: Matrix4x4::default(),
+            matrix: Matrix4x4::zero(),
         }
     }
 }

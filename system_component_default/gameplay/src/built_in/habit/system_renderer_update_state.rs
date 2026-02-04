@@ -1,6 +1,6 @@
 use crate::{
     built_in::facet::{
-        renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic, renderer_text::RendererText},
+        renderer::{renderer_dynamic::RendererDynamic, renderer_image::RendererImage, renderer_static::RendererStatic, renderer_text::RendererText},
         renderer_common::{RendererCommon, update_enabled},
         transform::{
             transform2d::{Transform2D, update_transform2d},
@@ -267,6 +267,29 @@ impl Habit for Instance {
                     }
                 }
             });
+            world.edit::<(&mut RendererImage, &Transform2D)>(|query| {
+                for (_, (renderer, transform)) in query {
+                    let zz = 1.0;
+                    let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
+                    let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz;
+
+                    // if !renderer.get_cached_enabled_in_hierarchy() {
+                    //     continue;
+                    // }
+                    // guard - no mesh
+                    let Some(asset) = &renderer.asset else {
+                        continue;
+                    };
+
+                    let matrix = Matrix4x4::multiply(&Matrix4x4::new(position, rotation, Vector3::one()), &transform.get_world_matrix(world));
+                    let matrix = Matrix4x4::multiply(&matrix, &renderer.bounds_matrix);
+                    // add draw call
+                    for _ in &asset.mesh {
+                        x.draw_calls
+                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), matrix, renderer.get_tint(), false));
+                    }
+                }
+            })
         });
     }
 }

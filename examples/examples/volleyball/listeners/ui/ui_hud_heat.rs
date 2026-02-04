@@ -1,21 +1,28 @@
 use curio_core::{
-    Vector2,
+    Vector2, Vector3,
     collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState},
     input::{axis_code::AxisCode, key_code::ButtonCode},
+    io::asset_loader::AssetLoader,
 };
 use std::collections::HashMap;
 
 use gameplay::{
-    built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
+    built_in::facet::{
+        renderer::{renderer_image::RendererImage, renderer_text::RendererText},
+        transform::transform2d::Transform2D,
+    },
     context_2d::Context2D,
     form::Form,
     traits::ui_panel::UIPanel,
     traits_internal::ui_common::UICommon,
 };
 
-use crate::state::{
-    host::state_heat::StateHeat,
-    state_teams::{StateTeamAssignments, Teams},
+use crate::{
+    Assets,
+    state::{
+        host::state_heat::StateHeat,
+        state_teams::{StateTeamAssignments, Teams},
+    },
 };
 
 pub struct UIHUD {
@@ -34,6 +41,52 @@ impl UICommon for UIHUD {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+        let form = context
+            .spawn("name", Transform2D::default())
+            .add_facet_default::<RendererImage>();
+
+        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
+            t.position = Vector2::new(0.1, 0.5);
+            t.scale = Vector3::one() * 0.4;
+            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TextureHeatGuage.into())));
+        });
+        let form = context
+            .spawn("name", Transform2D::default())
+            .add_facet_default::<RendererImage>();
+
+        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
+            t.position = Vector2::new(0.1, 0.5);
+            t.scale = Vector3::one() * 0.4;
+            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TextureHeatGuage.into())));
+        });
+
+        let form = context
+            .spawn("name", Transform2D::default())
+            .add_facet_default::<RendererImage>();
+
+        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
+            t.position = Vector2::new(0.9, 0.65);
+            t.scale = Vector3::one() * 0.4;
+            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TexturePortraitRed.into())));
+        });
+        let form = context
+            .spawn("name", Transform2D::default())
+            .add_facet_default::<RendererImage>();
+
+        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
+            t.position = Vector2::new(0.9, 0.45);
+            t.scale = Vector3::one() * 0.4;
+            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TexturePortraitBlue.into())));
+        });
+        let form = context
+            .spawn("name", Transform2D::default())
+            .add_facet_default::<RendererImage>();
+
+        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
+            t.position = Vector2::new(0.9, 0.25);
+            t.scale = Vector3::one() * 0.4;
+            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TexturePortraitBlue.into())));
+        });
         // get cur turn
         let cur_heat = game_state.get::<StateTeamAssignments>();
 

@@ -36,12 +36,13 @@ impl Hash for Matrix4x4 {
 }
 impl Eq for Matrix4x4 {}
 
-impl Matrix4x4 {
-    pub fn zero() -> Matrix4x4 {
-        Matrix4x4::new(Vector3::zero(), Quaternion::zero(), Vector3::zero())
+impl Default for Matrix4x4 {
+    fn default() -> Matrix4x4 {
+        Matrix4x4 { model: [[0.0; 4]; 4] }
     }
-
-    pub const fn default() -> Matrix4x4 {
+}
+impl Matrix4x4 {
+    pub const fn zero() -> Matrix4x4 {
         Matrix4x4 { model: [[0.0; 4]; 4] }
     }
 

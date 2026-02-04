@@ -38,6 +38,7 @@ pub mod built_in {
         }
         pub mod renderer {
             pub mod renderer_dynamic;
+            pub mod renderer_image;
             pub mod renderer_static;
             pub mod renderer_text;
         }

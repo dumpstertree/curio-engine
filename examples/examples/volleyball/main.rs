@@ -261,6 +261,10 @@ pub enum Assets {
     PrefabUIPanelShop = 11,
     PrefabUIPanelMedic = 12,
     PrefabUIPanelReward = 13,
+    TextureScoreGuage,
+    TextureHeatGuage,
+    TexturePortraitRed,
+    TexturePortraitBlue,
 
     Button,
 }
@@ -342,6 +346,26 @@ fn main() {
             Assets::PrefabUICard.into(),
             Assets::PrefabUICard.into(), //
             AssetDatabaseListing::Local(String::from("prefabs/ui_card.yaml")),
+        ),
+        (
+            Assets::TextureScoreGuage.into(),
+            Assets::TextureScoreGuage.into(), //
+            AssetDatabaseListing::Local(String::from("texture/score_guage.png")),
+        ),
+        (
+            Assets::TextureHeatGuage.into(),
+            Assets::TextureHeatGuage.into(), //
+            AssetDatabaseListing::Local(String::from("texture/heat_guage.png")),
+        ),
+        (
+            Assets::TexturePortraitRed.into(),
+            Assets::TexturePortraitRed.into(), //
+            AssetDatabaseListing::Local(String::from("texture/portrait_red.png")),
+        ),
+        (
+            Assets::TexturePortraitBlue.into(),
+            Assets::TexturePortraitBlue.into(), //
+            AssetDatabaseListing::Local(String::from("texture/portrait_blue.png")),
         ),
     ]));
     // create instance
