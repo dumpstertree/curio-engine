@@ -60,10 +60,28 @@ impl Teams {
             Teams::Blue => (-x_diff, -z_diff),
         }
     }
-    pub fn on_side(&self, _: i32, z: i32) -> bool {
+    pub fn is_on_side(&self, _: i32, z: i32) -> bool {
         match self {
             Teams::Red => return z <= GameBoard::get_bounds_max_for_team(&Teams::Red).y,
             Teams::Blue => return z >= GameBoard::get_bounds_min_for_team(&Teams::Blue).y,
+        }
+    }
+    pub fn is_out_of_bounds(&self, x: i32, z: i32) -> bool {
+        match self {
+            Teams::Red => {
+                if x < GameBoard::get_bounds_min_for_team(&Teams::Red).x || x < GameBoard::get_bounds_max_for_team(&Teams::Red).x || z > GameBoard::get_bounds_max_for_team(&Teams::Red).y {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+            Teams::Blue => {
+                if x < GameBoard::get_bounds_min_for_team(&Teams::Blue).x || x < GameBoard::get_bounds_max_for_team(&Teams::Blue).x || z < GameBoard::get_bounds_min_for_team(&Teams::Blue).y {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
     }
     pub fn next_team(&self) -> Self {

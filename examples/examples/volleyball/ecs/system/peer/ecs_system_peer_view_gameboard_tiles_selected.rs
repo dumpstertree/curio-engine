@@ -34,7 +34,6 @@ impl Habit for Instance {
         world.edit::<(&mut Transform3D, &ComponentGameBoardSelection, &mut RendererStatic)>(|query| {
             for (_, (transform, _, renderer)) in query {
                 let pos = GameBoard::get_world_position(state_selection.selected_index.x, state_selection.selected_index.y);
-                println!("loc {}", pos);
 
                 transform.position = pos;
                 renderer.set_enabled(state_selection.enabled.is_some());

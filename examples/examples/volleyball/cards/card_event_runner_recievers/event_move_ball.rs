@@ -1,4 +1,4 @@
-use crate::{cards::enums::card_events::CardEvents, state::state_position_ball::StatePositionBall};
+use crate::{cards::enums::card_events::CardEvents, game_board::GameBoard, state::state_position_ball::StatePositionBall};
 use curio_core::collections::game_state::GameState;
 
 pub struct EventReciever {}
@@ -20,10 +20,12 @@ impl EventReciever {
 
                 // note: all distance modifiers shoule be applied at the targeting phase
 
+                let min = GameBoard::get_bounds_min();
+                let max = GameBoard::get_bounds_max();
                 // edit ball position
                 game_state.edit::<StatePositionBall>(|x| {
-                    let pos_x = tile_ids[0].x.clamp(0, 3);
-                    let pos_y = tile_ids[0].y.clamp(0, 3);
+                    let pos_x = tile_ids[0].x.clamp(min.x, max.x);
+                    let pos_y = tile_ids[0].y.clamp(min.y, max.y);
                     // x.column = tile_ids[0].x;
                     // x.row = tile_ids[0].y;
                     x.column = pos_x;

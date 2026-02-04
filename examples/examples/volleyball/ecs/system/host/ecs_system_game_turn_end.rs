@@ -5,8 +5,8 @@ use gameplay::{
 use impulse::impulse;
 
 use curio_core::{
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, game_state::GameState},
-    collections::network_modes::NetworkModes
 };
 
 use crate::{
@@ -34,10 +34,19 @@ impl Impulse<GameEvents> for ECSSystemGameEndTurn {
                 println!("Instance: {}. End Turn {}", game_state.instance_id, team);
 
                 let state_position_ball = game_state.get::<StatePositionBall>();
-                let ball_is_on_side = team.on_side(state_position_ball.column, state_position_ball.row);
+
+                let out_of_bounds = team.is_out_of_bounds(state_position_ball.column, state_position_ball.row);
+                let ball_is_on_side = team.is_on_side(state_position_ball.column, state_position_ball.row);
+
                 if ball_is_on_side {
-                    println!("Point scored for {}!", team.next_team());
-                    event_queue.enqueue_event(GameEvents::PointScored(team.next_team()));
+                    if !out_of_bounds {
+                        println!("Point scored for {}!", team.next_team());
+                        event_queue.enqueue_event(GameEvents::PointScored(team.next_team()));
+                    } else {
+                        println!("Point scored for {}!", *team);
+                        event_queue.enqueue_event(GameEvents::PointScored(*team));
+                    }
+
                     return;
                 }
 
