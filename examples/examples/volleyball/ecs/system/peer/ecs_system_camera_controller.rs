@@ -7,9 +7,9 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
+    Quaternion, Vector3,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
-    collections::network_modes::NetworkModes
+    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
 };
 
 use crate::{

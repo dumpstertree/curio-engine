@@ -1,10 +1,7 @@
 use crate::{
-    collections::{
-        color::Color,
-        light_uniform::{DrawCallLight, LightType},
-        vector3::Vector3,
-    },
+    collections::light_uniform::{DrawCallLight, LightType},
     system::system_game_state::IState,
+    Color, Vector3,
 };
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]

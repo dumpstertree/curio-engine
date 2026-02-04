@@ -1,3 +1,5 @@
+use curio_core::Color;
+
 use crate::{
     built_in::facet::renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic, renderer_text::RendererText},
     context_3d::Context3D,
@@ -5,7 +7,6 @@ use crate::{
     traits::facet_common::FacetCommon,
     traits_internal::world_context_common::ContextCommon,
 };
-use curio_core::collections::color::Color;
 use std::collections::{HashMap, VecDeque};
 
 pub trait RendererCommon: FacetCommon {

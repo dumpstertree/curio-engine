@@ -5,9 +5,10 @@ use crate::{
         sys_record_debug::SysRecordDebug,
         sys_record_gui::{GuiElement, GuiWindow},
     },
-    collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState},
     extensions::extensions_f32::ExtensionsF32,
     system::system_game_state::IState,
+    Color, Vector3,
 };
 
 #[derive(Default, PartialEq, Clone)]

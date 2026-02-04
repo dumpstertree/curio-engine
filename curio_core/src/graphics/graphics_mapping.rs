@@ -1,4 +1,4 @@
-use crate::collections::vector2::Vector2;
+use crate::Vector2;
 
 #[derive(Clone)]
 pub struct GraphicsMapping {

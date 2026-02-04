@@ -1,5 +1,6 @@
+use curio_core::Vector2Int;
 use curio_core::collections::state_ownerships::StateOwnerships;
-use curio_core::{collections::vector2_int::Vector2Int, system::system_game_state::IState};
+use curio_core::system::system_game_state::IState;
 use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, hash::Hash, sync::Arc};

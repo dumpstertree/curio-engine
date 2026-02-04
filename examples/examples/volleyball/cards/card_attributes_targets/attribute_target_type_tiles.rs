@@ -1,4 +1,4 @@
-use curio_core::collections::vector2_int::Vector2Int;
+use curio_core::Vector2Int;
 use std::fmt::Display;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

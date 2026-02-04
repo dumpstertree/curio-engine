@@ -1,3 +1,5 @@
+use curio_core::Vector2Int;
+
 use crate::{
     cards::{
         card_attributes::{card_attribute_events::CardAttributeEvents, card_attribute_modifier::CardAttributeModifiers, card_attribute_requirement::CardAttributeRequirement},
@@ -12,7 +14,6 @@ use crate::{
         state_deck::{CardAttributeLifecycle, CardTypes},
     },
 };
-use curio_core::collections::vector2_int::Vector2Int;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},

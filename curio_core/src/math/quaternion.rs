@@ -1,5 +1,5 @@
-use crate::collections::vector3::Vector3;
 use crate::extensions::extensions_f32::ExtensionsF32;
+use crate::Vector3;
 use core::fmt;
 use fmt::Display;
 use serde::Deserialize;

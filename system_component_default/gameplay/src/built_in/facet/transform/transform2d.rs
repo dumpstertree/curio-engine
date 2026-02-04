@@ -1,4 +1,4 @@
-use curio_core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector2::Vector2, vector3::Vector3};
+use curio_core::{Matrix4x4, Quaternion, Vector2, Vector3};
 use std::{
     cell::RefMut,
     collections::{HashMap, VecDeque},

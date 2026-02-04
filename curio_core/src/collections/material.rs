@@ -230,10 +230,10 @@ use egui_wgpu::wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Shade
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    collections::color::Color,
     io::{asset_loader::AssetLoader, texture_asset::TextureAsset},
     random::Random,
     system_adapters::adapter_system_gpu::SystemGPU,
+    Color,
 };
 
 //=========================================

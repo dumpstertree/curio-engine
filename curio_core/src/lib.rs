@@ -1,3 +1,24 @@
+// math
+pub use crate::math::color::Color;
+pub use crate::math::matrix4x4::Matrix4x4;
+pub use crate::math::quaternion::Quaternion;
+pub use crate::math::vector2::Vector2;
+pub use crate::math::vector2_int::Vector2Int;
+pub use crate::math::vector3::Vector3;
+pub use crate::math::vector3_int::Vector3Int;
+pub use crate::math::vector4::Vector4;
+pub use crate::math::vector4_int::Vector4Int;
+
+// utils
+pub use crate::random::Random;
+
+// assets
+pub use crate::collections::material::Material;
+pub use crate::collections::mesh::Mesh;
+
+// rendering
+pub use crate::collections::light_uniform::LightType;
+
 pub mod built_in {
     pub mod stimulant {
         pub mod engine_commands;
@@ -54,10 +75,20 @@ pub mod io {
     pub mod model_asset_animated;
     pub mod texture_asset;
 }
+pub mod math {
+    pub(crate) mod color;
+    pub(crate) mod matrix4x4;
+    pub(crate) mod quaternion;
+    pub(crate) mod vector2;
+    pub(crate) mod vector2_int;
+    pub(crate) mod vector3;
+    pub(crate) mod vector3_int;
+    pub(crate) mod vector4;
+    pub(crate) mod vector4_int;
+}
 pub mod collections {
     pub mod any_map;
     pub mod camera_uniform;
-    pub mod color;
     pub mod curio_metadata;
     pub mod draw_call;
     pub mod event_queue;
@@ -73,22 +104,14 @@ pub mod collections {
     pub mod key_state;
     pub mod light_uniform;
     pub mod material;
-    pub mod matrix4x4;
     pub mod mesh;
     pub mod network_capabilities;
     pub mod network_modes;
     pub mod projection;
-    pub mod quaternion;
     pub mod state_map;
     pub mod state_ownerships;
     pub mod state_sync_event;
     pub mod tween;
-    pub mod vector2;
-    pub mod vector2_int;
-    pub mod vector3;
-    pub mod vector3_int;
-    pub mod vector4;
-    pub mod vector4_int;
     pub mod version_number;
     pub mod window_layout;
 }

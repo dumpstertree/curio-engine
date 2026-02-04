@@ -4,8 +4,10 @@ use cgmath::Matrix4;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::collections::{quaternion::Quaternion, vector3::Vector3, vector4::Vector4};
 use crate::extensions::extensions_f32::ExtensionsF32;
+use crate::Quaternion;
+use crate::Vector3;
+use crate::Vector4;
 
 #[repr(C)]
 #[derive(Copy, Clone, Serialize, Deserialize, bytemuck::Pod, bytemuck::Zeroable, PartialEq)]
@@ -54,9 +56,9 @@ impl Matrix4x4 {
     }
     /// Multiply this (column-major) 4x4 matrix by a column vector (x,y,z,w).
     /// Returns the resulting Vector4.
-    pub fn multiply_vec4(&self, v: crate::collections::vector4::Vector4) -> crate::collections::vector4::Vector4 {
+    pub fn multiply_vec4(&self, v: Vector4) -> Vector4 {
         let m = &self.model;
-        crate::collections::vector4::Vector4 {
+        Vector4 {
             x: m[0][0] * v.x + m[1][0] * v.y + m[2][0] * v.z + m[3][0] * v.w,
             y: m[0][1] * v.x + m[1][1] * v.y + m[2][1] * v.z + m[3][1] * v.w,
             z: m[0][2] * v.x + m[1][2] * v.y + m[2][2] * v.z + m[3][2] * v.w,

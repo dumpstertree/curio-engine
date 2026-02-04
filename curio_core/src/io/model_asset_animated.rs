@@ -1,10 +1,10 @@
 use crate::{
     collections::{
         f32::FloatExtras,
-        matrix4x4::Matrix4x4,
         mesh::{Mesh, Vertex},
     },
     io::model_asset::ModelAsset,
+    Matrix4x4,
 };
 
 use super::super::collections::material::Material;

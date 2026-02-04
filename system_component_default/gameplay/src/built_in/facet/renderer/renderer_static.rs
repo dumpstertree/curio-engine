@@ -4,7 +4,7 @@ use crate::{
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
 use curio_core::{
-    collections::color::Color,
+    Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset},
 };
 use std::sync::Arc;

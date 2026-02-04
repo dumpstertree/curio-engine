@@ -1,5 +1,5 @@
 use curio_core::{
-    collections::color::Color,
+    Color,
     io::{asset_loader::AssetLoader, model_asset::ModelAsset, model_asset_animated::ModelAssetAnimated},
 };
 use std::sync::Arc;

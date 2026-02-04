@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{collections::color::Color, io::texture_asset::TextureAsset, system::system_game_state::IState};
+use crate::{io::texture_asset::TextureAsset, system::system_game_state::IState, Color};
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordSkybox {

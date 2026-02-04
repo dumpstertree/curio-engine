@@ -1,8 +1,9 @@
+use curio_core::Vector3;
+
 use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
-use curio_core::collections::vector3::Vector3;
 
 pub struct AnimatorRotationSin {
     owner: Option<Form>,

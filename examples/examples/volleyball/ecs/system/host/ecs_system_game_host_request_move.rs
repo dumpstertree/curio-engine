@@ -4,8 +4,8 @@ use crate::{
     state::{state_energy::StateEnergy, state_position_player::StatePositionEntities, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector2_int::Vector2Int},
-    collections::network_modes::NetworkModes
+    Vector2Int,
+    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
 };
 use gameplay::{
     context_3d::Context3D,

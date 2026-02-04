@@ -3,11 +3,10 @@ use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionEntities;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
-use curio_core::collections::quaternion::Quaternion;
-use curio_core::collections::vector3::Vector3;
+use curio_core::{Quaternion, Vector3};
 use curio_core::{
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, game_state::GameState},
-    collections::network_modes::NetworkModes
 };
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::transform::transform3d::Transform3D;

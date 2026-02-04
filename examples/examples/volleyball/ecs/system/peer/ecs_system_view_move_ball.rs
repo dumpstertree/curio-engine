@@ -1,8 +1,8 @@
 use crate::ecs::components::component_ball::ComponentBall;
 use crate::game_board::GameBoard;
 use crate::state::state_position_ball::StatePositionBall;
+use curio_core::Vector3;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
-use curio_core::collections::vector3::Vector3;
 use curio_core::{
     collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, game_state::GameState},

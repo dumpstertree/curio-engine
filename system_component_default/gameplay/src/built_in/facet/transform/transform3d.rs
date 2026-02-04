@@ -1,4 +1,4 @@
-use curio_core::collections::{matrix4x4::Matrix4x4, quaternion::Quaternion, vector3::Vector3};
+use curio_core::{Matrix4x4, Quaternion, Vector3};
 use std::collections::{HashMap, VecDeque};
 
 use crate::{

@@ -1,8 +1,9 @@
 use std::{collections::HashMap, hash::Hash};
 
 use crate::{
-    collections::{input_button::InputButtonState, input_cursor::InputAxisState, vector2::Vector2},
+    collections::{input_button::InputButtonState, input_cursor::InputAxisState},
     input::{axis_code::AxisCode, key_code::ButtonCode},
+    Vector2,
 };
 
 // A snapshot of the current state of the input regardless of mappings

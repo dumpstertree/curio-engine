@@ -1,7 +1,4 @@
-use crate::{
-    collections::{camera_uniform::CameraSnapshot, vector3::Vector3},
-    system::system_game_state::IState,
-};
+use crate::{collections::camera_uniform::CameraSnapshot, system::system_game_state::IState, Vector3};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordCamera {

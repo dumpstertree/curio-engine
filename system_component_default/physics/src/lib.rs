@@ -3,12 +3,15 @@ use rapier3d::{
     parry::{query, shape::Cuboid},
 };
 
-use curio_core::built_in::{
-    facet::component_collider::{ColliderShape, ColliderSnapshot, CollisionSnapshot, Contact},
-    record::{sys_record_colliders::SysRecordCollider, sys_record_collision::SysRecordCollision},
+use curio_core::{
+    Vector3,
+    built_in::{
+        facet::component_collider::{ColliderShape, ColliderSnapshot, CollisionSnapshot, Contact},
+        record::{sys_record_colliders::SysRecordCollider, sys_record_collision::SysRecordCollision},
+    },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState},
     system::{system_component::SystemComponent, system_components::system_component_physics::SystemComponentPhysics},
 };
 

@@ -1,7 +1,4 @@
-use curio_core::{
-    collections::{state_ownerships::StateOwnerships, vector2_int::Vector2Int},
-    system::system_game_state::IState,
-};
+use curio_core::{Vector2Int, collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
 use std::hash::Hash;
 
 use record::record;

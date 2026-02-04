@@ -1,7 +1,4 @@
-use curio_core::{
-    collections::{game_state::GameState, vector2_int::Vector2Int},
-    random::Random,
-};
+use curio_core::{Vector2Int, collections::game_state::GameState, random::Random};
 
 use crate::{
     cards::{

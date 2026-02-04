@@ -8,11 +8,11 @@ use egui_wgpu::wgpu::VertexAttribute;
 use egui_wgpu::wgpu::VertexBufferLayout;
 use mesh_tools::primitives::{generate_plane, generate_sphere};
 
-use crate::collections::matrix4x4::Matrix4x4;
-use crate::collections::vector3;
 use crate::extensions::extensions_f32::ExtensionsF32;
 use crate::random::Random;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
+use crate::Matrix4x4;
+use crate::Vector3;
 #[derive(PartialEq)]
 pub struct Mesh {
     pub instance_id: i32,
@@ -31,7 +31,7 @@ impl Hash for Mesh {
 }
 
 impl Mesh {
-    pub fn size(&self) -> crate::collections::vector3::Vector3 {
+    pub fn size(&self) -> Vector3 {
         let mut x_min: f32 = 0.0;
         let mut x_max: f32 = 0.0;
         let mut y_min: f32 = 0.0;
@@ -60,9 +60,9 @@ impl Mesh {
             }
         }
 
-        crate::collections::vector3::Vector3::new(x_max - x_min, y_max - y_min, z_max - z_min)
+        Vector3::new(x_max - x_min, y_max - y_min, z_max - z_min)
     }
-    pub fn primitive_cube2(size: vector3::Vector3) -> Mesh {
+    pub fn primitive_cube2(size: Vector3) -> Mesh {
         let (positions, indices, uvs, normals) = Mesh::create_cube(size);
 
         let mut v: Vec<Vertex> = Vec::new();
@@ -84,7 +84,7 @@ impl Mesh {
         }
         Mesh::new(String::from("Cube"), v, i, Matrix4x4::default())
     }
-    pub fn create_cube(size: vector3::Vector3) -> (Vec<[f32; 3]>, Vec<i32>, Vec<[f32; 2]>, Vec<[f32; 3]>) {
+    pub fn create_cube(size: Vector3) -> (Vec<[f32; 3]>, Vec<i32>, Vec<[f32; 2]>, Vec<[f32; 3]>) {
         // Each face has 2 triangles = 6 vertices
         // Cube has 6 faces = 36 vertices total
 
@@ -159,7 +159,7 @@ impl Mesh {
         }
         Mesh::new(String::from("Plane"), v, i, Matrix4x4::default())
     }
-    pub fn primitive_cube(size: crate::collections::vector3::Vector3) -> Mesh {
+    pub fn primitive_cube(size: Vector3) -> Mesh {
         let cube_length = size.z;
         let cube_height = size.y;
         let cube_width = size.x;

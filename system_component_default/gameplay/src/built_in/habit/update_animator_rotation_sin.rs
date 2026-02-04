@@ -5,9 +5,9 @@ use crate::{
     traits_internal::world_context_common::ContextCommon,
 };
 use curio_core::{
+    Quaternion,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion},
-    collections::network_modes::NetworkModes
+    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
 };
 
 #[derive(Default)]

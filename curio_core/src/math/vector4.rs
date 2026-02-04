@@ -1,8 +1,8 @@
-use crate::collections::vector2::Vector2;
-use crate::collections::vector2_int::Vector2Int;
-use crate::collections::vector3::Vector3;
-use crate::collections::vector3_int::Vector3Int;
-use crate::collections::vector4_int::Vector4Int;
+use crate::Vector2;
+use crate::Vector2Int;
+use crate::Vector3;
+use crate::Vector3Int;
+use crate::Vector4Int;
 use serde::Serialize;
 use std::fmt::Display;
 use std::fmt::Formatter;

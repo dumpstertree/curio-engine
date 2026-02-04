@@ -1,6 +1,7 @@
 use crate::{
-    collections::{key_state::KeyState, vector3::Vector3},
+    collections::key_state::KeyState,
     input::{axis_code::AxisCode, key_code::ButtonCode},
+    Vector3,
 };
 
 /// Base trait that an object needs to implement to be a Curio.

@@ -1,10 +1,10 @@
 use curio_core::{
-    built_in::record::sys_record_time::SysRecordTime,
-    collections::{color::Color, event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
+    Color, Vector2,
+    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState},
     input::{axis_code::AxisCode, key_code::ButtonCode},
     io::asset_loader::AssetLoader,
 };
-use std::{sync::Arc, time::Instant};
+use std::sync::Arc;
 
 use gameplay::{
     built_in::facet::{

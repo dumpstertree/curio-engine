@@ -1,7 +1,8 @@
 use crate::{
-    collections::{game_instance::GameInstance, network_modes::NetworkModes, vector2::Vector2},
+    collections::{game_instance::GameInstance, network_modes::NetworkModes},
     graphics::graphics_mapping::GraphicsMapping,
     input::input_mapping::InputMapping,
+    Vector2,
 };
 
 pub struct GameMode {

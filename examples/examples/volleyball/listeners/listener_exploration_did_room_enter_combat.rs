@@ -11,9 +11,7 @@ use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{Assets, UIViewTypes};
 
-use curio_core::collections::quaternion::Quaternion;
-use curio_core::collections::vector2_int::Vector2Int;
-use curio_core::collections::vector3::Vector3;
+use curio_core::{Quaternion, Vector2Int, Vector3};
 
 use curio_core::io::asset_loader::AssetLoader;
 use curio_core::{

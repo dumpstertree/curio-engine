@@ -4,12 +4,12 @@ use crate::{
     traits::ui_events::IUIEvent,
 };
 use curio_core::{
+    Vector3,
     collections::{
         event_queue::{EventQueue, IGameEvent},
         game_mode::GameMode,
         game_state::GameState,
         key_state::KeyState,
-        vector3::Vector3,
     },
     input::{axis_code::AxisCode, key_code::ButtonCode},
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},

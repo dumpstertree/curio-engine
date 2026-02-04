@@ -1,4 +1,5 @@
-use crate::collections::vector2::Vector2;
+use crate::Vector2;
+
 #[derive(Clone, Default, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
 pub struct InputAxisState {
     pub position: Vector2,

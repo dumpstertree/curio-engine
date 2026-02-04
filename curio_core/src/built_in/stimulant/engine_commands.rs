@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::collections::{event_queue::EventScope, vector3::Vector3};
+use crate::{collections::event_queue::EventScope, Vector3};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]

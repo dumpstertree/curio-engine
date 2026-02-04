@@ -1,6 +1,9 @@
 use std::{hash::Hash, sync::Arc};
 
-use crate::collections::{color::Color, material::Material, matrix4x4::Matrix4x4, mesh::Mesh};
+use crate::{
+    collections::{material::Material, mesh::Mesh},
+    Color, Matrix4x4,
+};
 
 #[derive(Clone, PartialEq)]
 pub struct DrawCall {

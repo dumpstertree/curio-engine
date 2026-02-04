@@ -1,8 +1,8 @@
 use std::hash::Hash;
 
 use crate::{
-    collections::{matrix4x4::Matrix4x4, vector3::Vector3},
     extensions::extensions_f32::ExtensionsF32,
+    {Matrix4x4, Vector3},
 };
 
 #[derive(Clone, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]

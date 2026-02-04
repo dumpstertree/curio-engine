@@ -1,10 +1,11 @@
 use crate::{
     built_in::stimulant::engine_commands::EngineCommands,
-    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::GameState, key_state::KeyState, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::GameState, key_state::KeyState},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode},
     random::Random,
     system::system_component::SystemComponent,
+    Vector3,
 };
 
 /// An object that will be imbued with the logic of your application.

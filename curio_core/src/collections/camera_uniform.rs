@@ -1,10 +1,7 @@
 use core::f32;
 use std::hash::Hash;
 
-use crate::{
-    collections::{projection::Projection, quaternion::Quaternion, vector3::Vector3},
-    extensions::extensions_f32::ExtensionsF32,
-};
+use crate::{collections::projection::Projection, extensions::extensions_f32::ExtensionsF32, Quaternion, Vector3};
 use cgmath::{prelude::*, Matrix4, Point3};
 
 #[repr(C)]

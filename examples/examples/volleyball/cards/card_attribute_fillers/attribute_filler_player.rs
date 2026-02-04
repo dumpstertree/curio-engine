@@ -1,8 +1,4 @@
-use curio_core::{
-    built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{game_state::GameState, vector2_int::Vector2Int},
-    random::Random,
-};
+use curio_core::{Vector2Int, built_in::record::sys_record_network::SysRecordNetwork, collections::game_state::GameState, random::Random};
 use std::panic;
 
 use crate::{

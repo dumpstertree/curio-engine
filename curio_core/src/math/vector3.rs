@@ -1,10 +1,10 @@
 use crate::collections::f32;
-use crate::collections::vector2::Vector2;
-use crate::collections::vector2_int::Vector2Int;
-use crate::collections::vector3_int::Vector3Int;
-use crate::collections::vector4::Vector4;
-use crate::collections::vector4_int::Vector4Int;
 use crate::extensions::extensions_f32::ExtensionsF32;
+use crate::Vector2;
+use crate::Vector2Int;
+use crate::Vector3Int;
+use crate::Vector4;
+use crate::Vector4Int;
 use core::fmt;
 use fmt::Display;
 use serde::Deserialize;

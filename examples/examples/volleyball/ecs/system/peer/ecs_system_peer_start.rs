@@ -6,9 +6,9 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
+    Color, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_sun::SysRecordSun},
-    collections::network_modes::NetworkModes,
-    collections::{color::Color, event_queue::EventQueue, game_state::GameState, vector3::Vector3},
+    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
     io::asset_loader::AssetLoader,
 };
 

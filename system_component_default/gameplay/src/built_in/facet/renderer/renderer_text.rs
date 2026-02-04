@@ -1,5 +1,5 @@
 use curio_core::{
-    collections::{color::Color, matrix4x4::Matrix4x4, quaternion::Quaternion, vector2::Vector2, vector3::Vector3},
+    Color, Matrix4x4, Quaternion, Vector2, Vector3,
     io::{
         asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader, FontAsset},
         model_asset::ModelAsset,

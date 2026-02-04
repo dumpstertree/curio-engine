@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use crate::collections::vector3::Vector3;
+use crate::Vector3;
 
 pub struct Random {}
 impl Random {
