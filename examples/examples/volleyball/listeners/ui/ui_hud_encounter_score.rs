@@ -1,7 +1,6 @@
 use curio_core::{
-    Vector2, Vector3,
-    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState},
-    input::{axis_code::AxisCode, key_code::ButtonCode},
+    AxisCode, ButtonCode, InputAxisState, Vector2,
+    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{

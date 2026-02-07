@@ -1,9 +1,8 @@
 use std::{collections::HashMap, hash::Hash};
 
 use crate::{
-    collections::{input_button::InputButtonState, input_cursor::InputAxisState},
     input::{axis_code::AxisCode, input_mapping::InputMapping, key_code::ButtonCode},
-    Vector2,
+    InputAxisState, InputButtonState, Vector2,
 };
 
 // Result of testing raw input to mapped input

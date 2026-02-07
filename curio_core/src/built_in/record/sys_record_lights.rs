@@ -1,4 +1,4 @@
-use crate::{collections::light_uniform::DrawCallLight, system::system_game_state::IState};
+use crate::{graphics::light_uniform::DrawCallLight, system::system_game_state::IState};
 
 #[derive(Default, Hash, Clone, PartialEq, Eq)]
 pub struct SysRecordLights {

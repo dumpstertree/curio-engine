@@ -281,13 +281,11 @@ impl Instance {
                     .team_for(&user_uid)
                     .unwrap();
 
-                println!("min {}, max {}", min, max);
                 let mut targets = Vec::new();
                 for x in min.x..(max.x + 1) {
                     for y in min.y..(max.y + 1) {
                         let c = team.convert_dir(x, y);
                         targets.push(Vector2Int::new(pos_ball.column + c.0, pos_ball.row + c.1));
-                        println!("add target {}", Vector2Int::new(pos_ball.column + c.0, pos_ball.row + c.1));
                     }
                 }
 

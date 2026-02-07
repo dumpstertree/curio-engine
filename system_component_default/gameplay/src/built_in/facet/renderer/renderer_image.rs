@@ -14,7 +14,7 @@ use curio_core::{
 };
 use std::sync::Arc;
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct RendererImage {
     pub asset: Option<Arc<ModelAsset>>,
     pub bounds_matrix: Matrix4x4,
@@ -24,11 +24,23 @@ pub struct RendererImage {
     cached_tint_in_hierachy: Color,
     owner: Option<Form>,
 }
-
+impl Default for RendererImage {
+    fn default() -> RendererImage {
+        RendererImage {
+            asset: None,
+            enabled: true,
+            tint: Color::white(),
+            cached_enabled_in_hierachy: true,
+            cached_tint_in_hierachy: Color::white(),
+            owner: None,
+            bounds_matrix: Matrix4x4::default(),
+        }
+    }
+}
 impl FieldOverride for RendererImage {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.asset = Some(AssetLoader::load_model_static_from_database(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
+            "asset" => self.set_asset(Some(AssetLoader::load_texture_from_path(&AssetLoader::try_lookup_key_for_name(value).unwrap()))),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}
@@ -40,20 +52,8 @@ unsafe impl Send for RendererImage {}
 unsafe impl Sync for RendererImage {}
 
 impl RendererImage {
-    pub fn default() -> RendererImage {
-        RendererImage {
-            asset: None,
-            enabled: true,
-            tint: Color::white(),
-            cached_enabled_in_hierachy: true,
-            cached_tint_in_hierachy: Color::white(),
-            owner: None,
-            bounds_matrix: Matrix4x4::default(),
-        }
-    }
     pub fn set_asset(&mut self, asset: Option<Arc<TextureAsset>>) {
         if let Some(asset) = asset.clone() {
-            println!("set with scale {}", Vector3::new(1.0, asset.texture.width() as f32 / asset.texture.height() as f32, 1.0));
             self.bounds_matrix = Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::new(1.0, 0.5 * (asset.texture.height() as f32 / asset.texture.width() as f32), 1.0));
         }
         let shader = AssetLoader::load_shader_desc(&ASSET_UID_SHADER_UNLIT);

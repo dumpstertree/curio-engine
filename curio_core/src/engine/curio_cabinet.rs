@@ -15,12 +15,12 @@ use crate::{
         sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_gizmos::SysRecordGizmos, sys_record_gui::SysRecordGui, sys_record_input::SysRecordInput, sys_record_lights::SysRecordLights, sys_record_network::SysRecordNetwork,
         sys_record_rendering::SysRecordRendering, sys_record_screen::SysRecordScreen, sys_record_skybox::SysRecordSkybox, sys_record_sun::SysRecordSun, sys_record_time::SysRecordTime,
     },
-    collections::{curio_metadata::CurioMetadata, gpu_instance::GPUInstance, key_state::KeyState, window_layout::WindowLayout},
+    collections::{curio_metadata::CurioMetadata, key_state::KeyState, window_layout::WindowLayout},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode},
     static_data,
     system_adapters::adapter_system_gpu::SystemGPU,
-    Vector3,
+    GPUInstance, Vector3,
 };
 
 static mut ALL_META: Mutex<Vec<CurioMetadata>> = Mutex::new(Vec::new());

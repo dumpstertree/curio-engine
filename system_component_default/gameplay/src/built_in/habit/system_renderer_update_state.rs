@@ -12,9 +12,9 @@ use crate::{
     traits_internal::world_context_common::ContextCommon,
 };
 use curio_core::{
-    Matrix4x4, Quaternion, Vector3,
+    DrawCall, Matrix4x4, Quaternion, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_rendering::SysRecordRendering, sys_record_time::SysRecordTime},
-    collections::{draw_call::DrawCall, event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
 };
 
 #[derive(Default)]
@@ -273,9 +273,9 @@ impl Habit for Instance {
                     let rotation = state_camera.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
                     let position = state_camera.cameras.position + (state_camera.cameras.rotation * Vector3::forward()) * zz;
 
-                    // if !renderer.get_cached_enabled_in_hierarchy() {
-                    //     continue;
-                    // }
+                    if !renderer.get_cached_enabled_in_hierarchy() {
+                        continue;
+                    }
                     // guard - no mesh
                     let Some(asset) = &renderer.asset else {
                         continue;

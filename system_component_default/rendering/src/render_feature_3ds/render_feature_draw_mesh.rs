@@ -1,10 +1,9 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use curio_core::{
-    Matrix4x4,
+    LightSystem, Matrix4x4,
     built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
     collections::{
         game_state::GameState,
-        light_uniform::LightSystem,
         material::Material,
         mesh::{Mesh, Vertex},
     },

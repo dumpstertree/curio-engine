@@ -1,8 +1,4 @@
-use crate::{
-    collections::light_uniform::{DrawCallLight, LightType},
-    system::system_game_state::IState,
-    Color, Vector3,
-};
+use crate::{graphics::light_uniform::DrawCallLight, system::system_game_state::IState, Color, LightType, Vector3};
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordSun {

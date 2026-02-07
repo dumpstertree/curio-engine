@@ -217,9 +217,9 @@ pub mod impulse {
 }
 
 use curio_core::{
+    ButtonCode, InputMapping,
     collections::{curio_metadata::CurioMetadata, game_mode::GameMode, version_number::VersionNumber, window_layout::WindowLayout},
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
-    input::{input_mapping::InputMapping, key_code::ButtonCode},
     io::{
         asset_database::{AssetDatabase, AssetDatabaseListing},
         asset_loader::AssetLoader,
@@ -257,12 +257,17 @@ pub enum Assets {
     PrefabCamera = 9,
     // prefab - ui component
     PrefabUICard = 10,
+
     // prefab - hud
     PrefabUIPanelShop = 11,
     PrefabUIPanelMedic = 12,
     PrefabUIPanelReward = 13,
+    PrefabUIHeat,
     TextureScoreGuage,
     TextureHeatGuage,
+    TextureHeatGuageMarker,
+    TextureHeatGuageTopper,
+    TextureHeatGuageFill,
     TexturePortraitRed,
     TexturePortraitBlue,
 
@@ -348,14 +353,34 @@ fn main() {
             AssetDatabaseListing::Local(String::from("prefabs/ui_card.yaml")),
         ),
         (
+            Assets::PrefabUIHeat.into(),
+            Assets::PrefabUIHeat.into(), //
+            AssetDatabaseListing::Local(String::from("prefabs/ui_heat.yaml")),
+        ),
+        (
             Assets::TextureScoreGuage.into(),
             Assets::TextureScoreGuage.into(), //
             AssetDatabaseListing::Local(String::from("texture/score_guage.png")),
         ),
         (
+            Assets::TextureHeatGuageMarker.into(),
+            Assets::TextureHeatGuageMarker.into(), //
+            AssetDatabaseListing::Local(String::from("texture/heat_guage_marker.png")),
+        ),
+        (
             Assets::TextureHeatGuage.into(),
             Assets::TextureHeatGuage.into(), //
             AssetDatabaseListing::Local(String::from("texture/heat_guage.png")),
+        ),
+        (
+            Assets::TextureHeatGuageTopper.into(),
+            Assets::TextureHeatGuageTopper.into(), //
+            AssetDatabaseListing::Local(String::from("texture/heat_guage_topper.png")),
+        ),
+        (
+            Assets::TextureHeatGuageFill.into(),
+            Assets::TextureHeatGuageFill.into(), //
+            AssetDatabaseListing::Local(String::from("texture/heat_guage_fill.png")),
         ),
         (
             Assets::TexturePortraitRed.into(),

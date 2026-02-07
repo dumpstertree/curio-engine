@@ -42,6 +42,9 @@ pub mod built_in {
             pub mod renderer_static;
             pub mod renderer_text;
         }
+        pub mod tween {
+            pub mod tween;
+        }
         pub mod camera;
         pub mod collider_common;
         pub mod light;

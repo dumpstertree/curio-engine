@@ -16,4 +16,5 @@ pub fn register_built_in_ecs() {
     register_global_ecs::<update_animator_scale_sin::Instance>();
     register_global_ecs::<update_animator_rotation_sin::Instance>();
     register_global_ecs::<update_animator_position_sin::Instance>();
+    register_global_ecs::<crate::built_in::facet::tween::tween::Instance>();
 }

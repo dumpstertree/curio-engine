@@ -1,36 +1,33 @@
 use curio_core::{
-    Vector2, Vector3,
-    collections::{event_queue::EventQueue, game_state::GameState, input_cursor::InputAxisState, key_state::KeyState},
-    input::{axis_code::AxisCode, key_code::ButtonCode},
+    AxisCode, ButtonCode, InputAxisState, Quaternion, Random, Vector2, Vector3,
+    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use std::collections::HashMap;
 
 use gameplay::{
     built_in::facet::{
-        renderer::{renderer_image::RendererImage, renderer_text::RendererText},
-        transform::transform2d::Transform2D,
+        animator::{animator_rotation_sin::AnimatorRotationSin, animator_scale_sin::AnimatorScaleSin},
+        renderer::renderer_image::RendererImage,
+        renderer_common::RendererCommon,
+        transform::{transform2d::Transform2D, transform3d::Transform3D},
+        tween::tween::{Tween, TweenCurve, TweenTransform2DPosition, TweenTransform2DRotation},
     },
     context_2d::Context2D,
     form::Form,
     traits::ui_panel::UIPanel,
-    traits_internal::ui_common::UICommon,
+    traits_internal::{ui_common::UICommon, world_context_common::ContextCommon},
 };
 
-use crate::{
-    Assets,
-    state::{
-        host::state_heat::StateHeat,
-        state_teams::{StateTeamAssignments, Teams},
-    },
-};
+use crate::{Assets, state::host::state_heat::StateHeat};
 
 pub struct UIHUD {
-    go_text: HashMap<i32, Form>,
+    f_ui: Option<Form>,
+    last_heat: i32,
 }
 impl UIHUD {
     pub fn new() -> Box<UIHUD> {
-        Box::new(UIHUD { go_text: HashMap::new() })
+        Box::new(UIHUD { f_ui: None, last_heat: 0 })
     }
 }
 impl UIPanel for UIHUD {
@@ -41,97 +38,67 @@ impl UICommon for UIHUD {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
-        let form = context
-            .spawn("name", Transform2D::default())
-            .add_facet_default::<RendererImage>();
-
-        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
-            t.position = Vector2::new(0.1, 0.5);
-            t.scale = Vector3::one() * 0.4;
-            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TextureHeatGuage.into())));
-        });
-        let form = context
-            .spawn("name", Transform2D::default())
-            .add_facet_default::<RendererImage>();
-
-        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
-            t.position = Vector2::new(0.1, 0.5);
-            t.scale = Vector3::one() * 0.4;
-            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TextureHeatGuage.into())));
-        });
-
-        let form = context
-            .spawn("name", Transform2D::default())
-            .add_facet_default::<RendererImage>();
-
-        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
-            t.position = Vector2::new(0.9, 0.65);
-            t.scale = Vector3::one() * 0.4;
-            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TexturePortraitRed.into())));
-        });
-        let form = context
-            .spawn("name", Transform2D::default())
-            .add_facet_default::<RendererImage>();
-
-        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
-            t.position = Vector2::new(0.9, 0.45);
-            t.scale = Vector3::one() * 0.4;
-            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TexturePortraitBlue.into())));
-        });
-        let form = context
-            .spawn("name", Transform2D::default())
-            .add_facet_default::<RendererImage>();
-
-        form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
-            t.position = Vector2::new(0.9, 0.25);
-            t.scale = Vector3::one() * 0.4;
-            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TexturePortraitBlue.into())));
-        });
-        // get cur turn
-        let cur_heat = game_state.get::<StateTeamAssignments>();
-
-        for user_guid_heat in cur_heat.team_assignments {
-            for i in 0..user_guid_heat.1.len() {
-                let mut x_pos = if user_guid_heat.0 == Teams::Red { 0.15 } else { 0.85 };
-                if user_guid_heat.1.len() > 1 {
-                    if i == 0 {
-                        x_pos -= 0.05;
-                    } else {
-                        x_pos += 0.05;
-                    }
-                }
-                let mut r = RendererText::default();
-                r.set_font_size(0.03);
-                let guid = user_guid_heat.1[i];
-                self.go_text.insert(
-                    guid,
-                    context
-                        .spawn("", Transform2D::default().set_position_01(Vector2::new(x_pos, 0.8)))
-                        .add_facet(r),
-                );
-            }
-        }
+        self.f_ui = Some(context.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabUIHeat.into())));
     }
 
     fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
-        for x in &self.go_text {
-            x.1.destroy();
+        if let Some(ui) = &self.f_ui {
+            ui.destroy();
         }
-
-        self.go_text.clear();
+        self.f_ui = None;
     }
 
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get cur turn
         let cur_heat = game_state.get::<StateHeat>().all_players;
+        let heat = cur_heat.get(&game_state.instance_id).unwrap().clone();
 
-        // edit the text
-        for user_guid_heat in &cur_heat {
-            if let Some(go) = self.go_text.get(&user_guid_heat.0) {
-                go.edit_facet::<RendererText>(|x| {
-                    x.set_contents(&format!("HEAT: {}", user_guid_heat.1));
-                });
+        if let Some(ui) = &self.f_ui {
+            ui.try_edit_facet_in_child::<Transform2D>("marker", |x| {
+                let cur = x.position;
+                let tar = (heat as f32 / 30.0).clamp(0.0, 1.0) * 0.5 + 0.2;
+                x.position = Vector2::lerp(cur, Vector2::new(cur.x, tar), 0.2);
+            });
+
+            ui.try_edit_facets_in_child::<(RendererImage, AnimatorRotationSin, AnimatorScaleSin)>("topper", |(r, animr, anims)| {
+                let enabled = heat >= 30;
+                //
+                r.set_enabled(enabled);
+                animr.set_enabled(enabled);
+                anims.set_enabled(enabled);
+            });
+
+            if heat != self.last_heat {
+                self.spawn_particle(context, heat - self.last_heat);
+                self.last_heat = heat;
             }
+        }
+    }
+}
+impl UIHUD {
+    fn spawn_particle(&self, context: &mut Context2D, count: i32) {
+        println!("spawn particle {}", count);
+
+        for i in 0..100 {
+            let f = context
+                .spawn("blob", Transform2D::default())
+                .add_facet_default::<RendererImage>()
+                .add_facet_default::<Tween>();
+
+            f.edit_facets::<(Transform2D, RendererImage, Tween)>(|(transform, rend, tween)| {
+                // edit transform
+                transform.scale = Vector3::one() * 0.1;
+                // edit asset
+                rend.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TextureHeatGuageFill.into())));
+                // add tween
+                tween.add_tween(
+                    TweenTransform2DPosition::new(Vector2::one(), Vector2::new(0.1, 0.2))
+                        .curve(TweenCurve::EaseOut)
+                        .delay(i as f32 * 0.25)
+                        .duration(Random::range_float(0.2, 0.6))
+                        .on_complete(Box::new(|| print!("complted"))),
+                );
+            });
         }
     }
 }

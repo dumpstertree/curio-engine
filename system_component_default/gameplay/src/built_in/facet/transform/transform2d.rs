@@ -36,6 +36,7 @@ impl FieldOverride for Transform2D {
         match field {
             "order" => self.render_order = val.parse().unwrap_or_default(),
             "position" => self.position = val.parse().unwrap_or_default(),
+            "scale" => self.scale = val.parse().unwrap_or_default(),
             "rotation" => self.rotation = Quaternion::from_euler(val.parse().unwrap_or_default()),
             // "scale" => self.scale = val.parse().unwrap_or_default(),
             _ => {}

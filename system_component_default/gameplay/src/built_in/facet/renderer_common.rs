@@ -1,7 +1,12 @@
 use curio_core::Color;
 
 use crate::{
-    built_in::facet::renderer::{renderer_dynamic::RendererDynamic, renderer_static::RendererStatic, renderer_text::RendererText},
+    built_in::facet::renderer::{
+        renderer_dynamic::RendererDynamic,
+        renderer_image::{self, RendererImage},
+        renderer_static::RendererStatic,
+        renderer_text::RendererText,
+    },
     context_3d::Context3D,
     form::Form,
     traits::facet_common::FacetCommon,
@@ -160,6 +165,15 @@ pub fn update_enabled(context: &Context3D) {
         }
         all.insert(form, enabled);
     }
+    for x in context.get::<RendererImage>() {
+        let form = x.form();
+        let enabled = x.get_enabled();
+
+        if form.parent().is_none() || !form.parent().unwrap().has_facet::<RendererImage>() {
+            root.push(form.clone());
+        }
+        all.insert(form, enabled);
+    }
     for x in context.get::<RendererStatic>() {
         let form = x.form();
         let enabled = x.get_enabled();
@@ -225,6 +239,12 @@ pub fn update_enabled(context: &Context3D) {
         if form.has_facet::<RendererText>() {
             //
             form.edit_facet::<RendererText>(|x| {
+                x.set_cached_enabled_in_hierarchy(enabled);
+            });
+        };
+        if form.has_facet::<RendererImage>() {
+            //
+            form.edit_facet::<RendererImage>(|x| {
                 x.set_cached_enabled_in_hierarchy(enabled);
             });
         };

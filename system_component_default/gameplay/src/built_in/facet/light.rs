@@ -2,7 +2,7 @@ use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
-use curio_core::{Color, Vector3, collections::light_uniform::LightType};
+use curio_core::{Color, LightType, Vector3};
 
 #[derive(Default)]
 pub struct Light {
