@@ -229,12 +229,7 @@ use std::{hash::Hash, sync::Arc};
 use egui_wgpu::wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, ShaderModule};
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    io::{asset_loader::AssetLoader, texture_asset::TextureAsset},
-    random::Random,
-    system_adapters::adapter_system_gpu::SystemGPU,
-    Color,
-};
+use crate::{assets::asset::AssetCommonFromBits, io::asset_loader::AssetLoader, random::Random, system_adapters::adapter_system_gpu::SystemGPU, AssetCommon, Color, GPUInstance, TextureAsset};
 
 //=========================================
 // Data Types
@@ -301,7 +296,7 @@ impl Material {
     pub fn shader(&self) -> Arc<ShaderModule> {
         let device = &SystemGPU::get_device();
         // AssetLoader::load_shader_module(device, Builtin &self.shader_desc.shader_module_path)
-        AssetLoader::load_shader_module(device, &AssetLoader::try_lookup_key_for_name(&self.shader_desc.shader_module_path).unwrap())
+        SystemGPU::get_shader_module(&self.shader_desc.shader_module_path).unwrap();
     }
     pub fn instantiate(&self, name: &str) -> Material {
         Material {
@@ -470,6 +465,14 @@ pub struct ShaderDesc {
     shader_module_path: String,
     textures: Vec<ShaderTextureDesc>,
     colors: Vec<ShaderColorDesc>,
+}
+impl AssetCommon for ShaderDesc {}
+impl AssetCommonFromBits<ShaderDesc> for ShaderDesc {
+    fn from_bits(bits: &Vec<u8>) -> ShaderDesc {
+        let json: serde_json::Value = serde_json::from_slice(bits).expect("file should be proper JSON");
+        let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();
+        my_struct
+    }
 }
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct ShaderTextureDesc {

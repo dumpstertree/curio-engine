@@ -1,5 +1,5 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, Quaternion, Random, Vector2, Vector3,
+    AxisCode, ButtonCode, InputAxisState, PrefabGameObject, Quaternion, Random, TextureAsset, Vector2, Vector3,
     collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
@@ -38,7 +38,7 @@ impl UICommon for UIHUD {
     fn init(&mut self) {}
 
     fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
-        self.f_ui = Some(context.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabUIHeat.into())));
+        self.f_ui = Some(context.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabUIHeat.into())));
     }
 
     fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
@@ -79,7 +79,7 @@ impl UIHUD {
     fn spawn_particle(&self, context: &mut Context2D, count: i32) {
         println!("spawn particle {}", count);
 
-        for i in 0..100 {
+        for i in 0..count {
             let f = context
                 .spawn("blob", Transform2D::default())
                 .add_facet_default::<RendererImage>()
@@ -89,7 +89,7 @@ impl UIHUD {
                 // edit transform
                 transform.scale = Vector3::one() * 0.1;
                 // edit asset
-                rend.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TextureHeatGuageFill.into())));
+                rend.set_asset(Some(AssetLoader::load_asset::<TextureAsset>(&Assets::TextureHeatGuageFill.into())));
                 // add tween
                 tween.add_tween(
                     TweenTransform2DPosition::new(Vector2::one(), Vector2::new(0.1, 0.2))

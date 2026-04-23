@@ -1,7 +1,7 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2, Vector3,
     collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
-    io::asset_loader::AssetLoader,
+    io::{asset_loader::AssetLoader, model_asset_animated::ModelAssetAnimated},
 };
 use std::collections::HashMap;
 
@@ -39,7 +39,7 @@ impl UICommon for UIHUD {
 
     fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
         println!("present hud encounter");
-        let asset = AssetLoader::load_model_animated_from_database(&Assets::EnergyToken.into());
+        let asset = AssetLoader::load_asset::<ModelAssetAnimated>(&Assets::EnergyToken.into());
         // let x_offset = 0.15;
         let y_start = 0.75;
         let y_spacing = -0.05;

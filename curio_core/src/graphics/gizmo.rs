@@ -1,6 +1,6 @@
 use std::{hash::Hash, sync::Arc};
 
-use crate::{collections::mesh::Mesh, Color, Matrix4x4, Vector3};
+use crate::{graphics::mesh::Mesh, Color, Matrix4x4, Vector3};
 
 #[derive(Clone, PartialEq)]
 pub struct Gizmo {

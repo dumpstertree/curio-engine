@@ -1,2 +1,0 @@
-// asset
-pub trait Asset {}

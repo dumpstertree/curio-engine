@@ -221,6 +221,7 @@ use curio_core::{
     collections::{curio_metadata::CurioMetadata, game_mode::GameMode, version_number::VersionNumber, window_layout::WindowLayout},
     engine::{curio::Curio, curio_cabinet::CurioCabinet},
     io::{
+        asset_cache::AssetCache,
         asset_database::{AssetDatabase, AssetDatabaseListing},
         asset_loader::AssetLoader,
     },
@@ -284,6 +285,10 @@ impl Into<String> for Assets {
     }
 }
 fn main() {
+    AssetLoader::set_cache(
+        // set the max num of objects to keep in memory
+        AssetCache::new(100),
+    );
     AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
         // remote
         (

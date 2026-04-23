@@ -1,5 +1,5 @@
 use curio_core::{
-    AxisCode, ButtonCode, Color, InputAxisState, Vector2,
+    AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Vector2,
     collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
@@ -114,7 +114,7 @@ impl UIHUD {
         }
 
         // spawn prefab
-        let f_card = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabUICard.into()));
+        let f_card = world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabUICard.into()));
 
         // edit component on child
         f_card.try_edit_facet_in_child::<RendererText>("description", |x| {

@@ -3,10 +3,7 @@ use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
-use curio_core::{
-    Color,
-    io::{asset_loader::AssetLoader, model_asset::ModelAsset},
-};
+use curio_core::{Color, ModelAsset, io::asset_loader::AssetLoader};
 use std::sync::Arc;
 
 #[derive(Clone, Default)]
@@ -22,7 +19,7 @@ pub struct RendererStatic {
 impl FieldOverride for RendererStatic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.asset = Some(AssetLoader::load_model_static_from_database(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
+            "asset" => self.asset = Some(AssetLoader::load_asset::<ModelAsset>(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}

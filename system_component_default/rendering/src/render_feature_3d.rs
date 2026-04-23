@@ -1,4 +1,4 @@
-use curio_core::{GraphicsMapping, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::game_state::GameState, io::texture_asset::TextureAsset, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::game_state::GameState, system_adapters::adapter_system_gpu::SystemGPU};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};

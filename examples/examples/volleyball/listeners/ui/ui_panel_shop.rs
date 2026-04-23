@@ -1,5 +1,5 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState,
+    AxisCode, ButtonCode, InputAxisState, PrefabGameObject,
     built_in::record::sys_record_input::SysRecordInput,
     collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
     io::asset_loader::AssetLoader,
@@ -53,7 +53,7 @@ impl UICommon for UIPanelInstance {
         }
 
         // spawn the prefab
-        let f_ui = context.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabUIPanelShop.into()));
+        let f_ui = context.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabUIPanelShop.into()));
 
         // edit the description
         if let Some(f_description) = f_ui.get_child("description") {

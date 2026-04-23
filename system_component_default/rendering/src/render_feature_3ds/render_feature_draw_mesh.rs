@@ -1,13 +1,8 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use curio_core::{
-    LightSystem, Matrix4x4,
+    LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
     built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
-    collections::{
-        game_state::GameState,
-        material::Material,
-        mesh::{Mesh, Vertex},
-    },
-    io::texture_asset::TextureAsset,
+    collections::game_state::GameState,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::ahash::{HashMap, HashMapExt};

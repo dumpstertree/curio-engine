@@ -13,16 +13,13 @@ pub use crate::math::vector4_int::Vector4Int;
 pub use crate::random::Random;
 
 // assets
-pub use crate::collections::material::Material;
-pub use crate::collections::mesh::Mesh;
-
-// rendering
-pub use crate::graphics::draw_call::DrawCall;
-pub use crate::graphics::gizmo::Gizmo;
-pub use crate::graphics::gpu_instance::GPUInstance;
-pub use crate::graphics::graphics_mapping::GraphicsMapping;
-pub use crate::graphics::light_uniform::LightSystem;
-pub use crate::graphics::light_uniform::LightType;
+pub use crate::assets::asset::AssetCommon;
+pub use crate::assets::font_asset::FontAsset;
+pub use crate::assets::font_asset::FontDesc;
+pub use crate::assets::model_asset::ModelAsset;
+pub use crate::assets::prefab_asset::PrefabGameObject;
+pub use crate::assets::texture_asset::TextureAsset;
+pub use crate::graphics::material::ShaderDesc;
 
 // input
 pub use crate::input::axis_code::AxisCode;
@@ -33,6 +30,18 @@ pub use crate::input::input_snapshot_mapped::PlayerInputSnapshot;
 pub use crate::input::input_snapshot_raw::RawInputSnapshot;
 pub use crate::input::key_code::ButtonCode;
 
+// graphics
+pub use crate::graphics::draw_call::DrawCall;
+pub use crate::graphics::gizmo::Gizmo;
+pub use crate::graphics::gpu_instance::GPUInstance;
+pub use crate::graphics::graphics_mapping::GraphicsMapping;
+pub use crate::graphics::light_uniform::DrawCallLight;
+pub use crate::graphics::light_uniform::LightSystem;
+pub use crate::graphics::light_uniform::LightType;
+pub use crate::graphics::material::Material;
+pub use crate::graphics::mesh::Mesh;
+pub use crate::graphics::mesh::Vertex;
+
 //
 pub mod graphics {
     pub(crate) mod draw_call;
@@ -40,6 +49,8 @@ pub mod graphics {
     pub(crate) mod gpu_instance;
     pub(crate) mod graphics_mapping;
     pub(crate) mod light_uniform;
+    pub(crate) mod material;
+    pub(crate) mod mesh;
 }
 pub mod input {
     pub(crate) mod axis_code;
@@ -97,17 +108,20 @@ pub mod extensions {
     pub mod extensions_f64;
     pub mod extensions_i32;
 }
-
+pub mod assets {
+    pub(crate) mod asset;
+    pub(crate) mod font_asset;
+    pub(crate) mod model_asset;
+    pub(crate) mod prefab_asset;
+    pub(crate) mod texture_asset;
+}
 pub mod io {
-    pub mod asset;
     pub mod asset_cache;
     pub mod asset_database;
     pub mod asset_loader;
     pub mod file;
-    pub mod font_asset;
-    pub mod model_asset;
+
     pub mod model_asset_animated;
-    pub mod texture_asset;
 }
 
 pub mod collections {
@@ -121,8 +135,6 @@ pub mod collections {
     pub mod game_mode;
     pub mod game_state;
     pub mod key_state;
-    pub mod material;
-    pub mod mesh;
     pub mod network_capabilities;
     pub mod network_modes;
     pub mod projection;

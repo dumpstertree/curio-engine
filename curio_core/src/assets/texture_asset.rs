@@ -1,6 +1,6 @@
-use crate::system_adapters::adapter_system_gpu::SystemGPU;
+use crate::{assets::asset::AssetCommonFromBits, system_adapters::adapter_system_gpu::SystemGPU};
 
-use super::asset::Asset;
+use super::asset::AssetCommon;
 
 // data
 #[derive(Clone, PartialEq, Eq, Hash)]
@@ -161,4 +161,11 @@ impl TextureAsset {
 // public
 impl TextureAsset {}
 // asset
-impl Asset for TextureAsset {}
+impl AssetCommon for TextureAsset {}
+impl AssetCommonFromBits<TextureAsset> for TextureAsset {
+    fn from_bits(bits: &Vec<u8>) -> TextureAsset {
+        let image: image::DynamicImage = image::load_from_memory(&bits).unwrap();
+        let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
+        texture
+    }
+}

@@ -1,7 +1,8 @@
 use crate::form::Form;
 use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
-use curio_core::io::asset_loader::{AssetLoader, PrefabGameObject};
+use curio_core::PrefabGameObject;
+use curio_core::io::asset_loader::AssetLoader;
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -61,7 +62,7 @@ pub trait ContextCommon {
                 .map(|x| self.spawn_prefab_recursive_internal(x, x.name.clone()))
                 .collect();
 
-            let asset = AssetLoader::load_prefab(&key);
+            let asset = AssetLoader::load_asset::<PrefabGameObject>(&key);
             let mut parent_form = self.spawn_prefab_recursive_internal(&asset, split[1].to_owned());
 
             // create parent child relationship

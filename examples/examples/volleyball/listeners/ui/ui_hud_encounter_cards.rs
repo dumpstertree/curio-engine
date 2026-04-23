@@ -12,7 +12,7 @@ use crate::{
     },
 };
 use curio_core::{
-    AxisCode, ButtonCode, Color, InputAxisState, Quaternion, Vector2, Vector3,
+    AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Quaternion, Vector2, Vector3,
     collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
@@ -225,7 +225,7 @@ impl UIHUDInstance {
         }
 
         // spawn prefab
-        let f_card = world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabUICard.into()));
+        let f_card = world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabUICard.into()));
 
         // edit component on child
         f_card.try_edit_facet_in_child::<RendererText>("description", |x| {

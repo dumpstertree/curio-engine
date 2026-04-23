@@ -1,19 +1,20 @@
 use crate::{
-    collections::{
-        f32::FloatExtras,
+    assets::asset::AssetCommonFromBits,
+    collections::f32::FloatExtras,
+    graphics::{
+        material::Material,
         mesh::{Mesh, Vertex},
     },
-    io::model_asset::ModelAsset,
-    Matrix4x4,
+    io::asset_loader::{AssetLoader, ASSET_UID_SHADER_LIT},
+    AssetCommon, Matrix4x4, ModelAsset, ShaderDesc, TextureAsset,
 };
-
-use super::super::collections::material::Material;
-use super::asset::Asset;
 
 use egui::ahash::HashMap;
 use rayon::prelude::*;
-use rusty_spine::{AnimationState, AnimationStateData, Skeleton, SkeletonData};
+use rusty_spine::{AnimationState, AnimationStateData, Atlas, Skeleton, SkeletonData, SkeletonJson};
+use std::{error::Error, io::Cursor};
 use std::{sync::Arc, time::Instant};
+use zip::ZipArchive;
 
 pub struct ModelAssetAnimated {
     material: Arc<Material>,
@@ -196,8 +197,61 @@ impl ModelAssetAnimated {
         }
     }
 }
+impl ModelAssetAnimated {
+    fn unwrap_spine(data: &[u8]) -> Result<(Arc<Atlas>, Arc<SkeletonData>, TextureAsset), Box<dyn Error>> {
+        // Wrap the data so zip can read from it like a file
+        let reader = Cursor::new(data);
+        let mut archive = ZipArchive::new(reader)?;
 
-impl Asset for ModelAssetAnimated {}
+        // Try to read the files
+        let mut json_bytes = Vec::new();
+        let mut atlas_bytes = Vec::new();
+        let mut texture_bytes = Vec::new();
+
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)?;
+            let name = file.name().to_string();
+
+            if name.ends_with(".json") {
+                std::io::copy(&mut file, &mut json_bytes)?;
+            } else if name.ends_with(".atlas") {
+                std::io::copy(&mut file, &mut atlas_bytes)?;
+            } else if name.ends_with(".png") {
+                std::io::copy(&mut file, &mut texture_bytes)?;
+            }
+        }
+
+        if json_bytes.is_empty() || atlas_bytes.is_empty() || texture_bytes.is_empty() {
+            return Err("Missing .json or .atlas or .png in ZIP".into());
+        }
+
+        let atlas = Arc::new(Atlas::new(atlas_bytes.as_slice(), "").unwrap());
+
+        let mut json = SkeletonJson::new(atlas.clone());
+        json.set_scale(0.01);
+        let skeleton_data = Arc::new(json.read_skeleton_data(json_bytes.as_slice()).unwrap());
+        let image = image::load_from_memory_with_format(&texture_bytes, image::ImageFormat::Png).unwrap();
+        let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
+        Ok((atlas, skeleton_data, texture))
+    }
+}
+impl AssetCommon for ModelAssetAnimated {}
+impl AssetCommonFromBits<ModelAssetAnimated> for ModelAssetAnimated {
+    fn from_bits(bits: &Vec<u8>) -> ModelAssetAnimated {
+        //create a material
+        let shader_desc = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_LIT);
+        let spine_data = Self::unwrap_spine(bits);
+        let Ok(spine_data) = spine_data else {
+            panic!("Err {}", spine_data.err().unwrap());
+        };
+
+        let mut material = Material::new("Mat", shader_desc.clone(), false);
+        material.set_texture_with_label(Some(Arc::new(spine_data.2)), "diffuse");
+        material.finalize();
+        // create the asset
+        ModelAssetAnimated::new(Arc::new(material), spine_data.1.clone(), Arc::new(AnimationStateData::new(spine_data.1.clone())))
+    }
+}
 
 pub struct AnimationAsset {
     frames: Vec<Arc<FrameAsset>>,

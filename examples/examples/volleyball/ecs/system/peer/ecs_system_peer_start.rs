@@ -6,7 +6,7 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
-    Color, Vector3,
+    Color, PrefabGameObject, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_sun::SysRecordSun},
     collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
     io::asset_loader::AssetLoader,
@@ -55,18 +55,18 @@ impl Habit for Instance {
             .team_for(&game_state.instance_id)
         else {
             println!("Spawned Fallback Camera");
-            world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
+            world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabCamera.into()));
             return;
         };
 
         match team {
             Teams::Red => {
                 println!("Spawned Red Camera");
-                world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
+                world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabCamera.into()));
             }
             Teams::Blue => {
                 println!("Spawned Blue Camera");
-                world.spawn_prefab_recursive(&AssetLoader::load_prefab(&Assets::PrefabCamera.into()));
+                world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabCamera.into()));
             }
         }
     }

@@ -1,7 +1,7 @@
 use std::{hash::Hash, sync::Arc};
 
 use crate::{
-    collections::{material::Material, mesh::Mesh},
+    graphics::{material::Material, mesh::Mesh},
     Color, Matrix4x4,
 };
 

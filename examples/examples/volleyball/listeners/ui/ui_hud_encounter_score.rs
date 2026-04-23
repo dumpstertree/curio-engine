@@ -1,5 +1,5 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, Vector2,
+    AxisCode, ButtonCode, InputAxisState, TextureAsset, Vector2,
     collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
@@ -41,7 +41,7 @@ impl UICommon for UIHUD {
 
         form.edit_facets::<(Transform2D, RendererImage)>(|(t, r)| {
             t.position = Vector2::new(0.5, 0.85);
-            r.set_asset(Some(AssetLoader::load_texture_from_path(&Assets::TextureScoreGuage.into())));
+            r.set_asset(Some(AssetLoader::load_asset::<TextureAsset>(&Assets::TextureScoreGuage.into())));
         });
         // create obj
         let go_text = context

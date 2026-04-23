@@ -4,13 +4,8 @@ use crate::{
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
 use curio_core::{
-    Color, Material, Matrix4x4, Mesh, Quaternion, Vector3,
-    collections::{material, mesh::Vertex},
-    io::{
-        asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader},
-        model_asset::ModelAsset,
-        texture_asset::TextureAsset,
-    },
+    Color, Material, Matrix4x4, Mesh, ModelAsset, Quaternion, ShaderDesc, TextureAsset, Vector3, Vertex,
+    io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader},
 };
 use std::sync::Arc;
 
@@ -40,7 +35,7 @@ impl Default for RendererImage {
 impl FieldOverride for RendererImage {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.set_asset(Some(AssetLoader::load_texture_from_path(&AssetLoader::try_lookup_key_for_name(value).unwrap()))),
+            "asset" => self.set_asset(Some(AssetLoader::load_asset::<TextureAsset>(&AssetLoader::try_lookup_key_for_name(value).unwrap()))),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}
@@ -56,7 +51,7 @@ impl RendererImage {
         if let Some(asset) = asset.clone() {
             self.bounds_matrix = Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::new(1.0, 0.5 * (asset.texture.height() as f32 / asset.texture.width() as f32), 1.0));
         }
-        let shader = AssetLoader::load_shader_desc(&ASSET_UID_SHADER_UNLIT);
+        let shader = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT);
         let mut material = Material::new("image", shader, false);
         material.set_texture_with_label(asset, "diffuse");
         material.finalize();

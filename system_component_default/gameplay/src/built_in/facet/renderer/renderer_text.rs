@@ -1,9 +1,6 @@
 use curio_core::{
-    Color, Matrix4x4, Quaternion, Vector2, Vector3,
-    io::{
-        asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader, FontAsset},
-        model_asset::ModelAsset,
-    },
+    Color, FontAsset, Matrix4x4, ModelAsset, Quaternion, Vector2, Vector3,
+    io::asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader},
 };
 use std::sync::Arc;
 
@@ -60,7 +57,7 @@ impl FieldOverride for RendererText {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
             // "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
-            "asset" => self.font_asset = Some(AssetLoader::load_font_asset(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
+            "asset" => self.font_asset = Some(AssetLoader::load_asset::<FontAsset>(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
             "contents" => self.contents = value.to_string(),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "font_size" => self.font_size = value.parse().unwrap_or_default(),
@@ -195,7 +192,7 @@ impl RendererText {
         //     .unwrap_or_else(|| AssetLoader::load_font_asset("assets/default.font"));
 
         if self.font_asset.is_none() {
-            self.font_asset = Some(AssetLoader::load_font_asset(&ASSET_UID_FONT_ASSET_DEFAULT));
+            self.font_asset = Some(AssetLoader::load_asset::<FontAsset>(&ASSET_UID_FONT_ASSET_DEFAULT));
         }
         let Some(font_asset) = &self.font_asset else {
             return;

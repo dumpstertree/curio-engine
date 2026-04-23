@@ -11,7 +11,8 @@ use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{Assets, UIViewTypes};
 
-use curio_core::{Quaternion, Vector2Int, Vector3};
+use curio_core::io::model_asset_animated::ModelAssetAnimated;
+use curio_core::{ModelAsset, Quaternion, Vector2Int, Vector3};
 
 use curio_core::io::asset_loader::AssetLoader;
 use curio_core::{
@@ -70,14 +71,14 @@ impl Impulse<GameEvents> for Listener {
 }
 impl Listener {
     pub fn spawn_tile_select(_game_state: &mut GameState, world: &mut Context3D) {
-        let asset = Some(AssetLoader::load_model_static_from_database(&Assets::Ball.into()));
+        let asset = Some(AssetLoader::load_asset::<ModelAsset>(&Assets::Ball.into()));
         world
             .spawn("w", Transform3D::default().set_position(Vector3::up() * 0.05))
             .add_facet(ComponentGameBoardSelection::default())
             .add_facet(RendererStatic::default().set_asset(asset.clone()));
     }
     pub fn spawn_tiles(_game_state: &mut GameState, world: &mut Context3D) {
-        let asset = Some(AssetLoader::load_model_static_from_database(&Assets::GameBoardTileActive.into()));
+        let asset = Some(AssetLoader::load_asset::<ModelAsset>(&Assets::GameBoardTileActive.into()));
         // for team in Teams::all() {
         // let min = GameBoard::get_bounds_min_for_team(&team);
         // let max = GameBoard::get_bounds_max_for_team(&team);
@@ -97,7 +98,7 @@ impl Listener {
     }
     pub fn spawn_ball(game_state: &mut GameState, world: &mut Context3D) {
         let mut r = RendererStatic::default();
-        r = r.set_asset(Some(AssetLoader::load_model_static_from_database(&Assets::Ball.into())));
+        r = r.set_asset(Some(AssetLoader::load_asset::<ModelAsset>(&Assets::Ball.into())));
 
         let e = world
             .spawn("", Transform3D::default().set_scale(Vector3::one() * 0.5))
@@ -111,7 +112,7 @@ impl Listener {
 
     pub fn spawn_background(game_state: &mut GameState, world: &mut Context3D) {
         // let spine = AssetLoader::load_spine_from_path("path");
-        let asset_court = AssetLoader::load_model_static_from_database(&Assets::Court.into());
+        let asset_court = AssetLoader::load_asset::<ModelAsset>(&Assets::Court.into());
 
         let e = world
             .spawn("", Transform3D::default().set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))))
@@ -130,7 +131,7 @@ impl Listener {
                 for guid in guids {
                     let asset_id = state_entity_visual.all.get(guid).unwrap_or(&Assets::Goblin);
 
-                    let asset_goblin = AssetLoader::load_model_animated_from_database(&(*asset_id).into());
+                    let asset_goblin = AssetLoader::load_asset::<ModelAssetAnimated>(&(*asset_id).into());
                     let mut rend = RendererDynamic::default();
                     rend.set_asset(Some(asset_goblin.clone()));
 

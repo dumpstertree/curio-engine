@@ -1,6 +1,5 @@
-use curio_core::collections::mesh::Vertex;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
-use curio_core::{DrawCall, Matrix4x4, Vector3};
+use curio_core::{DrawCall, Matrix4x4, Vector3, Vertex};
 use std::num::NonZeroU64;
 
 use egui_wgpu::wgpu::{
