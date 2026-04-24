@@ -1,6 +1,6 @@
 use crate::{
     built_in::stimulant::engine_commands::EngineCommands,
-    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::GameState, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::Ledger, key_state::KeyState},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode},
     random::Random,
@@ -14,7 +14,7 @@ pub struct Curio {
     command_buffer: Vec<EngineCommands>,
     components: Vec<Box<dyn SystemComponent>>,
     game_events: Vec<EventQueue>,
-    game_state: Vec<GameState>,
+    game_state: Vec<Ledger>,
     game_mode: GameMode,
 }
 
@@ -34,7 +34,7 @@ impl Curio {
 
         // populate all states and events
         for i in 0..game_mode.game_instances.len() {
-            states.push(GameState::new(&format!("game_state__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode, ids[i], ids.clone()));
+            states.push(Ledger::new(&format!("game_state__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode, ids[i], ids.clone()));
             events.push(EventQueue::new(&format!("event_queue__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode));
         }
 

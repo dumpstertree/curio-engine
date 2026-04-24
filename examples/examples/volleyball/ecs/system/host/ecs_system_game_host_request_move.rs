@@ -5,7 +5,7 @@ use crate::{
 };
 use curio_core::{
     Vector2Int,
-    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -17,7 +17,7 @@ use impulse::impulse;
 #[impulse(GameEvents)]
 pub struct ECSSystemGameRequestMove {}
 impl ECSSystemGameRequestMove {
-    fn check_energy(game_state: &mut GameState, id: i32) -> bool {
+    fn check_energy(game_state: &mut Ledger, id: i32) -> bool {
         let has_energy = game_state.get::<StateEnergy>().all_players[&id].0 > 0;
         if !has_energy {
             println!("Requested Move for not enough energy");
@@ -26,7 +26,7 @@ impl ECSSystemGameRequestMove {
 
         return true;
     }
-    fn check_player_id(game_state: &mut GameState, id: i32) -> bool {
+    fn check_player_id(game_state: &mut Ledger, id: i32) -> bool {
         let state_teams = game_state
             .get::<StateTeamAssignments>()
             .team_for(&id)
@@ -39,7 +39,7 @@ impl ECSSystemGameRequestMove {
 
         return true;
     }
-    fn check_bounds(game_state: &mut GameState, id: i32, x_diff: i32, z_diff: i32, bounds_min: Vector2Int, bounds_max: Vector2Int) -> bool {
+    fn check_bounds(game_state: &mut Ledger, id: i32, x_diff: i32, z_diff: i32, bounds_min: Vector2Int, bounds_max: Vector2Int) -> bool {
         let cur_pos = game_state.get::<StatePositionEntities>().positions[&id];
         let new_pos = (cur_pos.0 + x_diff, cur_pos.1 + z_diff);
         let in_bounds = new_pos.0 >= bounds_min.x && new_pos.0 <= bounds_max.x && new_pos.1 >= bounds_min.y && new_pos.1 <= bounds_max.y;
@@ -53,15 +53,15 @@ impl ECSSystemGameRequestMove {
     }
 }
 impl Scope for ECSSystemGameRequestMove {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameRequestMove {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestMoveZPos(id) => {
                 if !ECSSystemGameRequestMove::check_player_id(game_state, *id) {

@@ -1,7 +1,7 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, PrefabGameObject,
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 
@@ -40,7 +40,7 @@ impl UIPanel for UIPanelInstance {
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         //
         let mut stock_names = Vec::new();
         let state_store = game_state.get::<StateShop>();
@@ -81,12 +81,12 @@ impl UICommon for UIPanelInstance {
         self.f_ui = Some(f_ui);
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         if let Some(f_ui) = &self.f_ui {
             f_ui.destroy();
         }
     }
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
         // no items
         if game_state.get::<StateShop>().shop.stock.len() == 0 {
             return;

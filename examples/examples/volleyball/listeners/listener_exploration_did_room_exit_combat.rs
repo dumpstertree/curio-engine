@@ -3,7 +3,7 @@ use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::built_in::impulse::ui_events::UIEvents;
@@ -16,15 +16,15 @@ use impulse::impulse;
 pub struct Listener {}
 
 impl Scope for Listener {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomExitCombat(_, _) => {
                 println!("exit combat room");
@@ -53,7 +53,7 @@ impl Impulse<GameEvents> for Listener {
 }
 
 impl Listener {
-    fn despawn_entities(game_state: &mut GameState, _world: &mut Context3D) {
+    fn despawn_entities(game_state: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Entities;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
@@ -61,7 +61,7 @@ impl Listener {
         }
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
-    fn despawn_background(game_state: &mut GameState, _world: &mut Context3D) {
+    fn despawn_background(game_state: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Background;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
@@ -70,7 +70,7 @@ impl Listener {
         game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 
-    fn despawn_ball(game_state: &mut GameState, _world: &mut Context3D) {
+    fn despawn_ball(game_state: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Ball;
         for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);

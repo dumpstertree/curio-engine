@@ -4,7 +4,7 @@ use crate::{
 };
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -17,15 +17,15 @@ use serde::de;
 #[impulse(GameEvents)]
 pub struct ImpulseInstance {}
 impl Scope for ImpulseInstance {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Impulse<GameEvents> for ImpulseInstance {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestBurnCard(user_guid, card_guid) => {
                 game_state.edit::<StateDeck>(|x| {

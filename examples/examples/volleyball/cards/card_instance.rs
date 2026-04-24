@@ -7,7 +7,7 @@ use crate::{
     },
     state::state_deck::{CardAttributeLifecycle, CardTypes},
 };
-use curio_core::{collections::game_state::GameState, random::Random};
+use curio_core::{collections::game_state::Ledger, random::Random};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
@@ -41,16 +41,16 @@ impl CardInstance {
     }
 
     // get values provided by statement
-    pub fn get_cost(&self, game_state: &GameState, user_id: i32) -> i32 {
+    pub fn get_cost(&self, game_state: &Ledger, user_id: i32) -> i32 {
         self.get_statement(game_state, user_id).cost
     }
-    pub fn get_attributes_events(&self, game_state: &GameState, user_id: i32) -> Vec<CardAttributeEvents> {
+    pub fn get_attributes_events(&self, game_state: &Ledger, user_id: i32) -> Vec<CardAttributeEvents> {
         self.get_statement(game_state, user_id).events.clone()
     }
-    pub fn get_attributes_modifiers(&self, game_state: &GameState, user_id: i32) -> Vec<CardAttributeModifiers> {
+    pub fn get_attributes_modifiers(&self, game_state: &Ledger, user_id: i32) -> Vec<CardAttributeModifiers> {
         self.get_statement(game_state, user_id).attributes.clone()
     }
-    pub fn get_attributes_requirements(&self, game_state: &GameState, user_id: i32) -> Vec<CardAttributeRequirement> {
+    pub fn get_attributes_requirements(&self, game_state: &Ledger, user_id: i32) -> Vec<CardAttributeRequirement> {
         self.get_statement(game_state, user_id).requirements.clone()
     }
     pub fn get_attributes_lifecycle(&self) -> Vec<CardAttributeLifecycle> {
@@ -65,7 +65,7 @@ impl CardInstance {
     /// Checks the CardMaster 'statements' for the first one that matches based on state state of the game using the passed in GameState.
     /// If a statement has no requirements thats always considered a pass
     /// If none match the last element is returned
-    pub fn get_statement(&self, game_state: &GameState, user_id: i32) -> CardStatement {
+    pub fn get_statement(&self, game_state: &Ledger, user_id: i32) -> CardStatement {
         let master = self.get_master();
         // println!("num statements : {}", master.statements.len());
         for statement in &master.statements {
@@ -80,7 +80,7 @@ impl CardInstance {
 
         master.statements.last().unwrap().clone()
     }
-    pub fn has_statement(&self, game_state: &GameState, user_id: i32) -> bool {
+    pub fn has_statement(&self, game_state: &Ledger, user_id: i32) -> bool {
         let master = self.get_master();
         for statement in &master.statements {
             let is_met = statement

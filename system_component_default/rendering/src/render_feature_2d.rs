@@ -1,14 +1,14 @@
 use crate::{egui_tools::EguiRenderer, render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI};
 use curio_core::{
     GraphicsMapping,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture};
 
 pub trait RenderFeature2D {
-    fn render(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer);
-    fn clear(&mut self, game_state: &mut GameState);
+    fn render(&mut self, game_state: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer);
+    fn clear(&mut self, game_state: &mut Ledger);
 }
 
 pub struct RenderFeature2DHelper {
@@ -25,7 +25,7 @@ impl RenderFeature2DHelper {
             features: vec![RenderFeatureDrawUI::new()],
         }
     }
-    pub fn draw_2d_features(&mut self, game_state: &mut Vec<GameState>, graphics_mappings: &mut Vec<GraphicsMapping>, encoder: &mut CommandEncoder, output: &SurfaceTexture, event_queue: &mut Vec<EventQueue>) {
+    pub fn draw_2d_features(&mut self, game_state: &mut Vec<Ledger>, graphics_mappings: &mut Vec<GraphicsMapping>, encoder: &mut CommandEncoder, output: &SurfaceTexture, event_queue: &mut Vec<EventQueue>) {
         // THIS IS HACKED BECAUSE WE CANT ALL WRITE TO THE MAIN SCREEN
 
         // for i in 0..(self.graphics_mappings.len() as usize) {

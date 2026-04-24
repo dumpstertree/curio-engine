@@ -10,9 +10,10 @@ use crate::collections::state_ownerships::StateOwnerships;
 use crate::collections::state_sync_event::StateSyncEvent;
 use crate::static_data::global_states::get_global_state_constructor_all;
 use crate::system::system_game_state::IState;
+use crate::{log, Severity};
 
 #[derive(Clone)]
-pub struct GameState {
+pub struct Ledger {
     pub name: String,
     pub instance_id: i32,
     pub all_instance_id: Vec<i32>,
@@ -20,7 +21,11 @@ pub struct GameState {
     pub network_capabilities: Option<NetworkCapabilities>,
 }
 
-impl GameState {
+impl Ledger {
+    /// Log but with the prefix for the this gameplay instance
+    pub fn log(&self, severity: Severity, contents: &str) {
+        log(severity, &format!("[{}]: {}", self.instance_id, contents));
+    }
     /// A conveince for get<T> that return time
     pub fn time(&self) -> SysRecordTime {
         self.get::<SysRecordTime>()
@@ -57,23 +62,27 @@ impl GameState {
             .map_or_else(Vec::new, |nc| nc.drain_sync_events())
     }
     /// Create a new lightweight instance that works without networking
-    pub fn new_single_instance(states: Vec<(i32, Box<dyn IState>)>) -> GameState {
+    pub fn new_single_instance(states: Vec<(i32, Box<dyn IState>)>) -> Ledger {
         let mut cache = StateMap::new();
         for state in states {
             cache.insert_any(state.0, state.1);
         }
 
-        GameState {
+        let gs = Ledger {
             name: String::from(""),
             network_capabilities: None,
             instance_id: -1,
             all_instance_id: vec![-1],
             cache: cache,
-        }
+        };
+
+        gs.log(Severity::Info, "Created!");
+
+        gs
     }
 
     /// Create a new instance with network capabilities
-    pub fn new(name: &str, network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> GameState {
+    pub fn new(name: &str, network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> Ledger {
         // create the cache we are going to use
         let mut cache = StateMap::default();
 
@@ -82,13 +91,17 @@ impl GameState {
             cache.insert_any(id, constructor());
         }
 
-        GameState {
+        let gs = Ledger {
             name: String::from(name),
             network_capabilities: Some(NetworkCapabilities::new(network_mode)),
             instance_id: instance_id,
             all_instance_id: all_instance_id,
             cache: cache,
-        }
+        };
+
+        gs.log(Severity::Info, "Created!");
+
+        gs
     }
 
     /// Edit the contents of type T

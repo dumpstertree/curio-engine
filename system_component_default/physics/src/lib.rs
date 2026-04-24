@@ -11,7 +11,7 @@ use curio_core::{
     },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     system::{system_component::SystemComponent, system_components::system_component_physics::SystemComponentPhysics},
 };
 
@@ -50,9 +50,9 @@ impl SystemComponent for SystemComponentDefaultPhysics {
     fn order(&self) -> i32 {
         2000
     }
-    fn init(&mut self, _: &mut Vec<GameState>) {}
+    fn init(&mut self, _: &mut Vec<Ledger>) {}
 
-    fn tick(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) {
+    fn tick(&mut self, game_state: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
         for game_state in game_state {
             // reset
             self.buffer_collider_box_cnt = 0;

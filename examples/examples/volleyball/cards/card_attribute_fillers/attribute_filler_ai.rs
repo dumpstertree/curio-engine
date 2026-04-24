@@ -1,4 +1,4 @@
-use curio_core::{Vector2Int, collections::game_state::GameState, random::Random};
+use curio_core::{Vector2Int, collections::game_state::Ledger, random::Random};
 
 use crate::{
     cards::{
@@ -17,7 +17,7 @@ use crate::{
 };
 pub struct CardAttributeFillerAI {}
 impl CardAttributeFillerAI {
-    pub fn fill_dependency_tiles(game_state: &GameState, uid: &i32, empty: AttributeTargetTypesTiles) -> DataDepsFilledAllPermutations {
+    pub fn fill_dependency_tiles(game_state: &Ledger, uid: &i32, empty: AttributeTargetTypesTiles) -> DataDepsFilledAllPermutations {
         // create the list of permutations
         let mut permuatations = DataDepsFilledAllPermutations::new();
 
@@ -143,7 +143,7 @@ impl CardAttributeFillerAI {
         // return the now filled permutations
         permuatations
     }
-    pub fn fill_dependency_entities(game_state: &GameState, uid: &i32, empty: AttribtuteTargetTypesEntities) -> DataDepsFilledAllPermutations {
+    pub fn fill_dependency_entities(game_state: &Ledger, uid: &i32, empty: AttribtuteTargetTypesEntities) -> DataDepsFilledAllPermutations {
         // create the list of permutations
         let mut permuatations = DataDepsFilledAllPermutations::new();
 
@@ -223,7 +223,7 @@ impl CardAttributeFillerAI {
         // return the now filled permutations
         permuatations
     }
-    pub fn fill_dependency_cards(game_state: &GameState, uid: &i32, empty: AttributeTargetTypesCards) -> DataDepsFilledAllPermutations {
+    pub fn fill_dependency_cards(game_state: &Ledger, uid: &i32, empty: AttributeTargetTypesCards) -> DataDepsFilledAllPermutations {
         // create the list of permutations
         let mut permuatations = DataDepsFilledAllPermutations::new();
 

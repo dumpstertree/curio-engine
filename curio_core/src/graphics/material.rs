@@ -216,6 +216,7 @@
 //     label: String,
 // }
 
+use core::panic;
 use std::{hash::Hash, sync::Arc};
 
 // #[derive(Clone, Serialize, Deserialize)]
@@ -229,7 +230,13 @@ use std::{hash::Hash, sync::Arc};
 use egui_wgpu::wgpu::{util::DeviceExt, BindGroup, BindGroupLayout, Buffer, ShaderModule};
 use serde::{Deserialize, Serialize};
 
-use crate::{assets::asset::AssetCommonFromBits, io::asset_loader::AssetLoader, random::Random, system_adapters::adapter_system_gpu::SystemGPU, AssetCommon, Color, GPUInstance, TextureAsset};
+use crate::{
+    assets::asset::AssetCommonFromBits,
+    io::asset_loader::{AssetLoader, ASSET_UID_SHADER_MODULE_LIT, ASSET_UID_SHADER_MODULE_UNLIT},
+    random::Random,
+    system_adapters::adapter_system_gpu::SystemGPU,
+    AssetCommon, Color, GPUInstance, TextureAsset,
+};
 
 //=========================================
 // Data Types
@@ -294,9 +301,19 @@ impl Material {
     }
 
     pub fn shader(&self) -> Arc<ShaderModule> {
-        let device = &SystemGPU::get_device();
+        // let device = &SystemGPU::get_device();
         // AssetLoader::load_shader_module(device, Builtin &self.shader_desc.shader_module_path)
-        SystemGPU::get_shader_module(&self.shader_desc.shader_module_path).unwrap();
+
+        if self.shader_desc.shader_module_path == "shader_module_lit" {
+            return SystemGPU::get_shader_module(&ASSET_UID_SHADER_MODULE_LIT);
+        }
+        if self.shader_desc.shader_module_path == "shader_module_unlit" {
+            return SystemGPU::get_shader_module(&ASSET_UID_SHADER_MODULE_UNLIT);
+        }
+        // SystemGPU::get_shader_module(&self.shader_desc.shader_module_path).unwrap()
+
+        // self.shader_desc.shader_module_path
+        panic!("IDK ABOUT THIS");
     }
     pub fn instantiate(&self, name: &str) -> Material {
         Material {

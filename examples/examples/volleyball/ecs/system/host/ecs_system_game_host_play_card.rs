@@ -5,7 +5,7 @@ use crate::{
 };
 use curio_core::{
     Vector3,
-    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -18,15 +18,15 @@ use impulse::impulse;
 pub struct ECSSystemGameRequestManuever {}
 
 impl Scope for ECSSystemGameRequestManuever {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {
                 // creates an event runner to all the events on

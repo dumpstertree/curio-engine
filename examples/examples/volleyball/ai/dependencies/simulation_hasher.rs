@@ -1,5 +1,5 @@
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 
 pub trait SimulationHasher {
-    fn hash(&self, instance: &GameState) -> u64;
+    fn hash(&self, instance: &Ledger) -> u64;
 }

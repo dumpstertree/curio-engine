@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
     random::Random,
 };
 
@@ -32,16 +32,16 @@ pub struct Listener {}
 
 // Impl - Instance
 impl Scope for Listener {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::InitializeEncounter(encounter) => {
                 // log

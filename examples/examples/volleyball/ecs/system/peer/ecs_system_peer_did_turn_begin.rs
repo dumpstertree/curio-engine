@@ -24,7 +24,7 @@ use crate::{
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     system::system_game_state::IState,
 };
 use gameplay::{
@@ -44,7 +44,7 @@ pub struct Instance {
     move_time: f64,
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
         let state_team = game_state.get::<StateTeamAssignments>();
         let active_team = game_state.get::<StateTurn>().active_instance_id;
         let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
@@ -65,17 +65,17 @@ impl Scope for Instance {
             == RoomTypes::Combat
             && any_ai
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, _game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {}
-    fn enable(&mut self, game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, _game_state: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {}
+    fn enable(&mut self, game_state: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
         self.move_time = 1.5;
         self.lastmove = game_state.get::<SysRecordTime>().scaled_time;
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
         let state_score = game_state.get::<StateScore>();
         if state_score.all_scores.iter().any(|x| *x.1 <= 0) {
             return;
@@ -112,7 +112,7 @@ impl Habit for Instance {
         // let is_turn = d == game_state.instance_id;
         if do_move && any_ai && game_state.get::<SysRecordTime>().scaled_time - self.lastmove > self.move_time {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |game_state| {
-                GameState::new_single_instance(vec![
+                Ledger::new_single_instance(vec![
                     // copy these states
                     (StateCardAttributeModifierStack::id(), Box::new(game_state.get::<StateCardAttributeModifierStack>())),
                     (StateTeamAssignments::id(), Box::new(game_state.get::<StateTeamAssignments>())),
@@ -175,7 +175,7 @@ impl Habit for Instance {
 //     }
 // }
 impl Impulse<GameEvents> for Instance {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidTurnBegin(_id) => {}
             _ => {

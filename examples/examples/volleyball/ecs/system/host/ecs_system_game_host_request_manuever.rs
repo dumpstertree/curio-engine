@@ -4,7 +4,7 @@ use crate::{
     state::{state_deck::StateDeck, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::{
@@ -18,15 +18,15 @@ use std::sync::Arc;
 #[impulse(GameEvents)]
 pub struct ECSSystemGameRequestManuever {}
 impl Scope for ECSSystemGameRequestManuever {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event
@@ -105,7 +105,7 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
     }
 }
 impl ECSSystemGameRequestManuever {
-    fn check_dependencies_match(card: &Arc<CardInstance>, response: &FilledCardResponse, game_state: &GameState, id: &i32) -> bool {
+    fn check_dependencies_match(card: &Arc<CardInstance>, response: &FilledCardResponse, game_state: &Ledger, id: &i32) -> bool {
         // get the full list of dependencies
         let deps_empty = card.get_attributes_events(game_state, *id);
         let deps_filled = &response.event;
@@ -176,7 +176,7 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    fn check_energy(game_state: &mut GameState, id: i32, cost: i32) -> bool {
+    fn check_energy(game_state: &mut Ledger, id: i32, cost: i32) -> bool {
         let has_energy = game_state.get::<StateEnergy>().all_players[&id].0 - cost >= 0;
         if !has_energy {
             println!("Requested manuever for not enough energy cur: ({}) cost: ({})", game_state.get::<StateEnergy>().all_players[&id].0, cost);
@@ -185,7 +185,7 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    fn check_player_id(game_state: &mut GameState, id: i32) -> bool {
+    fn check_player_id(game_state: &mut Ledger, id: i32) -> bool {
         let state_teams = game_state
             .get::<StateTeamAssignments>()
             .team_for(&id)
@@ -208,7 +208,7 @@ impl ECSSystemGameRequestManuever {
 
     //     return true;
     // }
-    fn check_card_index_consumable(game_state: &mut GameState, id: i32, card_index: i32) -> bool {
+    fn check_card_index_consumable(game_state: &mut Ledger, id: i32, card_index: i32) -> bool {
         let my_deck = &game_state.get::<StateDeck>().deck[&id];
         let is_in_range = card_index < my_deck.hand_consumable.len() as i32;
         if !is_in_range {
@@ -218,7 +218,7 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    fn try_play_card(game_state: &mut GameState, event_queue: &mut EventQueue, card_instance: Arc<CardInstance>, data: &FilledCardResponse, id: &i32) {
+    fn try_play_card(game_state: &mut Ledger, event_queue: &mut EventQueue, card_instance: Arc<CardInstance>, data: &FilledCardResponse, id: &i32) {
         // let library = CardLibrary::new();
         // let card = &library.get_card(&card_instance.card_id);
 

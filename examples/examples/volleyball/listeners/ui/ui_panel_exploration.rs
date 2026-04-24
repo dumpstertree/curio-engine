@@ -1,7 +1,7 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2, Vector3,
     built_in::record::{sys_record_input::SysRecordInput, sys_record_time::SysRecordTime},
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
 };
 
 use gameplay::{
@@ -45,7 +45,7 @@ impl UIPanel for UIPanelInstance {
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         let mut rend = RendererText::default();
         rend.set_contents("Where to go next?");
         // create obj
@@ -88,7 +88,7 @@ impl UICommon for UIPanelInstance {
         self.go_desc = Some(go_desc);
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         self.go_desc.clone().unwrap().destroy();
         for x in &self.go_opts {
             x.destroy();
@@ -98,7 +98,7 @@ impl UICommon for UIPanelInstance {
         // self.go_opt_1.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
         let input_state = game_state.get::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]

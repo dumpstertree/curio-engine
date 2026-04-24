@@ -1,7 +1,8 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, Vector2, Vector3,
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
+    AxisCode, ButtonCode, InputAxisState, Severity, Vector2, Vector3,
+    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
     io::{asset_loader::AssetLoader, model_asset_animated::ModelAssetAnimated},
+    log,
 };
 use std::collections::HashMap;
 
@@ -37,8 +38,9 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
-        println!("present hud encounter");
+    fn present(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+        game_state.log(Severity::Info, "present hud counter");
+
         let asset = AssetLoader::load_asset::<ModelAssetAnimated>(&Assets::EnergyToken.into());
         // let x_offset = 0.15;
         let y_start = 0.75;
@@ -91,7 +93,7 @@ impl UICommon for UIHUD {
         }
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         for x in &self.go_energy_0 {
             for go in x.1 {
                 go.destroy();
@@ -101,7 +103,7 @@ impl UICommon for UIHUD {
         self.go_energy_0.clear();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         let state_energy = game_state.get::<StateEnergy>();
 
         for user_uid in state_energy.all_players {

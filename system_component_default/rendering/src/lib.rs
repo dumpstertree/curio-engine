@@ -26,7 +26,7 @@ use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::built_in::record::sys_record_sun::SysRecordSun;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::game_mode::GameMode;
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use curio_core::system::system_component::SystemComponent;
 use curio_core::system::system_components::system_component_graphics::SystemComponentGraphics;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
@@ -49,9 +49,9 @@ impl SystemComponent for SystemComponentDefaultGraphics {
     fn order(&self) -> i32 {
         9000
     }
-    fn init(&mut self, _game_state: &mut Vec<GameState>) {}
+    fn init(&mut self, _game_state: &mut Vec<Ledger>) {}
 
-    fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
+    fn tick(&mut self, game_state: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
         // initialize frame and get resources for rendering
         let drawing_resources = Self::initialize_frame();
 
@@ -92,7 +92,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         let _window = SystemGPU::get_window();
         // self.egui_renderer.handle_input(&window, &event);
     }
-    fn set_game_mode(&mut self, _: &mut Vec<GameState>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, _: &mut Vec<Ledger>, game_mode: &GameMode) {
         let mut graphics_mapping = vec![];
         for x in &game_mode.game_instances {
             graphics_mapping.push(x.graphics_mappings.clone());

@@ -1,6 +1,6 @@
 use crate::built_in::stimulant::engine_commands::EngineCommands;
 use crate::collections::game_mode::GameMode;
-use crate::collections::game_state::GameState;
+use crate::collections::game_state::Ledger;
 use crate::collections::key_state::KeyState;
 use crate::input::axis_code::AxisCode;
 use crate::Vector3;
@@ -12,18 +12,18 @@ pub trait SystemComponent {
     fn order(&self) -> i32 {
         0
     }
-    fn refresh(&mut self, _game_state: &mut Vec<GameState>, _event_queue: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
+    fn refresh(&mut self, _game_state: &mut Vec<Ledger>, _event_queue: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
         vec![]
     }
 
     // lifecycle
-    fn init(&mut self, _game_state: &mut Vec<GameState>) {}
-    fn tick(&mut self, _game_state: &mut Vec<GameState>, _event_queue: &mut Vec<EventQueue>) {}
-    fn debug(&mut self, _game_state: &mut Vec<GameState>, _event_queue: &mut Vec<EventQueue>) {}
+    fn init(&mut self, _game_state: &mut Vec<Ledger>) {}
+    fn tick(&mut self, _game_state: &mut Vec<Ledger>, _event_queue: &mut Vec<EventQueue>) {}
+    fn debug(&mut self, _game_state: &mut Vec<Ledger>, _event_queue: &mut Vec<EventQueue>) {}
 
     // input
-    fn input_axis(&mut self, _game_statee: &mut Vec<GameState>, _axis_code: AxisCode, _val: Vector3) {}
-    fn input_button(&mut self, _game_state: &mut Vec<GameState>, _key_code: ButtonCode, _val: KeyState) {}
+    fn input_axis(&mut self, _game_statee: &mut Vec<Ledger>, _axis_code: AxisCode, _val: Vector3) {}
+    fn input_button(&mut self, _game_state: &mut Vec<Ledger>, _key_code: ButtonCode, _val: KeyState) {}
 
     // application
     fn application_quit(&mut self) {}
@@ -31,5 +31,5 @@ pub trait SystemComponent {
 
     // raw
     fn raw_event(&mut self, _: WindowEvent) {}
-    fn set_game_mode(&mut self, _game_state: &mut Vec<GameState>, _game_mode: &GameMode) {}
+    fn set_game_mode(&mut self, _game_state: &mut Vec<Ledger>, _game_mode: &GameMode) {}
 }

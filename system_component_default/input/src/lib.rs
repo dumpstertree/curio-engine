@@ -1,7 +1,7 @@
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::game_mode::GameMode;
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use curio_core::{AxisCode, ButtonCode, InputMapping, PlayerInputSnapshot, Vector2, Vector3};
 use std::collections::HashMap;
 
@@ -33,7 +33,7 @@ impl SystemComponent for SystemComponentDefaultInput {
         1000
     }
 
-    fn tick(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) {
+    fn tick(&mut self, game_state: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
         let mut cur_state = 0;
         // iterate over each
         for game_state in game_state {
@@ -67,13 +67,13 @@ impl SystemComponent for SystemComponentDefaultInput {
         // turn off flag
         self.mappings_is_dirty = false;
     }
-    fn input_axis(&mut self, _: &mut Vec<GameState>, code: AxisCode, val: Vector3) {
+    fn input_axis(&mut self, _: &mut Vec<Ledger>, code: AxisCode, val: Vector3) {
         self.state_axis.insert(code, val.to_vector2());
     }
-    fn input_button(&mut self, _: &mut Vec<GameState>, code: ButtonCode, val: KeyState) {
+    fn input_button(&mut self, _: &mut Vec<Ledger>, code: ButtonCode, val: KeyState) {
         self.state_button.insert(code, val == KeyState::Down);
     }
-    fn set_game_mode(&mut self, _game_state: &mut Vec<GameState>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, _game_state: &mut Vec<Ledger>, game_mode: &GameMode) {
         let mut active_mappings = vec![];
         for game_instance in &game_mode.game_instances {
             active_mappings.push(game_instance.input_mappings.clone());

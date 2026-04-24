@@ -2,7 +2,7 @@ use crate::{camera_rendering_components::CameraRenderingComponents, render_featu
 use curio_core::{
     LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
     built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
-    collections::game_state::GameState,
+    collections::game_state::Ledger,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::ahash::{HashMap, HashMapExt};
@@ -18,7 +18,7 @@ impl RenderFeatureDrawMesh {
         Box::new(RenderFeatureDrawMesh { light_system: Vec::new() })
     }
 
-    fn draw_all_mesh(&mut self, game_state: &mut GameState, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+    fn draw_all_mesh(&mut self, game_state: &mut Ledger, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         let state_draws = game_state.get::<SysRecordRendering>();
         let mut draw_calls = state_draws.draw_calls;
 
@@ -175,7 +175,7 @@ impl RenderFeatureDrawMesh {
 }
 
 impl RenderFeature3D for RenderFeatureDrawMesh {
-    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+    fn render(&mut self, game_state: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
@@ -187,7 +187,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
         self.draw_all_mesh(game_state, &config, &device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
     }
 
-    fn clear(&mut self, game_state: &mut GameState) {
+    fn clear(&mut self, game_state: &mut Ledger) {
         game_state.edit::<SysRecordRendering>(|x| x.draw_calls.clear());
         game_state.edit::<SysRecordLights>(|x| x.all_lights.clear());
     }

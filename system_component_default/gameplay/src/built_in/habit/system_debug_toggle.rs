@@ -1,7 +1,7 @@
 use curio_core::{
     ButtonCode,
     built_in::record::{sys_record_debug::SysRecordDebug, sys_record_input::SysRecordInput},
-    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
 };
 
 use crate::{
@@ -17,15 +17,15 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
         // get state
         let state_input = game_state.get::<SysRecordInput>();
 

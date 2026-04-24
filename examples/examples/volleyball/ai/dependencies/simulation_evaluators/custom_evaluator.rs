@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 
 use crate::{
     ai::dependencies::simulation_evaluator::SimulationEvaluator,
@@ -9,7 +9,7 @@ use crate::{
 
 pub struct CustomEvaluator {}
 impl SimulationEvaluator<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomEvaluator {
-    fn evaluate(&self, game_state: &GameState, user: (Teams, Vec<i32>), previous_moves: &Vec<(i32, SimulationManuevers)>) -> i64 {
+    fn evaluate(&self, game_state: &Ledger, user: (Teams, Vec<i32>), previous_moves: &Vec<(i32, SimulationManuevers)>) -> i64 {
         // get states
         let state_position_ball = game_state.get::<StatePositionBall>();
         let state_energy = game_state.get::<StateEnergy>();

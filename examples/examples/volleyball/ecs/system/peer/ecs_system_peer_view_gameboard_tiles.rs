@@ -17,7 +17,7 @@ use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::{Vector2Int, Vector3};
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
 };
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::renderer_common::RendererCommon;
@@ -32,16 +32,16 @@ use habit::habit;
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
         let state_exploration = game_state.get::<StateExploration>();
         state_exploration.exploration.get_cur_room().room_type == RoomTypes::Combat && !state_exploration.is_selecting_next
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, world: &mut Context3D, _events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
         let state_mode = game_state.get::<StatePeerInputMode>();
         let state_deck = game_state.get::<StateDeck>();
         let state_index = game_state.get::<StatePeerSelectedCards>();

@@ -6,7 +6,7 @@ use habit::habit;
 
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 
@@ -29,7 +29,7 @@ use crate::{
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -40,12 +40,12 @@ impl Scope for Instance {
             && !game_state.get::<StateExploration>().is_selecting_next
             && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
         // currently serving and cant move
         let state_ball = game_state.get::<StateBallMode>();
         if state_ball.mode == BallModes::Serve {

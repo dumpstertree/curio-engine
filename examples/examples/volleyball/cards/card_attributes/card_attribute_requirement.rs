@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 
 use crate::{
     game_board::{Directions, GameBoard},
@@ -25,7 +25,7 @@ pub enum CardAttributeRequirement {
 }
 
 impl CardAttributeRequirement {
-    pub fn is_met(&self, game_state: &GameState, user_id: i32) -> bool {
+    pub fn is_met(&self, game_state: &Ledger, user_id: i32) -> bool {
         match self {
             CardAttributeRequirement::BallRangeLessEqual(range) => {
                 let ball_loc = game_state.get::<StatePositionBall>();

@@ -217,5 +217,5 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessFog {
         pass.draw(0..3, 0..1);
     }
 
-    fn clear(&mut self, _game_state: &mut crate::GameState) {}
+    fn clear(&mut self, _game_state: &mut crate::Ledger) {}
 }

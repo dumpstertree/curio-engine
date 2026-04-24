@@ -1,6 +1,6 @@
 use curio_core::collections::{
     event_queue::{EventQueue, IGameEvent},
-    game_state::GameState,
+    game_state::Ledger,
 };
 use hecs::World;
 use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, vec};
@@ -64,7 +64,7 @@ where
             phantom_u: PhantomData::default(),
         }
     }
-    pub fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue) {
+    pub fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue) {
         // if not init -> init
         if !self.has_been_init {
             // flip flag

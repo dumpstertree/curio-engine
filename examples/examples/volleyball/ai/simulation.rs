@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use mcts::{self, GameState as MCTSGameState, transposition_table::TranspositionHash};
 use std::sync::Arc;
 
@@ -16,7 +16,7 @@ where
     data_source: Arc<Box<dyn SimulationDataSource<T, U>>>,
 
     // underlying gamestate
-    game_state: GameState,
+    game_state: Ledger,
 }
 // Impl Fn - Public
 impl<T, U> Simulation<T, U>
@@ -24,7 +24,7 @@ where
     T: Clone + Sync + Send + 'static,
     U: Clone + Sync + Send + 'static,
 {
-    pub fn new(delegate: Arc<Box<dyn SimulationDelegate<T, U>>>, data_source: Arc<Box<dyn SimulationDataSource<T, U>>>, hasher: Arc<Box<dyn SimulationHasher>>, game_state: GameState) -> Simulation<T, U> {
+    pub fn new(delegate: Arc<Box<dyn SimulationDelegate<T, U>>>, data_source: Arc<Box<dyn SimulationDataSource<T, U>>>, hasher: Arc<Box<dyn SimulationHasher>>, game_state: Ledger) -> Simulation<T, U> {
         // create the simulation
         Simulation {
             game_state: game_state,
@@ -36,7 +36,7 @@ where
     pub fn get_user(&self) -> U {
         self.data_source.get_cur_user(&self.game_state)
     }
-    pub fn get_game_state(&self) -> GameState {
+    pub fn get_game_state(&self) -> Ledger {
         self.game_state.clone()
     }
 }

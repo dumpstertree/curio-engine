@@ -6,7 +6,7 @@ use curio_core::{
         sys_record_gui::{GuiElementTypes, SysRecordGui},
         sys_record_debug_gui::SysRecordDebugGui,
     },
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::{Color32, Frame, Pos2, Ui};
@@ -21,7 +21,7 @@ impl RenderFeatureDrawUI {
         Box::new(RenderFeatureDrawUI {})
     }
 
-    fn draw_all_ui(game_state: &mut GameState, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
+    fn draw_all_ui(game_state: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
         let window = SystemGPU::get_window();
         let queue = SystemGPU::get_queue();
         let device = SystemGPU::get_device();
@@ -79,11 +79,11 @@ impl RenderFeatureDrawUI {
     }
 }
 impl RenderFeature2D for RenderFeatureDrawUI {
-    fn render(&mut self, game_state: &mut GameState, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
+    fn render(&mut self, game_state: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
         RenderFeatureDrawUI::draw_all_ui(game_state, system_event_queue, output, encoder, egui_renderer);
     }
 
-    fn clear(&mut self, game_state: &mut GameState) {
+    fn clear(&mut self, game_state: &mut Ledger) {
         game_state.edit::<SysRecordGui>(|x| {
             x.guis.clear();
         });

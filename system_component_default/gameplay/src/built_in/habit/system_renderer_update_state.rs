@@ -14,7 +14,7 @@ use crate::{
 use curio_core::{
     DrawCall, Matrix4x4, Quaternion, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_rendering::SysRecordRendering, sys_record_time::SysRecordTime},
-    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
 };
 
 #[derive(Default)]
@@ -25,15 +25,15 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
     }
 }
 impl Habit for Instance {
-    fn did_tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut EventQueue) {
         let state_camera = state.get::<SysRecordCamera>();
 
         let time = state.get::<SysRecordTime>().scaled_time;

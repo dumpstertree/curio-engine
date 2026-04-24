@@ -1,7 +1,7 @@
 use std::hash::{self, Hash};
 
 use crate::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     extensions::extensions_f32::ExtensionsF32,
     system::system_game_state::IState,
     Color, Vector3,
@@ -38,7 +38,7 @@ impl Hash for LabelDesc {
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct ButtonDesc {
     pub contents: String,
-    pub on_click: fn(game_state: &mut GameState, &mut EventQueue),
+    pub on_click: fn(game_state: &mut Ledger, &mut EventQueue),
 }
 
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -64,7 +64,7 @@ impl GuiElement {
             gui_type: GuiElementTypes::Label(LabelDesc { contents: label, font_size: size, color: color }),
         }
     }
-    pub fn new_text_button(contents: &str, on_click: fn(&mut GameState, &mut EventQueue)) -> GuiElement {
+    pub fn new_text_button(contents: &str, on_click: fn(&mut Ledger, &mut EventQueue)) -> GuiElement {
         GuiElement {
             gui_type: GuiElementTypes::Button(ButtonDesc { contents: contents.to_string(), on_click: on_click }),
         }

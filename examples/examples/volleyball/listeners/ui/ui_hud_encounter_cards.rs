@@ -13,7 +13,7 @@ use crate::{
 };
 use curio_core::{
     AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Quaternion, Vector2, Vector3,
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{
@@ -52,7 +52,7 @@ impl UIPanel for UIHUDInstance {
 }
 impl UICommon for UIHUDInstance {
     fn init(&mut self) {}
-    fn present(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get state
         let state_deck = game_state.get::<StateDeck>();
 
@@ -67,12 +67,12 @@ impl UICommon for UIHUDInstance {
                 .push(Self::spawn_card(game_state, context, card.clone()));
         }
     }
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         for f in &self.f_cards {
             f.destroy();
         }
     }
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // get the state
         let state_cards = game_state.get::<StateDeck>();
         let Some(deck) = state_cards.deck.get(&game_state.instance_id) else {
@@ -208,7 +208,7 @@ impl UICommon for UIHUDInstance {
     }
 }
 impl UIHUDInstance {
-    fn spawn_card(game_state: &mut GameState, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
+    fn spawn_card(game_state: &mut Ledger, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
         //
         let mut desc = card_inst.get_master().description.clone();
         for life in card_inst.get_attributes_lifecycle() {

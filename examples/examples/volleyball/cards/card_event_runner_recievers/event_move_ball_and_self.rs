@@ -7,11 +7,11 @@ use crate::{
         state_teams::{StateTeamAssignments, Teams},
     },
 };
-use curio_core::{Vector2Int, collections::game_state::GameState};
+use curio_core::{Vector2Int, collections::game_state::Ledger};
 
 pub struct EventReciever {}
 impl EventReciever {
-    pub fn recieve(event: &CardEvents, game_state: &mut GameState) -> Vec<CardEvents> {
+    pub fn recieve(event: &CardEvents, game_state: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::EventMoveBallAndEntity(wrapped_tiles, wrapped_entites) => {
                 //

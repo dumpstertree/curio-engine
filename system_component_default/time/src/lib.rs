@@ -4,7 +4,7 @@ use curio_core::built_in::record::sys_record_debug::SysRecordDebug;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::built_in::stimulant::engine_commands::EngineCommands;
 use curio_core::collections::event_queue::EventQueue;
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use curio_core::system::{system_component::SystemComponent, system_components::system_component_time::SystemComponentTime};
 
 pub struct SystemComponentDefaultTime {
@@ -29,7 +29,7 @@ impl SystemComponent for SystemComponentDefaultTime {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, game_state: &mut Vec<GameState>) {
+    fn init(&mut self, game_state: &mut Vec<Ledger>) {
         for game_state in game_state {
             game_state.edit::<SysRecordTime>(|x| {
                 x.target_frame_rate = 60.0;
@@ -37,7 +37,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn tick(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) {
+    fn tick(&mut self, game_state: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
         for game_state in game_state {
             let state_debug = game_state.get::<SysRecordDebug>();
 
@@ -74,7 +74,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn refresh(&mut self, game_state: &mut Vec<GameState>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
+    fn refresh(&mut self, game_state: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
         // get state
         let state_time = game_state[0].get::<SysRecordTime>();
 

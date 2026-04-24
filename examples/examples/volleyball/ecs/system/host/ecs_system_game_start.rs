@@ -6,7 +6,7 @@ use habit::habit;
 
 use curio_core::{
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_network::SysRecordNetwork},
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 use std::vec;
@@ -21,15 +21,15 @@ use crate::{
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
         println!("Instance: {}. Host Startup", game_state.instance_id);
 
         // set resolution

@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::{
@@ -20,15 +20,15 @@ use impulse::impulse;
 #[impulse(GameEvents)]
 pub struct ECSSystemGameRequestTurnEnd {}
 impl Scope for ECSSystemGameRequestTurnEnd {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameRequestTurnEnd {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestTurnEnd(id) => {
                 let Some(team) = game_state.get::<StateTeamAssignments>().team_for(id) else {

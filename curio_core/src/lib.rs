@@ -10,6 +10,8 @@ pub use crate::math::vector4::Vector4;
 pub use crate::math::vector4_int::Vector4Int;
 
 // utils
+pub use crate::log::log;
+pub use crate::log::Severity;
 pub use crate::random::Random;
 
 // assets
@@ -144,6 +146,7 @@ pub mod collections {
     pub mod version_number;
     pub mod window_layout;
 }
+mod log;
 pub mod random;
 
 pub mod static_data {

@@ -1,4 +1,4 @@
-use curio_core::collections::{event_runner::EventRunner, game_state::GameState};
+use curio_core::collections::{event_runner::EventRunner, game_state::Ledger};
 use std::vec;
 
 use crate::cards::{
@@ -14,12 +14,12 @@ use crate::cards::{
 #[derive(Clone)]
 /// Runs events specific to cards. This is broken out so it can be used with any gamestate seamlessly
 pub struct CardEventRunner {
-    runner: EventRunner<CardEvents, GameState>,
+    runner: EventRunner<CardEvents, Ledger>,
 }
 impl CardEventRunner {
     pub fn new() -> CardEventRunner {
         // create the list of all the recievers
-        let recievers: Vec<fn(&CardEvents, &mut GameState) -> Vec<CardEvents>> = vec![
+        let recievers: Vec<fn(&CardEvents, &mut Ledger) -> Vec<CardEvents>> = vec![
             event_heat_drain::EventReciever::recieve,
             event_card_discard::EventReciever::recieve,
             event_card_draw::EventReciever::recieve,
@@ -102,7 +102,7 @@ impl CardEventRunner {
         self.runner
             .enqueue(&CardEvents::ClearModifiersForFlag(*flag));
     }
-    pub fn post_and_drain(&mut self, game_state: &mut GameState) {
+    pub fn post_and_drain(&mut self, game_state: &mut Ledger) {
         self.runner.post_and_drain(game_state);
     }
 }

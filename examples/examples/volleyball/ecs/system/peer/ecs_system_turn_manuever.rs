@@ -16,7 +16,7 @@ use crate::state::state_teams::StateTeamAssignments;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::network_modes::NetworkModes;
-use curio_core::collections::{event_queue::EventQueue, game_state::GameState};
+use curio_core::collections::{event_queue::EventQueue, game_state::Ledger};
 use curio_core::extensions::extensions_i32::ExtensionsI32;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
@@ -32,7 +32,7 @@ pub struct ResponseBuilder {
 }
 
 impl ResponseBuilder {
-    pub fn new(game_state: &GameState, card: Arc<CardInstance>) -> ResponseBuilder {
+    pub fn new(game_state: &Ledger, card: Arc<CardInstance>) -> ResponseBuilder {
         let mut mod_builders = Vec::new();
         for x in card.get_attributes_modifiers(game_state, game_state.instance_id) {
             mod_builders.push(AttributeBuilder::new(x.get_data_dependencies_empty()));
@@ -47,7 +47,7 @@ impl ResponseBuilder {
             evnts: event_builders,
         }
     }
-    pub fn update(&mut self, game_state: &mut GameState) -> bool {
+    pub fn update(&mut self, game_state: &mut Ledger) -> bool {
         // the get the id of the user from the gamestate - possible change to pass in
         let user_id = game_state.instance_id;
 
@@ -99,7 +99,7 @@ impl AttributeBuilder {
     pub fn get_is_full(&self) -> bool {
         self.reference.len() == self.output.len()
     }
-    pub fn update(&mut self, game_state: &mut GameState, user_id: &i32) -> bool {
+    pub fn update(&mut self, game_state: &mut Ledger, user_id: &i32) -> bool {
         while self.output.len() < self.reference.len() {
             let i = self.output.len();
             // match for the reference
@@ -168,12 +168,12 @@ impl AttributeBuilder {
 
         return true;
     }
-    fn try_start(&mut self, game_state: &mut GameState, t: AttributeTargetTypesTiles) {
+    fn try_start(&mut self, game_state: &mut Ledger, t: AttributeTargetTypesTiles) {
         game_state.edit::<StatePeerSelectTargets>(|x| {
             x.enabled = Some(SelectStates::Enabled(t, WorkingState::default()));
         });
     }
-    fn try_complete(&mut self, game_state: &mut GameState, selection_state: SelectStates) -> bool {
+    fn try_complete(&mut self, game_state: &mut Ledger, selection_state: SelectStates) -> bool {
         match selection_state {
             SelectStates::Completed(filled) => {
                 // add to filled
@@ -199,15 +199,15 @@ pub struct Instance {
 }
 impl Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
         !game_state.get::<StateExploration>().is_selecting_next
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, event_queue: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
         let team = game_state
             .get::<StateTeamAssignments>()
             .team_for(&game_state.instance_id);

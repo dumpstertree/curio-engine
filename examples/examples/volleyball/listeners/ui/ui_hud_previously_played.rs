@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Vector2,
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
@@ -49,9 +49,9 @@ impl UIPanel for UIHUD {
 }
 impl UICommon for UIHUD {
     fn init(&mut self) {}
-    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         for i in (0..self.open_gos.len()).rev() {
             let f = &self.open_gos[i].0;
             let t = &self.open_gos[i].1;
@@ -98,7 +98,7 @@ impl UICommon for UIHUD {
     }
 }
 impl UIHUD {
-    fn spawn_card(game_state: &GameState, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
+    fn spawn_card(game_state: &Ledger, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
         let mut desc = card_inst.get_master().description.clone();
         for life in card_inst.get_attributes_lifecycle() {
             match life {

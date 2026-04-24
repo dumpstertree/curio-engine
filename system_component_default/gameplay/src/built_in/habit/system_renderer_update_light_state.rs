@@ -1,7 +1,7 @@
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
 };
 
 use crate::{
@@ -17,22 +17,22 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _game_state: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
+    fn enable(&mut self, _game_state: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
         // game_state.edit::<StateSun>(|x| {
         //     x.cast_shadows = true;
         //     x.color = Color::green();
         //     x.direction = (Vector3::down() + Vector3::forward()).normalize_and_copy()
         // });
     }
-    fn did_tick(&mut self, state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
         //edit draw call states
         let _t = state.get::<SysRecordTime>().scaled_time;
         // state.edit::<StateLights>(|x| {

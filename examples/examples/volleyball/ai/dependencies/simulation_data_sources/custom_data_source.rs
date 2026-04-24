@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use std::sync::Arc;
 
 use crate::{
@@ -24,7 +24,7 @@ use crate::{
 
 pub struct CustomDataSource {}
 impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomDataSource {
-    fn get_cur_user(&self, game_state: &GameState) -> (Teams, Vec<i32>) {
+    fn get_cur_user(&self, game_state: &Ledger) -> (Teams, Vec<i32>) {
         // get state
         let state_teams = game_state.get::<StateTeamAssignments>();
         let state_turn = game_state.get::<StateTurn>();
@@ -41,7 +41,7 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
         // return
         (state_turn.active_instance_id, guids.clone())
     }
-    fn get_all_simulation_actions(&self, game_state: &GameState, user: &(Teams, Vec<i32>)) -> Vec<(i32, SimulationManuevers)> {
+    fn get_all_simulation_actions(&self, game_state: &Ledger, user: &(Teams, Vec<i32>)) -> Vec<(i32, SimulationManuevers)> {
         // create the output
         let mut output: Vec<(i32, SimulationManuevers)> = Vec::new();
 
@@ -75,7 +75,7 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
 }
 
 impl CustomDataSource {
-    fn get_available_manuevers_for_cards(game_state: &GameState, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<(i32, SimulationManuevers)> {
+    fn get_available_manuevers_for_cards(game_state: &Ledger, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<(i32, SimulationManuevers)> {
         //
         let mut all_manuevers = Vec::new();
         let state_energy = game_state.get::<StateEnergy>();
@@ -167,7 +167,7 @@ impl CustomDataSource {
         // return
         all_manuevers
     }
-    fn get_available_manuevers(game_state: &GameState, user_uid: &i32) -> Vec<(i32, SimulationManuevers)> {
+    fn get_available_manuevers(game_state: &Ledger, user_uid: &i32) -> Vec<(i32, SimulationManuevers)> {
         // create the return object containing all the moves
         let mut all_manuevers = Vec::new();
 

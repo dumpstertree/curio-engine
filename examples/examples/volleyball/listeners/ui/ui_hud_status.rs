@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2,
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
 };
 
 use gameplay::{
@@ -30,7 +30,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         return;
         let go_helath = context
             .spawn("text.health", Transform2D::default().set_position_01(Vector2::new(0.2, 0.95)))
@@ -47,9 +47,9 @@ impl UICommon for UIHUD {
         self.go_gold = Some(go_gold);
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
 
-    fn tick(&mut self, game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         let state_health = game_state.get::<StateHealthExploration>();
         if let Some(x) = &self.go_health {
             x.edit_facet::<RendererText>(|y| {

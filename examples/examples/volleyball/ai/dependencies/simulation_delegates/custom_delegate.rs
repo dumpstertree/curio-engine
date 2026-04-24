@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use std::sync::Arc;
 
 use crate::{
@@ -15,7 +15,7 @@ use crate::{
 pub struct CustomDelegate {}
 impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomDelegate {
     // simulates the current move into the gamestate
-    fn simulate(&self, game_state: &mut GameState, user: &(Teams, Vec<i32>), manuever: &(i32, SimulationManuevers)) {
+    fn simulate(&self, game_state: &mut Ledger, user: &(Teams, Vec<i32>), manuever: &(i32, SimulationManuevers)) {
         let user_team = user.0;
         let user_id = manuever.0;
         let manuever = manuever.1.clone();
@@ -48,7 +48,7 @@ impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Custo
     }
 }
 impl CustomDelegate {
-    fn make_manuever_card(game_state: &mut GameState, data: &FilledCardResponse, card: &Arc<CardInstance>, user: &(Teams, i32)) {
+    fn make_manuever_card(game_state: &mut Ledger, data: &FilledCardResponse, card: &Arc<CardInstance>, user: &(Teams, i32)) {
         let cost = card.get_cost(game_state, user.1);
         // take for cost
         game_state.edit::<StateEnergy>(|x| {
@@ -84,7 +84,7 @@ impl CustomDelegate {
         // run all inside runner
         event_runner.post_and_drain(game_state);
     }
-    fn make_manuever_move(game_state: &mut GameState, delta: &Directions, user: &(Teams, i32)) {
+    fn make_manuever_move(game_state: &mut Ledger, delta: &Directions, user: &(Teams, i32)) {
         // pull out the constants
         const MOVE_COST: i32 = 1;
 
@@ -112,7 +112,7 @@ impl CustomDelegate {
             energy_cur_max.0 = energy_cur_max.0 - MOVE_COST;
         });
     }
-    fn make_manuever_end(game_state: &mut GameState) {
+    fn make_manuever_end(game_state: &mut Ledger) {
         // set the current terminated state to true
         game_state.edit::<StateTerminated>(|x| {
             x.is_terminated = true;

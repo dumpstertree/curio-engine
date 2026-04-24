@@ -5,12 +5,12 @@ use crate::{
         state_turn::StateTurn,
     },
 };
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub struct CustomHasher {}
 impl SimulationHasher for CustomHasher {
-    fn hash(&self, game_state: &GameState) -> u64 {
+    fn hash(&self, game_state: &Ledger) -> u64 {
         let mut hasher = DefaultHasher::new();
 
         game_state.get::<StateTerminated>().hash(&mut hasher);

@@ -1,7 +1,7 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2, Vector3,
     built_in::record::{sys_record_input::SysRecordInput, sys_record_time::SysRecordTime},
-    collections::{event_queue::EventQueue, game_state::GameState, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
 };
 
 use gameplay::{
@@ -38,7 +38,7 @@ impl UIPanel for UIPanelMedic {
 impl UICommon for UIPanelMedic {
     fn init(&mut self) {}
 
-    fn present(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // create obj
         let go_desc = context
             .spawn("text.description", Transform2D::default().set_position_01(Vector2::new(0.5, 0.5)))
@@ -58,13 +58,13 @@ impl UICommon for UIPanelMedic {
         self.go_opt_1 = Some(go_opt_1);
     }
 
-    fn dismiss(&mut self, _game_state: &mut GameState, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         self.go_desc.clone().unwrap().destroy();
         self.go_opt_0.clone().unwrap().destroy();
         self.go_opt_1.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut GameState, event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
         let input_state = game_state.get::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]

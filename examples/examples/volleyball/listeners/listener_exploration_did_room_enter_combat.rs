@@ -17,7 +17,7 @@ use curio_core::{ModelAsset, Quaternion, Vector2Int, Vector3};
 use curio_core::io::asset_loader::AssetLoader;
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
 };
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
@@ -32,15 +32,15 @@ use impulse::impulse;
 pub struct Listener {}
 
 impl Scope for Listener {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomEnterCombat(_, _) => {
                 println!("enter combat room");
@@ -70,14 +70,14 @@ impl Impulse<GameEvents> for Listener {
     }
 }
 impl Listener {
-    pub fn spawn_tile_select(_game_state: &mut GameState, world: &mut Context3D) {
+    pub fn spawn_tile_select(_game_state: &mut Ledger, world: &mut Context3D) {
         let asset = Some(AssetLoader::load_asset::<ModelAsset>(&Assets::Ball.into()));
         world
             .spawn("w", Transform3D::default().set_position(Vector3::up() * 0.05))
             .add_facet(ComponentGameBoardSelection::default())
             .add_facet(RendererStatic::default().set_asset(asset.clone()));
     }
-    pub fn spawn_tiles(_game_state: &mut GameState, world: &mut Context3D) {
+    pub fn spawn_tiles(_game_state: &mut Ledger, world: &mut Context3D) {
         let asset = Some(AssetLoader::load_asset::<ModelAsset>(&Assets::GameBoardTileActive.into()));
         // for team in Teams::all() {
         // let min = GameBoard::get_bounds_min_for_team(&team);
@@ -96,7 +96,7 @@ impl Listener {
         }
         // }
     }
-    pub fn spawn_ball(game_state: &mut GameState, world: &mut Context3D) {
+    pub fn spawn_ball(game_state: &mut Ledger, world: &mut Context3D) {
         let mut r = RendererStatic::default();
         r = r.set_asset(Some(AssetLoader::load_asset::<ModelAsset>(&Assets::Ball.into())));
 
@@ -110,7 +110,7 @@ impl Listener {
         });
     }
 
-    pub fn spawn_background(game_state: &mut GameState, world: &mut Context3D) {
+    pub fn spawn_background(game_state: &mut Ledger, world: &mut Context3D) {
         // let spine = AssetLoader::load_spine_from_path("path");
         let asset_court = AssetLoader::load_asset::<ModelAsset>(&Assets::Court.into());
 
@@ -123,7 +123,7 @@ impl Listener {
         });
     }
 
-    pub fn spawn_entities(game_state: &mut GameState, world: &mut Context3D) {
+    pub fn spawn_entities(game_state: &mut Ledger, world: &mut Context3D) {
         let state_entity_visual = game_state.get::<StateVisualEntity>();
         let state_teams = game_state.get::<StateTeamAssignments>();
         for team in Teams::all() {

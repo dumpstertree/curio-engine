@@ -1,11 +1,11 @@
-use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::game_state::GameState, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::game_state::Ledger, system_adapters::adapter_system_gpu::SystemGPU};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};
 
 pub trait RenderFeature3D {
-    fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup);
-    fn clear(&mut self, game_state: &mut GameState);
+    fn render(&mut self, game_state: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup);
+    fn clear(&mut self, game_state: &mut Ledger);
 }
 
 pub struct RenderFeature3DHelper {
@@ -25,7 +25,7 @@ impl RenderFeature3DHelper {
     pub fn draw_3d_features(
         &mut self,
         graphics_mappings: &mut Vec<GraphicsMapping>,
-        game_state: &mut Vec<GameState>,
+        game_state: &mut Vec<Ledger>,
         encoder: &mut egui_wgpu::wgpu::CommandEncoder,
         target_view: &mut egui_wgpu::wgpu::TextureView, // <-- changed from SurfaceTexture
         shadow_system: &ShadowSystem,

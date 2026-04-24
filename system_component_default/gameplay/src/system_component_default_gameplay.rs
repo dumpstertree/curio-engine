@@ -8,7 +8,7 @@ use curio_core::{
     collections::{
         event_queue::{EventQueue, IGameEvent},
         game_mode::GameMode,
-        game_state::GameState,
+        game_state::Ledger,
         key_state::KeyState,
     },
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
@@ -50,19 +50,19 @@ where
     T: IGameEvent + Display + 'static + Clone,
     U: IUIEvent + 'static,
 {
-    fn input_button(&mut self, _game_state: &mut Vec<GameState>, _key_code: ButtonCode, _val: KeyState) {}
-    fn input_axis(&mut self, _game_statee: &mut Vec<GameState>, _axis_code: AxisCode, _val: Vector3) {}
+    fn input_button(&mut self, _game_state: &mut Vec<Ledger>, _key_code: ButtonCode, _val: KeyState) {}
+    fn input_axis(&mut self, _game_statee: &mut Vec<Ledger>, _axis_code: AxisCode, _val: Vector3) {}
     fn order(&self) -> i32 {
         5000
     }
-    fn init(&mut self, _: &mut Vec<GameState>) {}
-    fn set_game_mode(&mut self, _game_state: &mut Vec<GameState>, game_mode: &GameMode) {
+    fn init(&mut self, _: &mut Vec<Ledger>) {}
+    fn set_game_mode(&mut self, _game_state: &mut Vec<Ledger>, game_mode: &GameMode) {
         for _ in &game_mode.game_instances {
             self.game_instance.push(GameplayInstance::new());
         }
     }
-    fn debug(&mut self, _game_state: &mut Vec<GameState>, _system_queue: &mut Vec<EventQueue>) {}
-    fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
+    fn debug(&mut self, _game_state: &mut Vec<Ledger>, _system_queue: &mut Vec<EventQueue>) {}
+    fn tick(&mut self, game_state: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
         // iterate over each gamestate
         for i in 0..game_state.len() {
             // get this index values

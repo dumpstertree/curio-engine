@@ -4,7 +4,7 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
@@ -14,10 +14,10 @@ use habit::habit;
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -34,10 +34,10 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {
+    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
         println!("enabled turn end");
     }
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
         // get input
         let state_input = game_state.get::<SysRecordInput>();
 

@@ -8,7 +8,7 @@ use habit::habit;
 use curio_core::{
     Color, PrefabGameObject, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_sun::SysRecordSun},
-    collections::{event_queue::EventQueue, game_state::GameState, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
     io::asset_loader::AssetLoader,
 };
 
@@ -20,18 +20,18 @@ use crate::{
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, game_state: &mut GameState, _world: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, game_state: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
         println!("Instance: {}. Peer Init", game_state.instance_id);
     }
-    fn enable(&mut self, game_state: &mut GameState, world: &mut Context3D, _event_queue: &mut EventQueue) {
+    fn enable(&mut self, game_state: &mut Ledger, world: &mut Context3D, _event_queue: &mut EventQueue) {
         println!("Instance: {}. Peer Startup", game_state.instance_id);
 
         // load any remote assets now

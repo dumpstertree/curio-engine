@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::{
@@ -22,15 +22,15 @@ use impulse::impulse;
 #[impulse(GameEvents)]
 pub struct ECSSystemGameTurnBegin {}
 impl Scope for ECSSystemGameTurnBegin {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
 impl Impulse<GameEvents> for ECSSystemGameTurnBegin {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _: &mut Context3D, events: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, events: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnBegin(id) => {
                 // end this turn

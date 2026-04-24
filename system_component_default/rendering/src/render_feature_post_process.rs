@@ -1,4 +1,4 @@
-use curio_core::{collections::game_state::GameState, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{collections::game_state::Ledger, system_adapters::adapter_system_gpu::SystemGPU};
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::TextureView;
@@ -8,7 +8,7 @@ use crate::render_feature_post_processes::render_feature_post_process_fog::Rende
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &egui_wgpu::wgpu::TextureView, output_view: &egui_wgpu::wgpu::TextureView, source: PostProcessSource);
 
-    fn clear(&mut self, game_state: &mut GameState);
+    fn clear(&mut self, game_state: &mut Ledger);
 }
 
 #[derive(Clone, Copy, Debug)]

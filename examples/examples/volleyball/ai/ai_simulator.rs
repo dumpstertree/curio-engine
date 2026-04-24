@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::GameState;
+use curio_core::collections::game_state::Ledger;
 use mcts::{MCTSManager, transposition_table::ApproxTable, tree_policy::UCTPolicy};
 use std::sync::Arc;
 
@@ -19,14 +19,14 @@ where
     delegate: Arc<Box<dyn SimulationDelegate<T, U>>>,
     hasher: Arc<Box<dyn SimulationHasher>>,
     evaluator: Arc<Box<dyn SimulationEvaluator<T, U>>>,
-    get_game_state: fn(&GameState) -> GameState,
+    get_game_state: fn(&Ledger) -> Ledger,
 }
 impl<T, U> AISimulator<T, U>
 where
     T: Default + Clone + Sync + Send + 'static,
     U: Clone + Sync + Send + 'static,
 {
-    pub fn new(delgate: Box<dyn SimulationDelegate<T, U>>, data_source: Box<dyn SimulationDataSource<T, U>>, hasher: Box<dyn SimulationHasher>, evaluator: Box<dyn SimulationEvaluator<T, U>>, get_game_state: fn(&GameState) -> GameState) -> AISimulator<T, U> {
+    pub fn new(delgate: Box<dyn SimulationDelegate<T, U>>, data_source: Box<dyn SimulationDataSource<T, U>>, hasher: Box<dyn SimulationHasher>, evaluator: Box<dyn SimulationEvaluator<T, U>>, get_game_state: fn(&Ledger) -> Ledger) -> AISimulator<T, U> {
         AISimulator {
             evaluator: Arc::new(evaluator),
             data_source: Arc::new(data_source),
@@ -35,7 +35,7 @@ where
             get_game_state,
         }
     }
-    pub fn simulate(&self, bulky_game_state: &GameState, fidelity: Fidelity, threading: Threading) -> T {
+    pub fn simulate(&self, bulky_game_state: &Ledger, fidelity: Fidelity, threading: Threading) -> T {
         // we take the bulky game state that is filled with lots of extra info from the entire game and we
         // trim out the fat so there is as little info to clone as we can
         let lean_game_state = (self.get_game_state)(bulky_game_state);

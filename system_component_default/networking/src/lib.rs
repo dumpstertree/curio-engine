@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::GameState, network_modes::NetworkModes, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
+    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::Ledger, network_modes::NetworkModes, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
     system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
 };
 use message_io::node::NodeEvent;
@@ -134,8 +134,8 @@ impl SystemComponentDefaultNetworking {
             });
         });
     }
-    fn tick_offline(&mut self, _game_state: &mut GameState, _: &mut EventQueue) {}
-    fn tick_online_host(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
+    fn tick_offline(&mut self, _game_state: &mut Ledger, _: &mut EventQueue) {}
+    fn tick_online_host(&mut self, game_state: &mut Ledger, _: &mut EventQueue) {
         let Ok(guard) = self.endpoints.lock() else {
             println!("couldnot lock");
             return;
@@ -155,7 +155,7 @@ impl SystemComponentDefaultNetworking {
             }
         }
     }
-    fn tick_online_peer(&mut self, game_state: &mut GameState, _: &mut EventQueue) {
+    fn tick_online_peer(&mut self, game_state: &mut Ledger, _: &mut EventQueue) {
         let Ok(mut guard) = self.incoming_events.lock() else {
             println!("couldnot lock");
             return;
@@ -170,10 +170,10 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     fn order(&self) -> i32 {
         10000
     }
-    fn init(&mut self, _: &mut Vec<GameState>) {
+    fn init(&mut self, _: &mut Vec<Ledger>) {
         println!("init networking");
     }
-    fn tick(&mut self, game_state: &mut Vec<GameState>, event_queue: &mut Vec<EventQueue>) {
+    fn tick(&mut self, game_state: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
         // save all pending changes and apply them at the end
         let mut pending_changes: HashMap<usize, Vec<StateSyncEvent>> = HashMap::new();
 
@@ -319,7 +319,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
     }
-    fn set_game_mode(&mut self, game_state: &mut Vec<GameState>, _game_mode: &GameMode) {
+    fn set_game_mode(&mut self, game_state: &mut Vec<Ledger>, _game_mode: &GameMode) {
         let mut v = vec![];
         for x in game_state.iter() {
             let Some(network_capabilities) = &x.network_capabilities else {

@@ -3,7 +3,7 @@ use crate::state::host::state_currency::StateCurrency;
 use crate::state::host::state_deck_exploration::StateDeckExploration;
 use crate::state::host::state_shop::{StateShop, StockItems};
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
@@ -15,15 +15,15 @@ use impulse::impulse;
 pub struct Listener {}
 
 impl Scope for Listener {
-    fn is_enabled(&mut self, _: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut GameState, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, game_state: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestPurchase(user_id, instance_id) => {
                 println!("purchase requested");

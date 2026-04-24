@@ -11,7 +11,7 @@ use curio_core::Vector2Int;
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
@@ -22,7 +22,7 @@ use std::panic;
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
         game_state
             .get::<StateExploration>()
             .exploration
@@ -30,13 +30,13 @@ impl Scope for Instance {
             .room_type
             == RoomTypes::Combat
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _: &mut GameState, _: &mut Context3D, _: &mut EventQueue) {}
-    fn tick(&mut self, game_state: &mut GameState, _: &mut Context3D, _events: &mut EventQueue) {
+    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
+    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, _events: &mut EventQueue) {
         let state_select_targets = game_state.get::<StatePeerSelectTargets>();
         let state_input = game_state.get::<SysRecordInput>();
         // mode is currently set to NONE
@@ -262,7 +262,7 @@ impl Habit for Instance {
     }
 }
 impl Instance {
-    fn get_all_tiles(&self, game_state: &GameState, target_type: AttributeTargetTypesTiles) -> Vec<Vector2Int> {
+    fn get_all_tiles(&self, game_state: &Ledger, target_type: AttributeTargetTypesTiles) -> Vec<Vector2Int> {
         match target_type {
             AttributeTargetTypesTiles::SelectOpponentBackCorner => {
                 let user_uid = game_state.instance_id;

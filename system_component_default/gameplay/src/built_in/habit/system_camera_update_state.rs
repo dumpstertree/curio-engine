@@ -1,7 +1,7 @@
 use curio_core::{
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug},
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::GameState},
+    collections::{event_queue::EventQueue, game_state::Ledger},
 };
 // use habit::habit;
 
@@ -16,15 +16,15 @@ use crate::{
 #[derive(Default)]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut GameState) -> bool {
+    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut GameState) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, state: &mut GameState, world: &mut Context3D, _: &mut EventQueue) {
+    fn tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut EventQueue) {
         if state.get::<SysRecordDebug>().is_paused {
             return;
         }
