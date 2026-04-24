@@ -5,22 +5,22 @@ use crate::{
         state_turn::StateTurn,
     },
 };
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
 pub struct CustomHasher {}
 impl SimulationHasher for CustomHasher {
-    fn hash(&self, game_state: &Ledger) -> u64 {
+    fn hash(&self, ledger: &Ledger) -> u64 {
         let mut hasher = DefaultHasher::new();
 
-        game_state.get::<StateTerminated>().hash(&mut hasher);
-        game_state.get::<StateTurn>().hash(&mut hasher);
-        game_state.get::<StateTeamAssignments>().hash(&mut hasher);
-        game_state.get::<StatePositionEntities>().hash(&mut hasher);
-        game_state.get::<StatePositionBall>().hash(&mut hasher);
-        game_state.get::<StateEnergy>().hash(&mut hasher);
-        game_state.get::<StateDeck>().hash(&mut hasher);
-        game_state
+        ledger.get::<StateTerminated>().hash(&mut hasher);
+        ledger.get::<StateTurn>().hash(&mut hasher);
+        ledger.get::<StateTeamAssignments>().hash(&mut hasher);
+        ledger.get::<StatePositionEntities>().hash(&mut hasher);
+        ledger.get::<StatePositionBall>().hash(&mut hasher);
+        ledger.get::<StateEnergy>().hash(&mut hasher);
+        ledger.get::<StateDeck>().hash(&mut hasher);
+        ledger
             .get::<StateCardAttributeModifierStack>()
             .hash(&mut hasher);
 

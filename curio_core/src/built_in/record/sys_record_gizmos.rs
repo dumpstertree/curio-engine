@@ -1,4 +1,4 @@
-use crate::{system::system_game_state::IState, Gizmo};
+use crate::{system::system_game_state::RecordCommon, Gizmo};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordGizmos {
@@ -9,7 +9,7 @@ impl SysRecordGizmos {
         SysRecordGizmos { draw_calls: Vec::new() }
     }
 }
-impl IState for SysRecordGizmos {
+impl RecordCommon for SysRecordGizmos {
     fn id() -> i32 {
         9827234
     }

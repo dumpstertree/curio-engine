@@ -1,4 +1,4 @@
-use curio_core::collections::{event_queue::EventQueue, game_state::Ledger};
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
 use hecs::World;
 
 use crate::{context_3d::Context3D, traits::scope::Scope};

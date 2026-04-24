@@ -49,7 +49,7 @@ where
             // evaluate from the custom evaluator and return it with the num of moves for mcts to do its thing
             vec![(); moves.len()],
             self.custom_evaluator_instance
-                .evaluate(&simulation.get_game_state(), simulation.get_user(), moves),
+                .evaluate(&simulation.get_ledger(), simulation.get_user(), moves),
         )
     }
 

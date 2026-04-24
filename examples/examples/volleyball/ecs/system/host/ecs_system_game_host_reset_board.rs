@@ -8,7 +8,7 @@ use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
@@ -17,8 +17,8 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGameResetBoard {}
-impl Scope for ECSSystemGameResetBoard {
+pub struct ECsystemGameResetBoard {}
+impl Scope for ECsystemGameResetBoard {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -27,44 +27,44 @@ impl Scope for ECSSystemGameResetBoard {
     }
 }
 
-impl Impulse<GameEvents> for ECSSystemGameResetBoard {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGameResetBoard {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ResetBoard(serving_team) => {
                 println!("Board Reset------------------------------------------------");
                 // setup ball mode
-                game_state.edit::<StateBallMode>(|x| x.mode = BallModes::Serve);
+                ledger.edit::<StateBallMode>(|x| x.mode = BallModes::Serve);
 
                 // set ball position
-                game_state.edit::<StatePositionBall>(|x| {
+                ledger.edit::<StatePositionBall>(|x| {
                     x.column = GameBoard::get_serving_tile(&serving_team).0;
                     x.row = GameBoard::get_serving_tile(&serving_team).1;
                 });
 
                 // reset attributes
-                game_state.edit::<StateCardAttributeModifierStack>(|x| {
+                ledger.edit::<StateCardAttributeModifierStack>(|x| {
                     x.clear_all();
                 });
 
                 // reset all red
-                let state_team = game_state.get::<StateTeamAssignments>();
+                let state_team = ledger.get::<StateTeamAssignments>();
                 if let Some(guids) = state_team.team_assignments.get(&Teams::Red) {
                     for guid in guids {
                         // reset energy
-                        game_state.edit::<StateEnergy>(|x| {
+                        ledger.edit::<StateEnergy>(|x| {
                             if let Some(y) = x.all_players.get_mut(guid) {
                                 y.0 = y.1;
                             }
                         });
                         // reset position
-                        game_state.edit::<StatePositionEntities>(|x| {
+                        ledger.edit::<StatePositionEntities>(|x| {
                             if let Some(y) = x.positions.get_mut(guid) {
                                 y.0 = GameBoard::get_serving_tile(&Teams::Red).0;
                                 y.1 = GameBoard::get_serving_tile(&Teams::Red).1;
                             }
                         });
                         // reset shuffle deck
-                        game_state.edit::<StateDeck>(|x| {
+                        ledger.edit::<StateDeck>(|x| {
                             if let Some(y) = x.deck.get_mut(guid) {
                                 y.reshuffle();
                                 y.draw(5);
@@ -77,13 +77,13 @@ impl Impulse<GameEvents> for ECSSystemGameResetBoard {
                 if let Some(guids) = state_team.team_assignments.get(&Teams::Blue) {
                     for guid in guids {
                         // reset energy
-                        game_state.edit::<StateEnergy>(|x| {
+                        ledger.edit::<StateEnergy>(|x| {
                             if let Some(y) = x.all_players.get_mut(guid) {
                                 y.0 = y.1;
                             }
                         });
                         // reset position
-                        game_state.edit::<StatePositionEntities>(|x| {
+                        ledger.edit::<StatePositionEntities>(|x| {
                             if let Some(y) = x.positions.get_mut(guid) {
                                 y.0 = GameBoard::get_serving_tile(&Teams::Blue).0 - pos_offset;
                                 y.1 = GameBoard::get_serving_tile(&Teams::Blue).1 - pos_offset;
@@ -91,7 +91,7 @@ impl Impulse<GameEvents> for ECSSystemGameResetBoard {
                         });
                         pos_offset += 1;
                         // reset shuffle deck
-                        game_state.edit::<StateDeck>(|x| {
+                        ledger.edit::<StateDeck>(|x| {
                             if let Some(y) = x.deck.get_mut(guid) {
                                 y.reshuffle();
                                 y.draw(5);

@@ -3,8 +3,8 @@ use crate::collections::state_ownerships::StateOwnerships;
 use std::any::TypeId;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-pub trait IState: AsAny + IStateClone + IStateHash + Sync {
-    fn default_box() -> Box<dyn IState>
+pub trait RecordCommon: AsAny + IStateClone + IStateHash + Sync {
+    fn default_box() -> Box<dyn RecordCommon>
     where
         Self: Sized + Default + 'static,
     {
@@ -30,13 +30,13 @@ pub trait IState: AsAny + IStateClone + IStateHash + Sync {
 
 // clone helper for trait objects
 pub trait IStateClone {
-    fn clone_box(&self) -> Box<dyn IState>;
+    fn clone_box(&self) -> Box<dyn RecordCommon>;
 }
 impl<T> IStateClone for T
 where
-    T: 'static + IState + Clone,
+    T: 'static + RecordCommon + Clone,
 {
-    fn clone_box(&self) -> Box<dyn IState> {
+    fn clone_box(&self) -> Box<dyn RecordCommon> {
         Box::new(self.clone())
     }
 }
@@ -52,7 +52,7 @@ pub trait IStateHash {
 
 impl<T> IStateHash for T
 where
-    T: 'static + IState + Hash,
+    T: 'static + RecordCommon + Hash,
 {
     fn hash_dyn_u64(&self) -> u64 {
         let mut h = DefaultHasher::new();

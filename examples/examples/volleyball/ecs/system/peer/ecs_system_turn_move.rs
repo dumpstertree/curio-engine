@@ -6,7 +6,7 @@ use habit::habit;
 
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     collections::network_modes::NetworkModes
 };
 
@@ -29,40 +29,40 @@ use crate::{
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
-        game_state
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+        ledger
             .get::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
             == RoomTypes::Combat
-            && game_state.get::<StatePeerInputMode>().mode == InputModes::Move
-            && !game_state.get::<StateExploration>().is_selecting_next
-            && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
+            && ledger.get::<StatePeerInputMode>().mode == InputModes::Move
+            && !ledger.get::<StateExploration>().is_selecting_next
+            && ledger.get::<StatePeerSelectTargets>().enabled.is_none()
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
         // currently serving and cant move
-        let state_ball = game_state.get::<StateBallMode>();
+        let state_ball = ledger.get::<StateBallMode>();
         if state_ball.mode == BallModes::Serve {
             return;
         }
 
-        let state_team = game_state.get::<StateTeamAssignments>();
-        let Some(team) = state_team.team_for(&game_state.instance_id) else {
+        let state_team = ledger.get::<StateTeamAssignments>();
+        let Some(team) = state_team.team_for(&ledger.instance_id) else {
             return;
         };
-        let state_position_player = game_state.get::<StatePositionEntities>();
+        let state_position_player = ledger.get::<StatePositionEntities>();
         let pos = state_position_player
             .positions
-            .get(&game_state.instance_id)
+            .get(&ledger.instance_id)
             .unwrap();
         // get states
-        let state_input = game_state.get::<SysRecordInput>();
+        let state_input = ledger.get::<SysRecordInput>();
 
         // get inputs from mapping
         let move_forward = state_input.mapped[0]
@@ -81,19 +81,19 @@ impl Habit for Instance {
         // if any movement detected
         if move_forward || move_back || move_left || move_right {
             if move_forward && GameBoard::can_move(&team, pos, crate::game_board::Directions::Forward) {
-                event_queue.enqueue_event(GameEvents::RequestMoveZPos(game_state.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveZPos(ledger.instance_id));
             }
 
             if move_back && GameBoard::can_move(&team, pos, crate::game_board::Directions::Back) {
-                event_queue.enqueue_event(GameEvents::RequestMoveZNeg(game_state.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveZNeg(ledger.instance_id));
             }
 
             if move_left && GameBoard::can_move(&team, pos, crate::game_board::Directions::Left) {
-                event_queue.enqueue_event(GameEvents::RequestMoveXNeg(game_state.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveXNeg(ledger.instance_id));
             }
 
             if move_right && GameBoard::can_move(&team, pos, crate::game_board::Directions::Right) {
-                event_queue.enqueue_event(GameEvents::RequestMoveXPos(game_state.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveXPos(ledger.instance_id));
             }
         }
     }

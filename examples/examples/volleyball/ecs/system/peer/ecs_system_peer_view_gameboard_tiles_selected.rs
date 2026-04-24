@@ -6,7 +6,7 @@ use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::{
     built_in::facet::{renderer::renderer_static::RendererStatic, renderer_common::RendererCommon, transform::transform3d::Transform3D},
@@ -19,17 +19,17 @@ use habit::habit;
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
-        let state_exploration = game_state.get::<StateExploration>();
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+        let state_exploration = ledger.get::<StateExploration>();
         state_exploration.exploration.get_cur_room().room_type == RoomTypes::Combat && !state_exploration.is_selecting_next
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
-        let state_selection = game_state.get::<StatePeerSelectTargets>();
+    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
+        let state_selection = ledger.get::<StatePeerSelectTargets>();
 
         world.edit::<(&mut Transform3D, &ComponentGameBoardSelection, &mut RendererStatic)>(|query| {
             for (_, (transform, _, renderer)) in query {

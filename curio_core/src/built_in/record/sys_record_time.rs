@@ -2,7 +2,7 @@ use std::hash::Hash;
 
 use crate::{
     extensions::{extensions_f32::ExtensionsF32, extensions_f64::ExtensionsF64},
-    system::system_game_state::IState,
+    system::system_game_state::RecordCommon,
 };
 
 #[derive(Default, PartialEq, Clone)]
@@ -16,7 +16,7 @@ pub struct SysRecordTime {
     pub average_fps: i32,
 }
 impl SysRecordTime {}
-impl IState for SysRecordTime {
+impl RecordCommon for SysRecordTime {
     fn id() -> i32 {
         38345
     }

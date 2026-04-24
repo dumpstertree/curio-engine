@@ -1,6 +1,6 @@
 use curio_core::collections::{
     event_queue::{EventQueue, IGameEvent},
-    game_state::Ledger,
+    ledger::Ledger,
 };
 use hecs::World;
 use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, vec};
@@ -64,7 +64,7 @@ where
             phantom_u: PhantomData::default(),
         }
     }
-    pub fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue) {
+    pub fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue) {
         // if not init -> init
         if !self.has_been_init {
             // flip flag
@@ -72,15 +72,15 @@ where
 
             // initialize each
             for x in self.ecs_systems.iter_mut() {
-                x.0.init(game_state, &mut self.context_32, event_queue);
+                x.0.init(ledger, &mut self.context_32, event_queue);
             }
         }
 
         // if not enabled -> enable
         for ecs_system in self.ecs_systems.iter_mut() {
             // do a network mode check
-            let run_on_network_modes = ecs_system.0.run_on_instance(game_state);
-            let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
+            let run_on_network_modes = ecs_system.0.run_on_instance(ledger);
+            let this_network_mode = &ledger.network_capabilities.clone().unwrap().privilege;
 
             // ignore if doesnt run on this instance
             if !run_on_network_modes.contains(this_network_mode) {
@@ -89,27 +89,27 @@ where
 
             // get cur state of enable
             let is_enabled = ecs_system.1;
-            let should_be_enabled = ecs_system.0.is_enabled(game_state);
+            let should_be_enabled = ecs_system.0.is_enabled(ledger);
 
             // enable
             if should_be_enabled && !is_enabled {
                 ecs_system
                     .0
-                    .enable(game_state, &mut self.context_32, event_queue);
+                    .enable(ledger, &mut self.context_32, event_queue);
             }
 
             // disable
             if !should_be_enabled && is_enabled {
                 ecs_system
                     .0
-                    .disable(game_state, &mut self.context_32, event_queue);
+                    .disable(ledger, &mut self.context_32, event_queue);
             }
 
             // save the new value
             ecs_system.1 = should_be_enabled;
         }
 
-        let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
+        let this_network_mode = &ledger.network_capabilities.clone().unwrap().privilege;
 
         // update any timed events to get added to the queu before we pull anything
         event_queue.update_timed_events();
@@ -120,13 +120,13 @@ where
                 UIEvents::Open(x) => {
                     let mut i = x.new_instance();
                     i.init();
-                    i.present(game_state, event_queue, &mut self.context_2d);
+                    i.present(ledger, event_queue, &mut self.context_2d);
                     //
                     self.ui.insert(x, i);
                 }
                 UIEvents::Close(u) => {
                     if let Some(mut x) = self.ui.remove(&u) {
-                        x.dismiss(game_state, event_queue, &mut self.context_2d);
+                        x.dismiss(ledger, event_queue, &mut self.context_2d);
                     }
                 }
             }
@@ -144,20 +144,20 @@ where
             // apply the event to each of our recievers
             for event_reciever in &mut self.event_recievers {
                 // make sure reciever is enabled
-                if !event_reciever.is_enabled(game_state) {
+                if !event_reciever.is_enabled(ledger) {
                     continue;
                 }
 
                 // make sure reciever can run on this instance type
                 if !event_reciever
-                    .run_on_instance(game_state)
+                    .run_on_instance(ledger)
                     .contains(this_network_mode)
                 {
                     continue;
                 }
 
                 // apply the event to the reciever
-                event_reciever.dequeue_event(game_state, &mut self.context_32, event_queue, this_event);
+                event_reciever.dequeue_event(ledger, &mut self.context_32, event_queue, this_event);
             }
 
             // remove
@@ -179,8 +179,8 @@ where
                 continue;
             }
             // do a network mode check
-            let run_on_network_modes = ecs_system.0.run_on_instance(game_state);
-            let this_network_mode = &game_state.network_capabilities.clone().unwrap().privilege;
+            let run_on_network_modes = ecs_system.0.run_on_instance(ledger);
+            let this_network_mode = &ledger.network_capabilities.clone().unwrap().privilege;
 
             // ignore if doesnt run on this instance
             if !run_on_network_modes.contains(this_network_mode) {
@@ -189,21 +189,21 @@ where
             // debug
             ecs_system
                 .0
-                .debug(game_state, &mut self.context_32, event_queue);
+                .debug(ledger, &mut self.context_32, event_queue);
             // tick
             ecs_system
                 .0
-                .will_tick(game_state, &mut self.context_32, event_queue);
+                .will_tick(ledger, &mut self.context_32, event_queue);
             ecs_system
                 .0
-                .tick(game_state, &mut self.context_32, event_queue);
+                .tick(ledger, &mut self.context_32, event_queue);
             ecs_system
                 .0
-                .did_tick(game_state, &mut self.context_32, event_queue);
+                .did_tick(ledger, &mut self.context_32, event_queue);
         }
 
         for x in self.ui.iter_mut() {
-            x.1.tick(game_state, event_queue, &mut self.context_2d);
+            x.1.tick(ledger, event_queue, &mut self.context_2d);
         }
         // dequeue events
     }

@@ -4,7 +4,7 @@ use curio_core::built_in::record::sys_record_debug::SysRecordDebug;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::built_in::stimulant::engine_commands::EngineCommands;
 use curio_core::collections::event_queue::EventQueue;
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 use curio_core::system::{system_component::SystemComponent, system_components::system_component_time::SystemComponentTime};
 
 pub struct SystemComponentDefaultTime {
@@ -29,21 +29,21 @@ impl SystemComponent for SystemComponentDefaultTime {
     fn order(&self) -> i32 {
         1000
     }
-    fn init(&mut self, game_state: &mut Vec<Ledger>) {
-        for game_state in game_state {
-            game_state.edit::<SysRecordTime>(|x| {
+    fn init(&mut self, ledger: &mut Vec<Ledger>) {
+        for ledger in ledger {
+            ledger.edit::<SysRecordTime>(|x| {
                 x.target_frame_rate = 60.0;
             });
         }
     }
 
-    fn tick(&mut self, game_state: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
-        for game_state in game_state {
-            let state_debug = game_state.get::<SysRecordDebug>();
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
+        for ledger in ledger {
+            let state_debug = ledger.get::<SysRecordDebug>();
 
             let cur_time = self.instant.elapsed().as_secs_f64();
 
-            let fps = 1.0 / (cur_time - game_state.get::<SysRecordTime>().unscaled_time);
+            let fps = 1.0 / (cur_time - ledger.get::<SysRecordTime>().unscaled_time);
             self.fps_average.push(fps);
 
             while self.fps_average.len() > 5 {
@@ -60,7 +60,7 @@ impl SystemComponent for SystemComponentDefaultTime {
             let pause_timescale = self.timescale * if state_debug.is_paused { 0.0 } else { 1.0 };
 
             // edit the state
-            game_state.edit::<SysRecordTime>(|x| {
+            ledger.edit::<SysRecordTime>(|x| {
                 x.frame_num = x.frame_num + 1;
                 x.average_fps = average_fps as i32;
                 // delta time
@@ -74,9 +74,9 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn refresh(&mut self, game_state: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
+    fn refresh(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
         // get state
-        let state_time = game_state[0].get::<SysRecordTime>();
+        let state_time = ledger[0].get::<SysRecordTime>();
 
         // calculate if we tick this frame
         let cur_time = self.instant.elapsed().as_secs_f64();

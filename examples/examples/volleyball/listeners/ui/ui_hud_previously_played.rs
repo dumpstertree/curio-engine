@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Vector2,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
@@ -49,24 +49,24 @@ impl UIPanel for UIHUD {
 }
 impl UICommon for UIHUD {
     fn init(&mut self) {}
-    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
-    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         for i in (0..self.open_gos.len()).rev() {
             let f = &self.open_gos[i].0;
             let t = &self.open_gos[i].1;
-            let dt = game_state.time().scaled_time - t;
+            let dt = ledger.time().scaled_time - t;
             f.edit_facet::<Transform2D>(|x| {
                 x.position = Vector2::new(0.75, Self::remap(Self::ease_in_hold_ease_out(dt as f32 / 2.0), 0.0, 1.0, -0.35, 1.35));
             });
 
-            if game_state.time().scaled_time - t > 2.0 {
+            if ledger.time().scaled_time - t > 2.0 {
                 let f = self.open_gos.remove(i);
                 f.0.destroy();
             }
         }
 
-        let state_play_history = game_state.get::<StatePlayHistory>();
+        let state_play_history = ledger.get::<StatePlayHistory>();
         if state_play_history.history.len() as i32 == self.history_len {
             return;
         }
@@ -82,15 +82,15 @@ impl UICommon for UIHUD {
             return;
         };
 
-        if state_play_history.history.last().unwrap().0 == game_state.instance_id {
+        if state_play_history.history.last().unwrap().0 == ledger.instance_id {
             return;
         };
 
-        let x = Self::spawn_card(&game_state, context, state_play_history.history.last().unwrap().1.clone());
+        let x = Self::spawn_card(&ledger, context, state_play_history.history.last().unwrap().1.clone());
         x.try_edit_facet::<Transform2D>(|x| {
             x.position = Vector2::new(-100.0, 100.0);
         });
-        self.open_gos.push((x, game_state.time().scaled_time));
+        self.open_gos.push((x, ledger.time().scaled_time));
 
         self.history_len = state_play_history.history.len() as i32;
 
@@ -98,7 +98,7 @@ impl UICommon for UIHUD {
     }
 }
 impl UIHUD {
-    fn spawn_card(game_state: &Ledger, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
+    fn spawn_card(ledger: &Ledger, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
         let mut desc = card_inst.get_master().description.clone();
         for life in card_inst.get_attributes_lifecycle() {
             match life {
@@ -127,7 +127,7 @@ impl UIHUD {
             x.set_contents(&format!("{}", card_inst.get_title()));
         });
         f_card.try_edit_facet_in_child::<RendererText>("cost", |x| {
-            x.set_contents(&format!("{}", card_inst.get_cost(game_state, game_state.instance_id)));
+            x.set_contents(&format!("{}", card_inst.get_cost(ledger, ledger.instance_id)));
         });
 
         f_card.try_edit_facet_in_child::<RendererStatic>("background", |renderer: &mut RendererStatic| {

@@ -4,7 +4,7 @@ use crate::{
     state::{state_deck::StateDeck, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::{
@@ -16,8 +16,8 @@ use std::sync::Arc;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGameRequestManuever {}
-impl Scope for ECSSystemGameRequestManuever {
+pub struct ECsystemGameRequestManuever {}
+impl Scope for ECsystemGameRequestManuever {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -25,24 +25,24 @@ impl Scope for ECSSystemGameRequestManuever {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGameRequestManuever {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event
-                println!("----------------------------use manuever!!! for {} with id {}", game_state.name, id);
+                println!("----------------------------use manuever!!! for {} with id {}", ledger.name, id);
 
-                if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
+                if !ECsystemGameRequestManuever::check_player_id(ledger, *id) {
                     println!("mismatch player id");
                     return;
                 }
                 // make sure the card they sent is a valid index
-                // if !ECSSystemGameRequestManuever::check_card_index_persistent(game_state, *id, *card_instance) {
+                // if !ECsystemGameRequestManuever::check_card_index_persistent(ledger, *id, *card_instance) {
                 //     return;
                 // }
 
                 // get state
-                // let state_deck = &game_state.get_value2::<StateDeck>();
+                // let state_deck = &ledger.get_value2::<StateDeck>();
 
                 // get the deck for play id
                 // let Some(deck) = &state_deck.deck.get(id) else {
@@ -52,7 +52,7 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
                 // get the card instance
                 // let card_instance = &deck.hand_persistent[*card_instance as usize];
 
-                let state_deck = &game_state.get::<StateDeck>();
+                let state_deck = &ledger.get::<StateDeck>();
                 let Some(deck) = state_deck.deck.get(id) else {
                     println!("card not found in deck");
                     return;
@@ -61,24 +61,24 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
                 let card_instance = deck.get_instance(*card_instance);
 
                 // play
-                ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
-                println!("-----------------------------------did use manuever!!! for {} with id {}", game_state.name, id);
+                ECsystemGameRequestManuever::try_play_card(ledger, event_queue, card_instance, data, id);
+                println!("-----------------------------------did use manuever!!! for {} with id {}", ledger.name, id);
             }
             GameEvents::RequestUseManeuverConsumable(id, card_instance, data) => {
                 // make sure the correct player is sending an event
 
                 println!("----------------------------use manuever!!!");
 
-                if !ECSSystemGameRequestManuever::check_player_id(game_state, *id) {
+                if !ECsystemGameRequestManuever::check_player_id(ledger, *id) {
                     println!("mismatch player id");
                     return;
                 }
                 // make sure the card they sent is a valid index
-                // if !ECSSystemGameRequestManuever::check_card_index_consumable(game_state, *id, *card_index) {
+                // if !ECsystemGameRequestManuever::check_card_index_consumable(ledger, *id, *card_index) {
                 //     return;
                 // }
 
-                // let state_deck = &game_state.get_value2::<StateDeck>();
+                // let state_deck = &ledger.get_value2::<StateDeck>();
 
                 // get the deck for play id
                 // let Some(deck) = &state_deck.deck.get(id) else {
@@ -88,26 +88,26 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
                 // get the card instance
                 // let card_instance = &deck.hand_consumable[*card_index as usize];
 
-                let state_deck = &game_state.get::<StateDeck>();
+                let state_deck = &ledger.get::<StateDeck>();
                 let Some(deck) = state_deck.deck.get(id) else {
                     println!("card not found in deck");
                     return;
                 };
-                println!("-----------------------------------did use manuever!!! for {}", game_state.name);
+                println!("-----------------------------------did use manuever!!! for {}", ledger.name);
 
                 let card_instance = deck.get_instance(*card_instance);
                 // play
-                ECSSystemGameRequestManuever::try_play_card(game_state, event_queue, card_instance, data, id);
+                ECsystemGameRequestManuever::try_play_card(ledger, event_queue, card_instance, data, id);
             }
 
             _ => {}
         }
     }
 }
-impl ECSSystemGameRequestManuever {
-    fn check_dependencies_match(card: &Arc<CardInstance>, response: &FilledCardResponse, game_state: &Ledger, id: &i32) -> bool {
+impl ECsystemGameRequestManuever {
+    fn check_dependencies_match(card: &Arc<CardInstance>, response: &FilledCardResponse, ledger: &Ledger, id: &i32) -> bool {
         // get the full list of dependencies
-        let deps_empty = card.get_attributes_events(game_state, *id);
+        let deps_empty = card.get_attributes_events(ledger, *id);
         let deps_filled = &response.event;
 
         // check that they have the same length
@@ -141,7 +141,7 @@ impl ECSSystemGameRequestManuever {
                 }
             }
         }
-        let deps_empty = card.get_attributes_modifiers(game_state, *id);
+        let deps_empty = card.get_attributes_modifiers(ledger, *id);
         let deps_filled = &response.modifiers;
         let count = deps_empty.len();
 
@@ -176,21 +176,21 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    fn check_energy(game_state: &mut Ledger, id: i32, cost: i32) -> bool {
-        let has_energy = game_state.get::<StateEnergy>().all_players[&id].0 - cost >= 0;
+    fn check_energy(ledger: &mut Ledger, id: i32, cost: i32) -> bool {
+        let has_energy = ledger.get::<StateEnergy>().all_players[&id].0 - cost >= 0;
         if !has_energy {
-            println!("Requested manuever for not enough energy cur: ({}) cost: ({})", game_state.get::<StateEnergy>().all_players[&id].0, cost);
+            println!("Requested manuever for not enough energy cur: ({}) cost: ({})", ledger.get::<StateEnergy>().all_players[&id].0, cost);
             return false;
         }
 
         return true;
     }
-    fn check_player_id(game_state: &mut Ledger, id: i32) -> bool {
-        let state_teams = game_state
+    fn check_player_id(ledger: &mut Ledger, id: i32) -> bool {
+        let state_teams = ledger
             .get::<StateTeamAssignments>()
             .team_for(&id)
             .unwrap();
-        let is_active_player = game_state.get::<StateTurn>().active_instance_id == state_teams;
+        let is_active_player = ledger.get::<StateTurn>().active_instance_id == state_teams;
         if !is_active_player {
             println!("Requested for non-active player");
             return false;
@@ -198,8 +198,8 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    // fn check_card_index_persistent(game_state: &mut GameState, id: i32, card_index: i32) -> bool {
-    //     let my_deck = &game_state.get::<StateDeck>().deck[&id];
+    // fn check_card_index_persistent(ledger: &mut GameState, id: i32, card_index: i32) -> bool {
+    //     let my_deck = &ledger.get::<StateDeck>().deck[&id];
     //     let is_in_range = card_index < my_deck.hand_persistent.len() as i32;
     //     if !is_in_range {
     //         println!("Card out of bounds");
@@ -208,8 +208,8 @@ impl ECSSystemGameRequestManuever {
 
     //     return true;
     // }
-    fn check_card_index_consumable(game_state: &mut Ledger, id: i32, card_index: i32) -> bool {
-        let my_deck = &game_state.get::<StateDeck>().deck[&id];
+    fn check_card_index_consumable(ledger: &mut Ledger, id: i32, card_index: i32) -> bool {
+        let my_deck = &ledger.get::<StateDeck>().deck[&id];
         let is_in_range = card_index < my_deck.hand_consumable.len() as i32;
         if !is_in_range {
             println!("Card out of bounds");
@@ -218,34 +218,34 @@ impl ECSSystemGameRequestManuever {
 
         return true;
     }
-    fn try_play_card(game_state: &mut Ledger, event_queue: &mut EventQueue, card_instance: Arc<CardInstance>, data: &FilledCardResponse, id: &i32) {
+    fn try_play_card(ledger: &mut Ledger, event_queue: &mut EventQueue, card_instance: Arc<CardInstance>, data: &FilledCardResponse, id: &i32) {
         // let library = CardLibrary::new();
         // let card = &library.get_card(&card_instance.card_id);
 
-        let cost = card_instance.get_cost(&game_state, *id);
-        if !ECSSystemGameRequestManuever::check_energy(game_state, *id, cost) {
+        let cost = card_instance.get_cost(&ledger, *id);
+        if !ECsystemGameRequestManuever::check_energy(ledger, *id, cost) {
             return;
         }
-        if !ECSSystemGameRequestManuever::check_dependencies_match(&card_instance, data, &game_state, id) {
+        if !ECsystemGameRequestManuever::check_dependencies_match(&card_instance, data, &ledger, id) {
             return;
         }
 
         if !card_instance
-            .get_statement(game_state, *id)
+            .get_statement(ledger, *id)
             .requirements
             .iter()
-            .all(|x| x.is_met(game_state, *id))
+            .all(|x| x.is_met(ledger, *id))
         {
             return;
         }
         // spend
-        game_state.edit::<StateEnergy>(|x| {
+        ledger.edit::<StateEnergy>(|x| {
             x.all_players
                 .insert(*id, (x.all_players[id].0 - cost, x.all_players[id].1));
         });
 
         // consume
-        game_state.edit::<StateDeck>(|x| {
+        ledger.edit::<StateDeck>(|x| {
             // get this deck
             let Some(deck) = x.deck.get_mut(id) else {
                 return;

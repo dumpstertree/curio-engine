@@ -26,7 +26,7 @@ use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::built_in::record::sys_record_sun::SysRecordSun;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::game_mode::GameMode;
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 use curio_core::system::system_component::SystemComponent;
 use curio_core::system::system_components::system_component_graphics::SystemComponentGraphics;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
@@ -49,9 +49,9 @@ impl SystemComponent for SystemComponentDefaultGraphics {
     fn order(&self) -> i32 {
         9000
     }
-    fn init(&mut self, _game_state: &mut Vec<Ledger>) {}
+    fn init(&mut self, _ledger: &mut Vec<Ledger>) {}
 
-    fn tick(&mut self, game_state: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
         // initialize frame and get resources for rendering
         let drawing_resources = Self::initialize_frame();
 
@@ -61,20 +61,20 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         let output_view = drawing_resources.2;
 
         self.shadow_system
-            .ensure_screens(game_state.len(), Matrix4x4::default());
-        for i in 0..game_state.len() {
-            let state_sun = game_state[i].get::<SysRecordSun>();
+            .ensure_screens(ledger.len(), Matrix4x4::default());
+        for i in 0..ledger.len() {
+            let state_sun = ledger[i].get::<SysRecordSun>();
             if state_sun.cast_shadows {
                 self.shadow_system
                     .update_for_screen(i, &state_sun.direction);
                 self.shadow_system
-                    .render_for_screen(&mut encoder, i, &game_state[i].get::<SysRecordRendering>().draw_calls);
+                    .render_for_screen(&mut encoder, i, &ledger[i].get::<SysRecordRendering>().draw_calls);
             }
         }
 
         // draw 3D into offscreen
         self.render_feature_3d_helper
-            .draw_3d_features(&mut self.graphics_mappings, game_state, &mut encoder, &mut self.offscreen_view, &self.shadow_system);
+            .draw_3d_features(&mut self.graphics_mappings, ledger, &mut encoder, &mut self.offscreen_view, &self.shadow_system);
 
         // post-processing into swapchain output
         self.render_feature_pp_helper
@@ -82,7 +82,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
 
         // draw all 2d
         self.render_feature_2d_helper
-            .draw_2d_features(game_state, &mut self.graphics_mappings, &mut encoder, &output, event_queue);
+            .draw_2d_features(ledger, &mut self.graphics_mappings, &mut encoder, &output, event_queue);
 
         // finalize the frame and render to the gpu
         Self::finalize_frame(output, encoder);

@@ -7,11 +7,11 @@ use crate::{
         state_teams::{StateTeamAssignments, Teams},
     },
 };
-use curio_core::{Vector2Int, collections::game_state::Ledger};
+use curio_core::{Vector2Int, collections::ledger::Ledger};
 
 pub struct EventReciever {}
 impl EventReciever {
-    pub fn recieve(event: &CardEvents, game_state: &mut Ledger) -> Vec<CardEvents> {
+    pub fn recieve(event: &CardEvents, ledger: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::EventMoveBallAndEntity(wrapped_tiles, wrapped_entites) => {
                 //
@@ -35,7 +35,7 @@ impl EventReciever {
                     return vec![];
                 }
 
-                let Some(team) = game_state
+                let Some(team) = ledger
                     .get::<StateTeamAssignments>()
                     .team_for(&entity_ids[0])
                 else {
@@ -66,13 +66,13 @@ impl EventReciever {
                 let pos_x = tile_ids[0].x.clamp(min.x, max.x);
                 let pos_y = tile_ids[0].y.clamp(min.y, max.y);
                 // edit ball position
-                game_state.edit::<StatePositionBall>(|x| {
+                ledger.edit::<StatePositionBall>(|x| {
                     // x.column = tile_ids[0].x;
                     // x.row = tile_ids[0].y;
                     x.column = pos_x;
                     x.row = pos_y;
                 });
-                game_state.edit::<StatePositionEntities>(|x| {
+                ledger.edit::<StatePositionEntities>(|x| {
                     //
                     if let Some(pos) = x.positions.get_mut(&entity_ids[0]) {
                         pos.0 = pos_x;

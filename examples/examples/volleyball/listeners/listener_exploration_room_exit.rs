@@ -3,8 +3,8 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_enounter_mode::StateEncounter;
 use crate::state::host::state_shop::StateShop;
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -14,9 +14,9 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGamePointScored {}
+pub struct ECsystemGamePointScored {}
 
-impl Scope for ECSSystemGamePointScored {
+impl Scope for ECsystemGamePointScored {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -24,8 +24,8 @@ impl Scope for ECSSystemGamePointScored {
         NetworkModes::all_host()
     }
 }
-impl Impulse<GameEvents> for ECSSystemGamePointScored {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGamePointScored {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationRoomExit(room) => {
                 println!("Exit Exploration Room: {}", room.guid);
@@ -33,7 +33,7 @@ impl Impulse<GameEvents> for ECSSystemGamePointScored {
                 match room.room_type {
                     RoomTypes::Combat => {
                         // get the current encounter we are leaving
-                        let state_encounter = game_state.get::<StateEncounter>();
+                        let state_encounter = ledger.get::<StateEncounter>();
 
                         //get the current encounter
                         let encounter = state_encounter.encounter;
@@ -44,7 +44,7 @@ impl Impulse<GameEvents> for ECSSystemGamePointScored {
                     }
                     RoomTypes::Shop => {
                         // get the current encounter we are leaving
-                        let state_shop = game_state.get::<StateShop>();
+                        let state_shop = ledger.get::<StateShop>();
 
                         //get the current encounter
                         let shop = state_shop.shop;

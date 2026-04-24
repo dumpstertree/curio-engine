@@ -1,6 +1,6 @@
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -19,16 +19,16 @@ pub struct Listener {
 
 // Impl - Instance
 impl Scope for Listener {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
     }
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, _game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, _ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::SetUIMode(ui) => {
                 println!("set ui");

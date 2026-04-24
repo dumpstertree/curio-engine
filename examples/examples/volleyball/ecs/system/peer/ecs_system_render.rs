@@ -15,7 +15,7 @@
 // use built_in_state::state_input::InputState;
 // use curio_core::collections::camera_uniform::CameraSnapshot;
 // use curio_core::collections::draw_call::DrawCall;
-// use curio_core::collections::game_state;
+// use curio_core::collections::ledger;
 // use curio_core::collections::material::Material;
 // use curio_core::collections::matrix4x4::Matrix4x4;
 // use curio_core::collections::mesh::Mesh;
@@ -24,30 +24,30 @@
 // use curio_core::io::asset_loader::AssetLoader;
 // use curio_core::io::model_asset::ModelAsset;
 // use curio_core::{
-//     collections::{event_queue::EventQueue, game_state::GameState},
+//     collections::{event_queue::EventQueue, ledger::GameState},
 //     collections::network_modes::NetworkModes
-//     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+//     gameplay::ecs::traits::ecs_system::ECsystemEventless,
 // };
 // use habit::habit;
 // use hecs::World;
 // use std::sync::Arc;
 
 // #[global_ecs_system]
-// pub struct ECSSystemRender {
+// pub struct ECsystemRender {
 //     // mesh_tile: Option<Arc<ModelAsset>>,
 //     asset: Option<Arc<ModelAsset>>,
 
 //     asset_ball: Option<Arc<ModelAsset>>,
 //     cnt: i32,
 // }
-// impl ECSSystemEventless for ECSSystemRender {
-//     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+// impl ECsystemEventless for ECsystemRender {
+//     fn run_on_instance(&mut self, ledger: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
 //         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
 //     }
-//     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut World) -> bool {
+//     fn is_enabled(&mut self, ledger: &mut GameState, _: &mut World) -> bool {
 //         true
 //     }
-//     fn init(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue, asset_loader: &mut core::io::asset_loader::AssetLoader) {
+//     fn init(&mut self, ledger: &mut GameState, world: &mut WorldContext, _: &mut EventQueue, asset_loader: &mut core::io::asset_loader::AssetLoader) {
 //         let asset = asset_loader.load_gltf("tile.glb").unwrap();
 //         for x in 0..4 {
 //             for z in 0..4 {
@@ -58,20 +58,20 @@
 //         self.asset = asset_loader.load_gltf("player.glb");
 //         self.asset_ball = asset_loader.load_gltf("ball.glb");
 //     }
-//     fn enable(&mut self, game_state: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
-//     fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
+//     fn enable(&mut self, ledger: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {}
+//     fn tick(&mut self, ledger: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
 //         self.cnt += 1;
 //         if self.cnt < 10 {
 //             return;
 //         }
 //         if self.cnt == 10 {
-//             for x in game_state.get_value2::<StatePositionPlayer>().positions {
+//             for x in ledger.get_value2::<StatePositionPlayer>().positions {
 //                 let pos = GameBoard::get_world_position(x.1.0, x.1.1);
 //                 world.spawn((ComponentPlayer::default().set_player_id(x.0), Renderer::default().set_asset(self.asset.clone()), Transform::default().set_position(pos)));
 //             }
 //             world.spawn((ComponentBall::default(), Renderer::default().set_asset(self.asset_ball.clone()), Transform::default()));
 //         }
-//         let state_player_positions = game_state.get_value2::<StatePositionPlayer>();
+//         let state_player_positions = ledger.get_value2::<StatePositionPlayer>();
 //         for (_, (player, transform)) in world.query::<(&ComponentPlayer, &mut Transform)>().iter() {
 //             let loc = state_player_positions
 //                 .positions
@@ -79,7 +79,7 @@
 //                 .unwrap();
 //             transform.position = Vector3::lerp(transform.position, GameBoard::get_world_position(loc.0, loc.1), 0.2);
 //         }
-//         let state_ball_positions = game_state.get_value2::<StatePositionBall>();
+//         let state_ball_positions = ledger.get_value2::<StatePositionBall>();
 //         for (_, (ball, transform)) in world.query::<(&ComponentBall, &mut Transform)>().iter() {
 //             transform.position = Vector3::lerp(transform.position, GameBoard::get_world_position(state_ball_positions.collun, state_ball_positions.row), 0.1);
 //         }

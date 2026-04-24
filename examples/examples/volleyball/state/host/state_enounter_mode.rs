@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 
 use record_serializable::record_serializable;
 
@@ -9,7 +9,7 @@ use crate::listeners::listener_initialize_encounter::Encounter;
 pub struct StateEncounter {
     pub encounter: Encounter,
 }
-impl IState for StateEncounter {
+impl RecordCommon for StateEncounter {
     fn id() -> i32 {
         990249234
     }
@@ -17,7 +17,7 @@ impl IState for StateEncounter {
         StateOwnerships::Instance
     }
 
-    fn default_box() -> Box<dyn IState>
+    fn default_box() -> Box<dyn RecordCommon>
     where
         Self: Sized + Default + 'static,
     {

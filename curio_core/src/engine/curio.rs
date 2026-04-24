@@ -1,6 +1,6 @@
 use crate::{
     built_in::stimulant::engine_commands::EngineCommands,
-    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, game_mode::GameMode, key_state::KeyState, ledger::Ledger},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode},
     random::Random,
@@ -14,7 +14,7 @@ pub struct Curio {
     command_buffer: Vec<EngineCommands>,
     components: Vec<Box<dyn SystemComponent>>,
     game_events: Vec<EventQueue>,
-    game_state: Vec<Ledger>,
+    ledger: Vec<Ledger>,
     game_mode: GameMode,
 }
 
@@ -34,7 +34,7 @@ impl Curio {
 
         // populate all states and events
         for i in 0..game_mode.game_instances.len() {
-            states.push(Ledger::new(&format!("game_state__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode, ids[i], ids.clone()));
+            states.push(Ledger::new(&format!("ledger__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode, ids[i], ids.clone()));
             events.push(EventQueue::new(&format!("event_queue__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode));
         }
 
@@ -47,7 +47,7 @@ impl Curio {
         Curio {
             command_buffer: vec![],
             components: sorted,
-            game_state: states,
+            ledger: states,
             game_events: events,
             game_mode,
         }
@@ -63,7 +63,7 @@ impl CurioCommon for Curio {
         // iterate over each component calling refresh and gathering the returned commands and adding them to the buffer
         for c in &mut self.components {
             self.command_buffer
-                .extend(c.refresh(&mut self.game_state, &mut self.game_events));
+                .extend(c.refresh(&mut self.ledger, &mut self.game_events));
         }
 
         // call fn on each command in the buffer
@@ -73,7 +73,7 @@ impl CurioCommon for Curio {
                     // iterate over each component
                     for c in &mut self.components {
                         // init the state
-                        c.tick(&mut self.game_state, &mut self.game_events);
+                        c.tick(&mut self.ledger, &mut self.game_events);
                     }
                 }
                 _ => {}
@@ -82,21 +82,21 @@ impl CurioCommon for Curio {
     }
     fn input_axis(&mut self, axis: AxisCode, state: Vector3) {
         for c in &mut self.components {
-            c.input_axis(&mut self.game_state, axis, state);
+            c.input_axis(&mut self.ledger, axis, state);
         }
     }
     fn input_button(&mut self, button: ButtonCode, state: KeyState) {
         for c in &mut self.components {
-            c.input_button(&mut self.game_state, button, state);
+            c.input_button(&mut self.ledger, button, state);
         }
     }
     fn window_opened(&mut self) {
         for c in &mut self.components {
             // init the state
-            c.init(&mut self.game_state);
+            c.init(&mut self.ledger);
 
             //set the gamemode the state will start with
-            c.set_game_mode(&mut self.game_state, &self.game_mode);
+            c.set_game_mode(&mut self.ledger, &self.game_mode);
         }
     }
     fn window_closed(&mut self) {

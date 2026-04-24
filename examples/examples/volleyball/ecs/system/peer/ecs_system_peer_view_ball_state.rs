@@ -4,9 +4,9 @@
 // };
 // use built_in_state::state_camera::CameraState;
 // use curio_core::{
-//     collections::{event_queue::EventQueue, game_state::GameState, quaternion::Quaternion, vector3::Vector3},
+//     collections::{event_queue::EventQueue, ledger::GameState, quaternion::Quaternion, vector3::Vector3},
 //     collections::network_modes::NetworkModes
-//     gameplay::{ecs::traits::ecs_system::ECSSystemEventless, world_context::WorldContext},
+//     gameplay::{ecs::traits::ecs_system::ECsystemEventless, world_context::WorldContext},
 // };
 // use habit::habit;
 // use hecs::World;
@@ -23,15 +23,15 @@
 
 // #[global_ecs_system]
 // pub struct ECSSytem {}
-// impl ECSSystemEventless for ECSSytem {
-//     fn run_on_instance(&mut self, game_state: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
+// impl ECsystemEventless for ECSSytem {
+//     fn run_on_instance(&mut self, ledger: &mut GameState) -> Vec<core::dumpster_engine::NetworkModes> {
 //         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
 //     }
-//     fn is_enabled(&mut self, game_state: &mut GameState, _: &mut WorldContext) -> bool {
+//     fn is_enabled(&mut self, ledger: &mut GameState, _: &mut WorldContext) -> bool {
 //         true
 //     }
-//     fn tick(&mut self, game_state: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
-//         let camera_state = game_state.get::<CameraState>();
+//     fn tick(&mut self, ledger: &mut GameState, world: &mut WorldContext, events: &mut EventQueue) {
+//         let camera_state = ledger.get::<CameraState>();
 //         for (_, (transform, renderer, _)) in world
 //             .query::<(&mut Transform, &mut ComponentRendererText, &ComponentUIBallState)>()
 //             .iter()
@@ -42,7 +42,7 @@
 
 //             transform.position = camera_state.cameras.position + camera_state.cameras.rotation * Vector3::new(0.0, 0.4, 1.0);
 //             transform.rotation = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
-//             match game_state.get::<StateBallMode>().mode {
+//             match ledger.get::<StateBallMode>().mode {
 //                 crate::state::state_ball_mode::BallModes::Serve => renderer.set_contents("SERVE"),
 //                 crate::state::state_ball_mode::BallModes::Bump => renderer.set_contents("BUMP"),
 //                 crate::state::state_ball_mode::BallModes::Set => renderer.set_contents("SET"),
@@ -61,15 +61,15 @@
 
 //             transform.position = camera_state.cameras.position + camera_state.cameras.rotation * Vector3::new(0.0, 0.5, 1.0);
 //             transform.rotation = camera_state.cameras.rotation * Quaternion::from_euler(Vector3::new(0.0, 180.0, 0.0));
-//             let state_scores = game_state.get::<StateScore>();
+//             let state_scores = ledger.get::<StateScore>();
 //             let score_red = state_scores.all_scores.get(&Teams::Red).unwrap_or(&0);
 //             let score_blue = state_scores.all_scores.get(&Teams::Blue).unwrap_or(&0);
 //             renderer.set_contents(&format!("{} - {}", score_red, score_blue));
 //         }
 
-//         let state_turn = game_state.get::<StateTurn>();
+//         let state_turn = ledger.get::<StateTurn>();
 
-//         let state_team = game_state.get::<StateTeamAssignments>();
+//         let state_team = ledger.get::<StateTeamAssignments>();
 //         for (_, (transform, renderer, _)) in world
 //             .query::<(&mut Transform, &mut ComponentRendererText, &ComponentUITurnState)>()
 //             .iter()

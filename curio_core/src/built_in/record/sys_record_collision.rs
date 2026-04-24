@@ -1,4 +1,4 @@
-use crate::{built_in::facet::component_collider::CollisionSnapshot, system::system_game_state::IState};
+use crate::{built_in::facet::component_collider::CollisionSnapshot, system::system_game_state::RecordCommon};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordCollision {
@@ -6,7 +6,7 @@ pub struct SysRecordCollision {
 }
 impl SysRecordCollision {}
 
-impl IState for SysRecordCollision {
+impl RecordCommon for SysRecordCollision {
     fn id() -> i32 {
         85738
     }

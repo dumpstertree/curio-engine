@@ -1,4 +1,4 @@
-use crate::system::system_game_state::IState;
+use crate::system::system_game_state::RecordCommon;
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordDebug {
@@ -10,7 +10,7 @@ impl SysRecordDebug {
         SysRecordDebug { is_inspecting: false, is_paused: false }
     }
 }
-impl IState for SysRecordDebug {
+impl RecordCommon for SysRecordDebug {
     fn id() -> i32 {
         908234
     }

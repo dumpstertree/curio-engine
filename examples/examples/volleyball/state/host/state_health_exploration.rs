@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, hash::Hash};
 
 use record_serializable::record_serializable;
@@ -8,7 +8,7 @@ use record_serializable::record_serializable;
 pub struct StateHealthExploration {
     pub all: HashMap<i32, (i32, i32)>,
 }
-impl IState for StateHealthExploration {
+impl RecordCommon for StateHealthExploration {
     fn id() -> i32 {
         990323234
     }

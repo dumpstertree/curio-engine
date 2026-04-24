@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, hash::Hash};
 
 use record_serializable::record_serializable;
@@ -10,7 +10,7 @@ use crate::listeners::listener_initialize_encounter::Controller;
 pub struct StateController {
     pub all_players: HashMap<i32, Controller>,
 }
-impl IState for StateController {
+impl RecordCommon for StateController {
     fn id() -> i32 {
         90183012
     }

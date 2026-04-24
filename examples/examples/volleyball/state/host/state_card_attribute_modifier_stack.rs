@@ -1,5 +1,5 @@
 use crate::cards::{card_modifier::CardModifier, enums::attribute_clear_flag::ModifierClearFlag};
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use record_serializable::record_serializable;
 
 #[derive(PartialEq, Eq, Hash)]
@@ -43,7 +43,7 @@ impl StateCardAttributeModifierStack {
         self.stack.retain(|x| x.clear_flag != clear_flag);
     }
 }
-impl IState for StateCardAttributeModifierStack {
+impl RecordCommon for StateCardAttributeModifierStack {
     fn id() -> i32 {
         0099
     }

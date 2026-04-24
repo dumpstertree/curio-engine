@@ -1,7 +1,7 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, PrefabGameObject,
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 
@@ -40,10 +40,10 @@ impl UIPanel for UIPanelInstance {
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         //
         let mut stock_names = Vec::new();
-        let state_store = game_state.get::<StateShop>();
+        let state_store = ledger.get::<StateShop>();
         for i in 0..state_store.shop.stock.len() {
             let stock = state_store.shop.stock.get(i).unwrap();
             match &stock.item {
@@ -81,19 +81,19 @@ impl UICommon for UIPanelInstance {
         self.f_ui = Some(f_ui);
     }
 
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         if let Some(f_ui) = &self.f_ui {
             f_ui.destroy();
         }
     }
-    fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
         // no items
-        if game_state.get::<StateShop>().shop.stock.len() == 0 {
+        if ledger.get::<StateShop>().shop.stock.len() == 0 {
             return;
         }
 
         let mut is_dirty = false;
-        let input_state = game_state.get::<SysRecordInput>();
+        let input_state = ledger.get::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
                 .get_button_or_default("move_back")
@@ -122,17 +122,17 @@ impl UICommon for UIPanelInstance {
                 if self.selected_index == 3 as i32 {
                     event_queue.enqueue_event(GameEvents::RequestLeaveExplorationRoom);
                 } else {
-                    let state_shop = game_state.get::<StateShop>();
+                    let state_shop = ledger.get::<StateShop>();
                     let stock = &state_shop.shop.stock;
 
                     if let Some(s) = stock.get(self.selected_index as usize) {
-                        event_queue.enqueue_event(GameEvents::RequestPurchase(game_state.instance_id, s.instance_id));
+                        event_queue.enqueue_event(GameEvents::RequestPurchase(ledger.instance_id, s.instance_id));
                     }
                 }
                 is_dirty = true;
             }
 
-            let state_store = game_state.get::<StateShop>();
+            let state_store = ledger.get::<StateShop>();
 
             //
             if !is_dirty && self.stock == state_store.shop.stock {
@@ -143,7 +143,7 @@ impl UICommon for UIPanelInstance {
 
             if let Some(f_ui) = &self.f_ui {
                 let mut stock_names = Vec::new();
-                let state_store = game_state.get::<StateShop>();
+                let state_store = ledger.get::<StateShop>();
 
                 for i in 0..state_store.shop.stock.len() {
                     let stock = state_store.shop.stock.get(i).unwrap();

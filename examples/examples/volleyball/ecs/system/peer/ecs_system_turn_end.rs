@@ -4,7 +4,7 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
@@ -14,22 +14,22 @@ use habit::habit;
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         vec![NetworkModes::LocalPeer, NetworkModes::OnlinePeer]
     }
-    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
-        game_state
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+        ledger
             .get::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
             == RoomTypes::Combat
-            && !game_state.get::<StateExploration>().is_selecting_next
-            && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
-        // game_state.get::<StateTurn>().active_instance_id
-        //     == game_state
+            && !ledger.get::<StateExploration>().is_selecting_next
+            && ledger.get::<StatePeerSelectTargets>().enabled.is_none()
+        // ledger.get::<StateTurn>().active_instance_id
+        //     == ledger
         //         .get::<StateTeamAssignments>()
-        //         .team_for(&game_state.instance_id)
+        //         .team_for(&ledger.instance_id)
         //         .unwrap()
     }
 }
@@ -37,9 +37,9 @@ impl Habit for Instance {
     fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
         println!("enabled turn end");
     }
-    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
         // get input
-        let state_input = game_state.get::<SysRecordInput>();
+        let state_input = ledger.get::<SysRecordInput>();
 
         // guard - input for next turn
         let input_next = state_input.mapped[0]
@@ -50,6 +50,6 @@ impl Habit for Instance {
         }
 
         // send event to end turn
-        events.enqueue_event(GameEvents::RequestTurnEnd(game_state.instance_id));
+        events.enqueue_event(GameEvents::RequestTurnEnd(ledger.instance_id));
     }
 }

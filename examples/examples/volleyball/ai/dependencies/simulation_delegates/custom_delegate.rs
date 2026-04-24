@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 use std::sync::Arc;
 
 use crate::{
@@ -15,20 +15,20 @@ use crate::{
 pub struct CustomDelegate {}
 impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomDelegate {
     // simulates the current move into the gamestate
-    fn simulate(&self, game_state: &mut Ledger, user: &(Teams, Vec<i32>), manuever: &(i32, SimulationManuevers)) {
+    fn simulate(&self, ledger: &mut Ledger, user: &(Teams, Vec<i32>), manuever: &(i32, SimulationManuevers)) {
         let user_team = user.0;
         let user_id = manuever.0;
         let manuever = manuever.1.clone();
         // each manuever type is handled differently. call the corresponding fn for each manuever
         match manuever {
-            SimulationManuevers::PlayCard(card, data) => Self::make_manuever_card(game_state, &data, &card, &(user_team, user_id)),
-            SimulationManuevers::MoveEntity(vector2_int) => Self::make_manuever_move(game_state, &vector2_int, &(user_team, user_id)),
-            SimulationManuevers::EndTurn => Self::make_manuever_end(game_state),
+            SimulationManuevers::PlayCard(card, data) => Self::make_manuever_card(ledger, &data, &card, &(user_team, user_id)),
+            SimulationManuevers::MoveEntity(vector2_int) => Self::make_manuever_move(ledger, &vector2_int, &(user_team, user_id)),
+            SimulationManuevers::EndTurn => Self::make_manuever_end(ledger),
             SimulationManuevers::Invalid => {}
         }
 
         // get state
-        let state_energy = game_state.get::<StateEnergy>();
+        let state_energy = ledger.get::<StateEnergy>();
 
         // get the energy for this user
         let Some(energy_cur_max) = state_energy.all_players.get(&user_id) else {
@@ -40,7 +40,7 @@ impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Custo
         let is_exhuasted = energy_cur_max.0 <= 0;
         if is_exhuasted {
             // edit gamestate for represent our exhausted state
-            game_state.edit::<StateTerminated>(|x| {
+            ledger.edit::<StateTerminated>(|x| {
                 x.is_terminated = true;
                 x.is_exhuasted = true;
             })
@@ -48,10 +48,10 @@ impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Custo
     }
 }
 impl CustomDelegate {
-    fn make_manuever_card(game_state: &mut Ledger, data: &FilledCardResponse, card: &Arc<CardInstance>, user: &(Teams, i32)) {
-        let cost = card.get_cost(game_state, user.1);
+    fn make_manuever_card(ledger: &mut Ledger, data: &FilledCardResponse, card: &Arc<CardInstance>, user: &(Teams, i32)) {
+        let cost = card.get_cost(ledger, user.1);
         // take for cost
-        game_state.edit::<StateEnergy>(|x| {
+        ledger.edit::<StateEnergy>(|x| {
             // get the energy state
             let Some(energy_cur_max) = x.all_players.get_mut(&user.1) else {
                 println!("Could not find 'Energy' for UID: {}", user.1);
@@ -65,8 +65,8 @@ impl CustomDelegate {
         let mut event_runner = CardEventRunner::new();
 
         // get the attributes out of this card
-        let atts_mods = card.get_attributes_modifiers(&game_state, user.1);
-        let atts_evnt = card.get_attributes_events(&game_state, user.1);
+        let atts_mods = card.get_attributes_modifiers(&ledger, user.1);
+        let atts_evnt = card.get_attributes_events(&ledger, user.1);
 
         // iterate over each mod and add it and its data to the runner
         for i in 0..atts_mods.len() {
@@ -82,14 +82,14 @@ impl CustomDelegate {
         event_runner.enqueue_clear_modifiers(&ModifierClearFlag::Play);
 
         // run all inside runner
-        event_runner.post_and_drain(game_state);
+        event_runner.post_and_drain(ledger);
     }
-    fn make_manuever_move(game_state: &mut Ledger, delta: &Directions, user: &(Teams, i32)) {
+    fn make_manuever_move(ledger: &mut Ledger, delta: &Directions, user: &(Teams, i32)) {
         // pull out the constants
         const MOVE_COST: i32 = 1;
 
         // change the position
-        game_state.edit::<StatePositionEntities>(|x| {
+        ledger.edit::<StatePositionEntities>(|x| {
             // get the position state
             let Some(position) = x.positions.get(&user.1) else {
                 println!("Could not find 'Position' for UID: {}", user.1);
@@ -102,7 +102,7 @@ impl CustomDelegate {
         });
 
         // remove the energy needed to move
-        game_state.edit::<StateEnergy>(|x| {
+        ledger.edit::<StateEnergy>(|x| {
             // get the energy state
             let Some(energy_cur_max) = x.all_players.get_mut(&user.1) else {
                 println!("Could not find 'Energy' for UID: {}", user.1);
@@ -112,9 +112,9 @@ impl CustomDelegate {
             energy_cur_max.0 = energy_cur_max.0 - MOVE_COST;
         });
     }
-    fn make_manuever_end(game_state: &mut Ledger) {
+    fn make_manuever_end(ledger: &mut Ledger) {
         // set the current terminated state to true
-        game_state.edit::<StateTerminated>(|x| {
+        ledger.edit::<StateTerminated>(|x| {
             x.is_terminated = true;
         })
     }

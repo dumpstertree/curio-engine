@@ -1,7 +1,7 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2,
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
 };
 
 use gameplay::{
@@ -31,7 +31,7 @@ impl UIPanel for UIPanelInstance {
 impl UICommon for UIPanelInstance {
     fn init(&mut self) {}
 
-    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         let mut rend = RendererText::default();
         rend.set_contents("Combat Rewards");
         // create obj
@@ -55,7 +55,7 @@ impl UICommon for UIPanelInstance {
         self.go_desc = Some(go_desc);
     }
 
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         println!("try dismiss!");
         self.go_desc.clone().unwrap().destroy();
         for x in &self.go_opts {
@@ -64,8 +64,8 @@ impl UICommon for UIPanelInstance {
         self.go_opts.clear();
     }
 
-    fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let state_input = game_state.get::<SysRecordInput>();
+    fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
+        let state_input = ledger.get::<SysRecordInput>();
         if state_input.mapped[0]
             .get_button_or_default("turn_end")
             .went_up

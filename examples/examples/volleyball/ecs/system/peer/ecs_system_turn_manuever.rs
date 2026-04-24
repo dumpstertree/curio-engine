@@ -16,7 +16,7 @@ use crate::state::state_teams::StateTeamAssignments;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::network_modes::NetworkModes;
-use curio_core::collections::{event_queue::EventQueue, game_state::Ledger};
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
 use curio_core::extensions::extensions_i32::ExtensionsI32;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
@@ -32,13 +32,13 @@ pub struct ResponseBuilder {
 }
 
 impl ResponseBuilder {
-    pub fn new(game_state: &Ledger, card: Arc<CardInstance>) -> ResponseBuilder {
+    pub fn new(ledger: &Ledger, card: Arc<CardInstance>) -> ResponseBuilder {
         let mut mod_builders = Vec::new();
-        for x in card.get_attributes_modifiers(game_state, game_state.instance_id) {
+        for x in card.get_attributes_modifiers(ledger, ledger.instance_id) {
             mod_builders.push(AttributeBuilder::new(x.get_data_dependencies_empty()));
         }
         let mut event_builders = Vec::new();
-        for x in card.get_attributes_events(game_state, game_state.instance_id) {
+        for x in card.get_attributes_events(ledger, ledger.instance_id) {
             event_builders.push(AttributeBuilder::new(x.get_data_dependencies_empty()));
         }
         ResponseBuilder {
@@ -47,14 +47,14 @@ impl ResponseBuilder {
             evnts: event_builders,
         }
     }
-    pub fn update(&mut self, game_state: &mut Ledger) -> bool {
+    pub fn update(&mut self, ledger: &mut Ledger) -> bool {
         // the get the id of the user from the gamestate - possible change to pass in
-        let user_id = game_state.instance_id;
+        let user_id = ledger.instance_id;
 
         // iterate over each modifier
         for x in self.mods.iter_mut() {
             if !x.get_is_full() {
-                if !x.update(game_state, &user_id) {
+                if !x.update(ledger, &user_id) {
                     // we updated but still didnt complete so full stop
                     return false;
                 }
@@ -63,7 +63,7 @@ impl ResponseBuilder {
         // iterate over each event
         for x in self.evnts.iter_mut() {
             if !x.get_is_full() {
-                if !x.update(game_state, &user_id) {
+                if !x.update(ledger, &user_id) {
                     // we updated but still didnt complete so full stop
                     return false;
                 }
@@ -99,7 +99,7 @@ impl AttributeBuilder {
     pub fn get_is_full(&self) -> bool {
         self.reference.len() == self.output.len()
     }
-    pub fn update(&mut self, game_state: &mut Ledger, user_id: &i32) -> bool {
+    pub fn update(&mut self, ledger: &mut Ledger, user_id: &i32) -> bool {
         while self.output.len() < self.reference.len() {
             let i = self.output.len();
             // match for the reference
@@ -119,17 +119,17 @@ impl AttributeBuilder {
                     // if selection wait
                     AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => {
                         // get the cur state
-                        let state_select_targets = game_state.get::<StatePeerSelectTargets>();
+                        let state_select_targets = ledger.get::<StatePeerSelectTargets>();
 
                         //if we have a selection
                         let Some(selection_state) = state_select_targets.enabled else {
                             // try to start waiting on a new selection
-                            self.try_start(game_state, target_type);
+                            self.try_start(ledger, target_type);
                             return false;
                         };
 
                         // try to complete - if completed move on to next else return false and try again next frame
-                        if !self.try_complete(game_state, selection_state) {
+                        if !self.try_complete(ledger, selection_state) {
                             return false;
                         }
 
@@ -139,17 +139,17 @@ impl AttributeBuilder {
                     // if selection wait
                     AttributeTargetTypesTiles::SelectOpponentBackCorner | AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamOpponent | AttributeTargetTypesTiles::SelectAny => {
                         // get the cur state
-                        let state_select_targets = game_state.get::<StatePeerSelectTargets>();
+                        let state_select_targets = ledger.get::<StatePeerSelectTargets>();
 
                         //if we have a selection
                         let Some(selection_state) = state_select_targets.enabled else {
                             // try to start waiting on a new selection
-                            self.try_start(game_state, target_type);
+                            self.try_start(ledger, target_type);
                             return false;
                         };
 
                         // try to complete - if completed move on to next else return false and try again next frame
-                        if !self.try_complete(game_state, selection_state) {
+                        if !self.try_complete(ledger, selection_state) {
                             return false;
                         }
 
@@ -163,24 +163,24 @@ impl AttributeBuilder {
 
             // fallback fill
             self.output
-                .push(CardAttributeFillerPlayer::fill_event(game_state, user_id, &self.reference[i]));
+                .push(CardAttributeFillerPlayer::fill_event(ledger, user_id, &self.reference[i]));
         }
 
         return true;
     }
-    fn try_start(&mut self, game_state: &mut Ledger, t: AttributeTargetTypesTiles) {
-        game_state.edit::<StatePeerSelectTargets>(|x| {
+    fn try_start(&mut self, ledger: &mut Ledger, t: AttributeTargetTypesTiles) {
+        ledger.edit::<StatePeerSelectTargets>(|x| {
             x.enabled = Some(SelectStates::Enabled(t, WorkingState::default()));
         });
     }
-    fn try_complete(&mut self, game_state: &mut Ledger, selection_state: SelectStates) -> bool {
+    fn try_complete(&mut self, ledger: &mut Ledger, selection_state: SelectStates) -> bool {
         match selection_state {
             SelectStates::Completed(filled) => {
                 // add to filled
                 self.output.push(filled);
 
                 // clear from state
-                game_state.edit::<StatePeerSelectTargets>(|x| {
+                ledger.edit::<StatePeerSelectTargets>(|x| {
                     x.enabled = None;
                 });
                 // complete did succeed
@@ -199,35 +199,35 @@ pub struct Instance {
 }
 impl Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
-        !game_state.get::<StateExploration>().is_selecting_next
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+        !ledger.get::<StateExploration>().is_selecting_next
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
-        let team = game_state
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
+        let team = ledger
             .get::<StateTeamAssignments>()
-            .team_for(&game_state.instance_id);
+            .team_for(&ledger.instance_id);
         let Some(team) = team else {
             return;
         };
-        let is_turn = game_state.get::<StateTurn>().active_instance_id == team;
+        let is_turn = ledger.get::<StateTurn>().active_instance_id == team;
 
         if is_turn
-            && game_state.get::<StatePeerSelectTargets>().enabled.is_none()
-            && game_state
+            && ledger.get::<StatePeerSelectTargets>().enabled.is_none()
+            && ledger
                 .get::<StateExploration>()
                 .exploration
                 .get_cur_room()
                 .room_type
                 == RoomTypes::Combat
-            && game_state.get::<StatePeerInputMode>().mode == InputModes::Manuever
+            && ledger.get::<StatePeerInputMode>().mode == InputModes::Manuever
         {
-            let state_input = game_state.get::<SysRecordInput>();
-            let state_deck = game_state.get::<StateDeck>();
+            let state_input = ledger.get::<SysRecordInput>();
+            let state_deck = ledger.get::<StateDeck>();
 
             let input_card_left = state_input.mapped[0]
                 .get_button_or_default("card_left")
@@ -239,12 +239,12 @@ impl Habit for Instance {
                 .get_button_or_default("card_submit")
                 .went_up;
 
-            let state_team = game_state.get::<StateTeamAssignments>();
-            let Some(_) = state_team.team_for(&game_state.instance_id) else {
+            let state_team = ledger.get::<StateTeamAssignments>();
+            let Some(_) = state_team.team_for(&ledger.instance_id) else {
                 return;
             };
             // my deck
-            let my_deck = &state_deck.deck[&game_state.instance_id];
+            let my_deck = &state_deck.deck[&ledger.instance_id];
             let my_cards_in_hand = my_deck.get_cards_from_hand(|x| x.get_manuever_type() != CardTypes::Move);
 
             // new bounds for looping
@@ -256,21 +256,21 @@ impl Habit for Instance {
                 .went_up;
 
             if input_card_burn {
-                let state_index = game_state.get::<StatePeerSelectedCards>();
+                let state_index = ledger.get::<StatePeerSelectedCards>();
 
                 let card = my_cards_in_hand[state_index.index as usize].clone();
                 if !card.get_burnable() {
                     return;
                 }
 
-                event_queue.enqueue_event(GameEvents::RequestBurnCard(game_state.instance_id, card.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestBurnCard(ledger.instance_id, card.instance_id));
 
                 println!("card burned");
             }
             // move left or right
             if input_card_left || input_card_right {
                 // edit the selected cards
-                game_state.edit::<StatePeerSelectedCards>(|x| {
+                ledger.edit::<StatePeerSelectedCards>(|x| {
                     // move left
                     if input_card_left {
                         x.index = (x.index - 1).repeat(bounds_min, bounds_max);
@@ -284,27 +284,27 @@ impl Habit for Instance {
             }
 
             // edit the selected cards
-            game_state.edit::<StatePeerSelectedCards>(|x| {
+            ledger.edit::<StatePeerSelectedCards>(|x| {
                 // incase its out of bounds clamp it
                 x.index = x.index.clamp(bounds_min, bounds_max);
             });
             if input_card_submit && self.builder.is_none() {
-                let index = game_state.get::<StatePeerSelectedCards>().index;
+                let index = ledger.get::<StatePeerSelectedCards>().index;
                 // start the builder
-                self.builder = Some(ResponseBuilder::new(game_state, my_cards_in_hand[index as usize].clone()))
+                self.builder = Some(ResponseBuilder::new(ledger, my_cards_in_hand[index as usize].clone()))
             }
         }
 
         let mut did_finalize = false;
         if let Some(builder) = &mut self.builder {
             // update the builder
-            if builder.update(game_state) {
+            if builder.update(ledger) {
                 // try finalize - this should pass because the update returned true
                 if let Some(card_response) = builder.try_finalize() {
                     let x = card_response.1.clone();
                     println!("sending {}", x.event.len());
                     // finished building run event
-                    event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(game_state.instance_id, card_response.0.instance_id, card_response.1));
+                    event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(ledger.instance_id, card_response.0.instance_id, card_response.1));
                     // mark as finalized
                     did_finalize = true;
                 }

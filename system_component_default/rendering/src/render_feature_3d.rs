@@ -1,11 +1,11 @@
-use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::game_state::Ledger, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::ledger::Ledger, system_adapters::adapter_system_gpu::SystemGPU};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};
 
 pub trait RenderFeature3D {
-    fn render(&mut self, game_state: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup);
-    fn clear(&mut self, game_state: &mut Ledger);
+    fn render(&mut self, ledger: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup);
+    fn clear(&mut self, ledger: &mut Ledger);
 }
 
 pub struct RenderFeature3DHelper {
@@ -25,7 +25,7 @@ impl RenderFeature3DHelper {
     pub fn draw_3d_features(
         &mut self,
         graphics_mappings: &mut Vec<GraphicsMapping>,
-        game_state: &mut Vec<Ledger>,
+        ledger: &mut Vec<Ledger>,
         encoder: &mut egui_wgpu::wgpu::CommandEncoder,
         target_view: &mut egui_wgpu::wgpu::TextureView, // <-- changed from SurfaceTexture
         shadow_system: &ShadowSystem,
@@ -52,8 +52,8 @@ impl RenderFeature3DHelper {
         // iterate over each camera in state
         for i in 0..graphics_mappings.len() {
             //
-            let game_state = game_state.get_mut(i).unwrap();
-            let state_camera = game_state.get::<SysRecordCamera>();
+            let ledger = ledger.get_mut(i).unwrap();
+            let state_camera = ledger.get::<SysRecordCamera>();
 
             // get camera data
             let cur_camera_snapshot = &state_camera.cameras;
@@ -79,14 +79,14 @@ impl RenderFeature3DHelper {
 
             // render features
             for feature in self.features.iter_mut() {
-                feature.render(game_state, &mut render_pass, camera_rendering, i, &shadow_system.bind_group_layout, shadow_system.sampling_bind_group_for(i).unwrap());
+                feature.render(ledger, &mut render_pass, camera_rendering, i, &shadow_system.bind_group_layout, shadow_system.sampling_bind_group_for(i).unwrap());
             }
         }
 
         // cleanup
         for feature in self.features.iter_mut() {
-            for game_state in &mut *game_state {
-                feature.clear(game_state);
+            for ledger in &mut *ledger {
+                feature.clear(ledger);
             }
         }
     }

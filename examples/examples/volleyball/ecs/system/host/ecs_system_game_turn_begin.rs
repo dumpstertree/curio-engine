@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::{
@@ -20,8 +20,8 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGameTurnBegin {}
-impl Scope for ECSSystemGameTurnBegin {
+pub struct ECsystemGameTurnBegin {}
+impl Scope for ECsystemGameTurnBegin {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -29,37 +29,37 @@ impl Scope for ECSSystemGameTurnBegin {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl Impulse<GameEvents> for ECSSystemGameTurnBegin {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, events: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGameTurnBegin {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnBegin(id) => {
                 // end this turn
-                println!("Instance: {}. Begin Turn {}", game_state.instance_id, id);
+                println!("Instance: {}. Begin Turn {}", ledger.instance_id, id);
 
-                game_state.edit::<StateTurn>(|x| {
+                ledger.edit::<StateTurn>(|x| {
                     x.active_instance_id = *id;
                 });
 
-                for guid in game_state
+                for guid in ledger
                     .get::<StateTeamAssignments>()
                     .team_assignments
                     .get(id)
                     .unwrap()
                 {
-                    let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
+                    let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
                     let mod_stack = state_modifiers.get_flat_stack_for_entity(*guid);
 
-                    let state_energy = game_state.get::<StateEnergy>();
+                    let state_energy = ledger.get::<StateEnergy>();
                     let cur_energy = state_energy.all_players.get(guid).unwrap_or(&(0, 0));
 
                     println!("cur energy {}", cur_energy.0);
 
-                    game_state.edit::<StateDeck>(|x| {
+                    ledger.edit::<StateDeck>(|x| {
                         if let Some(deck) = x.deck.get_mut(guid) {
                             deck.draw(1);
                         }
                     });
-                    game_state.edit::<StateHeat>(|x| {
+                    ledger.edit::<StateHeat>(|x| {
                         if !x.all_players.contains_key(guid) {
                             x.all_players.insert(*guid, cur_energy.0);
                         } else {
@@ -68,9 +68,9 @@ impl Impulse<GameEvents> for ECSSystemGameTurnBegin {
                         }
                     });
 
-                    println!("heat {}", game_state.get::<StateHeat>().all_players[guid]);
+                    println!("heat {}", ledger.get::<StateHeat>().all_players[guid]);
                     // update energy
-                    game_state.edit::<StateEnergy>(|x| {
+                    ledger.edit::<StateEnergy>(|x| {
                         if let Some(y) = x.all_players.get_mut(guid) {
                             y.0 = y.1 + mod_stack.energy;
                         }

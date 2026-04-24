@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, hash::Hash};
 
 use record_serializable::record_serializable;
@@ -10,7 +10,7 @@ use crate::state::state_deck::Deck;
 pub struct StateDeckExploration {
     pub deck: HashMap<i32, Deck>,
 }
-impl IState for StateDeckExploration {
+impl RecordCommon for StateDeckExploration {
     fn id() -> i32 {
         99023234
     }

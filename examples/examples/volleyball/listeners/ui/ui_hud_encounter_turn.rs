@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
 };
 
 use gameplay::{
@@ -28,7 +28,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         return;
         // create obj
         let go_text = context
@@ -39,18 +39,18 @@ impl UICommon for UIHUD {
         self.go_text = Some(go_text);
     }
 
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         self.go_text.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // try to unwrap
         let Some(go_text) = &self.go_text else {
             return;
         };
 
         // get cur turn
-        let cur_turn = game_state.get::<StateTurn>().active_instance_id;
+        let cur_turn = ledger.get::<StateTurn>().active_instance_id;
 
         // edit the text
         go_text.edit_facet::<RendererText>(|x| {

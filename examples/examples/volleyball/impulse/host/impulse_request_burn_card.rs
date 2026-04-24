@@ -4,7 +4,7 @@ use crate::{
 };
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -25,10 +25,10 @@ impl Scope for ImpulseInstance {
     }
 }
 impl Impulse<GameEvents> for ImpulseInstance {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestBurnCard(user_guid, card_guid) => {
-                game_state.edit::<StateDeck>(|x| {
+                ledger.edit::<StateDeck>(|x| {
                     if let Some(deck) = x.deck.get_mut(user_guid) {
                         let card_instance = deck.get_instance(*card_guid);
                         if !card_instance.get_burnable() {
@@ -38,7 +38,7 @@ impl Impulse<GameEvents> for ImpulseInstance {
                     }
                 });
 
-                game_state.edit::<StateEnergy>(|x| {
+                ledger.edit::<StateEnergy>(|x| {
                     if let Some(energy) = x.all_players.get_mut(user_guid) {
                         energy.0 += 1;
                     }

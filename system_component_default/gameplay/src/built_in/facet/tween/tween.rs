@@ -3,7 +3,7 @@ use std::any::{Any, TypeId};
 use curio_core::{
     Quaternion, Vector2, Vector3,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
 };
 
 use crate::{
@@ -390,18 +390,18 @@ impl TweenCommon for TweenTransform2DScale {
 pub struct Instance;
 
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
 
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
     }
 }
 
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut Ledger, context: &mut Context3D, _: &mut EventQueue) {
-        let dt = game_state.time().scaled_delta_time;
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _: &mut EventQueue) {
+        let dt = ledger.time().scaled_delta_time;
 
         context.edit::<&mut Tween>(|q| {
             for (_, t) in q {

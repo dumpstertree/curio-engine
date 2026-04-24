@@ -1,6 +1,6 @@
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     random::Random,
 };
 use gameplay::{
@@ -29,35 +29,35 @@ pub struct Listener {}
 
 // Impl - Instance
 impl Scope for Listener {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::InitializeExploration(exploration) => {
                 // log
                 println!("Exploration Initialized");
 
                 // assign and start the exploration
-                game_state.edit::<StateExploration>(|x| {
+                ledger.edit::<StateExploration>(|x| {
                     x.exploration = exploration.clone();
                     x.exploration.start();
                 });
 
                 // get the state
-                let state_exploration = game_state.get::<StateExploration>();
+                let state_exploration = ledger.get::<StateExploration>();
 
                 // get the exploration from the state
                 let cur_exploration = state_exploration.exploration;
 
                 // set the healthpoint total
-                game_state.edit::<StateScore>(|x| {
+                ledger.edit::<StateScore>(|x| {
                     x.all_scores.insert(Teams::Red, 10);
                 });
 

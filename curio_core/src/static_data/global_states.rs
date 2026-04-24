@@ -4,12 +4,12 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use crate::system::system_game_state::IState;
+use crate::system::system_game_state::RecordCommon;
 use serde::{de::DeserializeOwned, Serialize};
 
-type CreateFn = fn() -> Box<dyn IState>;
+type CreateFn = fn() -> Box<dyn RecordCommon>;
 type SerializerFn = fn(&dyn Any) -> Vec<u8>;
-type DeserializerFn = fn(&[u8]) -> Box<dyn IState>;
+type DeserializerFn = fn(&[u8]) -> Box<dyn RecordCommon>;
 
 struct StateRegistry {
     creators: HashMap<i32, CreateFn>,
@@ -85,7 +85,7 @@ pub fn get_global_state_serializer(id: &i32) -> Option<SerializerFn> {
 /// Register a State to be added to the Global State Registry
 pub fn register_global_state<T>()
 where
-    T: Any + IState + Default + 'static,
+    T: Any + RecordCommon + Default + 'static,
 {
     let mut registry = REGISTRY.write().expect("Registry poisoned");
     registry.creators.insert(T::id(), || Box::new(T::default()));
@@ -93,7 +93,7 @@ where
 /// Register a State  to be added to the Global State Registry that conforms to Serialize and DeserializeOwned in order to be transmisable between GameStates
 pub fn register_global_state_serializable<T>()
 where
-    T: IState + Serialize + DeserializeOwned + Default + Any + 'static,
+    T: RecordCommon + Serialize + DeserializeOwned + Default + Any + 'static,
 {
     let mut registry = REGISTRY.write().expect("Registry poisoned");
 

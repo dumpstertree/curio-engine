@@ -1,4 +1,4 @@
-use crate::system::system_game_state::IState;
+use crate::system::system_game_state::RecordCommon;
 use std::{collections::HashMap, fmt::Debug, hash::Hash};
 
 // ------------------------------------------------------
@@ -10,7 +10,7 @@ pub struct StateMap<K>
 where
     K: Eq + Hash + Clone + Debug,
 {
-    map: HashMap<K, Box<dyn IState>>,
+    map: HashMap<K, Box<dyn RecordCommon>>,
 }
 
 // ------------------------------------------------------
@@ -38,15 +38,15 @@ where
     }
 
     /// Insert a new IState into the map.
-    pub fn insert<T: IState + Default + Clone + 'static>(&mut self, key: K, value: T) {
+    pub fn insert<T: RecordCommon + Default + Clone + 'static>(&mut self, key: K, value: T) {
         self.map.insert(key, Box::new(value));
     }
-    pub fn insert_any(&mut self, key: K, value: Box<dyn IState>) {
+    pub fn insert_any(&mut self, key: K, value: Box<dyn RecordCommon>) {
         self.map.insert(key, value);
     }
 
     /// Get a reference to a stored type.
-    pub fn get<T: IState + 'static, Q: ?Sized + Eq + Hash>(&self, key: &Q) -> Option<&T>
+    pub fn get<T: RecordCommon + 'static, Q: ?Sized + Eq + Hash>(&self, key: &Q) -> Option<&T>
     where
         K: std::borrow::Borrow<Q>,
     {
@@ -54,7 +54,7 @@ where
     }
 
     /// Get a mutable reference to a stored type.
-    pub fn get_mut<T: IState + 'static, Q: ?Sized + Eq + Hash>(&mut self, key: &Q) -> Option<&mut T>
+    pub fn get_mut<T: RecordCommon + 'static, Q: ?Sized + Eq + Hash>(&mut self, key: &Q) -> Option<&mut T>
     where
         K: std::borrow::Borrow<Q>,
     {
@@ -70,7 +70,7 @@ where
     }
 
     /// Remove a key and return the boxed IState.
-    pub fn remove<Q: ?Sized + Eq + Hash>(&mut self, key: &Q) -> Option<Box<dyn IState>>
+    pub fn remove<Q: ?Sized + Eq + Hash>(&mut self, key: &Q) -> Option<Box<dyn RecordCommon>>
     where
         K: std::borrow::Borrow<Q>,
     {
@@ -93,12 +93,12 @@ where
     }
 
     /// Iterate over keys and their dyn values.
-    pub fn iter(&self) -> impl Iterator<Item = (&K, &Box<dyn IState>)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &Box<dyn RecordCommon>)> {
         self.map.iter()
     }
 
     /// Mutable iterator.
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut Box<dyn IState>)> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut Box<dyn RecordCommon>)> {
         self.map.iter_mut()
     }
 }
@@ -115,7 +115,7 @@ pub trait AsAny {
     }
 }
 
-impl<T: IState + 'static> AsAny for T {
+impl<T: RecordCommon + 'static> AsAny for T {
     fn as_any(&self) -> Option<&dyn std::any::Any> {
         Some(self)
     }

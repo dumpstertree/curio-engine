@@ -1,4 +1,4 @@
-use curio_core::{Vector2Int, collections::game_state::Ledger, random::Random};
+use curio_core::{Vector2Int, collections::ledger::Ledger, random::Random};
 
 use crate::{
     cards::{
@@ -17,16 +17,16 @@ use crate::{
 };
 pub struct CardAttributeFillerAI {}
 impl CardAttributeFillerAI {
-    pub fn fill_dependency_tiles(game_state: &Ledger, uid: &i32, empty: AttributeTargetTypesTiles) -> DataDepsFilledAllPermutations {
+    pub fn fill_dependency_tiles(ledger: &Ledger, uid: &i32, empty: AttributeTargetTypesTiles) -> DataDepsFilledAllPermutations {
         // create the list of permutations
         let mut permuatations = DataDepsFilledAllPermutations::new();
 
         // match for empty type
         match empty {
             AttributeTargetTypesTiles::SelectInRangeLocalToBall(min, max) => {
-                let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
-                let state_turn = game_state.get::<StateTurn>();
-                let state = game_state.get::<StatePositionEntities>();
+                let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
+                let state_turn = ledger.get::<StateTurn>();
+                let state = ledger.get::<StatePositionEntities>();
                 let state_position_ball = state.positions.get(uid).unwrap();
 
                 // get the modifiers for stack
@@ -48,7 +48,7 @@ impl CardAttributeFillerAI {
             }
             AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::RandomOnTeamUser => {
                 // get state
-                let state_team = game_state.get::<StateTeamAssignments>();
+                let state_team = ledger.get::<StateTeamAssignments>();
 
                 // get the team for this user
                 let Some(my_team) = state_team.team_for(&uid) else {
@@ -66,7 +66,7 @@ impl CardAttributeFillerAI {
             }
             AttributeTargetTypesTiles::SelectOnTeamOpponent | AttributeTargetTypesTiles::RandomOnTeamOpponent => {
                 // get state
-                let state_team = game_state.get::<StateTeamAssignments>();
+                let state_team = ledger.get::<StateTeamAssignments>();
 
                 // get the team for this user
                 let Some(my_team) = state_team.team_for(&uid) else {
@@ -85,9 +85,9 @@ impl CardAttributeFillerAI {
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)]));
             }
             AttributeTargetTypesTiles::RandomInRangeLocalToBall(min, max) => {
-                let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
-                let state_turn = game_state.get::<StateTurn>();
-                let state_position_ball = game_state.get::<StatePositionBall>();
+                let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
+                let state_turn = ledger.get::<StateTurn>();
+                let state_position_ball = ledger.get::<StatePositionBall>();
 
                 // get the modifiers for stack
                 let modifier_stack = state_modifiers.get_flat_stack_for_entity(*uid);
@@ -107,9 +107,9 @@ impl CardAttributeFillerAI {
                 permuatations.add_permutation(DataDepsFilled::Tiles(vec![Vector2Int::new(col, row)]));
             }
             AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => {
-                let state_modifiers = game_state.get::<StateCardAttributeModifierStack>();
-                let state_turn = game_state.get::<StateTurn>();
-                let state = game_state.get::<StatePositionEntities>();
+                let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
+                let state_turn = ledger.get::<StateTurn>();
+                let state = ledger.get::<StatePositionEntities>();
                 let state_position_ball = state.positions.get(uid).unwrap();
 
                 // get the modifiers for stack
@@ -143,7 +143,7 @@ impl CardAttributeFillerAI {
         // return the now filled permutations
         permuatations
     }
-    pub fn fill_dependency_entities(game_state: &Ledger, uid: &i32, empty: AttribtuteTargetTypesEntities) -> DataDepsFilledAllPermutations {
+    pub fn fill_dependency_entities(ledger: &Ledger, uid: &i32, empty: AttribtuteTargetTypesEntities) -> DataDepsFilledAllPermutations {
         // create the list of permutations
         let mut permuatations = DataDepsFilledAllPermutations::new();
 
@@ -154,7 +154,7 @@ impl CardAttributeFillerAI {
             }
             AttribtuteTargetTypesEntities::Select => {
                 // get state
-                let state_team = game_state.get::<StateTeamAssignments>();
+                let state_team = ledger.get::<StateTeamAssignments>();
 
                 // iterate over each team + uids
                 for team_ids in state_team.team_assignments {
@@ -167,7 +167,7 @@ impl CardAttributeFillerAI {
             }
             AttribtuteTargetTypesEntities::RandomAny => {
                 // get state
-                let state_team = game_state.get::<StateTeamAssignments>();
+                let state_team = ledger.get::<StateTeamAssignments>();
 
                 // get the uids of a random team
                 let Some(random_team) = state_team.team_assignments.get(&Teams::random()) else {
@@ -189,7 +189,7 @@ impl CardAttributeFillerAI {
             }
             AttribtuteTargetTypesEntities::RandomOpponent => {
                 // get state
-                let state_team = game_state.get::<StateTeamAssignments>();
+                let state_team = ledger.get::<StateTeamAssignments>();
 
                 // get the team for this user
                 let Some(my_team) = state_team.team_for(&uid) else {
@@ -223,7 +223,7 @@ impl CardAttributeFillerAI {
         // return the now filled permutations
         permuatations
     }
-    pub fn fill_dependency_cards(game_state: &Ledger, uid: &i32, empty: AttributeTargetTypesCards) -> DataDepsFilledAllPermutations {
+    pub fn fill_dependency_cards(ledger: &Ledger, uid: &i32, empty: AttributeTargetTypesCards) -> DataDepsFilledAllPermutations {
         // create the list of permutations
         let mut permuatations = DataDepsFilledAllPermutations::new();
 
@@ -233,7 +233,7 @@ impl CardAttributeFillerAI {
             AttributeTargetTypesCards::RandomUser => todo!(),
             AttributeTargetTypesCards::RandomOpponent => todo!(),
             AttributeTargetTypesCards::AllUser => {
-                let state_deck = game_state.get::<StateDeck>();
+                let state_deck = ledger.get::<StateDeck>();
 
                 // if we cant find a deck break
                 let Some(deck) = state_deck.deck.get(uid) else {

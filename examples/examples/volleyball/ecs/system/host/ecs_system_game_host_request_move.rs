@@ -5,7 +5,7 @@ use crate::{
 };
 use curio_core::{
     Vector2Int,
-    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -15,10 +15,10 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGameRequestMove {}
-impl ECSSystemGameRequestMove {
-    fn check_energy(game_state: &mut Ledger, id: i32) -> bool {
-        let has_energy = game_state.get::<StateEnergy>().all_players[&id].0 > 0;
+pub struct ECsystemGameRequestMove {}
+impl ECsystemGameRequestMove {
+    fn check_energy(ledger: &mut Ledger, id: i32) -> bool {
+        let has_energy = ledger.get::<StateEnergy>().all_players[&id].0 > 0;
         if !has_energy {
             println!("Requested Move for not enough energy");
             return false;
@@ -26,12 +26,12 @@ impl ECSSystemGameRequestMove {
 
         return true;
     }
-    fn check_player_id(game_state: &mut Ledger, id: i32) -> bool {
-        let state_teams = game_state
+    fn check_player_id(ledger: &mut Ledger, id: i32) -> bool {
+        let state_teams = ledger
             .get::<StateTeamAssignments>()
             .team_for(&id)
             .unwrap();
-        let is_active_player = game_state.get::<StateTurn>().active_instance_id == state_teams;
+        let is_active_player = ledger.get::<StateTurn>().active_instance_id == state_teams;
         if !is_active_player {
             println!("Requested Move for non-active player");
             return false;
@@ -39,8 +39,8 @@ impl ECSSystemGameRequestMove {
 
         return true;
     }
-    fn check_bounds(game_state: &mut Ledger, id: i32, x_diff: i32, z_diff: i32, bounds_min: Vector2Int, bounds_max: Vector2Int) -> bool {
-        let cur_pos = game_state.get::<StatePositionEntities>().positions[&id];
+    fn check_bounds(ledger: &mut Ledger, id: i32, x_diff: i32, z_diff: i32, bounds_min: Vector2Int, bounds_max: Vector2Int) -> bool {
+        let cur_pos = ledger.get::<StatePositionEntities>().positions[&id];
         let new_pos = (cur_pos.0 + x_diff, cur_pos.1 + z_diff);
         let in_bounds = new_pos.0 >= bounds_min.x && new_pos.0 <= bounds_max.x && new_pos.1 >= bounds_min.y && new_pos.1 <= bounds_max.y;
         if !in_bounds {
@@ -52,7 +52,7 @@ impl ECSSystemGameRequestMove {
         return true;
     }
 }
-impl Scope for ECSSystemGameRequestMove {
+impl Scope for ECsystemGameRequestMove {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -60,105 +60,105 @@ impl Scope for ECSSystemGameRequestMove {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl Impulse<GameEvents> for ECSSystemGameRequestMove {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGameRequestMove {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestMoveZPos(id) => {
-                if !ECSSystemGameRequestMove::check_player_id(game_state, *id) {
+                if !ECsystemGameRequestMove::check_player_id(ledger, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
+                if !ECsystemGameRequestMove::check_energy(ledger, *id) {
                     return;
                 }
 
-                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
+                let Some(team) = ledger.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
 
                 let dir = team.convert_dir(0, 1);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
+                if !ECsystemGameRequestMove::check_bounds(ledger, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 
-                game_state.edit::<StatePositionEntities>(|x| {
+                ledger.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
-                game_state.edit::<StateEnergy>(|x| {
+                ledger.edit::<StateEnergy>(|x| {
                     x.all_players
                         .insert(*id, (x.all_players[id].0 - 1, x.all_players[id].1));
                 });
             }
             GameEvents::RequestMoveZNeg(id) => {
-                if !ECSSystemGameRequestMove::check_player_id(game_state, *id) {
+                if !ECsystemGameRequestMove::check_player_id(ledger, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
+                if !ECsystemGameRequestMove::check_energy(ledger, *id) {
                     return;
                 }
-                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
+                let Some(team) = ledger.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
                 let dir = team.convert_dir(0, -1);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
+                if !ECsystemGameRequestMove::check_bounds(ledger, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 
-                game_state.edit::<StatePositionEntities>(|x| {
+                ledger.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
-                game_state.edit::<StateEnergy>(|x| {
+                ledger.edit::<StateEnergy>(|x| {
                     x.all_players
                         .insert(*id, (x.all_players[id].0 - 1, x.all_players[id].1));
                 });
             }
             GameEvents::RequestMoveXPos(id) => {
-                if !ECSSystemGameRequestMove::check_player_id(game_state, *id) {
+                if !ECsystemGameRequestMove::check_player_id(ledger, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
+                if !ECsystemGameRequestMove::check_energy(ledger, *id) {
                     return;
                 }
-                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
+                let Some(team) = ledger.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
 
                 let dir = team.convert_dir(1, 0);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
+                if !ECsystemGameRequestMove::check_bounds(ledger, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 
-                game_state.edit::<StatePositionEntities>(|x| {
+                ledger.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
-                game_state.edit::<StateEnergy>(|x| {
+                ledger.edit::<StateEnergy>(|x| {
                     x.all_players
                         .insert(*id, (x.all_players[id].0 - 1, x.all_players[id].1));
                 });
             }
             GameEvents::RequestMoveXNeg(id) => {
-                if !ECSSystemGameRequestMove::check_player_id(game_state, *id) {
+                if !ECsystemGameRequestMove::check_player_id(ledger, *id) {
                     return;
                 }
-                if !ECSSystemGameRequestMove::check_energy(game_state, *id) {
+                if !ECsystemGameRequestMove::check_energy(ledger, *id) {
                     return;
                 }
-                let Some(team) = game_state.get::<StateTeamAssignments>().team_for(&id) else {
+                let Some(team) = ledger.get::<StateTeamAssignments>().team_for(&id) else {
                     return;
                 };
 
                 let dir = team.convert_dir(-1, 0);
-                if !ECSSystemGameRequestMove::check_bounds(game_state, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
+                if !ECsystemGameRequestMove::check_bounds(ledger, *id, dir.0, dir.1, GameBoard::get_bounds_min_for_team(&team), GameBoard::get_bounds_max_for_team(&team)) {
                     return;
                 }
 
-                game_state.edit::<StatePositionEntities>(|x| {
+                ledger.edit::<StatePositionEntities>(|x| {
                     x.positions
                         .insert(*id, (x.positions[id].0 + dir.0, x.positions[id].1 + dir.1));
                 });
-                game_state.edit::<StateEnergy>(|x| {
+                ledger.edit::<StateEnergy>(|x| {
                     x.all_players
                         .insert(*id, (x.all_players[id].0 - 1, x.all_players[id].1));
                 });

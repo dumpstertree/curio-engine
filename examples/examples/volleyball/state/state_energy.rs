@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, hash::Hash};
 
 use record_serializable::record_serializable;
@@ -8,7 +8,7 @@ use record_serializable::record_serializable;
 pub struct StateEnergy {
     pub all_players: HashMap<i32, (i32, i32)>,
 }
-impl IState for StateEnergy {
+impl RecordCommon for StateEnergy {
     fn id() -> i32 {
         0001
     }

@@ -1,4 +1,4 @@
-use crate::system::system_game_state::IState;
+use crate::system::system_game_state::RecordCommon;
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordScreen {
@@ -16,7 +16,7 @@ impl SysRecordScreen {
         SysRecordScreen { width, height }
     }
 }
-impl IState for SysRecordScreen {
+impl RecordCommon for SysRecordScreen {
     fn id() -> i32 {
         464
     }

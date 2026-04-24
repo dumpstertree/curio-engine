@@ -5,7 +5,7 @@ use curio_core::Vector3;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::transform::transform3d::Transform3D;
@@ -18,17 +18,17 @@ use habit::habit;
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
-        let state_position_ball = game_state.get::<StatePositionBall>();
-        let state_time = game_state.get::<SysRecordTime>();
+    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
+        let state_position_ball = ledger.get::<StatePositionBall>();
+        let state_time = ledger.get::<SysRecordTime>();
 
         world.edit::<(&mut Transform3D, &ComponentBall, &mut RendererStatic)>(|q| {
             for (_, (transform, _ball, _renderer)) in q {

@@ -14,7 +14,7 @@ use crate::{
 use curio_core::{
     DrawCall, Matrix4x4, Quaternion, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_rendering::SysRecordRendering, sys_record_time::SysRecordTime},
-    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
 };
 
 #[derive(Default)]
@@ -25,10 +25,10 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
     }
 }

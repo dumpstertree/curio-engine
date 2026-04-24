@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, TextureAsset, Vector2,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{
@@ -34,7 +34,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         let form = context
             .spawn("name", Transform2D::default())
             .add_facet_default::<RendererImage>();
@@ -52,18 +52,18 @@ impl UICommon for UIHUD {
         self.go_text = Some(go_text);
     }
 
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         self.go_text.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // try to unwrap
         let Some(go_text) = &self.go_text else {
             return;
         };
 
         // get cur turn
-        let cur_scores = game_state.get::<StateScore>().all_scores;
+        let cur_scores = ledger.get::<StateScore>().all_scores;
 
         // missing scores for some reason
         if !cur_scores.contains_key(&Teams::Red) || !cur_scores.contains_key(&Teams::Blue) {

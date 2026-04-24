@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
 };
 
 use gameplay::{
@@ -30,7 +30,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         return;
         let go_helath = context
             .spawn("text.health", Transform2D::default().set_position_01(Vector2::new(0.2, 0.95)))
@@ -47,24 +47,24 @@ impl UICommon for UIHUD {
         self.go_gold = Some(go_gold);
     }
 
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
 
-    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let state_health = game_state.get::<StateHealthExploration>();
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+        let state_health = ledger.get::<StateHealthExploration>();
         if let Some(x) = &self.go_health {
             x.edit_facet::<RendererText>(|y| {
-                y.set_contents(&format!("{} of {} Health ", state_health.all.get(&game_state.instance_id).unwrap().0, state_health.all.get(&game_state.instance_id).unwrap().1));
+                y.set_contents(&format!("{} of {} Health ", state_health.all.get(&ledger.instance_id).unwrap().0, state_health.all.get(&ledger.instance_id).unwrap().1));
             });
         }
 
-        let state_deck_exploration = game_state.get::<StateDeckExploration>();
+        let state_deck_exploration = ledger.get::<StateDeckExploration>();
         if let Some(x) = &self.go_cards_cnt {
             x.edit_facet::<RendererText>(|y| {
                 y.set_contents(&format!(
                     "{} Cards",
                     state_deck_exploration
                         .deck
-                        .get(&game_state.instance_id)
+                        .get(&ledger.instance_id)
                         .unwrap()
                         .all_cards
                         .len()
@@ -72,7 +72,7 @@ impl UICommon for UIHUD {
             });
         }
 
-        let state_currency = game_state.get::<StateCurrency>();
+        let state_currency = ledger.get::<StateCurrency>();
         if let Some(x) = &self.go_gold {
             x.edit_facet::<RendererText>(|y| {
                 y.set_contents(&format!("{} Gold", state_currency.currency));

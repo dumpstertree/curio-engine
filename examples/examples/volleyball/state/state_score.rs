@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, hash::Hash};
 
 use record_serializable::record_serializable;
@@ -10,7 +10,7 @@ use crate::state::state_teams::Teams;
 pub struct StateScore {
     pub all_scores: HashMap<Teams, i32>,
 }
-impl IState for StateScore {
+impl RecordCommon for StateScore {
     fn id() -> i32 {
         90809
     }

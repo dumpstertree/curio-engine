@@ -1,5 +1,5 @@
 // use crate::render_feature_3d::RenderFeature3D;
-// use curio_core::collections::game_state::GameState;
+// use curio_core::collections::ledger::GameState;
 // use curio_core::collections::gizmo::Gizmo;
 // use curio_core::collections::material::Material;
 // use curio_core::collections::matrix4x4::Matrix4x4;
@@ -16,13 +16,13 @@
 //     pub fn new() -> Box<RenderFeatureDrawGizmo> {
 //         Box::new(RenderFeatureDrawGizmo {})
 //     }
-//     fn draw_all_gizmos(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera_bind: &BindGroup, camera_bind_layout: &BindGroupLayout) {
+//     fn draw_all_gizmos(&mut self, ledger: &mut GameState, render_pass: &mut RenderPass, camera_bind: &BindGroup, camera_bind_layout: &BindGroupLayout) {
 //         // get sys values
 //         let device = SystemGPU::get_device();
 //         let config = SystemGPU::get_config();
 
 //         // get state of gizmos
-//         let state_gizmos = game_state.get_value2::<GizmosState>();
+//         let state_gizmos = ledger.get_value2::<GizmosState>();
 
 //         // iterate over each gizmo
 //         for gizmo in &state_gizmos.draw_calls {
@@ -121,13 +121,13 @@
 //     }
 // }
 // impl RenderFeature3D for RenderFeatureDrawGizmo {
-//     fn render(&mut self, game_state: &mut GameState, render_pass: &mut RenderPass, camera_bind_group: &BindGroup, camera_bind_group_layout: &BindGroupLayout) {
+//     fn render(&mut self, ledger: &mut GameState, render_pass: &mut RenderPass, camera_bind_group: &BindGroup, camera_bind_group_layout: &BindGroupLayout) {
 //         // draw all
-//         self.draw_all_gizmos(game_state, render_pass, &camera_bind_group, &camera_bind_group_layout);
+//         self.draw_all_gizmos(ledger, render_pass, &camera_bind_group, &camera_bind_group_layout);
 //     }
-//     fn clear(&mut self, game_state: &mut GameState) {
+//     fn clear(&mut self, ledger: &mut GameState) {
 //         // clear state
-//         game_state.edit::<GizmosState>(|x| {
+//         ledger.edit::<GizmosState>(|x| {
 //             x.draw_calls.clear();
 //         });
 //     }

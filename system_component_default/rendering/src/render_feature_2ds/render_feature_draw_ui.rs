@@ -6,7 +6,7 @@ use curio_core::{
         sys_record_gui::{GuiElementTypes, SysRecordGui},
         sys_record_debug_gui::SysRecordDebugGui,
     },
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::{Color32, Frame, Pos2, Ui};
@@ -21,19 +21,19 @@ impl RenderFeatureDrawUI {
         Box::new(RenderFeatureDrawUI {})
     }
 
-    fn draw_all_ui(game_state: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
+    fn draw_all_ui(ledger: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
         let window = SystemGPU::get_window();
         let queue = SystemGPU::get_queue();
         let device = SystemGPU::get_device();
         let config = SystemGPU::get_config();
-        let state_gui_debug = &game_state.get::<SysRecordDebugGui>();
+        let state_gui_debug = &ledger.get::<SysRecordDebugGui>();
 
         // start gui
         egui_renderer.begin_frame(&window);
 
-        if game_state.get::<SysRecordDebug>().is_inspecting {
+        if ledger.get::<SysRecordDebug>().is_inspecting {
             //
-            let gui_window = &state_gui_debug.finalize(game_state);
+            let gui_window = &state_gui_debug.finalize(ledger);
 
             //
             let mut x = |ui: &mut Ui| {
@@ -51,7 +51,7 @@ impl RenderFeatureDrawUI {
                         GuiElementTypes::Button(button_desc) => {
                             let b = ui.button(&button_desc.contents);
                             if b.clicked() {
-                                (button_desc.on_click)(game_state, system_event_queue);
+                                (button_desc.on_click)(ledger, system_event_queue);
                                 println!("clicked");
                             }
                             if b.hovered() {}
@@ -79,15 +79,15 @@ impl RenderFeatureDrawUI {
     }
 }
 impl RenderFeature2D for RenderFeatureDrawUI {
-    fn render(&mut self, game_state: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
-        RenderFeatureDrawUI::draw_all_ui(game_state, system_event_queue, output, encoder, egui_renderer);
+    fn render(&mut self, ledger: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
+        RenderFeatureDrawUI::draw_all_ui(ledger, system_event_queue, output, encoder, egui_renderer);
     }
 
-    fn clear(&mut self, game_state: &mut Ledger) {
-        game_state.edit::<SysRecordGui>(|x| {
+    fn clear(&mut self, ledger: &mut Ledger) {
+        ledger.edit::<SysRecordGui>(|x| {
             x.guis.clear();
         });
-        game_state.edit::<SysRecordDebugGui>(|x| {
+        ledger.edit::<SysRecordDebugGui>(|x| {
             x.clear();
         });
     }

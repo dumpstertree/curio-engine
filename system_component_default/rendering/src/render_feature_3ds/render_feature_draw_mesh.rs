@@ -2,7 +2,7 @@ use crate::{camera_rendering_components::CameraRenderingComponents, render_featu
 use curio_core::{
     LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
     built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
-    collections::game_state::Ledger,
+    collections::ledger::Ledger,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::ahash::{HashMap, HashMapExt};
@@ -18,8 +18,8 @@ impl RenderFeatureDrawMesh {
         Box::new(RenderFeatureDrawMesh { light_system: Vec::new() })
     }
 
-    fn draw_all_mesh(&mut self, game_state: &mut Ledger, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
-        let state_draws = game_state.get::<SysRecordRendering>();
+    fn draw_all_mesh(&mut self, ledger: &mut Ledger, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+        let state_draws = ledger.get::<SysRecordRendering>();
         let mut draw_calls = state_draws.draw_calls;
 
         let _was = draw_calls.len();
@@ -175,20 +175,20 @@ impl RenderFeatureDrawMesh {
 }
 
 impl RenderFeature3D for RenderFeatureDrawMesh {
-    fn render(&mut self, game_state: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+    fn render(&mut self, ledger: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
-        self.light_system[camera_index].update(&game_state.get::<SysRecordSun>().get_draw_call(), &game_state.get::<SysRecordLights>().all_lights);
+        self.light_system[camera_index].update(&ledger.get::<SysRecordSun>().get_draw_call(), &ledger.get::<SysRecordLights>().all_lights);
 
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();
 
-        self.draw_all_mesh(game_state, &config, &device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
+        self.draw_all_mesh(ledger, &config, &device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
     }
 
-    fn clear(&mut self, game_state: &mut Ledger) {
-        game_state.edit::<SysRecordRendering>(|x| x.draw_calls.clear());
-        game_state.edit::<SysRecordLights>(|x| x.all_lights.clear());
+    fn clear(&mut self, ledger: &mut Ledger) {
+        ledger.edit::<SysRecordRendering>(|x| x.draw_calls.clear());
+        ledger.edit::<SysRecordLights>(|x| x.all_lights.clear());
     }
 }

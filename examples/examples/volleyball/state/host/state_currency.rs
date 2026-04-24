@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use record_serializable::record_serializable;
 use std::hash::Hash;
 
@@ -7,7 +7,7 @@ use std::hash::Hash;
 pub struct StateCurrency {
     pub currency: i32,
 }
-impl IState for StateCurrency {
+impl RecordCommon for StateCurrency {
     fn id() -> i32 {
         901812999
     }

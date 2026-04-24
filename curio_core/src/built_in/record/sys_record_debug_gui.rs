@@ -5,9 +5,9 @@ use crate::{
         sys_record_debug::SysRecordDebug,
         sys_record_gui::{GuiElement, GuiWindow},
     },
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     extensions::extensions_f32::ExtensionsF32,
-    system::system_game_state::IState,
+    system::system_game_state::RecordCommon,
     Color, Vector3,
 };
 
@@ -30,8 +30,8 @@ impl SysRecordDebugGui {
     pub fn append(&mut self, content: String) {
         self.contents.push(content);
     }
-    pub fn finalize(&self, game_state: &mut Ledger) -> GuiWindow {
-        let is_paused = game_state.get::<SysRecordDebug>().is_paused;
+    pub fn finalize(&self, ledger: &mut Ledger) -> GuiWindow {
+        let is_paused = ledger.get::<SysRecordDebug>().is_paused;
         let mut window = GuiWindow::new("debug".to_string(), Vector3::new(10.0, 10.0, 0.0), Vector3::zero());
         window.add(GuiElement::new_text_button(if is_paused { "Play" } else { "Pause" }, SysRecordDebugGui::pause_on_click));
         for x in &self.contents {
@@ -50,11 +50,11 @@ impl SysRecordDebugGui {
             size: 18.0,
         }
     }
-    fn pause_on_click(_game_state: &mut Ledger, _event_queue: &mut EventQueue) {
-        // event_queue.enqueue_event(EngineCommands::SetPauseMode(!game_state.get::<StateDebug>().is_paused));
+    fn pause_on_click(_ledger: &mut Ledger, _event_queue: &mut EventQueue) {
+        // event_queue.enqueue_event(EngineCommands::SetPauseMode(!ledger.get::<StateDebug>().is_paused));
     }
 }
-impl IState for SysRecordDebugGui {
+impl RecordCommon for SysRecordDebugGui {
     fn id() -> i32 {
         902945
     }

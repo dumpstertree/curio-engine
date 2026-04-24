@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_mode::GameMode, game_state::Ledger, network_modes::NetworkModes, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
+    collections::{event_queue::EventQueue, game_mode::GameMode, ledger::Ledger, network_modes::NetworkModes, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
     system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
 };
 use message_io::node::NodeEvent;
@@ -134,15 +134,15 @@ impl SystemComponentDefaultNetworking {
             });
         });
     }
-    fn tick_offline(&mut self, _game_state: &mut Ledger, _: &mut EventQueue) {}
-    fn tick_online_host(&mut self, game_state: &mut Ledger, _: &mut EventQueue) {
+    fn tick_offline(&mut self, _ledger: &mut Ledger, _: &mut EventQueue) {}
+    fn tick_online_host(&mut self, ledger: &mut Ledger, _: &mut EventQueue) {
         let Ok(guard) = self.endpoints.lock() else {
             println!("couldnot lock");
             return;
         };
 
         let endpoints = guard.as_slice();
-        let events = game_state.try_drain_network_sync_events();
+        let events = ledger.try_drain_network_sync_events();
         // println!("sending {} messages to {} peers", events.len(), endpoints.len());
 
         for event in &events {
@@ -155,13 +155,13 @@ impl SystemComponentDefaultNetworking {
             }
         }
     }
-    fn tick_online_peer(&mut self, game_state: &mut Ledger, _: &mut EventQueue) {
+    fn tick_online_peer(&mut self, ledger: &mut Ledger, _: &mut EventQueue) {
         let Ok(mut guard) = self.incoming_events.lock() else {
             println!("couldnot lock");
             return;
         };
 
-        game_state.try_apply_network_sync_events(&guard.to_vec());
+        ledger.try_apply_network_sync_events(&guard.to_vec());
 
         guard.clear();
     }
@@ -173,25 +173,25 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     fn init(&mut self, _: &mut Vec<Ledger>) {
         println!("init networking");
     }
-    fn tick(&mut self, game_state: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
         // save all pending changes and apply them at the end
         let mut pending_changes: HashMap<usize, Vec<StateSyncEvent>> = HashMap::new();
 
         // iterate over each gamestate creating list of pending changes
-        for i in 0..game_state.len() {
+        for i in 0..ledger.len() {
             // get the gamestate we are using
-            let Some(game_state_a) = game_state.get_mut(i) else {
+            let Some(ledger_a) = ledger.get_mut(i) else {
                 println!("Failed to get GameState at index: {}", i);
                 continue;
             };
 
             // get the network capabilities of the gamestate. This is not required and can be silently passed
-            let Some(game_state_a_network_capabalities) = game_state_a.network_capabilities.clone() else {
+            let Some(ledger_a_network_capabalities) = ledger_a.network_capabilities.clone() else {
                 continue;
             };
 
             // drain all network sync events
-            let drained_sync_events = game_state_a.try_drain_network_sync_events();
+            let drained_sync_events = ledger_a.try_drain_network_sync_events();
             // iterate over each sync event
             for sync_event in &drained_sync_events {
                 // if this state change is instance only we can skip it
@@ -199,24 +199,24 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                     continue;
                 }
                 // iterate over all gamestates again
-                for j in 0..game_state.len() {
+                for j in 0..ledger.len() {
                     // if i and j are equal that means we are syncing with ourself and can skip
                     if i == j {
                         continue;
                     }
                     // get the second GameState we are using
-                    let Some(game_state_b) = game_state.get_mut(i) else {
+                    let Some(ledger_b) = ledger.get_mut(i) else {
                         println!("Failed to get GameState at index: {}", i);
                         continue;
                     };
 
                     // get the network capabilities of the GameState. This is not required and can be silently passed
-                    let Some(game_state_b_network_capabalities) = game_state_b.network_capabilities.clone() else {
+                    let Some(ledger_b_network_capabalities) = ledger_b.network_capabilities.clone() else {
                         continue;
                     };
 
                     // compare privilege levels and make sure the ones trying to override are higher
-                    if game_state_a_network_capabalities.privilege >= game_state_b_network_capabalities.privilege {
+                    if ledger_a_network_capabalities.privilege >= ledger_b_network_capabalities.privilege {
                         // get the list of pending changes and add this sync event. if the list is not yet created we insert it
                         if let Some(list_pending_changes) = pending_changes.get_mut(&j) {
                             list_pending_changes.push(sync_event.clone());
@@ -228,9 +228,9 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
         // iterate over each gamestate applying all pending changes
-        for i in 0..game_state.len() {
+        for i in 0..ledger.len() {
             // get the gamestate we are using
-            let Some(game_state_a) = game_state.get_mut(i) else {
+            let Some(ledger_a) = ledger.get_mut(i) else {
                 println!("Failed to get GameState at index: {}", i);
                 continue;
             };
@@ -241,7 +241,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             };
 
             // apply all the sync events
-            game_state_a.try_apply_network_sync_events(&pending_changes);
+            ledger_a.try_apply_network_sync_events(&pending_changes);
         }
 
         // send events
@@ -277,7 +277,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             let event_queue_b = event_queue.get_mut(j).unwrap();
 
                             // get network cabailities for reciever
-                            let Some(network_capabilities) = &game_state[j].network_capabilities else {
+                            let Some(network_capabilities) = &ledger[j].network_capabilities else {
                                 continue;
                             };
 
@@ -301,7 +301,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             let event_queue_b = event_queue.get_mut(j).unwrap();
 
                             // get network cabailities for reciever
-                            let Some(network_capabilities) = &game_state[j].network_capabilities else {
+                            let Some(network_capabilities) = &ledger[j].network_capabilities else {
                                 continue;
                             };
 
@@ -319,9 +319,9 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
     }
-    fn set_game_mode(&mut self, game_state: &mut Vec<Ledger>, _game_mode: &GameMode) {
+    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, _game_mode: &GameMode) {
         let mut v = vec![];
-        for x in game_state.iter() {
+        for x in ledger.iter() {
             let Some(network_capabilities) = &x.network_capabilities else {
                 continue;
             };
@@ -329,7 +329,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                 v.push(x.instance_id);
             }
         }
-        for gs in game_state.iter_mut() {
+        for gs in ledger.iter_mut() {
             gs.edit::<SysRecordNetwork>(|x| x.set_peer_instance_ids(v.clone()));
         }
     }

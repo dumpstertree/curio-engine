@@ -1,4 +1,4 @@
-use crate::{collections::camera_uniform::CameraSnapshot, system::system_game_state::IState, Vector3};
+use crate::{collections::camera_uniform::CameraSnapshot, system::system_game_state::RecordCommon, Vector3};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordCamera {
@@ -16,7 +16,7 @@ impl SysRecordCamera {
     }
 }
 
-impl IState for SysRecordCamera {
+impl RecordCommon for SysRecordCamera {
     fn id() -> i32 {
         9879897
     }

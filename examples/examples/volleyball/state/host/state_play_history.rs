@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use record_serializable::record_serializable;
 use std::{hash::Hash, sync::Arc};
 
@@ -9,7 +9,7 @@ use crate::cards::{card_dependencies::filled_card_response::FilledCardResponse, 
 pub struct StatePlayHistory {
     pub history: Vec<(i32, Arc<CardInstance>, FilledCardResponse)>,
 }
-impl IState for StatePlayHistory {
+impl RecordCommon for StatePlayHistory {
     fn id() -> i32 {
         911830129
     }

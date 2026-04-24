@@ -11,7 +11,7 @@ use curio_core::{
     },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     system::{system_component::SystemComponent, system_components::system_component_physics::SystemComponentPhysics},
 };
 
@@ -52,13 +52,13 @@ impl SystemComponent for SystemComponentDefaultPhysics {
     }
     fn init(&mut self, _: &mut Vec<Ledger>) {}
 
-    fn tick(&mut self, game_state: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
-        for game_state in game_state {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
+        for ledger in ledger {
             // reset
             self.buffer_collider_box_cnt = 0;
 
             //
-            let state_collider = game_state.get::<SysRecordCollider>();
+            let state_collider = ledger.get::<SysRecordCollider>();
             for collider in state_collider.colliders {
                 // let isometry = Isometry3::identity();
                 // let mut shape: &dyn Shape;
@@ -78,7 +78,7 @@ impl SystemComponent for SystemComponentDefaultPhysics {
                 }
             }
 
-            let mut s = game_state.get::<SysRecordCollision>();
+            let mut s = ledger.get::<SysRecordCollision>();
             s.collisions.clear();
 
             for x in 0..self.buffer_collider_box_cnt {
@@ -134,10 +134,10 @@ impl SystemComponent for SystemComponentDefaultPhysics {
                 }
             }
 
-            game_state.edit::<SysRecordCollision>(|x| {
+            ledger.edit::<SysRecordCollision>(|x| {
                 x.collisions.clear();
             });
-            game_state.edit::<SysRecordCollider>(|x| {
+            ledger.edit::<SysRecordCollider>(|x| {
                 x.colliders.clear();
             });
         }

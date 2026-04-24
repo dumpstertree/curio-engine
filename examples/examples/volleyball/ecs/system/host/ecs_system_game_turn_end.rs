@@ -6,7 +6,7 @@ use impulse::impulse;
 
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 
 use crate::{
@@ -17,8 +17,8 @@ use crate::{
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGameEndTurn {}
-impl Scope for ECSSystemGameEndTurn {
+pub struct ECsystemGameEndTurn {}
+impl Scope for ECsystemGameEndTurn {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -26,14 +26,14 @@ impl Scope for ECSSystemGameEndTurn {
         vec![NetworkModes::LocalHost, NetworkModes::OnlineHost]
     }
 }
-impl Impulse<GameEvents> for ECSSystemGameEndTurn {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGameEndTurn {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::TurnEnd(team) => {
                 // end this turn
-                println!("Instance: {}. End Turn {}", game_state.instance_id, team);
+                println!("Instance: {}. End Turn {}", ledger.instance_id, team);
 
-                let state_position_ball = game_state.get::<StatePositionBall>();
+                let state_position_ball = ledger.get::<StatePositionBall>();
 
                 let out_of_bounds = team.is_out_of_bounds(state_position_ball.column, state_position_ball.row);
                 let ball_is_on_side = team.is_on_side(state_position_ball.column, state_position_ball.row);
@@ -53,7 +53,7 @@ impl Impulse<GameEvents> for ECSSystemGameEndTurn {
                 //clear any attributes that end at turn
                 let mut runner = CardEventRunner::new();
                 runner.enqueue_clear_modifiers(&ModifierClearFlag::Turn);
-                runner.post_and_drain(game_state);
+                runner.post_and_drain(ledger);
 
                 // begin the next player
                 event_queue.enqueue_event(GameEvents::TurnBegin(team.next_team()));

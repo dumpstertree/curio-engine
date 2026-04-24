@@ -1,6 +1,6 @@
 use std::hash::Hash;
 
-use crate::system::system_game_state::IState;
+use crate::system::system_game_state::RecordCommon;
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordNetwork {
@@ -22,7 +22,7 @@ impl SysRecordNetwork {
     }
 }
 
-impl IState for SysRecordNetwork {
+impl RecordCommon for SysRecordNetwork {
     fn id() -> i32 {
         345434
     }

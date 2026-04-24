@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 use std::sync::Arc;
 
 use crate::{
@@ -24,10 +24,10 @@ use crate::{
 
 pub struct CustomDataSource {}
 impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomDataSource {
-    fn get_cur_user(&self, game_state: &Ledger) -> (Teams, Vec<i32>) {
+    fn get_cur_user(&self, ledger: &Ledger) -> (Teams, Vec<i32>) {
         // get state
-        let state_teams = game_state.get::<StateTeamAssignments>();
-        let state_turn = game_state.get::<StateTurn>();
+        let state_teams = ledger.get::<StateTeamAssignments>();
+        let state_turn = ledger.get::<StateTurn>();
 
         // get team
 
@@ -41,12 +41,12 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
         // return
         (state_turn.active_instance_id, guids.clone())
     }
-    fn get_all_simulation_actions(&self, game_state: &Ledger, user: &(Teams, Vec<i32>)) -> Vec<(i32, SimulationManuevers)> {
+    fn get_all_simulation_actions(&self, ledger: &Ledger, user: &(Teams, Vec<i32>)) -> Vec<(i32, SimulationManuevers)> {
         // create the output
         let mut output: Vec<(i32, SimulationManuevers)> = Vec::new();
 
         // get state terminated
-        let state_terminated = game_state.get::<StateTerminated>();
+        let state_terminated = ledger.get::<StateTerminated>();
 
         // this has been marked as terminal so we know there is nothing we can do
         if state_terminated.is_terminated {
@@ -61,10 +61,10 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
         // iterate over each user id on the team
         for user_id in &user.1 {
             // append get all manuevers available for this uid
-            output.extend(Self::get_available_manuevers(&game_state, &user_id));
+            output.extend(Self::get_available_manuevers(&ledger, &user_id));
 
             // make sure the ball is not currently being served
-            if game_state.get::<StateBallMode>().mode != BallModes::Serve {
+            if ledger.get::<StateBallMode>().mode != BallModes::Serve {
                 // add end turn make sure this is added before possible breaking from lack of energy
                 output.push((*user_id, SimulationManuevers::EndTurn));
             }
@@ -75,10 +75,10 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
 }
 
 impl CustomDataSource {
-    fn get_available_manuevers_for_cards(game_state: &Ledger, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<(i32, SimulationManuevers)> {
+    fn get_available_manuevers_for_cards(ledger: &Ledger, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<(i32, SimulationManuevers)> {
         //
         let mut all_manuevers = Vec::new();
-        let state_energy = game_state.get::<StateEnergy>();
+        let state_energy = ledger.get::<StateEnergy>();
 
         // iterate over each card we were passed in
         for card in cards {
@@ -89,7 +89,7 @@ impl CustomDataSource {
             };
 
             // get the cost of this card
-            let card_cost = card.get_cost(game_state, *uid);
+            let card_cost = card.get_cost(ledger, *uid);
 
             // check if we have enough energy to play this card
             let has_energy_to_play = energy_cur_max.0 - card_cost >= 0;
@@ -98,7 +98,7 @@ impl CustomDataSource {
             }
 
             // check if we can play the cur card  in hand based on gamestate
-            let can_play_card = card.has_statement(game_state, uid.clone());
+            let can_play_card = card.has_statement(ledger, uid.clone());
             if !can_play_card {
                 continue;
             }
@@ -107,22 +107,22 @@ impl CustomDataSource {
             let mut all_data = DataDepsFilledForModifiers::new();
 
             // iterate over each modifier in the card and populate the list of dependencies
-            for modifier in card.get_attributes_modifiers(game_state, uid.clone()) {
+            for modifier in card.get_attributes_modifiers(ledger, uid.clone()) {
                 // iterate over each empty dependency for modifier and fill it
                 let mut filled = Vec::new();
                 for empty in modifier.get_data_dependencies_empty() {
                     match empty {
                         // dependency is a tile - fill the dependency based on type
                         DataDepsEmpty::Tiles(target_type) => {
-                            filled.push(CardAttributeFillerAI::fill_dependency_tiles(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_tiles(ledger, uid, target_type));
                         }
                         // dependency is a entity - fill the dependency based on type
                         DataDepsEmpty::Entities(target_type) => {
-                            filled.push(CardAttributeFillerAI::fill_dependency_entities(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_entities(ledger, uid, target_type));
                         }
                         // dependency is a card - fill the dependency based on type
                         DataDepsEmpty::Cards(target_type) => {
-                            filled.push(CardAttributeFillerAI::fill_dependency_cards(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_cards(ledger, uid, target_type));
                         }
                     }
                 }
@@ -131,22 +131,22 @@ impl CustomDataSource {
                 all_data.add_modifier_atts(FilledAttributeWithPermutation::new(filled));
             }
             // iterate over each event in the card and populate the list of dependencies
-            for event in card.get_attributes_events(game_state, uid.clone()) {
+            for event in card.get_attributes_events(ledger, uid.clone()) {
                 // iterate over each empty dependency for modifier and fill it
                 let mut filled = Vec::new();
                 for empty in event.get_data_dependencies_empty() {
                     match empty {
                         // dependency is a tile - fill the dependency based on type
                         DataDepsEmpty::Tiles(target_type) => {
-                            filled.push(CardAttributeFillerAI::fill_dependency_tiles(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_tiles(ledger, uid, target_type));
                         }
                         // dependency is a entity - fill the dependency based on type
                         DataDepsEmpty::Entities(target_type) => {
-                            filled.push(CardAttributeFillerAI::fill_dependency_entities(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_entities(ledger, uid, target_type));
                         }
                         // dependency is a card - fill the dependency based on type
                         DataDepsEmpty::Cards(target_type) => {
-                            filled.push(CardAttributeFillerAI::fill_dependency_cards(game_state, uid, target_type));
+                            filled.push(CardAttributeFillerAI::fill_dependency_cards(ledger, uid, target_type));
                         }
                     }
                 }
@@ -167,12 +167,12 @@ impl CustomDataSource {
         // return
         all_manuevers
     }
-    fn get_available_manuevers(game_state: &Ledger, user_uid: &i32) -> Vec<(i32, SimulationManuevers)> {
+    fn get_available_manuevers(ledger: &Ledger, user_uid: &i32) -> Vec<(i32, SimulationManuevers)> {
         // create the return object containing all the moves
         let mut all_manuevers = Vec::new();
 
         // get state
-        let state_deck = game_state.get::<StateDeck>();
+        let state_deck = ledger.get::<StateDeck>();
 
         // get deck from state
         let Some(deck) = state_deck.deck.get(user_uid) else {
@@ -181,10 +181,10 @@ impl CustomDataSource {
         };
 
         // add all the consumable cards
-        all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, user_uid, &deck.hand_consumable));
+        all_manuevers.append(&mut Self::get_available_manuevers_for_cards(ledger, user_uid, &deck.hand_consumable));
 
         // add all the persistent cards
-        // all_manuevers.append(&mut Self::get_available_manuevers_for_cards(game_state, uid, &deck.hand_persistent));
+        // all_manuevers.append(&mut Self::get_available_manuevers_for_cards(ledger, uid, &deck.hand_persistent));
 
         // return all
         all_manuevers

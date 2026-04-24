@@ -220,5 +220,5 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
         pass.draw(0..3, 0..1);
     }
 
-    fn clear(&mut self, _game_state: &mut crate::Ledger) {}
+    fn clear(&mut self, _ledger: &mut crate::Ledger) {}
 }

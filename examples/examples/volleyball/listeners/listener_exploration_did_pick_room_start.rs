@@ -2,8 +2,8 @@ use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::context_3d::Context3D;
 use gameplay::{
@@ -25,11 +25,11 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidPickRoomStart => {
                 // turn off selection value
-                game_state.edit::<StateExploration>(|x| {
+                ledger.edit::<StateExploration>(|x| {
                     x.is_selecting_next = true;
                 });
 

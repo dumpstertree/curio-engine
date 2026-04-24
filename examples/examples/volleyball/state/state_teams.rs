@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use record_serializable::record_serializable;
@@ -32,7 +32,7 @@ impl Hash for StateTeamAssignments {
         }
     }
 }
-impl IState for StateTeamAssignments {
+impl RecordCommon for StateTeamAssignments {
     fn id() -> i32 {
         00988
     }

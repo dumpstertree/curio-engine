@@ -1,4 +1,4 @@
-use crate::{graphics::light_uniform::DrawCallLight, system::system_game_state::IState, Color, LightType, Vector3};
+use crate::{graphics::light_uniform::DrawCallLight, system::system_game_state::RecordCommon, Color, LightType, Vector3};
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordSun {
@@ -18,7 +18,7 @@ impl SysRecordSun {
         }
     }
 }
-impl IState for SysRecordSun {
+impl RecordCommon for SysRecordSun {
     fn id() -> i32 {
         98067666
     }

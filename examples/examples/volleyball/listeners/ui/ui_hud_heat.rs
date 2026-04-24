@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, PrefabGameObject, Quaternion, Random, TextureAsset, Vector2, Vector3,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use std::collections::HashMap;
@@ -37,21 +37,21 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         self.f_ui = Some(context.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabUIHeat.into())));
     }
 
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         if let Some(ui) = &self.f_ui {
             ui.destroy();
         }
         self.f_ui = None;
     }
 
-    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get cur turn
-        let cur_heat = game_state.get::<StateHeat>().all_players;
-        let heat = cur_heat.get(&game_state.instance_id).unwrap().clone();
+        let cur_heat = ledger.get::<StateHeat>().all_players;
+        let heat = cur_heat.get(&ledger.instance_id).unwrap().clone();
 
         if let Some(ui) = &self.f_ui {
             ui.try_edit_facet_in_child::<Transform2D>("marker", |x| {

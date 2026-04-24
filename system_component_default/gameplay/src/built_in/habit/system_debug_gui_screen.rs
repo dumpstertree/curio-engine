@@ -1,7 +1,7 @@
 use curio_core::{
     built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui},
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 
@@ -18,21 +18,21 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, game_state: &mut Ledger) -> bool {
-        game_state.get::<SysRecordDebug>().is_inspecting
+    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+        ledger.get::<SysRecordDebug>().is_inspecting
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, game_state: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
         // get gpu data
         let sys_config = SystemGPU::get_config();
         let sys_window = SystemGPU::get_window();
 
         // edit state
-        game_state.edit::<SysRecordDebugGui>(|x| {
+        ledger.edit::<SysRecordDebugGui>(|x| {
             x.append(format!("Resolution: ({}, {})", sys_config.width, sys_config.height));
             x.append(format!("Screen Size: ({}, {})", sys_window.inner_size().width, sys_window.inner_size().height));
         });

@@ -3,8 +3,8 @@ use crate::state::host::state_currency::StateCurrency;
 use crate::state::host::state_deck_exploration::StateDeckExploration;
 use crate::state::host::state_shop::{StateShop, StockItems};
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
@@ -23,12 +23,12 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestPurchase(user_id, instance_id) => {
                 println!("purchase requested");
-                let state_shop = game_state.get::<StateShop>();
-                let state_currency = game_state.get::<StateCurrency>();
+                let state_shop = ledger.get::<StateShop>();
+                let state_currency = ledger.get::<StateCurrency>();
 
                 let mut matching_stock = None;
 
@@ -60,7 +60,7 @@ impl Impulse<GameEvents> for Listener {
                 // add item
                 match matching_stock.item {
                     StockItems::Card(card_uid) => {
-                        game_state.edit::<StateDeckExploration>(|x| {
+                        ledger.edit::<StateDeckExploration>(|x| {
                             // get deck for user id
                             let Some(deck) = x.deck.get_mut(user_id) else {
                                 println!("Deck not found for user_id: {}", user_id);
@@ -77,12 +77,12 @@ impl Impulse<GameEvents> for Listener {
                     }
                 }
                 // reduce currency
-                game_state.edit::<StateCurrency>(|x| {
+                ledger.edit::<StateCurrency>(|x| {
                     x.currency -= matching_stock.cost;
                 });
 
                 // reduce inventory
-                game_state.edit::<StateShop>(|x| {
+                ledger.edit::<StateShop>(|x| {
                     for stock in x.shop.stock.iter_mut() {
                         // not matching
                         if &stock.instance_id != instance_id {

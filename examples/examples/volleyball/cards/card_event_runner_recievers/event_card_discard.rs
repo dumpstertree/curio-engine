@@ -1,16 +1,16 @@
 use crate::{cards::enums::card_events::CardEvents, state::state_deck::StateDeck};
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 
 pub struct EventReciever {}
 impl EventReciever {
-    pub fn recieve(event: &CardEvents, game_state: &mut Ledger) -> Vec<CardEvents> {
+    pub fn recieve(event: &CardEvents, ledger: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::EventCardDiscard(wrapped_cards) => {
                 // unwrap the cards
                 let card_uids = wrapped_cards.as_cards();
 
                 // edit the state
-                game_state.edit::<StateDeck>(|x| {
+                ledger.edit::<StateDeck>(|x| {
                     // iterate over each entity and its deck
                     for uid_deck in x.deck.iter_mut() {
                         // pull out the deck we are editing

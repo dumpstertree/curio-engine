@@ -1,5 +1,5 @@
 use crate::context_2d::Context2D;
-use curio_core::collections::{event_queue::EventQueue, game_state::Ledger};
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
 
 pub trait UICommon {
     fn init(&mut self);
@@ -13,7 +13,7 @@ pub trait UICommon {
         obj.destroy()
 
     */
-    fn present(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, context: &mut Context2D);
-    fn dismiss(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, context: &mut Context2D);
-    fn tick(&mut self, game_state: &mut Ledger, event_queue: &mut EventQueue, context: &mut Context2D);
+    fn present(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, context: &mut Context2D);
+    fn dismiss(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, context: &mut Context2D);
+    fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, context: &mut Context2D);
 }

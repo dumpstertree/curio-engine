@@ -1,8 +1,8 @@
 use crate::state::state_teams::Teams;
 use crate::{game_events::GameEvents, state::state_score::StateScore};
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
@@ -10,9 +10,9 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGamePointScored {}
+pub struct ECsystemGamePointScored {}
 
-impl Scope for ECSSystemGamePointScored {
+impl Scope for ECsystemGamePointScored {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -20,12 +20,12 @@ impl Scope for ECSSystemGamePointScored {
         NetworkModes::all_host()
     }
 }
-impl Impulse<GameEvents> for ECSSystemGamePointScored {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGamePointScored {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PointScored(team) => {
                 // update score
-                game_state.edit::<StateScore>(|x| {
+                ledger.edit::<StateScore>(|x| {
                     // if there is already a score we use that
                     let mut cur_score = 0;
                     if x.all_scores.contains_key(&team.next_team()) {
@@ -37,7 +37,7 @@ impl Impulse<GameEvents> for ECSSystemGamePointScored {
                 });
 
                 // get the score state
-                let state_score = game_state.get::<StateScore>();
+                let state_score = ledger.get::<StateScore>();
 
                 // get the scores
                 let score_red = state_score.all_scores.get(&Teams::Red).unwrap_or(&99);

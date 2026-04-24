@@ -17,7 +17,7 @@ use curio_core::{ModelAsset, Quaternion, Vector2Int, Vector3};
 use curio_core::io::asset_loader::AssetLoader;
 use curio_core::{
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
@@ -40,20 +40,20 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomEnterCombat(_, _) => {
                 println!("enter combat room");
                 // add all entities to world
-                Self::spawn_entities(game_state, world);
+                Self::spawn_entities(ledger, world);
                 // add background to world
-                Self::spawn_background(game_state, world);
+                Self::spawn_background(ledger, world);
                 // add score to world
-                Self::spawn_ball(game_state, world);
+                Self::spawn_ball(ledger, world);
                 // add the tile visuals
-                Self::spawn_tiles(game_state, world);
+                Self::spawn_tiles(ledger, world);
                 // spawn tile selection
-                Self::spawn_tile_select(game_state, world);
+                Self::spawn_tile_select(ledger, world);
 
                 // change ui
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::Encounter));
@@ -70,14 +70,14 @@ impl Impulse<GameEvents> for Listener {
     }
 }
 impl Listener {
-    pub fn spawn_tile_select(_game_state: &mut Ledger, world: &mut Context3D) {
+    pub fn spawn_tile_select(_ledger: &mut Ledger, world: &mut Context3D) {
         let asset = Some(AssetLoader::load_asset::<ModelAsset>(&Assets::Ball.into()));
         world
             .spawn("w", Transform3D::default().set_position(Vector3::up() * 0.05))
             .add_facet(ComponentGameBoardSelection::default())
             .add_facet(RendererStatic::default().set_asset(asset.clone()));
     }
-    pub fn spawn_tiles(_game_state: &mut Ledger, world: &mut Context3D) {
+    pub fn spawn_tiles(_ledger: &mut Ledger, world: &mut Context3D) {
         let asset = Some(AssetLoader::load_asset::<ModelAsset>(&Assets::GameBoardTileActive.into()));
         // for team in Teams::all() {
         // let min = GameBoard::get_bounds_min_for_team(&team);
@@ -96,7 +96,7 @@ impl Listener {
         }
         // }
     }
-    pub fn spawn_ball(game_state: &mut Ledger, world: &mut Context3D) {
+    pub fn spawn_ball(ledger: &mut Ledger, world: &mut Context3D) {
         let mut r = RendererStatic::default();
         r = r.set_asset(Some(AssetLoader::load_asset::<ModelAsset>(&Assets::Ball.into())));
 
@@ -105,12 +105,12 @@ impl Listener {
             .add_facet(ComponentBall::default())
             .add_facet(r);
 
-        game_state.edit::<StateEntityIDs>(|x| {
+        ledger.edit::<StateEntityIDs>(|x| {
             x.add(EntityIDTypes::Ball, e.clone());
         });
     }
 
-    pub fn spawn_background(game_state: &mut Ledger, world: &mut Context3D) {
+    pub fn spawn_background(ledger: &mut Ledger, world: &mut Context3D) {
         // let spine = AssetLoader::load_spine_from_path("path");
         let asset_court = AssetLoader::load_asset::<ModelAsset>(&Assets::Court.into());
 
@@ -118,14 +118,14 @@ impl Listener {
             .spawn("", Transform3D::default().set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))))
             .add_facet(RendererStatic::default().set_asset(Some(asset_court)));
 
-        game_state.edit::<StateEntityIDs>(|x| {
+        ledger.edit::<StateEntityIDs>(|x| {
             x.add(EntityIDTypes::Background, e.clone());
         });
     }
 
-    pub fn spawn_entities(game_state: &mut Ledger, world: &mut Context3D) {
-        let state_entity_visual = game_state.get::<StateVisualEntity>();
-        let state_teams = game_state.get::<StateTeamAssignments>();
+    pub fn spawn_entities(ledger: &mut Ledger, world: &mut Context3D) {
+        let state_entity_visual = ledger.get::<StateVisualEntity>();
+        let state_teams = ledger.get::<StateTeamAssignments>();
         for team in Teams::all() {
             if let Some(guids) = state_teams.team_assignments.get(&team) {
                 for guid in guids {
@@ -146,7 +146,7 @@ impl Listener {
                         .add_facet(ComponentViewPlayer::default())
                         .add_facet(ComponentPlayer::default().set_player_id(*guid))
                         .add_facet(rend);
-                    game_state.edit::<StateEntityIDs>(|x| {
+                    ledger.edit::<StateEntityIDs>(|x| {
                         x.add(EntityIDTypes::Entities, e.clone());
                     });
                 }

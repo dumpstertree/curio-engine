@@ -1,8 +1,8 @@
 use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -12,9 +12,9 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGamePointScored {}
+pub struct ECsystemGamePointScored {}
 
-impl Scope for ECSSystemGamePointScored {
+impl Scope for ECsystemGamePointScored {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -22,16 +22,16 @@ impl Scope for ECSSystemGamePointScored {
         NetworkModes::all_host()
     }
 }
-impl Impulse<GameEvents> for ECSSystemGamePointScored {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGamePointScored {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestLeaveExplorationRoom => {
                 // exit current room
-                let state_exploration = game_state.get::<StateExploration>();
+                let state_exploration = ledger.get::<StateExploration>();
                 event_queue.enqueue_event(GameEvents::ExplorationRoomExit(state_exploration.exploration.get_cur_room()));
 
                 // change state
-                let state_exploration = game_state.get::<StateExploration>();
+                let state_exploration = ledger.get::<StateExploration>();
                 event_queue.enqueue_event(GameEvents::ExplorationPickRoomStart(state_exploration.exploration.clone()));
 
                 // did pick room

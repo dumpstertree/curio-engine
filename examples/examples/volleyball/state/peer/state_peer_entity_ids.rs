@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use record::record;
 use std::{collections::HashMap, hash::Hash};
 
@@ -31,7 +31,7 @@ impl StateEntityIDs {
         };
     }
 }
-impl IState for StateEntityIDs {
+impl RecordCommon for StateEntityIDs {
     fn id() -> i32 {
         3873473
     }

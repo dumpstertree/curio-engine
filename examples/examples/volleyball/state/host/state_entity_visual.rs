@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, hash::Hash};
 
 use record_serializable::record_serializable;
@@ -10,7 +10,7 @@ use crate::Assets;
 pub struct StateVisualEntity {
     pub all: HashMap<i32, Assets>,
 }
-impl IState for StateVisualEntity {
+impl RecordCommon for StateVisualEntity {
     fn id() -> i32 {
         90118301
     }

@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use record_serializable::record_serializable;
 
 use crate::state::state_teams::Teams;
@@ -8,7 +8,7 @@ use crate::state::state_teams::Teams;
 pub struct StateTurn {
     pub active_instance_id: Teams,
 }
-impl IState for StateTurn {
+impl RecordCommon for StateTurn {
     fn id() -> i32 {
         0005
     }

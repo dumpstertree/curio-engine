@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     collections::state_ownerships::StateOwnerships,
     static_data::global_states::{get_global_state_deserializer, get_global_state_serializer},
-    system::system_game_state::IState,
+    system::system_game_state::RecordCommon,
 };
 
 // The "erased" event you actually store in Vec
@@ -17,7 +17,7 @@ pub struct StateSyncEvent {
 impl StateSyncEvent {
     pub fn serialize<T>(val: &T) -> Option<StateSyncEvent>
     where
-        T: IState + 'static,
+        T: RecordCommon + 'static,
     {
         // pull out any values we need from the IState to record its identity
         let state_id = T::id();
@@ -35,7 +35,7 @@ impl StateSyncEvent {
             ownership: state_ownership,
         })
     }
-    pub fn deserialize(&self) -> Option<Box<dyn IState>> {
+    pub fn deserialize(&self) -> Option<Box<dyn RecordCommon>> {
         // conver the state data into an IState
         let Some(deserialized_state) = Self::deserialize_sync_event(&self.id, &self.payload) else {
             return None;
@@ -46,7 +46,7 @@ impl StateSyncEvent {
     }
 }
 impl StateSyncEvent {
-    fn deserialize_sync_event(id: &i32, bytes: &Vec<u8>) -> Option<Box<dyn IState>> {
+    fn deserialize_sync_event(id: &i32, bytes: &Vec<u8>) -> Option<Box<dyn RecordCommon>> {
         // get global fn
         let Some(fn_deserialize) = &get_global_state_deserializer(id) else {
             panic!("Failed to get GlobalDeserializeFn");

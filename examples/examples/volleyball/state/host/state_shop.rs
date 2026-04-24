@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::RecordCommon};
 use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 use std::hash::Hash;
@@ -8,7 +8,7 @@ use std::hash::Hash;
 pub struct StateShop {
     pub shop: Shop,
 }
-impl IState for StateShop {
+impl RecordCommon for StateShop {
     fn id() -> i32 {
         901830449
     }

@@ -13,7 +13,7 @@ use crate::{
 };
 use curio_core::{
     AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Quaternion, Vector2, Vector3,
-    collections::{event_queue::EventQueue, game_state::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{
@@ -52,37 +52,37 @@ impl UIPanel for UIHUDInstance {
 }
 impl UICommon for UIHUDInstance {
     fn init(&mut self) {}
-    fn present(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get state
-        let state_deck = game_state.get::<StateDeck>();
+        let state_deck = ledger.get::<StateDeck>();
 
         // get deck
-        let Some(deck) = state_deck.deck.get(&game_state.instance_id) else {
+        let Some(deck) = state_deck.deck.get(&ledger.instance_id) else {
             return;
         };
 
         // spawn card for each card in deck
         for card in &deck.get_cards_from_all(|x| x.get_manuever_type() != CardTypes::Move) {
             self.f_cards
-                .push(Self::spawn_card(game_state, context, card.clone()));
+                .push(Self::spawn_card(ledger, context, card.clone()));
         }
     }
-    fn dismiss(&mut self, _game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         for f in &self.f_cards {
             f.destroy();
         }
     }
-    fn tick(&mut self, game_state: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // get the state
-        let state_cards = game_state.get::<StateDeck>();
-        let Some(deck) = state_cards.deck.get(&game_state.instance_id) else {
+        let state_cards = ledger.get::<StateDeck>();
+        let Some(deck) = state_cards.deck.get(&ledger.instance_id) else {
             return;
         };
 
         // get state
-        let state_input_mode = game_state.get::<StatePeerInputMode>();
-        let state_peer_select_targets = game_state.get::<StatePeerSelectTargets>();
-        let state_selected_card = game_state.get::<StatePeerSelectedCards>();
+        let state_input_mode = ledger.get::<StatePeerInputMode>();
+        let state_peer_select_targets = ledger.get::<StatePeerSelectTargets>();
+        let state_selected_card = ledger.get::<StatePeerSelectedCards>();
 
         //get the target positions
         let pos_deck = Vector3::new(0.1, 0.9, 0.0);
@@ -139,7 +139,7 @@ impl UICommon for UIHUDInstance {
                     // edit background color
                     form_card.try_edit_facet_in_child::<RendererStatic>("background", |renderer: &mut RendererStatic| {
                         // check if can use order to change visual
-                        let req_met = card_inst.has_statement(game_state, game_state.instance_id);
+                        let req_met = card_inst.has_statement(ledger, ledger.instance_id);
 
                         // match to manuever type
                         match &card_inst.clone().get_manuever_type() {
@@ -208,7 +208,7 @@ impl UICommon for UIHUDInstance {
     }
 }
 impl UIHUDInstance {
-    fn spawn_card(game_state: &mut Ledger, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
+    fn spawn_card(ledger: &mut Ledger, world: &mut Context2D, card_inst: Arc<CardInstance>) -> Form {
         //
         let mut desc = card_inst.get_master().description.clone();
         for life in card_inst.get_attributes_lifecycle() {
@@ -238,7 +238,7 @@ impl UIHUDInstance {
             x.set_contents(&format!("{}", card_inst.get_title()));
         });
         f_card.try_edit_facet_in_child::<RendererText>("cost", |x| {
-            x.set_contents(&format!("{}", card_inst.get_cost(game_state, game_state.instance_id)));
+            x.set_contents(&format!("{}", card_inst.get_cost(ledger, ledger.instance_id)));
         });
 
         // edit component on self

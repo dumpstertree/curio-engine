@@ -3,7 +3,7 @@ use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     collections::network_modes::NetworkModes
 };
 use gameplay::built_in::impulse::ui_events::UIEvents;
@@ -24,16 +24,16 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomExitCombat(_, _) => {
                 println!("exit combat room");
                 // add all entities to world
-                Self::despawn_entities(game_state, world);
+                Self::despawn_entities(ledger, world);
                 // add background to world
-                Self::despawn_background(game_state, world);
+                Self::despawn_background(ledger, world);
                 // add score to world
-                Self::despawn_ball(game_state, world);
+                Self::despawn_ball(ledger, world);
 
                 // change ui
                 event_queue.enqueue_event(GameEvents::SetUIMode(UITypes::None));
@@ -53,29 +53,29 @@ impl Impulse<GameEvents> for Listener {
 }
 
 impl Listener {
-    fn despawn_entities(game_state: &mut Ledger, _world: &mut Context3D) {
+    fn despawn_entities(ledger: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Entities;
-        for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
+        for e in ledger.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
             e.destroy();
         }
-        game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
+        ledger.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
-    fn despawn_background(game_state: &mut Ledger, _world: &mut Context3D) {
+    fn despawn_background(ledger: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Background;
-        for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
+        for e in ledger.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
             e.destroy();
         }
-        game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
+        ledger.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 
-    fn despawn_ball(game_state: &mut Ledger, _world: &mut Context3D) {
+    fn despawn_ball(ledger: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Ball;
-        for e in game_state.get::<StateEntityIDs>().get(id.clone()) {
+        for e in ledger.get::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
             e.destroy();
         }
-        game_state.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
+        ledger.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 }

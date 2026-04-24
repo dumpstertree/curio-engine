@@ -3,8 +3,8 @@ use crate::state::host::state_currency::StateCurrency;
 use crate::state::state_score::StateScore;
 use crate::state::state_teams::StateTeamAssignments;
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
@@ -23,20 +23,20 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestHeal(user_guid) => {
-                let state_currency = game_state.get::<StateCurrency>();
+                let state_currency = ledger.get::<StateCurrency>();
                 if state_currency.currency < 100 {
                     println!("Not enough Currency. Require 100 have {}", state_currency.currency);
                     return;
                 }
 
-                let state_teams = game_state.get::<StateTeamAssignments>();
-                game_state.edit::<StateCurrency>(|x| {
+                let state_teams = ledger.get::<StateTeamAssignments>();
+                ledger.edit::<StateCurrency>(|x| {
                     x.currency -= 100;
                 });
-                game_state.edit::<StateScore>(|x| {
+                ledger.edit::<StateScore>(|x| {
                     if let Some(team) = state_teams.team_for(user_guid) {
                         if let Some(score) = x.all_scores.get_mut(&team) {
                             *score += 1;

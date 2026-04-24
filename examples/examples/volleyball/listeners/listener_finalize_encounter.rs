@@ -1,6 +1,6 @@
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 
 use gameplay::{
@@ -28,23 +28,23 @@ pub struct Listener {}
 
 // Impl - Instance
 impl Scope for Listener {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::FinalizeEncounter(_) => {
                 // get state
-                let state_deck: StateDeck = game_state.get::<StateDeck>();
+                let state_deck: StateDeck = ledger.get::<StateDeck>();
 
                 // remove any consumed cards
-                game_state.edit::<StateDeckExploration>(|x| {
+                ledger.edit::<StateDeckExploration>(|x| {
                     // iterate over each deck used in encounter
                     for deck_encounter in &state_deck.deck {
                         // if deck is also in exploration we continue
@@ -59,11 +59,11 @@ impl Impulse<GameEvents> for Listener {
                     }
                 });
 
-                let state_teams = game_state.get::<StateTeamAssignments>();
-                let state_score = game_state.get::<StateScore>();
+                let state_teams = ledger.get::<StateTeamAssignments>();
+                let state_score = ledger.get::<StateScore>();
 
                 // edit health based on encounter change
-                game_state.edit::<StateHealthExploration>(|x| {
+                ledger.edit::<StateHealthExploration>(|x| {
                     // iterate over each
                     for team_user_id in &state_teams.team_assignments {
                         // score for encounter
@@ -87,19 +87,19 @@ impl Impulse<GameEvents> for Listener {
                 // do some cleanup removing values we are no longer using
 
                 // clear teams foreach
-                game_state.edit::<StateTeamAssignments>(|x| x.team_assignments.clear());
+                ledger.edit::<StateTeamAssignments>(|x| x.team_assignments.clear());
                 // clear positions foreach
-                game_state.edit::<StatePositionEntities>(|x| x.positions.clear());
+                ledger.edit::<StatePositionEntities>(|x| x.positions.clear());
                 // clear energy foreach
-                game_state.edit::<StateEnergy>(|x| x.all_players.clear());
+                ledger.edit::<StateEnergy>(|x| x.all_players.clear());
                 // clear controller foreach
-                game_state.edit::<StateController>(|x| x.all_players.clear());
+                ledger.edit::<StateController>(|x| x.all_players.clear());
                 // clear decks foreach
-                game_state.edit::<StateDeck>(|x| x.deck.clear());
+                ledger.edit::<StateDeck>(|x| x.deck.clear());
                 // edit scores
-                game_state.edit::<StateScore>(|x| x.all_scores.clear());
+                ledger.edit::<StateScore>(|x| x.all_scores.clear());
                 // edit scores
-                game_state.edit::<StateHeat>(|x| x.all_players.clear());
+                ledger.edit::<StateHeat>(|x| x.all_players.clear());
             }
             _ => {}
         }

@@ -1,4 +1,4 @@
-use curio_core::collections::{event_runner::EventRunner, game_state::Ledger};
+use curio_core::collections::{event_runner::EventRunner, ledger::Ledger};
 use std::vec;
 
 use crate::cards::{
@@ -102,7 +102,7 @@ impl CardEventRunner {
         self.runner
             .enqueue(&CardEvents::ClearModifiersForFlag(*flag));
     }
-    pub fn post_and_drain(&mut self, game_state: &mut Ledger) {
-        self.runner.post_and_drain(game_state);
+    pub fn post_and_drain(&mut self, ledger: &mut Ledger) {
+        self.runner.post_and_drain(ledger);
     }
 }

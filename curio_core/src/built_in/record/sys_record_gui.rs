@@ -1,9 +1,9 @@
 use std::hash::{self, Hash};
 
 use crate::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     extensions::extensions_f32::ExtensionsF32,
-    system::system_game_state::IState,
+    system::system_game_state::RecordCommon,
     Color, Vector3,
 };
 
@@ -16,7 +16,7 @@ impl SysRecordGui {
         SysRecordGui { guis: Vec::new() }
     }
 }
-impl IState for SysRecordGui {
+impl RecordCommon for SysRecordGui {
     fn id() -> i32 {
         690345
     }
@@ -38,7 +38,7 @@ impl Hash for LabelDesc {
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct ButtonDesc {
     pub contents: String,
-    pub on_click: fn(game_state: &mut Ledger, &mut EventQueue),
+    pub on_click: fn(ledger: &mut Ledger, &mut EventQueue),
 }
 
 #[derive(Clone, Hash, PartialEq, Eq)]

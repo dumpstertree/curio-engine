@@ -1,4 +1,4 @@
-use crate::{system::system_game_state::IState, DrawCall};
+use crate::{system::system_game_state::RecordCommon, DrawCall};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordRendering {
@@ -9,7 +9,7 @@ impl SysRecordRendering {
         SysRecordRendering { draw_calls: Vec::new() }
     }
 }
-impl IState for SysRecordRendering {
+impl RecordCommon for SysRecordRendering {
     fn id() -> i32 {
         12345
     }

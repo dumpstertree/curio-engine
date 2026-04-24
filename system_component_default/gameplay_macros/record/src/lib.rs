@@ -19,8 +19,8 @@ pub fn record(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #input
 
         // Automatically implement IState for this type
-        // impl core::collections::game_state::IState for #name {
-        //     fn clone_box(&self) -> Box<dyn core::collections::game_state::IState> {
+        // impl core::collections::ledger::IState for #name {
+        //     fn clone_box(&self) -> Box<dyn core::collections::ledger::IState> {
         //         Box::new(self.clone())
         //     }
         // }
@@ -31,7 +31,7 @@ pub fn record(_attr: TokenStream, item: TokenStream) -> TokenStream {
         #[ctor::ctor]
         #[allow(non_snake_case)]
         fn #register_fn() {
-            // core::collections::game_state::GameState::register_global_states::<#name>();
+            // core::collections::ledger::GameState::register_global_states::<#name>();
            curio_core::static_data::global_states::register_global_state::<#name>();
         }
     };

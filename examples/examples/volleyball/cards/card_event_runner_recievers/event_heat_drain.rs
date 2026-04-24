@@ -1,13 +1,13 @@
 use crate::{cards::enums::card_events::CardEvents, state::host::state_heat::StateHeat};
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 
 pub struct EventReciever {}
 impl EventReciever {
-    pub fn recieve(event: &CardEvents, game_state: &mut Ledger) -> Vec<CardEvents> {
+    pub fn recieve(event: &CardEvents, ledger: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::EventHeatDrain(wrapped_entities) => {
                 // edit the energy
-                game_state.edit::<StateHeat>(|x| {
+                ledger.edit::<StateHeat>(|x| {
                     // unwrap entityes
                     let entity_ids = wrapped_entities.as_entities();
                     // iterate over each entity

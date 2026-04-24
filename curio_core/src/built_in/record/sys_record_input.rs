@@ -1,6 +1,6 @@
 use crate::{
     input::{input_snapshot_mapped::PlayerInputSnapshot, input_snapshot_raw::RawInputSnapshot},
-    system::system_game_state::IState,
+    system::system_game_state::RecordCommon,
 };
 
 #[derive(Default, Hash, Clone, PartialEq, Eq)]
@@ -14,7 +14,7 @@ impl SysRecordInput {
         SysRecordInput { mapped: Vec::new(), raw: RawInputSnapshot::new() }
     }
 }
-impl IState for SysRecordInput {
+impl RecordCommon for SysRecordInput {
     fn id() -> i32 {
         290873492
     }

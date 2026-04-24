@@ -135,8 +135,8 @@ pub mod collections {
     pub mod f32;
     pub mod game_instance;
     pub mod game_mode;
-    pub mod game_state;
     pub mod key_state;
+    pub mod ledger;
     pub mod network_capabilities;
     pub mod network_modes;
     pub mod projection;

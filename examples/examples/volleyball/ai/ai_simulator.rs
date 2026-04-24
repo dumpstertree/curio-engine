@@ -1,4 +1,4 @@
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 use mcts::{MCTSManager, transposition_table::ApproxTable, tree_policy::UCTPolicy};
 use std::sync::Arc;
 
@@ -19,26 +19,26 @@ where
     delegate: Arc<Box<dyn SimulationDelegate<T, U>>>,
     hasher: Arc<Box<dyn SimulationHasher>>,
     evaluator: Arc<Box<dyn SimulationEvaluator<T, U>>>,
-    get_game_state: fn(&Ledger) -> Ledger,
+    get_ledger: fn(&Ledger) -> Ledger,
 }
 impl<T, U> AISimulator<T, U>
 where
     T: Default + Clone + Sync + Send + 'static,
     U: Clone + Sync + Send + 'static,
 {
-    pub fn new(delgate: Box<dyn SimulationDelegate<T, U>>, data_source: Box<dyn SimulationDataSource<T, U>>, hasher: Box<dyn SimulationHasher>, evaluator: Box<dyn SimulationEvaluator<T, U>>, get_game_state: fn(&Ledger) -> Ledger) -> AISimulator<T, U> {
+    pub fn new(delgate: Box<dyn SimulationDelegate<T, U>>, data_source: Box<dyn SimulationDataSource<T, U>>, hasher: Box<dyn SimulationHasher>, evaluator: Box<dyn SimulationEvaluator<T, U>>, get_ledger: fn(&Ledger) -> Ledger) -> AISimulator<T, U> {
         AISimulator {
             evaluator: Arc::new(evaluator),
             data_source: Arc::new(data_source),
             delegate: Arc::new(delgate),
             hasher: Arc::new(hasher),
-            get_game_state,
+            get_ledger,
         }
     }
-    pub fn simulate(&self, bulky_game_state: &Ledger, fidelity: Fidelity, threading: Threading) -> T {
+    pub fn simulate(&self, bulky_ledger: &Ledger, fidelity: Fidelity, threading: Threading) -> T {
         // we take the bulky game state that is filled with lots of extra info from the entire game and we
         // trim out the fat so there is as little info to clone as we can
-        let lean_game_state = (self.get_game_state)(bulky_game_state);
+        let lean_ledger = (self.get_ledger)(bulky_ledger);
 
         // do more research into what this does
         let policy = UCTPolicy::new(0.5);
@@ -47,7 +47,7 @@ where
         let table = ApproxTable::new(1024); // tune size
 
         // create the instance of a simulation to use as the base for all changes we may make
-        let starting_simulation = Simulation::new(self.delegate.clone(), self.data_source.clone(), self.hasher.clone(), lean_game_state);
+        let starting_simulation = Simulation::new(self.delegate.clone(), self.data_source.clone(), self.hasher.clone(), lean_ledger);
 
         // create the objec that will evaluate each simulation
         let evaluator = Evaluator::new(self.evaluator.clone());

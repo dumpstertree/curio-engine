@@ -1,12 +1,12 @@
 use crate::{cards::enums::card_events::CardEvents, state::host::state_card_attribute_modifier_stack::StateCardAttributeModifierStack};
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 
 pub struct EventReciever {}
 impl EventReciever {
-    pub fn recieve(event: &CardEvents, game_state: &mut Ledger) -> Vec<CardEvents> {
+    pub fn recieve(event: &CardEvents, ledger: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::ClearModifiersAll() => {
-                game_state.edit::<StateCardAttributeModifierStack>(|x| {
+                ledger.edit::<StateCardAttributeModifierStack>(|x| {
                     x.clear_all();
                 });
             }

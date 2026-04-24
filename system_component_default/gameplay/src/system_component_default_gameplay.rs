@@ -8,7 +8,7 @@ use curio_core::{
     collections::{
         event_queue::{EventQueue, IGameEvent},
         game_mode::GameMode,
-        game_state::Ledger,
+        ledger::Ledger,
         key_state::KeyState,
     },
     system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
@@ -43,34 +43,34 @@ where
     T: IGameEvent + Display + 'static + Clone,
     U: IUIEvent + 'static,
 {
-    // fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECSSystemEventless>>) {}
+    // fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECsystemEventless>>) {}
 }
 impl<T, U> SystemComponent for SystemComponentDefaultGameplay<T, U>
 where
     T: IGameEvent + Display + 'static + Clone,
     U: IUIEvent + 'static,
 {
-    fn input_button(&mut self, _game_state: &mut Vec<Ledger>, _key_code: ButtonCode, _val: KeyState) {}
-    fn input_axis(&mut self, _game_statee: &mut Vec<Ledger>, _axis_code: AxisCode, _val: Vector3) {}
+    fn input_button(&mut self, _ledger: &mut Vec<Ledger>, _key_code: ButtonCode, _val: KeyState) {}
+    fn input_axis(&mut self, _ledgere: &mut Vec<Ledger>, _axis_code: AxisCode, _val: Vector3) {}
     fn order(&self) -> i32 {
         5000
     }
     fn init(&mut self, _: &mut Vec<Ledger>) {}
-    fn set_game_mode(&mut self, _game_state: &mut Vec<Ledger>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, _ledger: &mut Vec<Ledger>, game_mode: &GameMode) {
         for _ in &game_mode.game_instances {
             self.game_instance.push(GameplayInstance::new());
         }
     }
-    fn debug(&mut self, _game_state: &mut Vec<Ledger>, _system_queue: &mut Vec<EventQueue>) {}
-    fn tick(&mut self, game_state: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
+    fn debug(&mut self, _ledger: &mut Vec<Ledger>, _system_queue: &mut Vec<EventQueue>) {}
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
         // iterate over each gamestate
-        for i in 0..game_state.len() {
+        for i in 0..ledger.len() {
             // get this index values
-            let game_state = &mut game_state[i];
+            let ledger = &mut ledger[i];
             let event_queue = &mut event_queue[i];
 
             // tick the instance
-            self.game_instance[i].tick(game_state, event_queue);
+            self.game_instance[i].tick(ledger, event_queue);
         }
     }
 }

@@ -9,7 +9,7 @@ use crate::collections::state_map::StateMap;
 use crate::collections::state_ownerships::StateOwnerships;
 use crate::collections::state_sync_event::StateSyncEvent;
 use crate::static_data::global_states::get_global_state_constructor_all;
-use crate::system::system_game_state::IState;
+use crate::system::system_game_state::RecordCommon;
 use crate::{log, Severity};
 
 #[derive(Clone)]
@@ -61,8 +61,9 @@ impl Ledger {
             // drains all the sync events from network capabilities
             .map_or_else(Vec::new, |nc| nc.drain_sync_events())
     }
+
     /// Create a new lightweight instance that works without networking
-    pub fn new_single_instance(states: Vec<(i32, Box<dyn IState>)>) -> Ledger {
+    pub fn new_single_instance(states: Vec<(i32, Box<dyn RecordCommon>)>) -> Ledger {
         let mut cache = StateMap::new();
         for state in states {
             cache.insert_any(state.0, state.1);
@@ -105,23 +106,23 @@ impl Ledger {
     }
 
     /// Edit the contents of type T
-    pub fn edit<T: 'static>(&mut self, edit_fn: impl Fn(&mut T))
+    pub fn edit<TRecord: 'static>(&mut self, edit_fn: impl Fn(&mut TRecord))
     where
-        T: IState + Clone + 'static,
+        TRecord: RecordCommon + Clone + 'static,
     {
         // pull out values from T
-        let state_id = T::id();
-        let ownership = T::ownership();
+        let state_id = TRecord::id();
+        let ownership = TRecord::ownership();
 
         // get the value from the cache
-        let Some(state) = self.cache.get_mut::<T, i32>(&state_id) else {
-            panic!("Unknown type {}", type_name::<T>());
+        let Some(state) = self.cache.get_mut::<TRecord, i32>(&state_id) else {
+            panic!("Unknown type {}", type_name::<TRecord>());
         };
 
         // if we have networking and dont have privilege guard
         if let Some(net) = &self.network_capabilities {
             if !net.has_write_privilege(ownership) {
-                eprintln!("No write permission for {}", type_name::<T>());
+                eprintln!("No write permission for {}", type_name::<TRecord>());
                 return;
             }
         }
@@ -130,14 +131,14 @@ impl Ledger {
         edit_fn(state);
 
         // if this is only instance wide we can stop now
-        if T::ownership() == StateOwnerships::Instance {
+        if TRecord::ownership() == StateOwnerships::Instance {
             return;
         }
 
         // check if we have network capabilities
         if let Some(network_capabilites) = &mut self.network_capabilities {
             // get the value we edited from the cache
-            if let Some(edited_val) = self.cache.get::<T, i32>(&state_id) {
+            if let Some(edited_val) = self.cache.get::<TRecord, i32>(&state_id) {
                 // serialize the data into a state sync event
                 if let Some(state_sync_event) = StateSyncEvent::serialize(edited_val) {
                     // enqueue the sync event
@@ -148,15 +149,15 @@ impl Ledger {
     }
 
     /// Get a read only copy of type T
-    pub fn get<T: 'static>(&self) -> T
+    pub fn get<TRecord: 'static>(&self) -> TRecord
     where
-        T: IState + Clone + 'static,
+        TRecord: RecordCommon + Clone + 'static,
     {
         self.cache
             // get the cached value
-            .get::<T, i32>(&T::id())
+            .get::<TRecord, i32>(&TRecord::id())
             // unwrap else panic
-            .unwrap_or_else(|| panic!("Unknown type {}", type_name::<T>()))
+            .unwrap_or_else(|| panic!("Unknown type {}", type_name::<TRecord>()))
             // return clones result
             .clone()
     }

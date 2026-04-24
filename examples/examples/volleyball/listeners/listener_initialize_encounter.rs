@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
     random::Random,
 };
 
@@ -32,44 +32,44 @@ pub struct Listener {}
 
 // Impl - Instance
 impl Scope for Listener {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::InitializeEncounter(encounter) => {
                 // log
                 println!("Encounter Initialized");
 
                 // store the encounter
-                game_state.edit::<StateEncounter>(|x| {
+                ledger.edit::<StateEncounter>(|x| {
                     x.encounter = encounter.clone();
                 });
 
                 // clear old
-                game_state.edit::<StateTeamAssignments>(|x| {
+                ledger.edit::<StateTeamAssignments>(|x| {
                     x.team_assignments.insert(Teams::Red, Vec::new());
                     x.team_assignments.insert(Teams::Blue, Vec::new());
                 });
-                game_state.edit::<StateEnergy>(|x| {
+                ledger.edit::<StateEnergy>(|x| {
                     x.all_players.clear();
                 });
-                game_state.edit::<StateDeck>(|x| {
+                ledger.edit::<StateDeck>(|x| {
                     x.deck.clear();
                 });
-                game_state.edit::<StateController>(|x| {
+                ledger.edit::<StateController>(|x| {
                     x.all_players.clear();
                 });
-                game_state.edit::<StatePositionEntities>(|x| {
+                ledger.edit::<StatePositionEntities>(|x| {
                     x.positions.clear();
                 });
-                game_state.edit::<StateHeat>(|x| {
+                ledger.edit::<StateHeat>(|x| {
                     x.all_players.clear();
                 });
 
@@ -80,67 +80,67 @@ impl Impulse<GameEvents> for Listener {
                             let guid = Random::range_int(-9999, 9999);
 
                             // intialize the team
-                            game_state.edit::<StateTeamAssignments>(|x| {
+                            ledger.edit::<StateTeamAssignments>(|x| {
                                 x.team_assignments.get_mut(&Teams::Blue).unwrap().push(guid);
                             });
                             // initialize the deck
-                            game_state.edit::<StateDeck>(|x| {
+                            ledger.edit::<StateDeck>(|x| {
                                 x.deck
                                     .insert(guid, DeckLibrary::get_deck_for_uid(&p.deck_id));
                             });
                             // initialize the energy max
-                            game_state.edit::<StateEnergy>(|x| {
+                            ledger.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(guid, (0, p.energy));
                             });
                             // initialize the energy max
-                            game_state.edit::<StatePositionEntities>(|x| {
+                            ledger.edit::<StatePositionEntities>(|x| {
                                 x.positions.insert(guid, (0, 0));
                             });
                             // initialze the controll state
-                            game_state.edit::<StateController>(|x| {
+                            ledger.edit::<StateController>(|x| {
                                 x.all_players.insert(guid, Controller::Ai);
                             });
                             // initialze the visual
-                            game_state.edit::<StateVisualEntity>(|x| {
+                            ledger.edit::<StateVisualEntity>(|x| {
                                 x.all.insert(guid, p.visual.clone());
                             });
                             // initialize heat
-                            game_state.edit::<StateHeat>(|x| {
+                            ledger.edit::<StateHeat>(|x| {
                                 x.all_players.insert(guid, 0);
                             });
                         }
                     }
                     TeamController::Player => {
-                        let state_network = game_state.get::<SysRecordNetwork>();
+                        let state_network = ledger.get::<SysRecordNetwork>();
                         let guids = state_network.peer_instance_ids();
                         for guid in guids {
                             // intialize the team
-                            game_state.edit::<StateTeamAssignments>(|x| {
+                            ledger.edit::<StateTeamAssignments>(|x| {
                                 x.team_assignments
                                     .get_mut(&Teams::Blue)
                                     .unwrap()
                                     .push(*guid);
                             });
                             // initialize the deck
-                            let state_deck_exploration = game_state.get::<StateDeckExploration>();
-                            game_state.edit::<StateDeck>(|x| {
+                            let state_deck_exploration = ledger.get::<StateDeckExploration>();
+                            ledger.edit::<StateDeck>(|x| {
                                 x.deck
                                     .insert(*guid, state_deck_exploration.deck.get(guid).unwrap().clone());
                             });
                             // initialize the energy max
-                            game_state.edit::<StateEnergy>(|x| {
+                            ledger.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(*guid, (0, 5));
                             });
                             // initialize the energy max
-                            game_state.edit::<StatePositionEntities>(|x| {
+                            ledger.edit::<StatePositionEntities>(|x| {
                                 x.positions.insert(*guid, (0, 0));
                             });
                             // initialze the controll state
-                            game_state.edit::<StateController>(|x| {
+                            ledger.edit::<StateController>(|x| {
                                 x.all_players.insert(*guid, Controller::Player);
                             });
                             // initialize heat
-                            game_state.edit::<StateHeat>(|x| {
+                            ledger.edit::<StateHeat>(|x| {
                                 x.all_players.insert(*guid, 0);
                             });
                         }
@@ -155,64 +155,64 @@ impl Impulse<GameEvents> for Listener {
                             let guid = Random::range_int(-9999, 9999);
 
                             // intialize the team
-                            game_state.edit::<StateTeamAssignments>(|x| {
+                            ledger.edit::<StateTeamAssignments>(|x| {
                                 x.team_assignments.get_mut(&Teams::Red).unwrap().push(guid);
                             });
                             // initialize the deck
-                            game_state.edit::<StateDeck>(|x| {
+                            ledger.edit::<StateDeck>(|x| {
                                 x.deck
                                     .insert(guid, DeckLibrary::get_deck_for_uid(&p.deck_id));
                             });
                             // initialize the energy max
-                            game_state.edit::<StateEnergy>(|x| {
+                            ledger.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(guid, (0, p.energy));
                             });
                             // initialize the energy max
-                            game_state.edit::<StatePositionEntities>(|x| {
+                            ledger.edit::<StatePositionEntities>(|x| {
                                 x.positions.insert(guid, (0, 0));
                             });
                             // initialze the controll state
-                            game_state.edit::<StateController>(|x| {
+                            ledger.edit::<StateController>(|x| {
                                 x.all_players.insert(guid, Controller::Ai);
                             });
                             // initialze the visual
-                            game_state.edit::<StateVisualEntity>(|x| {
+                            ledger.edit::<StateVisualEntity>(|x| {
                                 x.all.insert(guid, p.visual.clone());
                             });
                             // initialize heat
-                            game_state.edit::<StateHeat>(|x| {
+                            ledger.edit::<StateHeat>(|x| {
                                 x.all_players.insert(guid, 0);
                             });
                         }
                     }
                     TeamController::Player => {
-                        let state_network = game_state.get::<SysRecordNetwork>();
+                        let state_network = ledger.get::<SysRecordNetwork>();
                         let guids = state_network.peer_instance_ids();
                         for guid in guids {
                             // intialize the team
-                            game_state.edit::<StateTeamAssignments>(|x| {
+                            ledger.edit::<StateTeamAssignments>(|x| {
                                 x.team_assignments.get_mut(&Teams::Red).unwrap().push(*guid);
                             });
                             // initialize the deck
-                            let state_deck_exploration = game_state.get::<StateDeckExploration>();
-                            game_state.edit::<StateDeck>(|x| {
+                            let state_deck_exploration = ledger.get::<StateDeckExploration>();
+                            ledger.edit::<StateDeck>(|x| {
                                 x.deck
                                     .insert(*guid, state_deck_exploration.deck.get(guid).unwrap().clone());
                             });
                             // initialize the energy max
-                            game_state.edit::<StateEnergy>(|x| {
+                            ledger.edit::<StateEnergy>(|x| {
                                 x.all_players.insert(*guid, (0, 5));
                             });
                             // initialize the energy max
-                            game_state.edit::<StatePositionEntities>(|x| {
+                            ledger.edit::<StatePositionEntities>(|x| {
                                 x.positions.insert(*guid, (0, 0));
                             });
                             // initialze the controll state
-                            game_state.edit::<StateController>(|x| {
+                            ledger.edit::<StateController>(|x| {
                                 x.all_players.insert(*guid, Controller::Player);
                             });
                             // initialize heat
-                            game_state.edit::<StateHeat>(|x| {
+                            ledger.edit::<StateHeat>(|x| {
                                 x.all_players.insert(*guid, 0);
                             });
                         }
@@ -221,9 +221,9 @@ impl Impulse<GameEvents> for Listener {
                 }
 
                 // set scores
-                let state_network = game_state.get::<SysRecordNetwork>();
-                let state_health_exploration = game_state.get::<StateHealthExploration>();
-                game_state.edit::<StateScore>(|x| {
+                let state_network = ledger.get::<SysRecordNetwork>();
+                let state_health_exploration = ledger.get::<StateHealthExploration>();
+                ledger.edit::<StateScore>(|x| {
                     let mut score_red = 0;
                     let mut score_blue = 0;
                     match &encounter.team_red {

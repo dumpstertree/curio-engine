@@ -1,9 +1,9 @@
 use crate::{cards::enums::card_events::CardEvents, state::state_position_player::StatePositionEntities};
-use curio_core::collections::game_state::Ledger;
+use curio_core::collections::ledger::Ledger;
 
 pub struct EventReciever {}
 impl EventReciever {
-    pub fn recieve(event: &CardEvents, game_state: &mut Ledger) -> Vec<CardEvents> {
+    pub fn recieve(event: &CardEvents, ledger: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::EventMoveEntities(entities, tiles) => {
                 // unwrap
@@ -14,7 +14,7 @@ impl EventReciever {
                     panic!("only supports one tile");
                 }
 
-                game_state.edit::<StatePositionEntities>(|y| {
+                ledger.edit::<StatePositionEntities>(|y| {
                     for x in &entity_ids {
                         let Some(position) = y.positions.get_mut(x) else { return };
                         position.0 = tile_ids[0].x;

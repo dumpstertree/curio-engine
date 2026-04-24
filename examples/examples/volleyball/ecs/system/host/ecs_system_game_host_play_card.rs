@@ -5,7 +5,7 @@ use crate::{
 };
 use curio_core::{
     Vector3,
-    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
 };
 use gameplay::{
     context_3d::Context3D,
@@ -15,28 +15,28 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGameRequestManuever {}
+pub struct ECsystemGameRequestManuever {}
 
-impl Scope for ECSSystemGameRequestManuever {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+impl Scope for ECsystemGameRequestManuever {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
-impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
-    fn dequeue_event(&mut self, game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGameRequestManuever {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {
                 // creates an event runner to all the events on
                 let mut event_runner = CardEventRunner::new();
 
-                let was_state_ball_pos = game_state.get::<StatePositionBall>();
+                let was_state_ball_pos = ledger.get::<StatePositionBall>();
 
                 // get the attributes out of this card
-                let atts_mods = card_instance.get_attributes_modifiers(&game_state, *id);
-                let atts_evnt = card_instance.get_attributes_events(&game_state, *id);
+                let atts_mods = card_instance.get_attributes_modifiers(&ledger, *id);
+                let atts_evnt = card_instance.get_attributes_events(&ledger, *id);
 
                 println!("PLAYED CARD: {}", card_instance.card_id);
                 // iterate over each mod and add it and its data to the runner
@@ -53,20 +53,20 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
                 event_runner.enqueue_clear_modifiers(&ModifierClearFlag::Play);
 
                 // run all inside runner
-                event_runner.post_and_drain(game_state);
+                event_runner.post_and_drain(ledger);
 
                 // add play to history
-                game_state.edit::<StatePlayHistory>(|x| {
+                ledger.edit::<StatePlayHistory>(|x| {
                     x.history.push((*id, card_instance.clone(), data.clone()));
                 });
 
                 let t = card_instance.get_manuever_type();
                 match t {
                     CardTypes::Bump => {
-                        let state_pos_ball = game_state.get::<StatePositionBall>();
+                        let state_pos_ball = ledger.get::<StatePositionBall>();
                         let delta_x = state_pos_ball.column - was_state_ball_pos.column;
                         let delta_y = state_pos_ball.row - was_state_ball_pos.row;
-                        game_state.edit::<StatePositionEntities>(|x| {
+                        ledger.edit::<StatePositionEntities>(|x| {
                             if let Some(pos) = x.positions.get_mut(id) {
                                 pos.0 = pos.0 - delta_x.clamp(-1, 1);
                                 pos.1 = pos.1 - delta_y.clamp(-1, 1);
@@ -74,10 +74,10 @@ impl Impulse<GameEvents> for ECSSystemGameRequestManuever {
                         });
                     }
                     CardTypes::Spike => {
-                        let state_pos_ball = game_state.get::<StatePositionBall>();
+                        let state_pos_ball = ledger.get::<StatePositionBall>();
                         let delta_x = state_pos_ball.column - was_state_ball_pos.column;
                         let delta_y = state_pos_ball.row - was_state_ball_pos.row;
-                        game_state.edit::<StatePositionEntities>(|x| {
+                        ledger.edit::<StatePositionEntities>(|x| {
                             if let Some(pos) = x.positions.get_mut(id) {
                                 pos.0 = pos.0 + delta_x.clamp(-1, 1);
                                 pos.1 = pos.1 + delta_y.clamp(-1, 1);

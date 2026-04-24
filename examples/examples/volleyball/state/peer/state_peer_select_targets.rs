@@ -1,4 +1,4 @@
-use curio_core::{Vector2Int, collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{Vector2Int, collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::hash::Hash;
 
 use record::record;
@@ -10,7 +10,7 @@ pub struct StatePeerSelectTargets {
     pub selected_index: Vector2Int,
     pub enabled: Option<SelectStates>,
 }
-impl IState for StatePeerSelectTargets {
+impl RecordCommon for StatePeerSelectTargets {
     fn id() -> i32 {
         98273477
     }

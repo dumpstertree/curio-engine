@@ -1,7 +1,7 @@
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
     collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, game_state::Ledger},
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 
 use crate::{
@@ -17,16 +17,16 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_host()
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _game_state: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
-        // game_state.edit::<StateSun>(|x| {
+    fn enable(&mut self, _ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
+        // ledger.edit::<StateSun>(|x| {
         //     x.cast_shadows = true;
         //     x.color = Color::green();
         //     x.direction = (Vector3::down() + Vector3::forward()).normalize_and_copy()
@@ -76,11 +76,11 @@ impl Habit for Instance {
 //         color::Color,
 //         draw_call::DrawCall,
 //         event_queue::EventQueue,
-//         game_state::{self, GameState},
+//         ledger::{self, GameState},
 //         light_uniform::DrawCallLight,
 //         vector3::Vector3,
 //     },
-//     gameplay::ecs::traits::ecs_system::ECSSystemEventless,
+//     gameplay::ecs::traits::ecs_system::ECsystemEventless,
 // };
 // use habit::habit;
 // use hecs::World;
@@ -92,7 +92,7 @@ impl Habit for Instance {
 //         Box::new(SystemRendererUpdateState {})
 //     }
 // }
-// impl ECSSystemEventless for SystemRendererUpdateState {
+// impl ECsystemEventless for SystemRendererUpdateState {
 //     fn is_enabled(&mut self, _: &mut GameState, _: &mut World) -> bool {
 //         true
 //     }

@@ -9,7 +9,7 @@ use habit::habit;
 use curio_core::{
     Quaternion, Vector3,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, game_state::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
 };
 
 use crate::{
@@ -20,24 +20,24 @@ use crate::{
 #[habit]
 pub struct Instance {}
 impl Scope for Instance {
-    fn is_enabled(&mut self, _game_state: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true
     }
-    fn run_on_instance(&mut self, _game_state: &mut Ledger) -> Vec<NetworkModes> {
+    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, _game_state: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {}
-    fn enable(&mut self, _game_state: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue) {}
-    fn did_tick(&mut self, game_state: &mut Ledger, context: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {}
+    fn enable(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue) {}
+    fn did_tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_select_target = game_state.get::<StatePeerSelectTargets>();
-        let _state_time = game_state.get::<SysRecordTime>();
-        let state_pos_ball = game_state.get::<StatePositionBall>();
-        let state_pos_entity = game_state.get::<StatePositionEntities>();
-        let state_turn = game_state.get::<StateTurn>();
-        let Some(tile_player) = state_pos_entity.positions.get(&game_state.instance_id) else {
+        let state_select_target = ledger.get::<StatePeerSelectTargets>();
+        let _state_time = ledger.get::<SysRecordTime>();
+        let state_pos_ball = ledger.get::<StatePositionBall>();
+        let state_pos_entity = ledger.get::<StatePositionEntities>();
+        let state_turn = ledger.get::<StateTurn>();
+        let Some(tile_player) = state_pos_entity.positions.get(&ledger.instance_id) else {
             return;
         };
         let pos_ball = GameBoard::get_world_position(state_pos_ball.column, state_pos_ball.row);

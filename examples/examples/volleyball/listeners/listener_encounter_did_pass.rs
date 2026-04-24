@@ -1,8 +1,8 @@
 use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use curio_core::{
-    collections::{event_queue::EventQueue, game_state::Ledger},
-    collections::network_modes::NetworkModes
+    collections::network_modes::NetworkModes,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::context_3d::Context3D;
 use gameplay::{
@@ -13,9 +13,9 @@ use impulse::impulse;
 
 #[derive(Default)]
 #[impulse(GameEvents)]
-pub struct ECSSystemGamePointScored {}
+pub struct ECsystemGamePointScored {}
 
-impl Scope for ECSSystemGamePointScored {
+impl Scope for ECsystemGamePointScored {
     fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
@@ -23,8 +23,8 @@ impl Scope for ECSSystemGamePointScored {
         NetworkModes::all_peer()
     }
 }
-impl Impulse<GameEvents> for ECSSystemGamePointScored {
-    fn dequeue_event(&mut self, _game_state: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+impl Impulse<GameEvents> for ECsystemGamePointScored {
+    fn dequeue_event(&mut self, _ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::DidEncounterPass => {
                 // request leave room

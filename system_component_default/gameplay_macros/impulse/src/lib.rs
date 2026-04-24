@@ -19,7 +19,7 @@
 
 //         // // This enforces the trait bound at compile time
 //         // struct _EnforceEventReceiver_ where #self_ty: core::gameplay::ecs::traits::ecs_event_reciever::EventReciever<#event_type> { }
-//         // struct _EnforceSystem where #self_ty: crate::system::system_components::gameplay_components::gameplay_component_default::ECSSystemEventless { }
+//         // struct _EnforceSystem where #self_ty: crate::system::system_components::gameplay_components::gameplay_component_default::ECsystemEventless { }
 //     };
 
 //     TokenStream::from(expanded)

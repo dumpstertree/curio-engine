@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::IState};
+use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::fmt;
 
 use record_serializable::record_serializable;
@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct StateBallMode {
     pub mode: BallModes,
 }
-impl IState for StateBallMode {
+impl RecordCommon for StateBallMode {
     fn id() -> i32 {
         0003
     }
