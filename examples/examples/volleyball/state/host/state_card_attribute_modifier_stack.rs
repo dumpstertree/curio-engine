@@ -3,7 +3,7 @@ use curio_core::{collections::state_ownerships::StateOwnerships, system::system_
 use record_serializable::record_serializable;
 
 #[derive(PartialEq, Eq, Hash)]
-#[record_serializable(serializable,ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,serializable,ownership = StateOwnerships::Host)]
 pub struct StateCardAttributeModifierStack {
     stack: Vec<CardModifier>,
 }

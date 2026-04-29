@@ -6,7 +6,7 @@ use record_serializable::record_serializable;
 use crate::state::state_teams::Teams;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateScore {
     pub all_scores: HashMap<Teams, i32>,
 }

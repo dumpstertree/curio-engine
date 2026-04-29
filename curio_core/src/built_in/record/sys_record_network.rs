@@ -24,6 +24,6 @@ impl SysRecordNetwork {
 
 impl RecordCommon for SysRecordNetwork {
     fn id() -> i32 {
-        345434
+        109
     }
 }

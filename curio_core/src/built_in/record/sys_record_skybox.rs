@@ -9,7 +9,7 @@ pub struct SysRecordSkybox {
 impl SysRecordSkybox {}
 impl RecordCommon for SysRecordSkybox {
     fn id() -> i32 {
-        9806666
+        112
     }
 }
 

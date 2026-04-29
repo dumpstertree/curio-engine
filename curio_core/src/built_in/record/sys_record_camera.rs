@@ -18,7 +18,7 @@ impl SysRecordCamera {
 
 impl RecordCommon for SysRecordCamera {
     fn id() -> i32 {
-        9879897
+        100
     }
 }
 impl SysRecordCamera {

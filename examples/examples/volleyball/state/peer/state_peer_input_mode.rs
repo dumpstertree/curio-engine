@@ -4,7 +4,7 @@ use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 
 #[derive(Hash, PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Instance)]
+#[record_serializable(serializable,ownership = StateOwnerships::Instance)]
 pub struct StatePeerInputMode {
     pub mode: InputModes,
 }

@@ -8,6 +8,6 @@ impl SysRecordCollision {}
 
 impl RecordCommon for SysRecordCollision {
     fn id() -> i32 {
-        85738
+        102
     }
 }

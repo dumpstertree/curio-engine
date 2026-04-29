@@ -8,6 +8,6 @@ impl SysRecordCollider {}
 
 impl RecordCommon for SysRecordCollider {
     fn id() -> i32 {
-        98341
+        101
     }
 }

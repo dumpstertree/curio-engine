@@ -11,6 +11,6 @@ impl SysRecordGizmos {
 }
 impl RecordCommon for SysRecordGizmos {
     fn id() -> i32 {
-        9827234
+        105
     }
 }

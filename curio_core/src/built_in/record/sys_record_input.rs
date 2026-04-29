@@ -16,6 +16,6 @@ impl SysRecordInput {
 }
 impl RecordCommon for SysRecordInput {
     fn id() -> i32 {
-        290873492
+        107
     }
 }

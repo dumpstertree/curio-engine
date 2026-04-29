@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::game_board::GameBoard;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateTeamAssignments {
     pub team_assignments: HashMap<Teams, Vec<i32>>,
 }

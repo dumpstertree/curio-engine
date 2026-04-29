@@ -6,7 +6,7 @@ use record_serializable::record_serializable;
 use crate::Assets;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateVisualEntity {
     pub all: HashMap<i32, Assets>,
 }

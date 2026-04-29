@@ -12,6 +12,6 @@ impl SysRecordLights {
 }
 impl RecordCommon for SysRecordLights {
     fn id() -> i32 {
-        0983543847
+        108
     }
 }

@@ -20,6 +20,6 @@ impl SysRecordSun {
 }
 impl RecordCommon for SysRecordSun {
     fn id() -> i32 {
-        98067666
+        113
     }
 }

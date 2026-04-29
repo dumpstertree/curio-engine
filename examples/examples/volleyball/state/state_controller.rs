@@ -6,7 +6,7 @@ use record_serializable::record_serializable;
 use crate::listeners::listener_initialize_encounter::Controller;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateController {
     pub all_players: HashMap<i32, Controller>,
 }

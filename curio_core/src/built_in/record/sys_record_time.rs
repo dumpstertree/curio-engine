@@ -18,7 +18,7 @@ pub struct SysRecordTime {
 impl SysRecordTime {}
 impl RecordCommon for SysRecordTime {
     fn id() -> i32 {
-        38345
+        114
     }
 }
 impl Hash for SysRecordTime {

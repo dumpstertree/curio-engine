@@ -18,7 +18,7 @@ impl SysRecordGui {
 }
 impl RecordCommon for SysRecordGui {
     fn id() -> i32 {
-        690345
+        106
     }
 }
 #[derive(Default, Clone, PartialEq)]

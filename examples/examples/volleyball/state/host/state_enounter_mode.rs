@@ -5,7 +5,7 @@ use record_serializable::record_serializable;
 use crate::listeners::listener_initialize_encounter::Encounter;
 
 #[derive(Hash, PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateEncounter {
     pub encounter: Encounter,
 }

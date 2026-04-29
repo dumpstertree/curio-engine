@@ -18,7 +18,6 @@ impl Form {
     }
 }
 unsafe impl Send for Form {}
-
 unsafe impl Sync for Form {}
 
 // Public Methods

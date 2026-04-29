@@ -18,6 +18,6 @@ impl SysRecordScreen {
 }
 impl RecordCommon for SysRecordScreen {
     fn id() -> i32 {
-        464
+        111
     }
 }

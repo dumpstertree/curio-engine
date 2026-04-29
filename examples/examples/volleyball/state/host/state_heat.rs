@@ -3,7 +3,7 @@ use record_serializable::record_serializable;
 use std::{collections::HashMap, hash::Hash};
 
 #[derive(PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateHeat {
     pub all_players: HashMap<i32, i32>,
 }

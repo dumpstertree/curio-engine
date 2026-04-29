@@ -12,6 +12,6 @@ impl SysRecordDebug {
 }
 impl RecordCommon for SysRecordDebug {
     fn id() -> i32 {
-        908234
+        104
     }
 }

@@ -5,7 +5,7 @@ use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 
 #[derive(Hash, PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateBallMode {
     pub mode: BallModes,
 }

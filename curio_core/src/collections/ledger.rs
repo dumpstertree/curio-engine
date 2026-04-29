@@ -87,6 +87,9 @@ impl Ledger {
 
         // Pre-allocate to the exact size needed.
         let max_id = constructors.iter().map(|(id, _)| *id).max().unwrap_or(-1);
+        for x in constructors.iter() {
+            println!("{}", x.0);
+        }
         let mut entries: Vec<Option<Entry>> = (0..=max_id.max(0)).map(|_| None).collect();
 
         for (id, constructor) in constructors {

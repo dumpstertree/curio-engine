@@ -11,6 +11,6 @@ impl SysRecordRendering {
 }
 impl RecordCommon for SysRecordRendering {
     fn id() -> i32 {
-        12345
+        110
     }
 }

@@ -5,7 +5,7 @@ use std::{hash::Hash, sync::Arc};
 use crate::cards::{card_dependencies::filled_card_response::FilledCardResponse, card_instance::CardInstance};
 
 #[derive(PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StatePlayHistory {
     pub history: Vec<(i32, Arc<CardInstance>, FilledCardResponse)>,
 }

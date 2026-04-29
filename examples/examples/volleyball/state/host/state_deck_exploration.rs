@@ -6,7 +6,7 @@ use record_serializable::record_serializable;
 use crate::state::state_deck::Deck;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable(ownership = StateOwnerships::Host)]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateDeckExploration {
     pub deck: HashMap<i32, Deck>,
 }
