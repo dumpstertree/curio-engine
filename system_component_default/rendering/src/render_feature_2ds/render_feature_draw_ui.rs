@@ -26,12 +26,12 @@ impl RenderFeatureDrawUI {
         let queue = SystemGPU::get_queue();
         let device = SystemGPU::get_device();
         let config = SystemGPU::get_config();
-        let state_gui_debug = &ledger.get::<SysRecordDebugGui>();
+        let state_gui_debug = &ledger.read::<SysRecordDebugGui>();
 
         // start gui
         egui_renderer.begin_frame(&window);
 
-        if ledger.get::<SysRecordDebug>().is_inspecting {
+        if ledger.read::<SysRecordDebug>().is_inspecting {
             //
             let gui_window = &state_gui_debug.finalize(ledger);
 
@@ -84,10 +84,10 @@ impl RenderFeature2D for RenderFeatureDrawUI {
     }
 
     fn clear(&mut self, ledger: &mut Ledger) {
-        ledger.edit::<SysRecordGui>(|x| {
+        ledger.write::<SysRecordGui>(|x| {
             x.guis.clear();
         });
-        ledger.edit::<SysRecordDebugGui>(|x| {
+        ledger.write::<SysRecordDebugGui>(|x| {
             x.clear();
         });
     }

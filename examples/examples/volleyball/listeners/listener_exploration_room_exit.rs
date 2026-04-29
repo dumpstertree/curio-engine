@@ -33,10 +33,10 @@ impl Impulse<GameEvents> for ECsystemGamePointScored {
                 match room.room_type {
                     RoomTypes::Combat => {
                         // get the current encounter we are leaving
-                        let state_encounter = ledger.get::<StateEncounter>();
+                        let state_encounter = ledger.read::<StateEncounter>();
 
                         //get the current encounter
-                        let encounter = state_encounter.encounter;
+                        let encounter = &state_encounter.encounter;
 
                         // notify as to leaving combat room
                         event_queue.enqueue_event(GameEvents::ExplorationDidRoomExitCombat(room.clone(), encounter.clone()));
@@ -44,10 +44,10 @@ impl Impulse<GameEvents> for ECsystemGamePointScored {
                     }
                     RoomTypes::Shop => {
                         // get the current encounter we are leaving
-                        let state_shop = ledger.get::<StateShop>();
+                        let state_shop = ledger.read::<StateShop>();
 
                         //get the current encounter
-                        let shop = state_shop.shop;
+                        let shop = &state_shop.shop;
 
                         // notify as to leaving combat room
                         event_queue.enqueue_event(GameEvents::ExplorationDidRoomExitShop(room.clone(), shop.clone()));

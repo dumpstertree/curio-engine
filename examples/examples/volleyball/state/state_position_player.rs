@@ -3,7 +3,7 @@ use std::{collections::HashMap, hash::Hash};
 
 use record_serializable::record_serializable;
 #[derive(PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StatePositionEntities {
     pub positions: HashMap<i32, (i32, i32)>,
 }
@@ -16,14 +16,5 @@ impl Hash for StatePositionEntities {
             k.hash(state);
             self.positions.get(k).unwrap().hash(state);
         }
-    }
-}
-
-impl RecordCommon for StatePositionEntities {
-    fn id() -> i32 {
-        0004
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
     }
 }

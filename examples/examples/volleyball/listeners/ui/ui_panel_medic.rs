@@ -65,7 +65,7 @@ impl UICommon for UIPanelMedic {
     }
 
     fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let input_state = ledger.get::<SysRecordInput>();
+        let input_state = ledger.read::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
                 .get_button_or_default("move_forward")
@@ -98,7 +98,7 @@ impl UICommon for UIPanelMedic {
             }
         }
 
-        let sin = f32::sin(ledger.get::<SysRecordTime>().unscaled_time as f32 * 5.0);
+        let sin = f32::sin(ledger.read::<SysRecordTime>().unscaled_time as f32 * 5.0);
 
         if let Some(a) = &self.go_desc {
             // edit text renderer
@@ -110,7 +110,7 @@ impl UICommon for UIPanelMedic {
             a.edit_facet::<Transform2D>(|x| x.scale = Vector3::one() * 0.5 + Vector3::one() * if self.selected_index == 0 { sin * 0.1 } else { 0.0 });
             // edit text renderer
             a.edit_facet::<RendererText>(|x| {
-                let state_currency = ledger.get::<StateCurrency>();
+                let state_currency = ledger.read::<StateCurrency>();
                 if state_currency.currency >= 100 {
                     x.set_contents(&format!("Heal +1 for 100g"));
                 } else {

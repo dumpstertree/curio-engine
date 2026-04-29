@@ -17,7 +17,7 @@ pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
         ledger
-            .get::<StateExploration>()
+            .read::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
@@ -30,9 +30,9 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _events: &mut EventQueue) {
-        let state_input = ledger.get::<SysRecordInput>();
+        let state_input = ledger.read::<SysRecordInput>();
 
-        ledger.edit::<StatePeerInputMode>(|x| {
+        ledger.write::<StatePeerInputMode>(|x| {
             if state_input.mapped[0]
                 .get_button_or_default("card_mode")
                 .is_down

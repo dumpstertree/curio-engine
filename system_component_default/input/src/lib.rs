@@ -38,7 +38,7 @@ impl SystemComponent for SystemComponentDefaultInput {
         // iterate over each
         for ledger in ledger {
             //
-            ledger.edit::<SysRecordInput>(|x| {
+            ledger.write::<SysRecordInput>(|x| {
                 // if mismatched map length we need to rebuild - this is actually an issue because what if same amount
                 if self.mappings_is_dirty {
                     // clear old

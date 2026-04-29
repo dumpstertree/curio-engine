@@ -31,7 +31,7 @@ impl SysRecordDebugGui {
         self.contents.push(content);
     }
     pub fn finalize(&self, ledger: &mut Ledger) -> GuiWindow {
-        let is_paused = ledger.get::<SysRecordDebug>().is_paused;
+        let is_paused = ledger.read::<SysRecordDebug>().is_paused;
         let mut window = GuiWindow::new("debug".to_string(), Vector3::new(10.0, 10.0, 0.0), Vector3::zero());
         window.add(GuiElement::new_text_button(if is_paused { "Play" } else { "Pause" }, SysRecordDebugGui::pause_on_click));
         for x in &self.contents {

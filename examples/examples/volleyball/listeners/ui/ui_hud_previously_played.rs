@@ -66,7 +66,7 @@ impl UICommon for UIHUD {
             }
         }
 
-        let state_play_history = ledger.get::<StatePlayHistory>();
+        let state_play_history = ledger.read::<StatePlayHistory>();
         if state_play_history.history.len() as i32 == self.history_len {
             return;
         }

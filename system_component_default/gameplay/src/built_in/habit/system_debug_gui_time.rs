@@ -18,7 +18,7 @@ impl Instance {
 }
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        ledger.get::<SysRecordDebug>().is_inspecting
+        ledger.read::<SysRecordDebug>().is_inspecting
     }
     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
@@ -27,9 +27,9 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_time = ledger.get::<SysRecordTime>();
+        let state_time = ledger.read::<SysRecordTime>();
 
-        ledger.edit::<SysRecordDebugGui>(|x| {
+        ledger.write::<SysRecordDebugGui>(|x| {
             x.append(format!("FPS: {} / Target FPS: {}", state_time.average_fps, state_time.target_frame_rate));
             x.append(format!("Scaled Time: {}", state_time.scaled_time));
             x.append(format!("Unscaled Time: {}", state_time.unscaled_time));

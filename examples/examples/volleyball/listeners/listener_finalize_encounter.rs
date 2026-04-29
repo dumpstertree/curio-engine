@@ -41,10 +41,10 @@ impl Impulse<GameEvents> for Listener {
         match event {
             GameEvents::FinalizeEncounter(_) => {
                 // get state
-                let state_deck: StateDeck = ledger.get::<StateDeck>();
+                let state_deck = ledger.read::<StateDeck>();
 
                 // remove any consumed cards
-                ledger.edit::<StateDeckExploration>(|x| {
+                ledger.write::<StateDeckExploration>(|x| {
                     // iterate over each deck used in encounter
                     for deck_encounter in &state_deck.deck {
                         // if deck is also in exploration we continue
@@ -59,11 +59,11 @@ impl Impulse<GameEvents> for Listener {
                     }
                 });
 
-                let state_teams = ledger.get::<StateTeamAssignments>();
-                let state_score = ledger.get::<StateScore>();
+                let state_teams = ledger.read::<StateTeamAssignments>();
+                let state_score = ledger.read::<StateScore>();
 
                 // edit health based on encounter change
-                ledger.edit::<StateHealthExploration>(|x| {
+                ledger.write::<StateHealthExploration>(|x| {
                     // iterate over each
                     for team_user_id in &state_teams.team_assignments {
                         // score for encounter
@@ -87,19 +87,19 @@ impl Impulse<GameEvents> for Listener {
                 // do some cleanup removing values we are no longer using
 
                 // clear teams foreach
-                ledger.edit::<StateTeamAssignments>(|x| x.team_assignments.clear());
+                ledger.write::<StateTeamAssignments>(|x| x.team_assignments.clear());
                 // clear positions foreach
-                ledger.edit::<StatePositionEntities>(|x| x.positions.clear());
+                ledger.write::<StatePositionEntities>(|x| x.positions.clear());
                 // clear energy foreach
-                ledger.edit::<StateEnergy>(|x| x.all_players.clear());
+                ledger.write::<StateEnergy>(|x| x.all_players.clear());
                 // clear controller foreach
-                ledger.edit::<StateController>(|x| x.all_players.clear());
+                ledger.write::<StateController>(|x| x.all_players.clear());
                 // clear decks foreach
-                ledger.edit::<StateDeck>(|x| x.deck.clear());
+                ledger.write::<StateDeck>(|x| x.deck.clear());
                 // edit scores
-                ledger.edit::<StateScore>(|x| x.all_scores.clear());
+                ledger.write::<StateScore>(|x| x.all_scores.clear());
                 // edit scores
-                ledger.edit::<StateHeat>(|x| x.all_players.clear());
+                ledger.write::<StateHeat>(|x| x.all_players.clear());
             }
             _ => {}
         }

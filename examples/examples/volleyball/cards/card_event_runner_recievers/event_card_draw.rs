@@ -7,7 +7,7 @@ impl EventReciever {
         match event {
             CardEvents::EventCardDraw(wrapped_entities, count) => {
                 // edit state
-                ledger.edit::<StateDeck>(|y| {
+                ledger.write::<StateDeck>(|y| {
                     // unwrap the entites
                     let entity_ids = wrapped_entities.as_entities();
                     for entity_id in &entity_ids {

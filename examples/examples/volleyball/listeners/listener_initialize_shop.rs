@@ -33,7 +33,7 @@ impl Impulse<GameEvents> for Listener {
                 println!("Shop Initialized");
 
                 //
-                ledger.edit::<StateShop>(|x| {
+                ledger.write::<StateShop>(|x| {
                     // set the active shop
                     x.shop = shop.clone()
                 });

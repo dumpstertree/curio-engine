@@ -27,13 +27,13 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_input = ledger.get::<SysRecordInput>();
+        let state_input = ledger.read::<SysRecordInput>();
 
         // get input button
         let debug_button = state_input.raw.get_button(&ButtonCode::Backquote);
         if debug_button.went_up {
             // flip the toggle
-            ledger.edit::<SysRecordDebug>(|x| {
+            ledger.write::<SysRecordDebug>(|x| {
                 x.is_inspecting = !x.is_inspecting;
             });
         }

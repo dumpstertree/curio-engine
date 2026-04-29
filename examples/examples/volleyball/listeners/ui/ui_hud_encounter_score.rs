@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, TextureAsset, Vector2,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{
@@ -63,7 +63,7 @@ impl UICommon for UIHUD {
         };
 
         // get cur turn
-        let cur_scores = ledger.get::<StateScore>().all_scores;
+        let cur_scores = ledger.read::<StateScore>().all_scores.clone();
 
         // missing scores for some reason
         if !cur_scores.contains_key(&Teams::Red) || !cur_scores.contains_key(&Teams::Blue) {

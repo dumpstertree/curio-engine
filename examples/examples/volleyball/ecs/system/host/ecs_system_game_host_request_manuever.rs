@@ -52,7 +52,7 @@ impl Impulse<GameEvents> for ECsystemGameRequestManuever {
                 // get the card instance
                 // let card_instance = &deck.hand_persistent[*card_instance as usize];
 
-                let state_deck = &ledger.get::<StateDeck>();
+                let state_deck = &ledger.read::<StateDeck>();
                 let Some(deck) = state_deck.deck.get(id) else {
                     println!("card not found in deck");
                     return;
@@ -88,7 +88,7 @@ impl Impulse<GameEvents> for ECsystemGameRequestManuever {
                 // get the card instance
                 // let card_instance = &deck.hand_consumable[*card_index as usize];
 
-                let state_deck = &ledger.get::<StateDeck>();
+                let state_deck = &ledger.read::<StateDeck>();
                 let Some(deck) = state_deck.deck.get(id) else {
                     println!("card not found in deck");
                     return;
@@ -177,9 +177,9 @@ impl ECsystemGameRequestManuever {
         return true;
     }
     fn check_energy(ledger: &mut Ledger, id: i32, cost: i32) -> bool {
-        let has_energy = ledger.get::<StateEnergy>().all_players[&id].0 - cost >= 0;
+        let has_energy = ledger.read::<StateEnergy>().all_players[&id].0 - cost >= 0;
         if !has_energy {
-            println!("Requested manuever for not enough energy cur: ({}) cost: ({})", ledger.get::<StateEnergy>().all_players[&id].0, cost);
+            println!("Requested manuever for not enough energy cur: ({}) cost: ({})", ledger.read::<StateEnergy>().all_players[&id].0, cost);
             return false;
         }
 
@@ -187,10 +187,10 @@ impl ECsystemGameRequestManuever {
     }
     fn check_player_id(ledger: &mut Ledger, id: i32) -> bool {
         let state_teams = ledger
-            .get::<StateTeamAssignments>()
+            .read::<StateTeamAssignments>()
             .team_for(&id)
             .unwrap();
-        let is_active_player = ledger.get::<StateTurn>().active_instance_id == state_teams;
+        let is_active_player = ledger.read::<StateTurn>().active_instance_id == state_teams;
         if !is_active_player {
             println!("Requested for non-active player");
             return false;
@@ -209,7 +209,7 @@ impl ECsystemGameRequestManuever {
     //     return true;
     // }
     fn check_card_index_consumable(ledger: &mut Ledger, id: i32, card_index: i32) -> bool {
-        let my_deck = &ledger.get::<StateDeck>().deck[&id];
+        let my_deck = &ledger.read::<StateDeck>().deck[&id];
         let is_in_range = card_index < my_deck.hand_consumable.len() as i32;
         if !is_in_range {
             println!("Card out of bounds");
@@ -239,13 +239,13 @@ impl ECsystemGameRequestManuever {
             return;
         }
         // spend
-        ledger.edit::<StateEnergy>(|x| {
+        ledger.write::<StateEnergy>(|x| {
             x.all_players
                 .insert(*id, (x.all_players[id].0 - cost, x.all_players[id].1));
         });
 
         // consume
-        ledger.edit::<StateDeck>(|x| {
+        ledger.write::<StateDeck>(|x| {
             // get this deck
             let Some(deck) = x.deck.get_mut(id) else {
                 return;

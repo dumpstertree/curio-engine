@@ -4,15 +4,7 @@ use record_serializable::record_serializable;
 use crate::state::state_teams::Teams;
 
 #[derive(Hash, PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateTurn {
     pub active_instance_id: Teams,
-}
-impl RecordCommon for StateTurn {
-    fn id() -> i32 {
-        0005
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
 }

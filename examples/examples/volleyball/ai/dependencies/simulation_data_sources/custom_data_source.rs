@@ -26,8 +26,8 @@ pub struct CustomDataSource {}
 impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomDataSource {
     fn get_cur_user(&self, ledger: &Ledger) -> (Teams, Vec<i32>) {
         // get state
-        let state_teams = ledger.get::<StateTeamAssignments>();
-        let state_turn = ledger.get::<StateTurn>();
+        let state_teams = ledger.read::<StateTeamAssignments>();
+        let state_turn = ledger.read::<StateTurn>();
 
         // get team
 
@@ -46,7 +46,7 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
         let mut output: Vec<(i32, SimulationManuevers)> = Vec::new();
 
         // get state terminated
-        let state_terminated = ledger.get::<StateTerminated>();
+        let state_terminated = ledger.read::<StateTerminated>();
 
         // this has been marked as terminal so we know there is nothing we can do
         if state_terminated.is_terminated {
@@ -64,7 +64,7 @@ impl SimulationDataSource<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Cus
             output.extend(Self::get_available_manuevers(&ledger, &user_id));
 
             // make sure the ball is not currently being served
-            if ledger.get::<StateBallMode>().mode != BallModes::Serve {
+            if ledger.read::<StateBallMode>().mode != BallModes::Serve {
                 // add end turn make sure this is added before possible breaking from lack of energy
                 output.push((*user_id, SimulationManuevers::EndTurn));
             }
@@ -78,7 +78,7 @@ impl CustomDataSource {
     fn get_available_manuevers_for_cards(ledger: &Ledger, uid: &i32, cards: &Vec<Arc<CardInstance>>) -> Vec<(i32, SimulationManuevers)> {
         //
         let mut all_manuevers = Vec::new();
-        let state_energy = ledger.get::<StateEnergy>();
+        let state_energy = ledger.read::<StateEnergy>();
 
         // iterate over each card we were passed in
         for card in cards {
@@ -172,7 +172,7 @@ impl CustomDataSource {
         let mut all_manuevers = Vec::new();
 
         // get state
-        let state_deck = ledger.get::<StateDeck>();
+        let state_deck = ledger.read::<StateDeck>();
 
         // get deck from state
         let Some(deck) = state_deck.deck.get(user_uid) else {

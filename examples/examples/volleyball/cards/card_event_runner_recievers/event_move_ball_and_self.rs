@@ -36,7 +36,7 @@ impl EventReciever {
                 }
 
                 let Some(team) = ledger
-                    .get::<StateTeamAssignments>()
+                    .read::<StateTeamAssignments>()
                     .team_for(&entity_ids[0])
                 else {
                     return vec![];
@@ -66,13 +66,13 @@ impl EventReciever {
                 let pos_x = tile_ids[0].x.clamp(min.x, max.x);
                 let pos_y = tile_ids[0].y.clamp(min.y, max.y);
                 // edit ball position
-                ledger.edit::<StatePositionBall>(|x| {
+                ledger.write::<StatePositionBall>(|x| {
                     // x.column = tile_ids[0].x;
                     // x.row = tile_ids[0].y;
                     x.column = pos_x;
                     x.row = pos_y;
                 });
-                ledger.edit::<StatePositionEntities>(|x| {
+                ledger.write::<StatePositionEntities>(|x| {
                     //
                     if let Some(pos) = x.positions.get_mut(&entity_ids[0]) {
                         pos.0 = pos_x;

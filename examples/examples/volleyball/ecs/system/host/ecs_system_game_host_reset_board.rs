@@ -8,8 +8,8 @@ use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use curio_core::{
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, ledger::Ledger},
-    collections::network_modes::NetworkModes
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
@@ -33,38 +33,38 @@ impl Impulse<GameEvents> for ECsystemGameResetBoard {
             GameEvents::ResetBoard(serving_team) => {
                 println!("Board Reset------------------------------------------------");
                 // setup ball mode
-                ledger.edit::<StateBallMode>(|x| x.mode = BallModes::Serve);
+                ledger.write::<StateBallMode>(|x| x.mode = BallModes::Serve);
 
                 // set ball position
-                ledger.edit::<StatePositionBall>(|x| {
+                ledger.write::<StatePositionBall>(|x| {
                     x.column = GameBoard::get_serving_tile(&serving_team).0;
                     x.row = GameBoard::get_serving_tile(&serving_team).1;
                 });
 
                 // reset attributes
-                ledger.edit::<StateCardAttributeModifierStack>(|x| {
+                ledger.write::<StateCardAttributeModifierStack>(|x| {
                     x.clear_all();
                 });
 
                 // reset all red
-                let state_team = ledger.get::<StateTeamAssignments>();
+                let state_team = ledger.read::<StateTeamAssignments>();
                 if let Some(guids) = state_team.team_assignments.get(&Teams::Red) {
                     for guid in guids {
                         // reset energy
-                        ledger.edit::<StateEnergy>(|x| {
+                        ledger.write::<StateEnergy>(|x| {
                             if let Some(y) = x.all_players.get_mut(guid) {
                                 y.0 = y.1;
                             }
                         });
                         // reset position
-                        ledger.edit::<StatePositionEntities>(|x| {
+                        ledger.write::<StatePositionEntities>(|x| {
                             if let Some(y) = x.positions.get_mut(guid) {
                                 y.0 = GameBoard::get_serving_tile(&Teams::Red).0;
                                 y.1 = GameBoard::get_serving_tile(&Teams::Red).1;
                             }
                         });
                         // reset shuffle deck
-                        ledger.edit::<StateDeck>(|x| {
+                        ledger.write::<StateDeck>(|x| {
                             if let Some(y) = x.deck.get_mut(guid) {
                                 y.reshuffle();
                                 y.draw(5);
@@ -77,13 +77,13 @@ impl Impulse<GameEvents> for ECsystemGameResetBoard {
                 if let Some(guids) = state_team.team_assignments.get(&Teams::Blue) {
                     for guid in guids {
                         // reset energy
-                        ledger.edit::<StateEnergy>(|x| {
+                        ledger.write::<StateEnergy>(|x| {
                             if let Some(y) = x.all_players.get_mut(guid) {
                                 y.0 = y.1;
                             }
                         });
                         // reset position
-                        ledger.edit::<StatePositionEntities>(|x| {
+                        ledger.write::<StatePositionEntities>(|x| {
                             if let Some(y) = x.positions.get_mut(guid) {
                                 y.0 = GameBoard::get_serving_tile(&Teams::Blue).0 - pos_offset;
                                 y.1 = GameBoard::get_serving_tile(&Teams::Blue).1 - pos_offset;
@@ -91,7 +91,7 @@ impl Impulse<GameEvents> for ECsystemGameResetBoard {
                         });
                         pos_offset += 1;
                         // reset shuffle deck
-                        ledger.edit::<StateDeck>(|x| {
+                        ledger.write::<StateDeck>(|x| {
                             if let Some(y) = x.deck.get_mut(guid) {
                                 y.reshuffle();
                                 y.draw(5);

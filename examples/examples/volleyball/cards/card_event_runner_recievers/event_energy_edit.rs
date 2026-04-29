@@ -7,7 +7,7 @@ impl EventReciever {
         match event {
             CardEvents::EventEnergyEdit(wrapped_entities, count) => {
                 // edit the gamestate
-                ledger.edit::<StateEnergy>(|x| {
+                ledger.write::<StateEnergy>(|x| {
                     // get the ids from the wrapped data
                     let entity_ids = wrapped_entities.as_entities();
                     // iterate over each entity

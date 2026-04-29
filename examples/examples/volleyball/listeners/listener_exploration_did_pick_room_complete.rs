@@ -29,7 +29,7 @@ impl Impulse<GameEvents> for Listener {
         match event {
             GameEvents::ExplorationDidPickRoomComplete => {
                 // turn off selection value
-                ledger.edit::<StateExploration>(|x| {
+                ledger.write::<StateExploration>(|x| {
                     x.is_selecting_next = false;
                 });
 

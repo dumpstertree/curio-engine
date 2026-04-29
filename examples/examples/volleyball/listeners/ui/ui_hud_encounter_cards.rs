@@ -54,7 +54,7 @@ impl UICommon for UIHUDInstance {
     fn init(&mut self) {}
     fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get state
-        let state_deck = ledger.get::<StateDeck>();
+        let state_deck = ledger.read::<StateDeck>();
 
         // get deck
         let Some(deck) = state_deck.deck.get(&ledger.instance_id) else {
@@ -74,15 +74,15 @@ impl UICommon for UIHUDInstance {
     }
     fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // get the state
-        let state_cards = ledger.get::<StateDeck>();
+        let state_cards = ledger.read::<StateDeck>();
         let Some(deck) = state_cards.deck.get(&ledger.instance_id) else {
             return;
         };
 
         // get state
-        let state_input_mode = ledger.get::<StatePeerInputMode>();
-        let state_peer_select_targets = ledger.get::<StatePeerSelectTargets>();
-        let state_selected_card = ledger.get::<StatePeerSelectedCards>();
+        let state_input_mode = ledger.read::<StatePeerInputMode>();
+        let state_peer_select_targets = ledger.read::<StatePeerSelectTargets>();
+        let state_selected_card = ledger.read::<StatePeerSelectedCards>();
 
         //get the target positions
         let pos_deck = Vector3::new(0.1, 0.9, 0.0);

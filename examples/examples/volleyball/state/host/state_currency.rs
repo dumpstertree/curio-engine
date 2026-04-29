@@ -3,15 +3,7 @@ use record_serializable::record_serializable;
 use std::hash::Hash;
 
 #[derive(Hash, PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateCurrency {
     pub currency: i32,
-}
-impl RecordCommon for StateCurrency {
-    fn id() -> i32 {
-        901812999
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
 }

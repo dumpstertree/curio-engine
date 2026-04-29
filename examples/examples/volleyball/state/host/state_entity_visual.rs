@@ -6,17 +6,9 @@ use record_serializable::record_serializable;
 use crate::Assets;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateVisualEntity {
     pub all: HashMap<i32, Assets>,
-}
-impl RecordCommon for StateVisualEntity {
-    fn id() -> i32 {
-        90118301
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
 }
 impl Hash for StateVisualEntity {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {

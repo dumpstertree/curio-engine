@@ -4,17 +4,9 @@ use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 
 #[derive(Hash, PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Instance)]
 pub struct StatePeerInputMode {
     pub mode: InputModes,
-}
-impl RecordCommon for StatePeerInputMode {
-    fn id() -> i32 {
-        982734
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Instance
-    }
 }
 
 #[derive(Default, Clone, Serialize, Deserialize, Hash, PartialEq, Eq)]

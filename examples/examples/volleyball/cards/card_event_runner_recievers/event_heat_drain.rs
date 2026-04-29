@@ -7,7 +7,7 @@ impl EventReciever {
         match event {
             CardEvents::EventHeatDrain(wrapped_entities) => {
                 // edit the energy
-                ledger.edit::<StateHeat>(|x| {
+                ledger.write::<StateHeat>(|x| {
                     // unwrap entityes
                     let entity_ids = wrapped_entities.as_entities();
                     // iterate over each entity

@@ -27,11 +27,11 @@ impl Impulse<GameEvents> for ECsystemGamePointScored {
         match event {
             GameEvents::RequestLeaveExplorationRoom => {
                 // exit current room
-                let state_exploration = ledger.get::<StateExploration>();
+                let state_exploration = ledger.read::<StateExploration>();
                 event_queue.enqueue_event(GameEvents::ExplorationRoomExit(state_exploration.exploration.get_cur_room()));
 
                 // change state
-                let state_exploration = ledger.get::<StateExploration>();
+                let state_exploration = ledger.read::<StateExploration>();
                 event_queue.enqueue_event(GameEvents::ExplorationPickRoomStart(state_exploration.exploration.clone()));
 
                 // did pick room

@@ -58,15 +58,15 @@ impl SystemComponent for SystemComponentDefaultPhysics {
             self.buffer_collider_box_cnt = 0;
 
             //
-            let state_collider = ledger.get::<SysRecordCollider>();
-            for collider in state_collider.colliders {
+            let state_collider = ledger.read::<SysRecordCollider>();
+            for collider in state_collider.colliders.iter() {
                 // let isometry = Isometry3::identity();
                 // let mut shape: &dyn Shape;
                 match &collider.shape {
                     ColliderShape::Box(def) => {
                         let size = def.size / 2.0;
                         // self.buffer_collider_box[self.buffer_collider_box_cnt] = Cuboid::new(Vector3::new(size.x, size.y, size.z));
-                        self.buffer_collider_box[self.buffer_collider_box_cnt] = (Cuboid::new(rapier3d::na::Vector3::new(size.x, size.y, size.z)), collider);
+                        self.buffer_collider_box[self.buffer_collider_box_cnt] = (Cuboid::new(rapier3d::na::Vector3::new(size.x, size.y, size.z)), collider.clone());
                         self.buffer_collider_box_cnt = self.buffer_collider_box_cnt + 1;
                     }
                     ColliderShape::Sphere(_) => {
@@ -78,66 +78,67 @@ impl SystemComponent for SystemComponentDefaultPhysics {
                 }
             }
 
-            let mut s = ledger.get::<SysRecordCollision>();
-            s.collisions.clear();
+            ledger.write::<SysRecordCollision>(|col| {
+                col.collisions.clear();
 
-            for x in 0..self.buffer_collider_box_cnt {
-                let xx = &self.buffer_collider_box[x];
-                for y in 0..self.buffer_collider_box_cnt {
-                    let yy = &self.buffer_collider_box[y];
+                for x in 0..self.buffer_collider_box_cnt {
+                    let xx = &self.buffer_collider_box[x];
+                    for y in 0..self.buffer_collider_box_cnt {
+                        let yy = &self.buffer_collider_box[y];
 
-                    if xx.1.guid == yy.1.guid {
-                        continue;
+                        if xx.1.guid == yy.1.guid {
+                            continue;
+                        }
+
+                        let p0 = xx.1.matrix.extract_position();
+                        let r0 = xx.1.matrix.extract_rotation().to_euler();
+
+                        let p1 = yy.1.matrix.extract_position();
+                        let r1 = yy.1.matrix.extract_rotation().to_euler();
+
+                        // println!("big rot :{}", r0);
+
+                        let a = Isometry3::new(rapier3d::na::Vector3::new(p0.x, p0.y, p0.z), rapier3d::na::Vector3::new(r0.x, r0.y, r0.z));
+                        let b = &xx.0;
+                        let c = Isometry3::new(rapier3d::na::Vector3::new(p1.x, p1.y, p1.z), rapier3d::na::Vector3::new(r1.x, r1.y, r1.z));
+                        let d = &yy.0;
+
+                        let intersects = query::intersection_test(&a, b, &c, d);
+
+                        let Ok(intersects) = intersects else {
+                            continue;
+                        };
+
+                        if !intersects {
+                            continue;
+                        }
+
+                        let contact = query::contact(&a, b, &c, d, 1.0);
+                        let Ok(concat) = contact else {
+                            continue;
+                        };
+
+                        let Some(contacta) = concat else {
+                            continue;
+                        };
+
+                        col.collisions.push(CollisionSnapshot {
+                            collider_a: xx.1.clone(),
+                            collider_b: yy.1.clone(),
+                            contact: Contact {
+                                point: Vector3::new(contacta.point1.x, contacta.point1.y, contacta.point1.z),
+                                normal_a: Vector3::new(contacta.normal1.x, contacta.normal1.y, contacta.normal1.z),
+                                normal_b: Vector3::new(contacta.normal2.x, contacta.normal2.y, contacta.normal2.z),
+                            },
+                        });
                     }
-
-                    let p0 = xx.1.matrix.extract_position();
-                    let r0 = xx.1.matrix.extract_rotation().to_euler();
-
-                    let p1 = yy.1.matrix.extract_position();
-                    let r1 = yy.1.matrix.extract_rotation().to_euler();
-
-                    // println!("big rot :{}", r0);
-
-                    let a = Isometry3::new(rapier3d::na::Vector3::new(p0.x, p0.y, p0.z), rapier3d::na::Vector3::new(r0.x, r0.y, r0.z));
-                    let b = &xx.0;
-                    let c = Isometry3::new(rapier3d::na::Vector3::new(p1.x, p1.y, p1.z), rapier3d::na::Vector3::new(r1.x, r1.y, r1.z));
-                    let d = &yy.0;
-
-                    let intersects = query::intersection_test(&a, b, &c, d);
-
-                    let Ok(intersects) = intersects else {
-                        continue;
-                    };
-
-                    if !intersects {
-                        continue;
-                    }
-
-                    let contact = query::contact(&a, b, &c, d, 1.0);
-                    let Ok(concat) = contact else {
-                        continue;
-                    };
-
-                    let Some(contacta) = concat else {
-                        continue;
-                    };
-
-                    s.collisions.push(CollisionSnapshot {
-                        collider_a: xx.1.clone(),
-                        collider_b: yy.1.clone(),
-                        contact: Contact {
-                            point: Vector3::new(contacta.point1.x, contacta.point1.y, contacta.point1.z),
-                            normal_a: Vector3::new(contacta.normal1.x, contacta.normal1.y, contacta.normal1.z),
-                            normal_b: Vector3::new(contacta.normal2.x, contacta.normal2.y, contacta.normal2.z),
-                        },
-                    });
                 }
-            }
+            });
 
-            ledger.edit::<SysRecordCollision>(|x| {
+            ledger.write::<SysRecordCollision>(|x| {
                 x.collisions.clear();
             });
-            ledger.edit::<SysRecordCollider>(|x| {
+            ledger.write::<SysRecordCollider>(|x| {
                 x.colliders.clear();
             });
         }

@@ -33,25 +33,25 @@ impl Habit for Instance {
         println!("Instance: {}. Host Startup", ledger.instance_id);
 
         // set resolution
-        ledger.edit::<SysRecordCamera>(|x| {
+        ledger.write::<SysRecordCamera>(|x| {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
         });
 
-        ledger.edit::<StateCurrency>(|x| {
+        ledger.write::<StateCurrency>(|x| {
             x.currency = 100;
         });
 
         // get state
-        let state_network = ledger.get::<SysRecordNetwork>();
+        let state_network = ledger.read::<SysRecordNetwork>();
 
         // add starting decks for each player - eventually load this from disc
-        ledger.edit::<StateDeckExploration>(|x| {
+        ledger.write::<StateDeckExploration>(|x| {
             for id in state_network.peer_instance_ids() {
                 x.deck.insert(*id, DeckLibrary::get_player_deck_standard());
             }
         });
-        ledger.edit::<StateHealthExploration>(|x| {
+        ledger.write::<StateHealthExploration>(|x| {
             for id in state_network.peer_instance_ids() {
                 x.all.insert(*id, (7, 7));
             }

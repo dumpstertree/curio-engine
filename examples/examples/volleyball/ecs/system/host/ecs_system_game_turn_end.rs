@@ -33,7 +33,7 @@ impl Impulse<GameEvents> for ECsystemGameEndTurn {
                 // end this turn
                 println!("Instance: {}. End Turn {}", ledger.instance_id, team);
 
-                let state_position_ball = ledger.get::<StatePositionBall>();
+                let state_position_ball = ledger.read::<StatePositionBall>();
 
                 let out_of_bounds = team.is_out_of_bounds(state_position_ball.column, state_position_ball.row);
                 let ball_is_on_side = team.is_on_side(state_position_ball.column, state_position_ball.row);

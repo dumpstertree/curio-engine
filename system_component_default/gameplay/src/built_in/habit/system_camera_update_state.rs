@@ -25,13 +25,13 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut EventQueue) {
-        if state.get::<SysRecordDebug>().is_paused {
+        if state.read::<SysRecordDebug>().is_paused {
             return;
         }
         world.edit::<(&mut Transform3D, &Camera)>(|q| {
             //
             for (_entity, (transform, _camera)) in q {
-                state.edit::<SysRecordCamera>(|x| {
+                state.write::<SysRecordCamera>(|x| {
                     x.cameras.position = transform.position;
                     x.cameras.rotation = transform.rotation;
                 });

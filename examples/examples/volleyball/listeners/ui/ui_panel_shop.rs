@@ -43,7 +43,7 @@ impl UICommon for UIPanelInstance {
     fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         //
         let mut stock_names = Vec::new();
-        let state_store = ledger.get::<StateShop>();
+        let state_store = ledger.read::<StateShop>();
         for i in 0..state_store.shop.stock.len() {
             let stock = state_store.shop.stock.get(i).unwrap();
             match &stock.item {
@@ -88,12 +88,12 @@ impl UICommon for UIPanelInstance {
     }
     fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
         // no items
-        if ledger.get::<StateShop>().shop.stock.len() == 0 {
+        if ledger.read::<StateShop>().shop.stock.len() == 0 {
             return;
         }
 
         let mut is_dirty = false;
-        let input_state = ledger.get::<SysRecordInput>();
+        let input_state = ledger.read::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
                 .get_button_or_default("move_back")
@@ -122,7 +122,7 @@ impl UICommon for UIPanelInstance {
                 if self.selected_index == 3 as i32 {
                     event_queue.enqueue_event(GameEvents::RequestLeaveExplorationRoom);
                 } else {
-                    let state_shop = ledger.get::<StateShop>();
+                    let state_shop = ledger.read::<StateShop>();
                     let stock = &state_shop.shop.stock;
 
                     if let Some(s) = stock.get(self.selected_index as usize) {
@@ -132,7 +132,7 @@ impl UICommon for UIPanelInstance {
                 is_dirty = true;
             }
 
-            let state_store = ledger.get::<StateShop>();
+            let state_store = ledger.read::<StateShop>();
 
             //
             if !is_dirty && self.stock == state_store.shop.stock {
@@ -143,7 +143,7 @@ impl UICommon for UIPanelInstance {
 
             if let Some(f_ui) = &self.f_ui {
                 let mut stock_names = Vec::new();
-                let state_store = ledger.get::<StateShop>();
+                let state_store = ledger.read::<StateShop>();
 
                 for i in 0..state_store.shop.stock.len() {
                     let stock = state_store.shop.stock.get(i).unwrap();

@@ -63,12 +63,12 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         self.shadow_system
             .ensure_screens(ledger.len(), Matrix4x4::default());
         for i in 0..ledger.len() {
-            let state_sun = ledger[i].get::<SysRecordSun>();
+            let state_sun = ledger[i].read::<SysRecordSun>();
             if state_sun.cast_shadows {
                 self.shadow_system
                     .update_for_screen(i, &state_sun.direction);
                 self.shadow_system
-                    .render_for_screen(&mut encoder, i, &ledger[i].get::<SysRecordRendering>().draw_calls);
+                    .render_for_screen(&mut encoder, i, &ledger[i].read::<SysRecordRendering>().draw_calls);
             }
         }
 

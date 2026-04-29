@@ -141,6 +141,7 @@ pub mod collections {
     pub mod network_modes;
     pub mod projection;
     pub mod state_map;
+    pub mod state_map2;
     pub mod state_ownerships;
     pub mod state_sync_event;
     pub mod version_number;
@@ -154,6 +155,8 @@ pub mod static_data {
     pub mod global_states;
 }
 pub mod system {
+    pub mod record_id;
+
     pub mod system_component;
     pub mod system_game_state;
     pub mod system_components {
@@ -168,3 +171,8 @@ pub mod system {
 pub mod system_adapters {
     pub mod adapter_system_gpu;
 }
+
+use std::any::TypeId;
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicI32, Ordering};
+use std::sync::{LazyLock, Mutex};

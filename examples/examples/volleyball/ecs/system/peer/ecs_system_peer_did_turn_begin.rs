@@ -45,20 +45,20 @@ pub struct Instance {
 }
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        let state_team = ledger.get::<StateTeamAssignments>();
-        let active_team = ledger.get::<StateTurn>().active_instance_id;
+        let state_team = ledger.read::<StateTeamAssignments>();
+        let active_team = ledger.read::<StateTurn>().active_instance_id;
         let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
             return false;
         };
 
         let any_ai = ledger
-            .get::<StateController>()
+            .read::<StateController>()
             .all_players
             .iter()
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
 
         ledger
-            .get::<StateExploration>()
+            .read::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
@@ -73,35 +73,35 @@ impl Habit for Instance {
     fn init(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {}
     fn enable(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
         self.move_time = 1.5;
-        self.lastmove = ledger.get::<SysRecordTime>().scaled_time;
+        self.lastmove = ledger.read::<SysRecordTime>().scaled_time;
     }
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
-        let state_score = ledger.get::<StateScore>();
+        let state_score = ledger.read::<StateScore>();
         if state_score.all_scores.iter().any(|x| *x.1 <= 0) {
             return;
         }
-        let state_team = ledger.get::<StateTeamAssignments>();
-        let active_team = ledger.get::<StateTurn>().active_instance_id;
+        let state_team = ledger.read::<StateTeamAssignments>();
+        let active_team = ledger.read::<StateTurn>().active_instance_id;
         let Some(current_guids) = state_team.team_assignments.get(&active_team) else {
             return;
         };
 
         let any_ai = ledger
-            .get::<StateController>()
+            .read::<StateController>()
             .all_players
             .iter()
             .any(|x| current_guids.contains(x.0) && x.1 == &Controller::Ai);
 
-        let state_team = ledger.get::<StateTeamAssignments>();
-        let state_turn = ledger.get::<StateTurn>();
-        let state_control = ledger.get::<StateController>();
+        let state_team = ledger.read::<StateTeamAssignments>();
+        let state_turn = ledger.read::<StateTurn>();
+        let state_control = ledger.read::<StateController>();
         let team = state_team
             .team_assignments
             .get(&state_turn.active_instance_id)
             .unwrap();
 
         let mut do_move = false;
-        for x in state_control.all_players {
+        for x in &state_control.all_players {
             if team.contains(&x.0) {
                 match x.1 {
                     Controller::Ai => do_move = true,
@@ -110,18 +110,18 @@ impl Habit for Instance {
             }
         }
         // let is_turn = d == ledger.instance_id;
-        if do_move && any_ai && ledger.get::<SysRecordTime>().scaled_time - self.lastmove > self.move_time {
+        if do_move && any_ai && ledger.read::<SysRecordTime>().scaled_time - self.lastmove > self.move_time {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |ledger| {
                 Ledger::new_single_instance(vec![
                     // copy these states
-                    (StateCardAttributeModifierStack::id(), Box::new(ledger.get::<StateCardAttributeModifierStack>())),
-                    (StateTeamAssignments::id(), Box::new(ledger.get::<StateTeamAssignments>())),
-                    (StatePositionEntities::id(), Box::new(ledger.get::<StatePositionEntities>())), //
-                    (StatePositionBall::id(), Box::new(ledger.get::<StatePositionBall>())),
-                    (StateBallMode::id(), Box::new(ledger.get::<StateBallMode>())),
-                    (StateEnergy::id(), Box::new(ledger.get::<StateEnergy>())),
-                    (StateDeck::id(), Box::new(ledger.get::<StateDeck>())),
-                    (StateTurn::id(), Box::new(ledger.get::<StateTurn>())),
+                    (StateCardAttributeModifierStack::id(), Box::new((*ledger.read::<StateCardAttributeModifierStack>()).clone())),
+                    (StateTeamAssignments::id(), Box::new((*ledger.read::<StateTeamAssignments>()).clone())),
+                    (StatePositionEntities::id(), Box::new((*ledger.read::<StatePositionEntities>()).clone())),
+                    (StatePositionBall::id(), Box::new((*ledger.read::<StatePositionBall>()).clone())),
+                    (StateBallMode::id(), Box::new((*ledger.read::<StateBallMode>()).clone())),
+                    (StateEnergy::id(), Box::new((*ledger.read::<StateEnergy>()).clone())),
+                    (StateDeck::id(), Box::new((*ledger.read::<StateDeck>()).clone())),
+                    (StateTurn::id(), Box::new((*ledger.read::<StateTurn>()).clone())),
                     // add this state
                     (StateTerminated::id(), Box::new(StateTerminated { is_terminated: false, is_exhuasted: false })),
                 ])
@@ -154,7 +154,7 @@ impl Habit for Instance {
 
             // let e = run_ai(ledger);
             // events.enqueue_event(e);
-            self.lastmove = ledger.get::<SysRecordTime>().scaled_time;
+            self.lastmove = ledger.read::<SysRecordTime>().scaled_time;
             println!(
                 "did ai
                         
@@ -179,7 +179,7 @@ impl Impulse<GameEvents> for Instance {
         match event {
             GameEvents::DidTurnBegin(_id) => {}
             _ => {
-                let _state_time = ledger.get::<SysRecordTime>();
+                let _state_time = ledger.read::<SysRecordTime>();
                 // self.lastmove = ledger.get::<TimeState>().unscaled_time;
                 unsafe { DO_MOVE = true };
             }

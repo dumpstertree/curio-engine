@@ -50,14 +50,14 @@ impl UICommon for UIHUD {
     fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
 
     fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let state_health = ledger.get::<StateHealthExploration>();
+        let state_health = ledger.read::<StateHealthExploration>();
         if let Some(x) = &self.go_health {
             x.edit_facet::<RendererText>(|y| {
                 y.set_contents(&format!("{} of {} Health ", state_health.all.get(&ledger.instance_id).unwrap().0, state_health.all.get(&ledger.instance_id).unwrap().1));
             });
         }
 
-        let state_deck_exploration = ledger.get::<StateDeckExploration>();
+        let state_deck_exploration = ledger.read::<StateDeckExploration>();
         if let Some(x) = &self.go_cards_cnt {
             x.edit_facet::<RendererText>(|y| {
                 y.set_contents(&format!(
@@ -72,7 +72,7 @@ impl UICommon for UIHUD {
             });
         }
 
-        let state_currency = ledger.get::<StateCurrency>();
+        let state_currency = ledger.read::<StateCurrency>();
         if let Some(x) = &self.go_gold {
             x.edit_facet::<RendererText>(|y| {
                 y.set_contents(&format!("{} Gold", state_currency.currency));

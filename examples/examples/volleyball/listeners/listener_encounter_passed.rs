@@ -28,7 +28,7 @@ impl Impulse<GameEvents> for ECsystemGamePointScored {
                 println!("Encounter Passed");
 
                 // claim rewards
-                ledger.edit::<StateCurrency>(|x| {
+                ledger.write::<StateCurrency>(|x| {
                     x.currency += 100;
                 });
 

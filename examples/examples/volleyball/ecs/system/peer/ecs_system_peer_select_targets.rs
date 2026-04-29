@@ -24,7 +24,7 @@ pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
         ledger
-            .get::<StateExploration>()
+            .read::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
@@ -37,18 +37,18 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _events: &mut EventQueue) {
-        let state_select_targets = ledger.get::<StatePeerSelectTargets>();
-        let state_input = ledger.get::<SysRecordInput>();
+        let state_select_targets = ledger.read::<StatePeerSelectTargets>();
+        let state_input = ledger.read::<SysRecordInput>();
         // mode is currently set to NONE
-        let Some(mode) = state_select_targets.enabled else {
+        let Some(mode) = &state_select_targets.enabled else {
             return;
         };
 
         match mode {
             SelectStates::Enabled(target, _working_state) => {
-                let state_team = ledger.get::<StateTeamAssignments>();
+                let state_team = ledger.read::<StateTeamAssignments>();
                 let team = state_team.team_for(&ledger.instance_id).unwrap();
-                let mut all_targets = self.get_all_tiles(ledger, target);
+                let mut all_targets = self.get_all_tiles(ledger, *target);
 
                 if all_targets.len() == 0 {
                     panic!("invalid number of targets!");
@@ -65,13 +65,13 @@ impl Habit for Instance {
 
                         // clamp to a tile in our range
                         if !all_targets.contains(&state_select_targets.selected_index) {
-                            ledger.edit::<StatePeerSelectTargets>(|x| {
+                            ledger.write::<StatePeerSelectTargets>(|x| {
                                 x.selected_index = all_targets[0];
                             });
                         }
                         // get submition event
                         if input_submit.went_up {
-                            ledger.edit::<StatePeerSelectTargets>(|x| x.enabled = Some(SelectStates::Completed(DataDepsFilled::Tiles(vec![x.selected_index]))));
+                            ledger.write::<StatePeerSelectTargets>(|x| x.enabled = Some(SelectStates::Completed(DataDepsFilled::Tiles(vec![x.selected_index]))));
                             println!("submit");
                         }
 
@@ -148,7 +148,7 @@ impl Habit for Instance {
                                 closest = t;
                             }
                         }
-                        ledger.edit::<StatePeerSelectTargets>(|x| {
+                        ledger.write::<StatePeerSelectTargets>(|x| {
                             x.selected_index = closest;
                             println!("try set {}", closest);
                         });
@@ -164,13 +164,13 @@ impl Habit for Instance {
 
                         // clamp to a tile in our range
                         if !all_targets.contains(&state_select_targets.selected_index) {
-                            ledger.edit::<StatePeerSelectTargets>(|x| {
+                            ledger.write::<StatePeerSelectTargets>(|x| {
                                 x.selected_index = all_targets[0];
                             });
                         }
                         // get submition event
                         if input_submit.went_up {
-                            ledger.edit::<StatePeerSelectTargets>(|x| x.enabled = Some(SelectStates::Completed(DataDepsFilled::Tiles(vec![x.selected_index]))));
+                            ledger.write::<StatePeerSelectTargets>(|x| x.enabled = Some(SelectStates::Completed(DataDepsFilled::Tiles(vec![x.selected_index]))));
                             println!("submit");
                         }
 
@@ -247,7 +247,7 @@ impl Habit for Instance {
                                 closest = t;
                             }
                         }
-                        ledger.edit::<StatePeerSelectTargets>(|x| {
+                        ledger.write::<StatePeerSelectTargets>(|x| {
                             x.selected_index = closest;
                             println!("try set {}", closest);
                         });
@@ -267,17 +267,17 @@ impl Instance {
             AttributeTargetTypesTiles::SelectOpponentBackCorner => {
                 let user_uid = ledger.instance_id;
                 let team = ledger
-                    .get::<StateTeamAssignments>()
+                    .read::<StateTeamAssignments>()
                     .team_for(&user_uid)
                     .unwrap();
                 return GameBoard::get_back_corners_for_team(&team.next_team());
             }
 
             AttributeTargetTypesTiles::SelectInRangeLocalToBall(min, max) => {
-                let pos_ball = ledger.get::<StatePositionBall>();
+                let pos_ball = ledger.read::<StatePositionBall>();
                 let user_uid = ledger.instance_id;
                 let team = ledger
-                    .get::<StateTeamAssignments>()
+                    .read::<StateTeamAssignments>()
                     .team_for(&user_uid)
                     .unwrap();
 
@@ -295,7 +295,7 @@ impl Instance {
             AttributeTargetTypesTiles::SelectAny => GameBoard::get_tiles(),
             AttributeTargetTypesTiles::SelectOnTeamUser => {
                 let user_uid = ledger.instance_id;
-                let team = ledger.get::<StateTeamAssignments>().team_for(&user_uid);
+                let team = ledger.read::<StateTeamAssignments>().team_for(&user_uid);
                 if let Some(team) = team {
                     return GameBoard::get_tiles_for_team(&team);
                 }
@@ -304,7 +304,7 @@ impl Instance {
             }
             AttributeTargetTypesTiles::SelectOnTeamOpponent => {
                 let user_uid = ledger.instance_id;
-                let team = ledger.get::<StateTeamAssignments>().team_for(&user_uid);
+                let team = ledger.read::<StateTeamAssignments>().team_for(&user_uid);
                 if let Some(team) = team {
                     return GameBoard::get_tiles_for_team(&team.next_team());
                 }

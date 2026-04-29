@@ -20,7 +20,7 @@ use habit::habit;
 pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        let state_exploration = ledger.get::<StateExploration>();
+        let state_exploration = ledger.read::<StateExploration>();
         state_exploration.exploration.get_cur_room().room_type == RoomTypes::Combat && !state_exploration.is_selecting_next
     }
     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
@@ -29,7 +29,7 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
-        let state_selection = ledger.get::<StatePeerSelectTargets>();
+        let state_selection = ledger.read::<StatePeerSelectTargets>();
 
         world.edit::<(&mut Transform3D, &ComponentGameBoardSelection, &mut RendererStatic)>(|query| {
             for (_, (transform, _, renderer)) in query {

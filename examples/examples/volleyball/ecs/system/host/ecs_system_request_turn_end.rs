@@ -31,17 +31,17 @@ impl Impulse<GameEvents> for ECsystemGameRequestTurnEnd {
     fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestTurnEnd(id) => {
-                let Some(team) = ledger.get::<StateTeamAssignments>().team_for(id) else {
+                let Some(team) = ledger.read::<StateTeamAssignments>().team_for(id) else {
                     return;
                 };
                 //  guard -> make sure the requested end of turn is for the active player
-                let is_active_player = ledger.get::<StateTurn>().active_instance_id == team;
+                let is_active_player = ledger.read::<StateTurn>().active_instance_id == team;
                 if !is_active_player {
                     println!("Requested Turn End for non-active player");
                     return;
                 }
 
-                let is_serving = ledger.get::<StateBallMode>().mode == BallModes::Serve;
+                let is_serving = ledger.read::<StateBallMode>().mode == BallModes::Serve;
                 if is_serving {
                     println!("Requested Turn End in Serve Mode");
                     return;

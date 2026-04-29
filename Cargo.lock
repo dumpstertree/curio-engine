@@ -644,6 +644,7 @@ dependencies = [
  "bytemuck",
  "cgmath",
  "chrono",
+ "downcast-rs 2.0.1",
  "egui",
  "egui-wgpu",
  "gltf",

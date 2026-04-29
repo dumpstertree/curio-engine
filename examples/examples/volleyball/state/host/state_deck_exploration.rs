@@ -6,18 +6,11 @@ use record_serializable::record_serializable;
 use crate::state::state_deck::Deck;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateDeckExploration {
     pub deck: HashMap<i32, Deck>,
 }
-impl RecordCommon for StateDeckExploration {
-    fn id() -> i32 {
-        99023234
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
-}
+
 impl Hash for StateDeckExploration {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         let mut keys: Vec<&i32> = self.deck.keys().collect();

@@ -41,9 +41,9 @@ impl CardAttributeFillerPlayer {
                 AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => CardAttributeFillerPlayer::get_tiles_random_in_range_global(id, ledger, min, max),
                 AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => {
                     let uid = id;
-                    let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
-                    let state_turn = ledger.get::<StateTurn>();
-                    let state = ledger.get::<StatePositionEntities>();
+                    let state_modifiers = ledger.read::<StateCardAttributeModifierStack>();
+                    let state_turn = ledger.read::<StateTurn>();
+                    let state = ledger.read::<StatePositionEntities>();
                     let state_position_ball = state.positions.get(uid).unwrap();
 
                     // get the modifiers for stack
@@ -99,9 +99,9 @@ impl CardAttributeFillerPlayer {
                     AttributeTargetTypesTiles::RandomInRangeGlobal(min, max) => filled.push(CardAttributeFillerPlayer::get_tiles_random_in_range_global(id, ledger, min, max)),
                     AttributeTargetTypesTiles::RandomInRangeLocalToUser(min, max) => {
                         let uid = id;
-                        let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
-                        let state_turn = ledger.get::<StateTurn>();
-                        let state = ledger.get::<StatePositionEntities>();
+                        let state_modifiers = ledger.read::<StateCardAttributeModifierStack>();
+                        let state_turn = ledger.read::<StateTurn>();
+                        let state = ledger.read::<StatePositionEntities>();
                         let state_position_ball = state.positions.get(uid).unwrap();
 
                         // get the modifiers for stack
@@ -134,22 +134,22 @@ impl CardAttributeFillerPlayer {
 // get -> entity
 impl CardAttributeFillerPlayer {
     fn get_entity_user(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _cur_player_id = ledger.get::<StateTurn>().active_instance_id;
+        let _cur_player_id = ledger.read::<StateTurn>().active_instance_id;
         DataDepsFilled::Entities(vec![*id])
     }
     fn get_entity_select(_ledger: &Ledger) -> DataDepsFilled {
         todo!()
     }
     fn get_entity_random(ledger: &Ledger) -> DataDepsFilled {
-        let state_peers = ledger.get::<SysRecordNetwork>();
+        let state_peers = ledger.read::<SysRecordNetwork>();
         let peer_instance_ids = state_peers.peer_instance_ids();
         let random_index = Random::range_int(0, peer_instance_ids.len().try_into().unwrap());
         let selected = peer_instance_ids.get(random_index as usize).unwrap();
         DataDepsFilled::Entities(vec![*selected])
     }
     fn get_entity_opponent(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_team_assignment = ledger.get::<StateTeamAssignments>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_team_assignment = ledger.read::<StateTeamAssignments>();
         let opponent_team = state_team_assignment.team_for(&id).unwrap().next_team();
         let opponent_ids = state_team_assignment
             .team_assignments
@@ -165,8 +165,8 @@ impl CardAttributeFillerPlayer {
         todo!()
     }
     fn get_card_user_random(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_deck = ledger.get::<StateDeck>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_deck = ledger.read::<StateDeck>();
 
         let Some(deck) = state_deck.deck.get(id) else {
             panic!("");
@@ -186,8 +186,8 @@ impl CardAttributeFillerPlayer {
         todo!()
     }
     fn get_card_user_all(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_deck = ledger.get::<StateDeck>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_deck = ledger.read::<StateDeck>();
 
         let Some(deck) = state_deck.deck.get(id) else {
             panic!("");
@@ -201,9 +201,9 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Cards(result)
     }
     fn get_card_opponent_all(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_deck = ledger.get::<StateDeck>();
-        let state_team_assignment = ledger.get::<StateTeamAssignments>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_deck = ledger.read::<StateDeck>();
+        let state_team_assignment = ledger.read::<StateTeamAssignments>();
         let opponent_team = state_team_assignment.team_for(id).unwrap().next_team();
         let opponent_ids = state_team_assignment
             .team_assignments
@@ -223,9 +223,9 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Cards(result)
     }
     fn get_card_opponent_random(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_deck = ledger.get::<StateDeck>();
-        let state_team_assignment = ledger.get::<StateTeamAssignments>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_deck = ledger.read::<StateDeck>();
+        let state_team_assignment = ledger.read::<StateTeamAssignments>();
         let opponent_team = state_team_assignment.team_for(id).unwrap().next_team();
         let opponent_ids = state_team_assignment
             .team_assignments
@@ -258,8 +258,8 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(0, 4), Random::range_int(0, 4))])
     }
     pub fn get_tiles_random_on_team_user(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_team_assignment = ledger.get::<StateTeamAssignments>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_team_assignment = ledger.read::<StateTeamAssignments>();
 
         let Some(cur_team) = state_team_assignment.team_for(id) else {
             panic!("");
@@ -271,8 +271,8 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Tiles(vec![Vector2Int::new(Random::range_int(bounds_min.x, bounds_max.x), Random::range_int(bounds_min.y, bounds_max.y))])
     }
     pub fn get_tiles_random_on_team_opponent(id: &i32, ledger: &Ledger) -> DataDepsFilled {
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_team_assignment = ledger.get::<StateTeamAssignments>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_team_assignment = ledger.read::<StateTeamAssignments>();
 
         let Some(cur_team) = state_team_assignment.team_for(id) else {
             panic!("");
@@ -293,10 +293,10 @@ impl CardAttributeFillerPlayer {
         DataDepsFilled::Tiles(vec![Vector2Int::new(random_x, random_z)])
     }
     pub fn get_tiles_random_in_range_local(id: &i32, ledger: &Ledger, min: &Vector2Int, max: &Vector2Int) -> DataDepsFilled {
-        let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
-        let _state_turn = ledger.get::<StateTurn>();
-        let state_teams = ledger.get::<StateTeamAssignments>();
-        let state_position_ball = ledger.get::<StatePositionBall>();
+        let state_modifiers = ledger.read::<StateCardAttributeModifierStack>();
+        let _state_turn = ledger.read::<StateTurn>();
+        let state_teams = ledger.read::<StateTeamAssignments>();
+        let state_position_ball = ledger.read::<StatePositionBall>();
 
         // get the modifiers for stack
         let modifier_stack = state_modifiers.get_flat_stack_for_entity(*id);

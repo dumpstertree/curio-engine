@@ -28,8 +28,8 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
-        let state_position_player = ledger.get::<StatePositionEntities>();
-        let state_time = ledger.get::<SysRecordTime>();
+        let state_position_player = ledger.read::<StatePositionEntities>();
+        let state_time = ledger.read::<SysRecordTime>();
 
         world.edit::<(&mut Transform3D, &ComponentPlayer, &ComponentViewPlayer, &mut RendererDynamic)>(|query| {
             for (_, (transform, player, _, renderer)) in query {

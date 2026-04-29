@@ -4,18 +4,16 @@ use serde::{Deserialize, Serialize};
 use std::hash::Hash;
 
 #[derive(PartialEq, Eq, Hash)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateShop {
     pub shop: Shop,
 }
-impl RecordCommon for StateShop {
-    fn id() -> i32 {
-        901830449
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
-}
+// impl StateShop {
+//     fn ownership() -> StateOwnerships {
+//         StateOwnerships::Host
+//     }
+// }
+
 #[derive(Default, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
 pub struct Shop {
     pub stock: Vec<Stock>,

@@ -10,7 +10,7 @@ impl EventReciever {
                 let card_uids = wrapped_cards.as_cards();
 
                 // edit the state
-                ledger.edit::<StateDeck>(|x| {
+                ledger.write::<StateDeck>(|x| {
                     // iterate over each entity and its deck
                     for uid_deck in x.deck.iter_mut() {
                         // pull out the deck we are editing

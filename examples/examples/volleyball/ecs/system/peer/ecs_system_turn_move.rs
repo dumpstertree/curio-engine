@@ -31,14 +31,14 @@ pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
         ledger
-            .get::<StateExploration>()
+            .read::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
             == RoomTypes::Combat
-            && ledger.get::<StatePeerInputMode>().mode == InputModes::Move
-            && !ledger.get::<StateExploration>().is_selecting_next
-            && ledger.get::<StatePeerSelectTargets>().enabled.is_none()
+            && ledger.read::<StatePeerInputMode>().mode == InputModes::Move
+            && !ledger.read::<StateExploration>().is_selecting_next
+            && ledger.read::<StatePeerSelectTargets>().enabled.is_none()
     }
     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
@@ -47,22 +47,22 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
         // currently serving and cant move
-        let state_ball = ledger.get::<StateBallMode>();
+        let state_ball = ledger.read::<StateBallMode>();
         if state_ball.mode == BallModes::Serve {
             return;
         }
 
-        let state_team = ledger.get::<StateTeamAssignments>();
+        let state_team = ledger.read::<StateTeamAssignments>();
         let Some(team) = state_team.team_for(&ledger.instance_id) else {
             return;
         };
-        let state_position_player = ledger.get::<StatePositionEntities>();
+        let state_position_player = ledger.read::<StatePositionEntities>();
         let pos = state_position_player
             .positions
             .get(&ledger.instance_id)
             .unwrap();
         // get states
-        let state_input = ledger.get::<SysRecordInput>();
+        let state_input = ledger.read::<SysRecordInput>();
 
         // get inputs from mapping
         let move_forward = state_input.mapped[0]

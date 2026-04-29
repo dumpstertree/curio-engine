@@ -6,7 +6,7 @@ impl EventReciever {
     pub fn recieve(event: &CardEvents, ledger: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::ClearModifiersAll() => {
-                ledger.edit::<StateCardAttributeModifierStack>(|x| {
+                ledger.write::<StateCardAttributeModifierStack>(|x| {
                     x.clear_all();
                 });
             }

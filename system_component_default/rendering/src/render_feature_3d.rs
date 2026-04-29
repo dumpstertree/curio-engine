@@ -53,7 +53,7 @@ impl RenderFeature3DHelper {
         for i in 0..graphics_mappings.len() {
             //
             let ledger = ledger.get_mut(i).unwrap();
-            let state_camera = ledger.get::<SysRecordCamera>();
+            let state_camera = ledger.read::<SysRecordCamera>();
 
             // get camera data
             let cur_camera_snapshot = &state_camera.cameras;

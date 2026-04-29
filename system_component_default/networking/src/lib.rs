@@ -330,7 +330,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
         for gs in ledger.iter_mut() {
-            gs.edit::<SysRecordNetwork>(|x| x.set_peer_instance_ids(v.clone()));
+            gs.write::<SysRecordNetwork>(|x| x.set_peer_instance_ids(v.clone()));
         }
     }
 }

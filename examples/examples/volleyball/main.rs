@@ -290,7 +290,7 @@ fn main() {
         AssetCache::new(100),
     );
     AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
-        // remote
+        // remote100
         (
             Assets::Goblin.into(),
             Assets::Goblin.into(),

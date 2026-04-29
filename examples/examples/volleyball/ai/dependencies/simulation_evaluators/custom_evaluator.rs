@@ -11,11 +11,11 @@ pub struct CustomEvaluator {}
 impl SimulationEvaluator<(i32, SimulationManuevers), (Teams, Vec<i32>)> for CustomEvaluator {
     fn evaluate(&self, ledger: &Ledger, user: (Teams, Vec<i32>), previous_moves: &Vec<(i32, SimulationManuevers)>) -> i64 {
         // get states
-        let state_position_ball = ledger.get::<StatePositionBall>();
-        let state_energy = ledger.get::<StateEnergy>();
-        let state_terminated = ledger.get::<StateTerminated>();
-        let state_modifier_stack = ledger.get::<StateCardAttributeModifierStack>();
-        let state_deck = ledger.get::<StateDeck>();
+        let state_position_ball = ledger.read::<StatePositionBall>();
+        let state_energy = ledger.read::<StateEnergy>();
+        let state_terminated = ledger.read::<StateTerminated>();
+        let state_modifier_stack = ledger.read::<StateCardAttributeModifierStack>();
+        let state_deck = ledger.read::<StateDeck>();
 
         // get bounds
         let min = GameBoard::get_bounds_min_for_team(&user.0);

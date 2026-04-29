@@ -6,18 +6,11 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, fmt::Display, hash::Hash, sync::Arc};
 
 #[derive(PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateDeck {
     pub deck: HashMap<i32, Deck>,
 }
-impl RecordCommon for StateDeck {
-    fn id() -> i32 {
-        0007
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
-}
+
 impl Hash for StateDeck {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         let mut keys: Vec<&i32> = self.deck.keys().collect();

@@ -25,7 +25,7 @@ impl Impulse<GameEvents> for ECsystemGamePointScored {
         match event {
             GameEvents::PointScored(team) => {
                 // update score
-                ledger.edit::<StateScore>(|x| {
+                ledger.write::<StateScore>(|x| {
                     // if there is already a score we use that
                     let mut cur_score = 0;
                     if x.all_scores.contains_key(&team.next_team()) {
@@ -37,7 +37,7 @@ impl Impulse<GameEvents> for ECsystemGamePointScored {
                 });
 
                 // get the score state
-                let state_score = ledger.get::<StateScore>();
+                let state_score = ledger.read::<StateScore>();
 
                 // get the scores
                 let score_red = state_score.all_scores.get(&Teams::Red).unwrap_or(&99);

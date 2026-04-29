@@ -3,7 +3,7 @@ use curio_core::{collections::state_ownerships::StateOwnerships, system::system_
 use record_serializable::record_serializable;
 
 #[derive(PartialEq, Eq, Hash)]
-#[record_serializable]
+#[record_serializable(serializable,ownership = StateOwnerships::Host)]
 pub struct StateCardAttributeModifierStack {
     stack: Vec<CardModifier>,
 }
@@ -41,13 +41,5 @@ impl StateCardAttributeModifierStack {
     }
     pub fn clear_from_stack(&mut self, clear_flag: ModifierClearFlag) {
         self.stack.retain(|x| x.clear_flag != clear_flag);
-    }
-}
-impl RecordCommon for StateCardAttributeModifierStack {
-    fn id() -> i32 {
-        0099
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
     }
 }

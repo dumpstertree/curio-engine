@@ -27,8 +27,8 @@ impl Impulse<GameEvents> for Listener {
         match event {
             GameEvents::RequestPurchase(user_id, instance_id) => {
                 println!("purchase requested");
-                let state_shop = ledger.get::<StateShop>();
-                let state_currency = ledger.get::<StateCurrency>();
+                let state_shop = ledger.read::<StateShop>();
+                let state_currency = ledger.read::<StateCurrency>();
 
                 let mut matching_stock = None;
 
@@ -60,7 +60,7 @@ impl Impulse<GameEvents> for Listener {
                 // add item
                 match matching_stock.item {
                     StockItems::Card(card_uid) => {
-                        ledger.edit::<StateDeckExploration>(|x| {
+                        ledger.write::<StateDeckExploration>(|x| {
                             // get deck for user id
                             let Some(deck) = x.deck.get_mut(user_id) else {
                                 println!("Deck not found for user_id: {}", user_id);
@@ -77,12 +77,12 @@ impl Impulse<GameEvents> for Listener {
                     }
                 }
                 // reduce currency
-                ledger.edit::<StateCurrency>(|x| {
+                ledger.write::<StateCurrency>(|x| {
                     x.currency -= matching_stock.cost;
                 });
 
                 // reduce inventory
-                ledger.edit::<StateShop>(|x| {
+                ledger.write::<StateShop>(|x| {
                     for stock in x.shop.stock.iter_mut() {
                         // not matching
                         if &stock.instance_id != instance_id {

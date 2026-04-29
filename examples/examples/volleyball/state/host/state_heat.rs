@@ -3,17 +3,9 @@ use record_serializable::record_serializable;
 use std::{collections::HashMap, hash::Hash};
 
 #[derive(PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateHeat {
     pub all_players: HashMap<i32, i32>,
-}
-impl RecordCommon for StateHeat {
-    fn id() -> i32 {
-        901830129
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
 }
 impl Hash for StateHeat {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {

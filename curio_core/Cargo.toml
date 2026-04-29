@@ -61,7 +61,7 @@ bincode = "1.3"
 zip = "0.6"
 rayon = "1.11.0"
 log = "0.4.29"
-
+downcast-rs = "2.0.1"
 
 [dependencies.image]
 version = "0.24"

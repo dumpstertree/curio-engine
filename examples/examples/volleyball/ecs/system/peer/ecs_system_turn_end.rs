@@ -19,13 +19,13 @@ impl Scope for Instance {
     }
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
         ledger
-            .get::<StateExploration>()
+            .read::<StateExploration>()
             .exploration
             .get_cur_room()
             .room_type
             == RoomTypes::Combat
-            && !ledger.get::<StateExploration>().is_selecting_next
-            && ledger.get::<StatePeerSelectTargets>().enabled.is_none()
+            && !ledger.read::<StateExploration>().is_selecting_next
+            && ledger.read::<StatePeerSelectTargets>().enabled.is_none()
         // ledger.get::<StateTurn>().active_instance_id
         //     == ledger
         //         .get::<StateTeamAssignments>()
@@ -39,7 +39,7 @@ impl Habit for Instance {
     }
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
         // get input
-        let state_input = ledger.get::<SysRecordInput>();
+        let state_input = ledger.read::<SysRecordInput>();
 
         // guard - input for next turn
         let input_next = state_input.mapped[0]

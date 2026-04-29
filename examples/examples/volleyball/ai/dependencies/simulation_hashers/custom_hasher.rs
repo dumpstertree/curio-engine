@@ -13,15 +13,15 @@ impl SimulationHasher for CustomHasher {
     fn hash(&self, ledger: &Ledger) -> u64 {
         let mut hasher = DefaultHasher::new();
 
-        ledger.get::<StateTerminated>().hash(&mut hasher);
-        ledger.get::<StateTurn>().hash(&mut hasher);
-        ledger.get::<StateTeamAssignments>().hash(&mut hasher);
-        ledger.get::<StatePositionEntities>().hash(&mut hasher);
-        ledger.get::<StatePositionBall>().hash(&mut hasher);
-        ledger.get::<StateEnergy>().hash(&mut hasher);
-        ledger.get::<StateDeck>().hash(&mut hasher);
+        ledger.read::<StateTerminated>().hash(&mut hasher);
+        ledger.read::<StateTurn>().hash(&mut hasher);
+        ledger.read::<StateTeamAssignments>().hash(&mut hasher);
+        ledger.read::<StatePositionEntities>().hash(&mut hasher);
+        ledger.read::<StatePositionBall>().hash(&mut hasher);
+        ledger.read::<StateEnergy>().hash(&mut hasher);
+        ledger.read::<StateDeck>().hash(&mut hasher);
         ledger
-            .get::<StateCardAttributeModifierStack>()
+            .read::<StateCardAttributeModifierStack>()
             .hash(&mut hasher);
 
         hasher.finish()

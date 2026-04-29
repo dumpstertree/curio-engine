@@ -31,7 +31,7 @@ impl SystemComponent for SystemComponentDefaultTime {
     }
     fn init(&mut self, ledger: &mut Vec<Ledger>) {
         for ledger in ledger {
-            ledger.edit::<SysRecordTime>(|x| {
+            ledger.write::<SysRecordTime>(|x| {
                 x.target_frame_rate = 60.0;
             });
         }
@@ -39,11 +39,11 @@ impl SystemComponent for SystemComponentDefaultTime {
 
     fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
         for ledger in ledger {
-            let state_debug = ledger.get::<SysRecordDebug>();
+            let state_debug = ledger.read::<SysRecordDebug>();
 
             let cur_time = self.instant.elapsed().as_secs_f64();
 
-            let fps = 1.0 / (cur_time - ledger.get::<SysRecordTime>().unscaled_time);
+            let fps = 1.0 / (cur_time - ledger.read::<SysRecordTime>().unscaled_time);
             self.fps_average.push(fps);
 
             while self.fps_average.len() > 5 {
@@ -60,7 +60,7 @@ impl SystemComponent for SystemComponentDefaultTime {
             let pause_timescale = self.timescale * if state_debug.is_paused { 0.0 } else { 1.0 };
 
             // edit the state
-            ledger.edit::<SysRecordTime>(|x| {
+            ledger.write::<SysRecordTime>(|x| {
                 x.frame_num = x.frame_num + 1;
                 x.average_fps = average_fps as i32;
                 // delta time
@@ -76,7 +76,7 @@ impl SystemComponent for SystemComponentDefaultTime {
 
     fn refresh(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
         // get state
-        let state_time = ledger[0].get::<SysRecordTime>();
+        let state_time = ledger[0].read::<SysRecordTime>();
 
         // calculate if we tick this frame
         let cur_time = self.instant.elapsed().as_secs_f64();

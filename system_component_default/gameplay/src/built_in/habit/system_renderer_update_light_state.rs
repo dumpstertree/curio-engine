@@ -34,7 +34,7 @@ impl Habit for Instance {
     }
     fn did_tick(&mut self, state: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
         //edit draw call states
-        let _t = state.get::<SysRecordTime>().scaled_time;
+        let _t = state.read::<SysRecordTime>().scaled_time;
         // state.edit::<StateLights>(|x| {
         //     for (_, (light, transform)) in world.query::<(&ComponentLight, &Transform)>().iter() {
         //         x.all_lights.push(DrawCallLight {

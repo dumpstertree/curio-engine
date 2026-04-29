@@ -7,7 +7,7 @@ impl EventReciever {
         match event {
             CardEvents::ModifierCostForEntities(wrapped_entities, clear_flag, count) => {
                 let entity_uids = wrapped_entities.as_entities();
-                ledger.edit::<StateCardAttributeModifierStack>(|x| {
+                ledger.write::<StateCardAttributeModifierStack>(|x| {
                     x.add_to_stack(CardModifier {
                         clear_flag: *clear_flag,
                         applies_to_players: vec![],

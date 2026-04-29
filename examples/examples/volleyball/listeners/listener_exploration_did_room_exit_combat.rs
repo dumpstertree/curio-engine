@@ -55,27 +55,27 @@ impl Impulse<GameEvents> for Listener {
 impl Listener {
     fn despawn_entities(ledger: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Entities;
-        for e in ledger.get::<StateEntityIDs>().get(id.clone()) {
+        for e in ledger.read::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
             e.destroy();
         }
-        ledger.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
+        ledger.write::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
     fn despawn_background(ledger: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Background;
-        for e in ledger.get::<StateEntityIDs>().get(id.clone()) {
+        for e in ledger.read::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
             e.destroy();
         }
-        ledger.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
+        ledger.write::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 
     fn despawn_ball(ledger: &mut Ledger, _world: &mut Context3D) {
         let id = EntityIDTypes::Ball;
-        for e in ledger.get::<StateEntityIDs>().get(id.clone()) {
+        for e in ledger.read::<StateEntityIDs>().get(id.clone()) {
             // let _ = world.despawn(e);
             e.destroy();
         }
-        ledger.edit::<StateEntityIDs>(|x| x.clear(id.clone()));
+        ledger.write::<StateEntityIDs>(|x| x.clear(id.clone()));
     }
 }

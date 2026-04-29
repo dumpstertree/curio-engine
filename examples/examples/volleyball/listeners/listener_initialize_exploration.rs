@@ -45,19 +45,19 @@ impl Impulse<GameEvents> for Listener {
                 println!("Exploration Initialized");
 
                 // assign and start the exploration
-                ledger.edit::<StateExploration>(|x| {
+                ledger.write::<StateExploration>(|x| {
                     x.exploration = exploration.clone();
                     x.exploration.start();
                 });
 
                 // get the state
-                let state_exploration = ledger.get::<StateExploration>();
+                let state_exploration = ledger.read::<StateExploration>();
 
                 // get the exploration from the state
-                let cur_exploration = state_exploration.exploration;
+                let cur_exploration = &state_exploration.exploration;
 
                 // set the healthpoint total
-                ledger.edit::<StateScore>(|x| {
+                ledger.write::<StateScore>(|x| {
                     x.all_scores.insert(Teams::Red, 10);
                 });
 

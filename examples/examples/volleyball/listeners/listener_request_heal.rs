@@ -26,17 +26,17 @@ impl Impulse<GameEvents> for Listener {
     fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestHeal(user_guid) => {
-                let state_currency = ledger.get::<StateCurrency>();
+                let state_currency = ledger.read::<StateCurrency>();
                 if state_currency.currency < 100 {
                     println!("Not enough Currency. Require 100 have {}", state_currency.currency);
                     return;
                 }
 
-                let state_teams = ledger.get::<StateTeamAssignments>();
-                ledger.edit::<StateCurrency>(|x| {
+                let state_teams = ledger.read::<StateTeamAssignments>();
+                ledger.write::<StateCurrency>(|x| {
                     x.currency -= 100;
                 });
-                ledger.edit::<StateScore>(|x| {
+                ledger.write::<StateScore>(|x| {
                     if let Some(team) = state_teams.team_for(user_guid) {
                         if let Some(score) = x.all_scores.get_mut(&team) {
                             *score += 1;

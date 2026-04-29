@@ -14,7 +14,7 @@ impl EventReciever {
                     panic!("only supports one tile");
                 }
 
-                ledger.edit::<StatePositionEntities>(|y| {
+                ledger.write::<StatePositionEntities>(|y| {
                     for x in &entity_ids {
                         let Some(position) = y.positions.get_mut(x) else { return };
                         position.0 = tile_ids[0].x;

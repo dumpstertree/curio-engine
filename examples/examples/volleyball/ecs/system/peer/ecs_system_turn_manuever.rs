@@ -119,17 +119,17 @@ impl AttributeBuilder {
                     // if selection wait
                     AttributeTargetTypesTiles::SelectInRangeLocalToBall(_, _) => {
                         // get the cur state
-                        let state_select_targets = ledger.get::<StatePeerSelectTargets>();
+                        let state_select_targets = ledger.read::<StatePeerSelectTargets>();
 
                         //if we have a selection
-                        let Some(selection_state) = state_select_targets.enabled else {
+                        let Some(selection_state) = &state_select_targets.enabled else {
                             // try to start waiting on a new selection
                             self.try_start(ledger, target_type);
                             return false;
                         };
 
                         // try to complete - if completed move on to next else return false and try again next frame
-                        if !self.try_complete(ledger, selection_state) {
+                        if !self.try_complete(ledger, selection_state.clone()) {
                             return false;
                         }
 
@@ -139,17 +139,17 @@ impl AttributeBuilder {
                     // if selection wait
                     AttributeTargetTypesTiles::SelectOpponentBackCorner | AttributeTargetTypesTiles::SelectOnTeamUser | AttributeTargetTypesTiles::SelectOnTeamOpponent | AttributeTargetTypesTiles::SelectAny => {
                         // get the cur state
-                        let state_select_targets = ledger.get::<StatePeerSelectTargets>();
+                        let state_select_targets = ledger.read::<StatePeerSelectTargets>();
 
                         //if we have a selection
-                        let Some(selection_state) = state_select_targets.enabled else {
+                        let Some(selection_state) = &state_select_targets.enabled else {
                             // try to start waiting on a new selection
                             self.try_start(ledger, target_type);
                             return false;
                         };
 
                         // try to complete - if completed move on to next else return false and try again next frame
-                        if !self.try_complete(ledger, selection_state) {
+                        if !self.try_complete(ledger, selection_state.clone()) {
                             return false;
                         }
 
@@ -169,7 +169,7 @@ impl AttributeBuilder {
         return true;
     }
     fn try_start(&mut self, ledger: &mut Ledger, t: AttributeTargetTypesTiles) {
-        ledger.edit::<StatePeerSelectTargets>(|x| {
+        ledger.write::<StatePeerSelectTargets>(|x| {
             x.enabled = Some(SelectStates::Enabled(t, WorkingState::default()));
         });
     }
@@ -180,7 +180,7 @@ impl AttributeBuilder {
                 self.output.push(filled);
 
                 // clear from state
-                ledger.edit::<StatePeerSelectTargets>(|x| {
+                ledger.write::<StatePeerSelectTargets>(|x| {
                     x.enabled = None;
                 });
                 // complete did succeed
@@ -200,7 +200,7 @@ pub struct Instance {
 impl Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        !ledger.get::<StateExploration>().is_selecting_next
+        !ledger.read::<StateExploration>().is_selecting_next
     }
     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all_peer()
@@ -209,25 +209,25 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
         let team = ledger
-            .get::<StateTeamAssignments>()
+            .read::<StateTeamAssignments>()
             .team_for(&ledger.instance_id);
         let Some(team) = team else {
             return;
         };
-        let is_turn = ledger.get::<StateTurn>().active_instance_id == team;
+        let is_turn = ledger.read::<StateTurn>().active_instance_id == team;
 
         if is_turn
-            && ledger.get::<StatePeerSelectTargets>().enabled.is_none()
+            && ledger.read::<StatePeerSelectTargets>().enabled.is_none()
             && ledger
-                .get::<StateExploration>()
+                .read::<StateExploration>()
                 .exploration
                 .get_cur_room()
                 .room_type
                 == RoomTypes::Combat
-            && ledger.get::<StatePeerInputMode>().mode == InputModes::Manuever
+            && ledger.read::<StatePeerInputMode>().mode == InputModes::Manuever
         {
-            let state_input = ledger.get::<SysRecordInput>();
-            let state_deck = ledger.get::<StateDeck>();
+            let state_input = ledger.read::<SysRecordInput>();
+            let state_deck = ledger.read::<StateDeck>();
 
             let input_card_left = state_input.mapped[0]
                 .get_button_or_default("card_left")
@@ -239,7 +239,7 @@ impl Habit for Instance {
                 .get_button_or_default("card_submit")
                 .went_up;
 
-            let state_team = ledger.get::<StateTeamAssignments>();
+            let state_team = ledger.read::<StateTeamAssignments>();
             let Some(_) = state_team.team_for(&ledger.instance_id) else {
                 return;
             };
@@ -256,7 +256,7 @@ impl Habit for Instance {
                 .went_up;
 
             if input_card_burn {
-                let state_index = ledger.get::<StatePeerSelectedCards>();
+                let state_index = ledger.read::<StatePeerSelectedCards>();
 
                 let card = my_cards_in_hand[state_index.index as usize].clone();
                 if !card.get_burnable() {
@@ -270,7 +270,7 @@ impl Habit for Instance {
             // move left or right
             if input_card_left || input_card_right {
                 // edit the selected cards
-                ledger.edit::<StatePeerSelectedCards>(|x| {
+                ledger.write::<StatePeerSelectedCards>(|x| {
                     // move left
                     if input_card_left {
                         x.index = (x.index - 1).repeat(bounds_min, bounds_max);
@@ -284,12 +284,12 @@ impl Habit for Instance {
             }
 
             // edit the selected cards
-            ledger.edit::<StatePeerSelectedCards>(|x| {
+            ledger.write::<StatePeerSelectedCards>(|x| {
                 // incase its out of bounds clamp it
                 x.index = x.index.clamp(bounds_min, bounds_max);
             });
             if input_card_submit && self.builder.is_none() {
-                let index = ledger.get::<StatePeerSelectedCards>().index;
+                let index = ledger.read::<StatePeerSelectedCards>().index;
                 // start the builder
                 self.builder = Some(ResponseBuilder::new(ledger, my_cards_in_hand[index as usize].clone()))
             }

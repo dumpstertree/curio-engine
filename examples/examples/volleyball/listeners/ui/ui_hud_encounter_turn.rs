@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
 };
 
 use gameplay::{
@@ -50,7 +50,7 @@ impl UICommon for UIHUD {
         };
 
         // get cur turn
-        let cur_turn = ledger.get::<StateTurn>().active_instance_id;
+        let cur_turn = ledger.read::<StateTurn>().active_instance_id;
 
         // edit the text
         go_text.edit_facet::<RendererText>(|x| {

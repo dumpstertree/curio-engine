@@ -6,7 +6,7 @@ impl EventReciever {
     pub fn recieve(event: &CardEvents, ledger: &mut Ledger) -> Vec<CardEvents> {
         match event {
             CardEvents::EventChangeBallMode(ball_mode) => {
-                ledger.edit::<StateBallMode>(|x| {
+                ledger.write::<StateBallMode>(|x| {
                     x.mode = ball_mode.clone();
                 });
             }

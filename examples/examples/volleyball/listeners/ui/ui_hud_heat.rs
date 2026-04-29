@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, PrefabGameObject, Quaternion, Random, TextureAsset, Vector2, Vector3,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use std::collections::HashMap;
@@ -50,7 +50,7 @@ impl UICommon for UIHUD {
 
     fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get cur turn
-        let cur_heat = ledger.get::<StateHeat>().all_players;
+        let cur_heat = ledger.read::<StateHeat>().all_players.clone();
         let heat = cur_heat.get(&ledger.instance_id).unwrap().clone();
 
         if let Some(ui) = &self.f_ui {

@@ -34,9 +34,9 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn did_tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut EventQueue) {
-        let state_camera = state.get::<SysRecordCamera>();
+        let state_camera = state.read::<SysRecordCamera>();
 
-        let time = state.get::<SysRecordTime>().scaled_time;
+        let time = state.read::<SysRecordTime>().scaled_time;
         //edit draw call states
         update_enabled(world);
         update_transform2d(world);
@@ -64,7 +64,7 @@ impl Habit for Instance {
         //     }
         // });
 
-        state.edit::<SysRecordRendering>(|x| {
+        state.write::<SysRecordRendering>(|x| {
             // iterate over each renderer
 
             // for (_entity, (transform, _camera)) in q {

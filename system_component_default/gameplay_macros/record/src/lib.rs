@@ -1,40 +1,40 @@
-use proc_macro::TokenStream;
-use quote::{format_ident, quote};
-use syn::{parse_macro_input, parse_quote, ItemStruct};
+// use proc_macro::TokenStream;
+// use quote::{format_ident, quote};
+// use syn::{parse_macro_input, parse_quote, ItemStruct};
 
-#[proc_macro_attribute]
-pub fn record(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let mut input = parse_macro_input!(item as ItemStruct);
-    let name = &input.ident;
+// #[proc_macro_attribute]
+// pub fn record(_attr: TokenStream, item: TokenStream) -> TokenStream {
+//     let mut input = parse_macro_input!(item as ItemStruct);
+//     let name = &input.ident;
 
-    // Append derives if not already present
-    input
-        .attrs
-        .push(parse_quote!(#[derive(Default, Clone, PartialEq)]));
+//     // Append derives if not already present
+//     input
+//         .attrs
+//         .push(parse_quote!(#[derive(Default, Clone, PartialEq)]));
 
-    // Implement Send + Sync + IState for the struct automatically
-    let register_fn = format_ident!("global_state_{}", name);
+//     // Implement Send + Sync + IState for the struct automatically
+//     let register_fn = format_ident!("global_state_{}", name);
 
-    let expanded = quote! {
-        #input
+//     let expanded = quote! {
+//         #input
 
-        // Automatically implement IState for this type
-        // impl core::collections::ledger::IState for #name {
-        //     fn clone_box(&self) -> Box<dyn core::collections::ledger::IState> {
-        //         Box::new(self.clone())
-        //     }
-        // }
+//         // Automatically implement IState for this type
+//         // impl core::collections::ledger::IState for #name {
+//         //     fn clone_box(&self) -> Box<dyn core::collections::ledger::IState> {
+//         //         Box::new(self.clone())
+//         //     }
+//         // }
 
-        unsafe impl Send for #name {}
-        unsafe impl Sync for #name {}
+//         unsafe impl Send for #name {}
+//         unsafe impl Sync for #name {}
 
-        #[ctor::ctor]
-        #[allow(non_snake_case)]
-        fn #register_fn() {
-            // core::collections::ledger::GameState::register_global_states::<#name>();
-           curio_core::static_data::global_states::register_global_state::<#name>();
-        }
-    };
+//         #[ctor::ctor]
+//         #[allow(non_snake_case)]
+//         fn #register_fn() {
+//             // core::collections::ledger::GameState::register_global_states::<#name>();
+//            curio_core::static_data::global_states::register_global_state::<#name>();
+//         }
+//     };
 
-    TokenStream::from(expanded)
-}
+//     TokenStream::from(expanded)
+// }

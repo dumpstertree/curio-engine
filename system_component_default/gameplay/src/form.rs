@@ -17,6 +17,10 @@ impl Form {
         Form { form_ref }
     }
 }
+unsafe impl Send for Form {}
+
+unsafe impl Sync for Form {}
+
 // Public Methods
 impl Form {
     /// Get the instance ID of this Form

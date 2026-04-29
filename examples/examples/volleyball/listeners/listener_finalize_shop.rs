@@ -33,7 +33,7 @@ impl Impulse<GameEvents> for Listener {
         match event {
             GameEvents::FinalizeShop(_) => {
                 // clear shop
-                ledger.edit::<StateShop>(|x| {
+                ledger.write::<StateShop>(|x| {
                     x.shop = Shop::new(vec![]);
                 });
             }

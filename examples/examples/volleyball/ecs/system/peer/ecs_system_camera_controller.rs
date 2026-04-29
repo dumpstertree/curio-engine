@@ -32,11 +32,11 @@ impl Habit for Instance {
     fn enable(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue) {}
     fn did_tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_select_target = ledger.get::<StatePeerSelectTargets>();
-        let _state_time = ledger.get::<SysRecordTime>();
-        let state_pos_ball = ledger.get::<StatePositionBall>();
-        let state_pos_entity = ledger.get::<StatePositionEntities>();
-        let state_turn = ledger.get::<StateTurn>();
+        let state_select_target = ledger.read::<StatePeerSelectTargets>();
+        let _state_time = ledger.read::<SysRecordTime>();
+        let state_pos_ball = ledger.read::<StatePositionBall>();
+        let state_pos_entity = ledger.read::<StatePositionEntities>();
+        let state_turn = ledger.read::<StateTurn>();
         let Some(tile_player) = state_pos_entity.positions.get(&ledger.instance_id) else {
             return;
         };

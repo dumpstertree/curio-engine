@@ -28,7 +28,7 @@ impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Custo
         }
 
         // get state
-        let state_energy = ledger.get::<StateEnergy>();
+        let state_energy = ledger.read::<StateEnergy>();
 
         // get the energy for this user
         let Some(energy_cur_max) = state_energy.all_players.get(&user_id) else {
@@ -40,7 +40,7 @@ impl SimulationDelegate<(i32, SimulationManuevers), (Teams, Vec<i32>)> for Custo
         let is_exhuasted = energy_cur_max.0 <= 0;
         if is_exhuasted {
             // edit gamestate for represent our exhausted state
-            ledger.edit::<StateTerminated>(|x| {
+            ledger.write::<StateTerminated>(|x| {
                 x.is_terminated = true;
                 x.is_exhuasted = true;
             })
@@ -51,7 +51,7 @@ impl CustomDelegate {
     fn make_manuever_card(ledger: &mut Ledger, data: &FilledCardResponse, card: &Arc<CardInstance>, user: &(Teams, i32)) {
         let cost = card.get_cost(ledger, user.1);
         // take for cost
-        ledger.edit::<StateEnergy>(|x| {
+        ledger.write::<StateEnergy>(|x| {
             // get the energy state
             let Some(energy_cur_max) = x.all_players.get_mut(&user.1) else {
                 println!("Could not find 'Energy' for UID: {}", user.1);
@@ -89,7 +89,7 @@ impl CustomDelegate {
         const MOVE_COST: i32 = 1;
 
         // change the position
-        ledger.edit::<StatePositionEntities>(|x| {
+        ledger.write::<StatePositionEntities>(|x| {
             // get the position state
             let Some(position) = x.positions.get(&user.1) else {
                 println!("Could not find 'Position' for UID: {}", user.1);
@@ -102,7 +102,7 @@ impl CustomDelegate {
         });
 
         // remove the energy needed to move
-        ledger.edit::<StateEnergy>(|x| {
+        ledger.write::<StateEnergy>(|x| {
             // get the energy state
             let Some(energy_cur_max) = x.all_players.get_mut(&user.1) else {
                 println!("Could not find 'Energy' for UID: {}", user.1);
@@ -114,7 +114,7 @@ impl CustomDelegate {
     }
     fn make_manuever_end(ledger: &mut Ledger) {
         // set the current terminated state to true
-        ledger.edit::<StateTerminated>(|x| {
+        ledger.write::<StateTerminated>(|x| {
             x.is_terminated = true;
         })
     }

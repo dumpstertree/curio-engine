@@ -1,9 +1,8 @@
-use crate::collections::state_map::AsAny;
 use crate::collections::state_ownerships::StateOwnerships;
 use std::any::TypeId;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-pub trait RecordCommon: AsAny + IStateClone + IStateHash + Sync {
+pub trait RecordCommon: IStateClone + IStateHash + DowncastSync {
     fn default_box() -> Box<dyn RecordCommon>
     where
         Self: Sized + Default + 'static,
@@ -11,15 +10,18 @@ pub trait RecordCommon: AsAny + IStateClone + IStateHash + Sync {
         Box::new(Self::default())
     }
 
+    // fn id() -> i32
+    // where
+    //     Self: Sized + 'static,
+    // {
+    //     let mut hasher = DefaultHasher::new();
+    //     TypeId::of::<Self>().hash(&mut hasher);
+    //     hasher.finish() as i32
+    // }
+
     fn id() -> i32
     where
-        Self: Sized + 'static,
-    {
-        let mut hasher = DefaultHasher::new();
-        TypeId::of::<Self>().hash(&mut hasher);
-        hasher.finish() as i32
-    }
-
+        Self: Sized + 'static;
     fn ownership() -> StateOwnerships
     where
         Self: Sized + 'static,
@@ -61,3 +63,6 @@ where
         h.finish()
     }
 }
+
+use downcast_rs::{impl_downcast, DowncastSync};
+impl_downcast!(sync RecordCommon);

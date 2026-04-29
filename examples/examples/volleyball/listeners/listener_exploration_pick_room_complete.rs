@@ -27,13 +27,13 @@ impl Impulse<GameEvents> for ECsystemGamePointScored {
         match event {
             GameEvents::ExplorationPickRoomComplete(room) => {
                 // // edit the encounter state to move to the next room
-                ledger.edit::<StateExploration>(|x| {
+                ledger.write::<StateExploration>(|x| {
                     // progress the exploration
                     x.exploration.next(&room.guid);
                 });
 
                 // enter current room
-                let state_exploration = ledger.get::<StateExploration>();
+                let state_exploration = ledger.read::<StateExploration>();
                 event_queue.enqueue_event(GameEvents::ExplorationRoomEnter(state_exploration.exploration.get_cur_room()));
 
                 // close the ui

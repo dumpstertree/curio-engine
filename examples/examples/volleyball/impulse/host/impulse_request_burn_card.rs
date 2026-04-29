@@ -28,7 +28,7 @@ impl Impulse<GameEvents> for ImpulseInstance {
     fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::RequestBurnCard(user_guid, card_guid) => {
-                ledger.edit::<StateDeck>(|x| {
+                ledger.write::<StateDeck>(|x| {
                     if let Some(deck) = x.deck.get_mut(user_guid) {
                         let card_instance = deck.get_instance(*card_guid);
                         if !card_instance.get_burnable() {
@@ -38,7 +38,7 @@ impl Impulse<GameEvents> for ImpulseInstance {
                     }
                 });
 
-                ledger.edit::<StateEnergy>(|x| {
+                ledger.write::<StateEnergy>(|x| {
                     if let Some(energy) = x.all_players.get_mut(user_guid) {
                         energy.0 += 1;
                     }

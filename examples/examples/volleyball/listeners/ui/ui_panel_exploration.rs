@@ -54,7 +54,7 @@ impl UICommon for UIPanelInstance {
             .add_facet(rend);
 
         let next_rooms = ledger
-            .get::<StateExploration>()
+            .read::<StateExploration>()
             .exploration
             .get_next_room();
 
@@ -99,7 +99,7 @@ impl UICommon for UIPanelInstance {
     }
 
     fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let input_state = ledger.get::<SysRecordInput>();
+        let input_state = ledger.read::<SysRecordInput>();
         if input_state.mapped.len() > 0 {
             if input_state.mapped[0]
                 .get_button_or_default("move_left")
@@ -128,7 +128,7 @@ impl UICommon for UIPanelInstance {
             }
         }
 
-        let sin = f32::sin(ledger.get::<SysRecordTime>().unscaled_time as f32 * 5.0);
+        let sin = f32::sin(ledger.read::<SysRecordTime>().unscaled_time as f32 * 5.0);
         for i in 0..self.go_opts.len() {
             let go = &self.go_opts[i];
             go.edit_facet::<Transform2D>(|x| {

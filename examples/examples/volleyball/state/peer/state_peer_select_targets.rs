@@ -1,22 +1,13 @@
 use curio_core::{Vector2Int, collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
+use record_serializable::record_serializable;
 use std::hash::Hash;
-
-use record::record;
 
 use crate::cards::{card_attributes_targets::attribute_target_type_tiles::AttributeTargetTypesTiles, card_dependencies::data_dep_filled::DataDepsFilled};
 
-#[record]
+#[record_serializable(ownership = StateOwnerships::Instance)]
 pub struct StatePeerSelectTargets {
     pub selected_index: Vector2Int,
     pub enabled: Option<SelectStates>,
-}
-impl RecordCommon for StatePeerSelectTargets {
-    fn id() -> i32 {
-        98273477
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Instance
-    }
 }
 impl Hash for StatePeerSelectTargets {
     fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {

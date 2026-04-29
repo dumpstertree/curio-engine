@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Severity, Vector2, Vector3,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
     io::{asset_loader::AssetLoader, model_asset_animated::ModelAssetAnimated},
     log,
 };
@@ -47,10 +47,10 @@ impl UICommon for UIHUD {
         let y_spacing = -0.05;
 
         // iterate over each team
-        for user_guid in ledger.get::<StateTeamAssignments>().team_assignments {
+        for user_guid in &ledger.read::<StateTeamAssignments>().team_assignments {
             // iterate over each memeber in team
             for i in 0..user_guid.1.len() {
-                let mut x_pos = if user_guid.0 == Teams::Red { 0.15 } else { 0.85 };
+                let mut x_pos = if *user_guid.0 == Teams::Red { 0.15 } else { 0.85 };
                 if user_guid.1.len() > 1 {
                     if i == 0 {
                         x_pos -= 0.05;
@@ -104,9 +104,9 @@ impl UICommon for UIHUD {
     }
 
     fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let state_energy = ledger.get::<StateEnergy>();
+        let state_energy = ledger.read::<StateEnergy>();
 
-        for user_uid in state_energy.all_players {
+        for user_uid in state_energy.all_players.clone() {
             let Some(user_gos) = self.go_energy_0.get(&user_uid.0) else {
                 continue;
             };

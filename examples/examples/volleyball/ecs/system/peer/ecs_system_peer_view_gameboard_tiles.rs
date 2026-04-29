@@ -33,7 +33,7 @@ use habit::habit;
 pub struct Instance {}
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        let state_exploration = ledger.get::<StateExploration>();
+        let state_exploration = ledger.read::<StateExploration>();
         state_exploration.exploration.get_cur_room().room_type == RoomTypes::Combat && !state_exploration.is_selecting_next
     }
     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
@@ -42,10 +42,10 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
-        let state_mode = ledger.get::<StatePeerInputMode>();
-        let state_deck = ledger.get::<StateDeck>();
-        let state_index = ledger.get::<StatePeerSelectedCards>();
-        if state_mode.mode != InputModes::Manuever && ledger.get::<StatePeerSelectTargets>().enabled.is_none() {
+        let state_mode = ledger.read::<StatePeerInputMode>();
+        let state_deck = ledger.read::<StateDeck>();
+        let state_index = ledger.read::<StatePeerSelectedCards>();
+        if state_mode.mode != InputModes::Manuever && ledger.read::<StatePeerSelectTargets>().enabled.is_none() {
             world.edit::<(&mut Transform3D, &ComponentGameBoardTile, &mut RendererStatic)>(|query| {
                 for (_, (_transform, _gameboard_tile, renderer)) in query {
                     renderer.set_enabled(false);
@@ -59,7 +59,7 @@ impl Habit for Instance {
                     return;
                 };
 
-                let state_entity_pos = ledger.get::<StatePositionEntities>();
+                let state_entity_pos = ledger.read::<StatePositionEntities>();
 
                 let hand = deck.get_cards_from_hand(|x| x.get_manuever_type() != CardTypes::Move);
                 let selected = &hand.get(state_index.index as usize);
@@ -67,17 +67,17 @@ impl Habit for Instance {
                     return;
                 };
                 let team = ledger
-                    .get::<StateTeamAssignments>()
+                    .read::<StateTeamAssignments>()
                     .team_for(&ledger.instance_id)
                     .unwrap();
                 let pos_entity = state_entity_pos
                     .positions
                     .get(&ledger.instance_id)
                     .unwrap();
-                let pos_ball = ledger.get::<StatePositionBall>();
+                let pos_ball = ledger.read::<StatePositionBall>();
                 let events = selected.get_attributes_events(ledger, ledger.instance_id);
                 let mut targets = Vec::new();
-                let state_attribute_stack = ledger.get::<StateCardAttributeModifierStack>();
+                let state_attribute_stack = ledger.read::<StateCardAttributeModifierStack>();
                 let s0 = state_attribute_stack.get_flat_stack_for_entity(ledger.instance_id);
                 // let s1 = state_attribute_stack.get_flat_stack_for_card(selected.instance_id);
                 // let stack = s0.;
@@ -151,7 +151,7 @@ impl Habit for Instance {
                         }
                     }
                 }
-                let sin = f32::sin(ledger.get::<SysRecordTime>().unscaled_time as f32 * 5.0);
+                let sin = f32::sin(ledger.read::<SysRecordTime>().unscaled_time as f32 * 5.0);
 
                 renderer.set_enabled(targets.contains(&gameboard_tile.tile));
                 transform.scale = Vector3::one() + Vector3::one() * 0.1 * sin;

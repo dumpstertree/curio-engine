@@ -194,9 +194,7 @@ where
             ecs_system
                 .0
                 .will_tick(ledger, &mut self.context_32, event_queue);
-            ecs_system
-                .0
-                .tick(ledger, &mut self.context_32, event_queue);
+            ecs_system.0.tick(ledger, &mut self.context_32, event_queue);
             ecs_system
                 .0
                 .did_tick(ledger, &mut self.context_32, event_queue);

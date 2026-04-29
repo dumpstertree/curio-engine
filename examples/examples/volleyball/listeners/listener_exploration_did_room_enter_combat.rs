@@ -105,7 +105,7 @@ impl Listener {
             .add_facet(ComponentBall::default())
             .add_facet(r);
 
-        ledger.edit::<StateEntityIDs>(|x| {
+        ledger.write::<StateEntityIDs>(|x| {
             x.add(EntityIDTypes::Ball, e.clone());
         });
     }
@@ -118,14 +118,14 @@ impl Listener {
             .spawn("", Transform3D::default().set_rotation(Quaternion::from_euler(Vector3::new(0.0, 90.0, 0.0))))
             .add_facet(RendererStatic::default().set_asset(Some(asset_court)));
 
-        ledger.edit::<StateEntityIDs>(|x| {
+        ledger.write::<StateEntityIDs>(|x| {
             x.add(EntityIDTypes::Background, e.clone());
         });
     }
 
     pub fn spawn_entities(ledger: &mut Ledger, world: &mut Context3D) {
-        let state_entity_visual = ledger.get::<StateVisualEntity>();
-        let state_teams = ledger.get::<StateTeamAssignments>();
+        let state_entity_visual = ledger.read::<StateVisualEntity>();
+        let state_teams = ledger.read::<StateTeamAssignments>();
         for team in Teams::all() {
             if let Some(guids) = state_teams.team_assignments.get(&team) {
                 for guid in guids {
@@ -146,7 +146,7 @@ impl Listener {
                         .add_facet(ComponentViewPlayer::default())
                         .add_facet(ComponentPlayer::default().set_player_id(*guid))
                         .add_facet(rend);
-                    ledger.edit::<StateEntityIDs>(|x| {
+                    ledger.write::<StateEntityIDs>(|x| {
                         x.add(EntityIDTypes::Entities, e.clone());
                     });
                 }

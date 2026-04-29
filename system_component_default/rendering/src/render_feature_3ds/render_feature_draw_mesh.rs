@@ -19,10 +19,8 @@ impl RenderFeatureDrawMesh {
     }
 
     fn draw_all_mesh(&mut self, ledger: &mut Ledger, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
-        let state_draws = ledger.get::<SysRecordRendering>();
-        let mut draw_calls = state_draws.draw_calls;
-
-        let _was = draw_calls.len();
+        let state_draws = ledger.read::<SysRecordRendering>();
+        let mut draw_calls = state_draws.draw_calls.clone();
         let mut batching: HashMap<(Arc<Mesh>, Arc<Material>), Vec<Matrix4x4>> = HashMap::new();
         for draw_call in draw_calls.drain(..) {
             let mesh = draw_call.mesh;
@@ -179,7 +177,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
-        self.light_system[camera_index].update(&ledger.get::<SysRecordSun>().get_draw_call(), &ledger.get::<SysRecordLights>().all_lights);
+        self.light_system[camera_index].update(&ledger.read::<SysRecordSun>().get_draw_call(), &ledger.read::<SysRecordLights>().all_lights);
 
         let config = SystemGPU::get_config();
         let device = SystemGPU::get_device();
@@ -188,7 +186,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
     }
 
     fn clear(&mut self, ledger: &mut Ledger) {
-        ledger.edit::<SysRecordRendering>(|x| x.draw_calls.clear());
-        ledger.edit::<SysRecordLights>(|x| x.all_lights.clear());
+        ledger.write::<SysRecordRendering>(|x| x.draw_calls.clear());
+        ledger.write::<SysRecordLights>(|x| x.all_lights.clear());
     }
 }

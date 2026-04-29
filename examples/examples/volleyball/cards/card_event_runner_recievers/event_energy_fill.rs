@@ -10,10 +10,10 @@ impl EventReciever {
         match event {
             CardEvents::EventEnergyFill(wrapped_entities) => {
                 // get modifiers
-                let state_card_attribute_modifier_stack = ledger.get::<StateCardAttributeModifierStack>();
+                let state_card_attribute_modifier_stack = ledger.read::<StateCardAttributeModifierStack>();
 
                 // edit the energy
-                ledger.edit::<StateEnergy>(|x| {
+                ledger.write::<StateEnergy>(|x| {
                     // unwrap entityes
                     let entity_ids = wrapped_entities.as_entities();
                     // iterate over each entity

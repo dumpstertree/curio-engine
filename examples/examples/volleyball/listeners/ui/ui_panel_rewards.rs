@@ -65,7 +65,7 @@ impl UICommon for UIPanelInstance {
     }
 
     fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue, _context: &mut Context2D) {
-        let state_input = ledger.get::<SysRecordInput>();
+        let state_input = ledger.read::<SysRecordInput>();
         if state_input.mapped[0]
             .get_button_or_default("turn_end")
             .went_up

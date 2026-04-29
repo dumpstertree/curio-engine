@@ -5,18 +5,11 @@ use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 
 #[derive(Hash, PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateBallMode {
     pub mode: BallModes,
 }
-impl RecordCommon for StateBallMode {
-    fn id() -> i32 {
-        0003
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
-}
+
 #[derive(Hash, PartialEq, Eq, Default, Clone, Serialize, Deserialize)]
 pub enum BallModes {
     #[default]

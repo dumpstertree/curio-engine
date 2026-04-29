@@ -28,7 +28,7 @@ impl Scope for Instance {
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, context3d: &mut Context3D, _: &mut EventQueue) {
         // get state
-        let state_time = ledger.get::<SysRecordTime>();
+        let state_time = ledger.read::<SysRecordTime>();
         let time = state_time.scaled_time as f32;
 
         // edit the forms in context

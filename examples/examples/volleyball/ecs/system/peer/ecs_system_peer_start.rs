@@ -38,11 +38,11 @@ impl Habit for Instance {
         AssetLoader::preload_remote_assets(false);
 
         // set resolution
-        ledger.edit::<SysRecordCamera>(|x| {
+        ledger.write::<SysRecordCamera>(|x| {
             x.resolution_width = 1920 / 1;
             x.resolution_height = 1080 / 1;
         });
-        ledger.edit::<SysRecordSun>(|x| {
+        ledger.write::<SysRecordSun>(|x| {
             x.cast_shadows = true;
             x.color = Color::white();
             x.direction = (Vector3::forward() + Vector3::down()).normalize_and_copy();
@@ -51,7 +51,7 @@ impl Habit for Instance {
         // }
         // fn tick(&mut self, ledger: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         let Some(team) = ledger
-            .get::<StateTeamAssignments>()
+            .read::<StateTeamAssignments>()
             .team_for(&ledger.instance_id)
         else {
             println!("Spawned Fallback Camera");

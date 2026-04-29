@@ -23,7 +23,7 @@ impl EventReciever {
                 let min = GameBoard::get_bounds_min();
                 let max = GameBoard::get_bounds_max();
                 // edit ball position
-                ledger.edit::<StatePositionBall>(|x| {
+                ledger.write::<StatePositionBall>(|x| {
                     let pos_x = tile_ids[0].x.clamp(min.x, max.x);
                     let pos_y = tile_ids[0].y.clamp(min.y, max.y);
                     // x.column = tile_ids[0].x;

@@ -6,17 +6,9 @@ use record_serializable::record_serializable;
 use crate::state::state_teams::Teams;
 
 #[derive(PartialEq, Eq)]
-#[record_serializable]
+#[record_serializable(ownership = StateOwnerships::Host)]
 pub struct StateScore {
     pub all_scores: HashMap<Teams, i32>,
-}
-impl RecordCommon for StateScore {
-    fn id() -> i32 {
-        90809
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Host
-    }
 }
 impl Hash for StateScore {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {

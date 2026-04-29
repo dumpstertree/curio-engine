@@ -1,10 +1,10 @@
 use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
-use record::record;
+use record_serializable::record_serializable;
 use std::{collections::HashMap, hash::Hash};
 
 use gameplay::form::Form;
 
-#[record]
+#[record_serializable(ownership = StateOwnerships::Instance)]
 pub struct StateEntityIDs {
     ids: HashMap<EntityIDTypes, Vec<Form>>,
 }
@@ -31,14 +31,14 @@ impl StateEntityIDs {
         };
     }
 }
-impl RecordCommon for StateEntityIDs {
-    fn id() -> i32 {
-        3873473
-    }
-    fn ownership() -> StateOwnerships {
-        StateOwnerships::Instance
-    }
-}
+// impl RecordCommon for StateEntityIDs {
+//     fn id() -> i32 {
+//         3873473
+//     }
+//     fn ownership() -> StateOwnerships {
+//         StateOwnerships::Instance
+//     }
+// }
 impl Hash for StateEntityIDs {
     fn hash<H: std::hash::Hasher>(&self, _: &mut H) {}
 }

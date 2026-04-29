@@ -9,8 +9,8 @@ use crate::{
     },
 };
 use curio_core::{
+    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, ledger::Ledger},
-    collections::network_modes::NetworkModes
 };
 use gameplay::{
     context_3d::Context3D,
@@ -36,30 +36,30 @@ impl Impulse<GameEvents> for ECsystemGameTurnBegin {
                 // end this turn
                 println!("Instance: {}. Begin Turn {}", ledger.instance_id, id);
 
-                ledger.edit::<StateTurn>(|x| {
+                ledger.write::<StateTurn>(|x| {
                     x.active_instance_id = *id;
                 });
 
                 for guid in ledger
-                    .get::<StateTeamAssignments>()
+                    .read::<StateTeamAssignments>()
                     .team_assignments
                     .get(id)
                     .unwrap()
                 {
-                    let state_modifiers = ledger.get::<StateCardAttributeModifierStack>();
+                    let state_modifiers = ledger.read::<StateCardAttributeModifierStack>();
                     let mod_stack = state_modifiers.get_flat_stack_for_entity(*guid);
 
-                    let state_energy = ledger.get::<StateEnergy>();
+                    let state_energy = ledger.read::<StateEnergy>();
                     let cur_energy = state_energy.all_players.get(guid).unwrap_or(&(0, 0));
 
                     println!("cur energy {}", cur_energy.0);
 
-                    ledger.edit::<StateDeck>(|x| {
+                    ledger.write::<StateDeck>(|x| {
                         if let Some(deck) = x.deck.get_mut(guid) {
                             deck.draw(1);
                         }
                     });
-                    ledger.edit::<StateHeat>(|x| {
+                    ledger.write::<StateHeat>(|x| {
                         if !x.all_players.contains_key(guid) {
                             x.all_players.insert(*guid, cur_energy.0);
                         } else {
@@ -68,9 +68,9 @@ impl Impulse<GameEvents> for ECsystemGameTurnBegin {
                         }
                     });
 
-                    println!("heat {}", ledger.get::<StateHeat>().all_players[guid]);
+                    println!("heat {}", ledger.read::<StateHeat>().all_players[guid]);
                     // update energy
-                    ledger.edit::<StateEnergy>(|x| {
+                    ledger.write::<StateEnergy>(|x| {
                         if let Some(y) = x.all_players.get_mut(guid) {
                             y.0 = y.1 + mod_stack.energy;
                         }

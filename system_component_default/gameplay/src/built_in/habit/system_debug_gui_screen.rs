@@ -19,7 +19,7 @@ impl Instance {
 }
 impl Scope for Instance {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        ledger.get::<SysRecordDebug>().is_inspecting
+        ledger.read::<SysRecordDebug>().is_inspecting
     }
     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
         NetworkModes::all()
@@ -32,7 +32,7 @@ impl Habit for Instance {
         let sys_window = SystemGPU::get_window();
 
         // edit state
-        ledger.edit::<SysRecordDebugGui>(|x| {
+        ledger.write::<SysRecordDebugGui>(|x| {
             x.append(format!("Resolution: ({}, {})", sys_config.width, sys_config.height));
             x.append(format!("Screen Size: ({}, {})", sys_window.inner_size().width, sys_window.inner_size().height));
         });

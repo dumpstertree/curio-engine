@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, Vector2,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
 };
 use gameplay::{
     built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
@@ -48,7 +48,7 @@ impl UICommon for UIHUD {
         };
 
         // get cur turn
-        let cur_mode = ledger.get::<StateBallMode>().mode;
+        let cur_mode = &ledger.read::<StateBallMode>().mode;
 
         // edit the text
         go_text.edit_facet::<RendererText>(|x| {
