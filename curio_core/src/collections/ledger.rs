@@ -1,5 +1,5 @@
 use std::any::type_name;
-use std::sync::Arc;
+use std::rc::Rc;
 use std::vec;
 
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
@@ -19,23 +19,23 @@ use crate::{log, Severity};
 struct Entry {
     /// Authoritative mutable copy. Downcast via `downcast_mut::<T>()`.
     write: Box<dyn RecordCommon>,
-    /// Shared snapshot. Downcast via `downcast_arc::<T>()`.
-    /// Replaced on every write — existing Arc handles remain valid and
+    /// Shared snapshot. Downcast via `downcast_rc::<T>()`.
+    /// Replaced on every write — existing Rc handles remain valid and
     /// point to the previous value until they are dropped.
-    read: Arc<dyn RecordCommon>,
+    read: Rc<dyn RecordCommon>,
 }
 
 impl Entry {
-    /// Build from a boxed value. Clones once to seed the read Arc.
+    /// Build from a boxed value. Clones once to seed the read Rc.
     fn new(value: Box<dyn RecordCommon>) -> Self {
-        let read = Arc::from(value.clone_box());
+        let read = Rc::from(value.clone_box());
         Entry { write: value, read }
     }
 
-    /// Rebuild the read Arc from the current write value.
+    /// Rebuild the read Rc from the current write value.
     /// Called after any mutation so readers immediately see the new value.
     fn sync_read(&mut self) {
-        self.read = Arc::from(self.write.clone_box());
+        self.read = Rc::from(self.write.clone_box());
     }
 }
 
@@ -43,7 +43,7 @@ impl Clone for Entry {
     fn clone(&self) -> Self {
         Entry {
             write: self.write.clone_box(),
-            read: Arc::from(self.write.clone_box()),
+            read: Rc::from(self.write.clone_box()),
         }
     }
 }
@@ -66,18 +66,6 @@ pub struct Ledger {
 
 impl Ledger {
     // -------------------------------------------------------------------------
-    // Internal helpers
-    // -------------------------------------------------------------------------
-
-    /// Ensure `entries` is large enough to hold `index`, then set the slot.
-    fn set_entry(&mut self, index: usize, entry: Entry) {
-        if index >= self.entries.len() {
-            self.entries.resize_with(index + 1, || None);
-        }
-        self.entries[index] = Some(entry);
-    }
-
-    // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
 
@@ -85,11 +73,7 @@ impl Ledger {
     pub fn new(name: &str, network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> Self {
         let constructors = get_global_state_constructor_all();
 
-        // Pre-allocate to the exact size needed.
         let max_id = constructors.iter().map(|(id, _)| *id).max().unwrap_or(-1);
-        for x in constructors.iter() {
-            println!("{}", x.0);
-        }
         let mut entries: Vec<Option<Entry>> = (0..=max_id.max(0)).map(|_| None).collect();
 
         for (id, constructor) in constructors {
@@ -143,11 +127,11 @@ impl Ledger {
     // Convenience accessors
     // -------------------------------------------------------------------------
 
-    pub fn time(&self) -> Arc<SysRecordTime> {
+    pub fn time(&self) -> Rc<SysRecordTime> {
         self.read::<SysRecordTime>()
     }
 
-    pub fn screen(&self) -> Arc<SysRecordScreen> {
+    pub fn screen(&self) -> Rc<SysRecordScreen> {
         self.read::<SysRecordScreen>()
     }
 
@@ -175,19 +159,19 @@ impl Ledger {
     // Core API
     // -------------------------------------------------------------------------
 
-    /// Returns a cloned `Arc<TRecord>` — just a refcount increment.
+    /// Returns a cloned `Rc<TRecord>` — just a refcount increment, no allocation.
     /// All callers share the same allocation until the next `write()`.
     /// Panics if `TRecord` was not registered.
     #[inline]
-    pub fn read<TRecord>(&self) -> Arc<TRecord>
+    pub fn read<TRecord>(&self) -> Rc<TRecord>
     where
         TRecord: RecordCommon + 'static,
     {
         let id = TRecord::id();
         let entry = self.get_entry(id, type_name::<TRecord>());
 
-        Arc::clone(&entry.read)
-            .downcast_arc::<TRecord>()
+        Rc::clone(&entry.read)
+            .downcast_rc::<TRecord>()
             .unwrap_or_else(|_| panic!("[{}] read: downcast failed for '{}' — this should never happen", self.instance_id, type_name::<TRecord>()))
     }
 
@@ -222,7 +206,6 @@ impl Ledger {
             edit_fn(state);
             entry.sync_read();
 
-            // Serialize while we still have the entry — borrow ends after this block.
             if ownership != StateOwnerships::Instance {
                 entry
                     .write
@@ -231,9 +214,8 @@ impl Ledger {
             } else {
                 None
             }
-        }; // ← mutable borrow of self.entries dropped here
+        };
 
-        // Now safe to mutably borrow self.network_capabilities.
         if let Some(event) = sync_event {
             if let Some(net) = &mut self.network_capabilities {
                 net.enqueue_sync_events(event);
@@ -246,7 +228,7 @@ impl Ledger {
     // -------------------------------------------------------------------------
 
     /// Apply incoming sync events from other instances.
-    /// Overwrites both the write-side value and immediately syncs the read Arc.
+    /// Overwrites both the write-side value and immediately syncs the read Rc.
     pub fn try_apply_network_sync_events(&mut self, sync: &[StateSyncEvent]) {
         if self.network_capabilities.is_none() {
             return;

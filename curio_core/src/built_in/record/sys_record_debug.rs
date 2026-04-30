@@ -1,4 +1,8 @@
-use crate::system::system_game_state::RecordCommon;
+use std::sync::OnceLock;
+
+use crate::system::{record_id::RecordId, system_game_state::RecordCommon};
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordDebug {
@@ -12,6 +16,6 @@ impl SysRecordDebug {
 }
 impl RecordCommon for SysRecordDebug {
     fn id() -> i32 {
-        104
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordDebug>())
     }
 }

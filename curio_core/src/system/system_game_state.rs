@@ -2,7 +2,7 @@ use crate::collections::state_ownerships::StateOwnerships;
 use std::any::TypeId;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-pub trait RecordCommon: IStateClone + IStateHash + DowncastSync {
+pub trait RecordCommon: IStateClone + IStateHash + Downcast {
     fn default_box() -> Box<dyn RecordCommon>
     where
         Self: Sized + Default + 'static,
@@ -64,5 +64,5 @@ where
     }
 }
 
-use downcast_rs::{impl_downcast, DowncastSync};
-impl_downcast!(sync RecordCommon);
+use downcast_rs::{impl_downcast, Downcast};
+impl_downcast!(RecordCommon); // no `sync`

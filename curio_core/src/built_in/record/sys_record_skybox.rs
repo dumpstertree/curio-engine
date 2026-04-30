@@ -1,6 +1,10 @@
-use std::sync::Arc;
+use crate::{
+    system::{record_id::RecordId, system_game_state::RecordCommon},
+    Color, TextureAsset,
+};
+use std::sync::{Arc, OnceLock};
 
-use crate::{system::system_game_state::RecordCommon, Color, TextureAsset};
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordSkybox {
@@ -9,7 +13,7 @@ pub struct SysRecordSkybox {
 impl SysRecordSkybox {}
 impl RecordCommon for SysRecordSkybox {
     fn id() -> i32 {
-        112
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordSkybox>())
     }
 }
 

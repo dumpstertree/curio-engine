@@ -1,8 +1,10 @@
-use std::hash::Hash;
+use std::{hash::Hash, sync::OnceLock};
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 use crate::{
     extensions::{extensions_f32::ExtensionsF32, extensions_f64::ExtensionsF64},
-    system::system_game_state::RecordCommon,
+    system::{record_id::RecordId, system_game_state::RecordCommon},
 };
 
 #[derive(Default, PartialEq, Clone)]
@@ -18,7 +20,7 @@ pub struct SysRecordTime {
 impl SysRecordTime {}
 impl RecordCommon for SysRecordTime {
     fn id() -> i32 {
-        114
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordTime>())
     }
 }
 impl Hash for SysRecordTime {

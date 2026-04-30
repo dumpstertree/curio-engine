@@ -1,4 +1,11 @@
-use crate::{collections::camera_uniform::CameraSnapshot, system::system_game_state::RecordCommon, Vector3};
+use crate::{
+    collections::camera_uniform::CameraSnapshot,
+    system::{record_id::RecordId, system_game_state::RecordCommon},
+    Vector3,
+};
+use std::sync::OnceLock;
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordCamera {
@@ -18,7 +25,7 @@ impl SysRecordCamera {
 
 impl RecordCommon for SysRecordCamera {
     fn id() -> i32 {
-        100
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordCamera>())
     }
 }
 impl SysRecordCamera {

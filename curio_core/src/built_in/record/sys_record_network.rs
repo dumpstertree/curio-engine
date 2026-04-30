@@ -1,6 +1,7 @@
-use std::hash::Hash;
+use std::{hash::Hash, sync::OnceLock};
 
-use crate::system::system_game_state::RecordCommon;
+use crate::system::{record_id::RecordId, system_game_state::RecordCommon};
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordNetwork {
@@ -24,6 +25,6 @@ impl SysRecordNetwork {
 
 impl RecordCommon for SysRecordNetwork {
     fn id() -> i32 {
-        109
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordNetwork>())
     }
 }

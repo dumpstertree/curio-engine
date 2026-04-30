@@ -1,9 +1,14 @@
-use std::hash::{self, Hash};
+use std::{
+    hash::{self, Hash},
+    sync::OnceLock,
+};
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 use crate::{
     collections::{event_queue::EventQueue, ledger::Ledger},
     extensions::extensions_f32::ExtensionsF32,
-    system::system_game_state::RecordCommon,
+    system::{record_id::RecordId, system_game_state::RecordCommon},
     Color, Vector3,
 };
 
@@ -18,7 +23,7 @@ impl SysRecordGui {
 }
 impl RecordCommon for SysRecordGui {
     fn id() -> i32 {
-        106
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordGui>())
     }
 }
 #[derive(Default, Clone, PartialEq)]

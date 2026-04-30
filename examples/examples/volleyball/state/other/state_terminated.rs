@@ -1,5 +1,13 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
-use std::hash::{Hash, Hasher};
+use curio_core::{
+    collections::state_ownerships::StateOwnerships,
+    system::{record_id::RecordId, system_game_state::RecordCommon},
+};
+use std::{
+    hash::{Hash, Hasher},
+    sync::OnceLock,
+};
+
+static RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Clone, Default)]
 pub struct StateTerminated {
@@ -12,14 +20,11 @@ impl RecordCommon for StateTerminated {
         StateOwnerships::Instance
     }
 
-    fn id() -> i32
-    where
-        Self: Sized + 'static,
-    {
-        println!("TODO FIX THIS");
-        1000
+    fn id() -> i32 {
+        *RECORD_ID.get_or_init(|| RecordId::of::<StateTerminated>())
     }
 }
+
 impl Hash for StateTerminated {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.is_terminated.hash(state);

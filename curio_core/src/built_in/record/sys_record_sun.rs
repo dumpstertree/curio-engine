@@ -1,4 +1,12 @@
-use crate::{graphics::light_uniform::DrawCallLight, system::system_game_state::RecordCommon, Color, LightType, Vector3};
+use std::sync::OnceLock;
+
+use crate::{
+    graphics::light_uniform::DrawCallLight,
+    system::{record_id::RecordId, system_game_state::RecordCommon},
+    Color, LightType, Vector3,
+};
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordSun {
@@ -20,6 +28,6 @@ impl SysRecordSun {
 }
 impl RecordCommon for SysRecordSun {
     fn id() -> i32 {
-        113
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordSun>())
     }
 }

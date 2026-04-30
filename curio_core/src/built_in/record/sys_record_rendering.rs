@@ -1,4 +1,12 @@
-use crate::{system::system_game_state::RecordCommon, DrawCall};
+use std::sync::OnceLock;
+
+use crate::{
+    built_in::record::sys_record_camera::SysRecordCamera,
+    system::{record_id::RecordId, system_game_state::RecordCommon},
+    DrawCall,
+};
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordRendering {
@@ -11,6 +19,6 @@ impl SysRecordRendering {
 }
 impl RecordCommon for SysRecordRendering {
     fn id() -> i32 {
-        110
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordRendering>())
     }
 }

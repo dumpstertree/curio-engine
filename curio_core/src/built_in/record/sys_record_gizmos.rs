@@ -1,4 +1,11 @@
-use crate::{system::system_game_state::RecordCommon, Gizmo};
+use std::sync::OnceLock;
+
+use crate::{
+    system::{record_id::RecordId, system_game_state::RecordCommon},
+    Gizmo,
+};
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordGizmos {
@@ -11,6 +18,6 @@ impl SysRecordGizmos {
 }
 impl RecordCommon for SysRecordGizmos {
     fn id() -> i32 {
-        105
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordGizmos>())
     }
 }

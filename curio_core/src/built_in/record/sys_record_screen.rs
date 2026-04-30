@@ -1,4 +1,8 @@
-use crate::system::system_game_state::RecordCommon;
+use std::sync::OnceLock;
+
+use crate::system::{record_id::RecordId, system_game_state::RecordCommon};
+
+static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub struct SysRecordScreen {
@@ -18,6 +22,6 @@ impl SysRecordScreen {
 }
 impl RecordCommon for SysRecordScreen {
     fn id() -> i32 {
-        111
+        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordScreen>())
     }
 }
