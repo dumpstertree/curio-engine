@@ -1,6 +1,6 @@
 use curio_core::{
-    AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Vector2,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    AxisCode, ButtonCode, Color, InputAxisState, KeyState, PrefabGameObject, Vector2,
+    collections::{event_queue::EventQueue, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;

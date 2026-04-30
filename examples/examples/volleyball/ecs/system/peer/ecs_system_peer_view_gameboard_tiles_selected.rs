@@ -5,8 +5,8 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 
 use curio_core::{
-    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, ledger::Ledger},
+    network_modes::NetworkModes,
 };
 use gameplay::{
     built_in::facet::{renderer::renderer_static::RendererStatic, renderer_common::RendererCommon, transform::transform3d::Transform3D},

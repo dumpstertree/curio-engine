@@ -1,7 +1,7 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, PrefabGameObject,
+    AxisCode, ButtonCode, InputAxisState, KeyState, PrefabGameObject,
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 

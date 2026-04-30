@@ -1,6 +1,6 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, Vector2,
-    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
+    AxisCode, ButtonCode, InputAxisState, KeyState, Vector2,
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 use gameplay::{
     built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},

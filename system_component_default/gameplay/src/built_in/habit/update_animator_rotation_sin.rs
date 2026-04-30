@@ -7,7 +7,8 @@ use crate::{
 use curio_core::{
     Quaternion,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger},
+    network_modes::NetworkModes,
 };
 
 #[derive(Default)]

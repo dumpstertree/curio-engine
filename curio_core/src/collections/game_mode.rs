@@ -1,9 +1,4 @@
-use crate::{
-    collections::{game_instance::GameInstance, network_modes::NetworkModes},
-    graphics::graphics_mapping::GraphicsMapping,
-    input::input_mapping::InputMapping,
-    Vector2,
-};
+use crate::{collections::game_instance::GameInstance, graphics::graphics_mapping::GraphicsMapping, input::input_mapping::InputMapping, network_modes::NetworkModes, Vector2};
 
 pub struct GameMode {
     // pub input_mappings: Vec<InputMapping>,

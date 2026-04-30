@@ -1,4 +1,4 @@
-use curio_core::{AxisCode, ButtonCode, InputAxisState, collections::key_state::KeyState};
+use curio_core::{AxisCode, ButtonCode, InputAxisState, KeyState};
 
 use crate::traits_internal::ui_common::UICommon;
 

@@ -14,7 +14,8 @@ use crate::{
 use curio_core::{
     DrawCall, Matrix4x4, Quaternion, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_rendering::SysRecordRendering, sys_record_time::SysRecordTime},
-    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger},
+    network_modes::NetworkModes,
 };
 
 #[derive(Default)]

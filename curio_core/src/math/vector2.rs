@@ -1,5 +1,4 @@
-use crate::collections::f32;
-use crate::extensions::extensions_f32::ExtensionsF32;
+use crate::extensions_f32::ExtensionsF32;
 use crate::Vector2Int;
 use crate::Vector3;
 use crate::Vector3Int;

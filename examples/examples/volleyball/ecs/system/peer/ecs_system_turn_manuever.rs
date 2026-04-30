@@ -15,14 +15,13 @@ use crate::state::state_deck::CardTypes;
 use crate::state::state_teams::StateTeamAssignments;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
-use curio_core::collections::network_modes::NetworkModes;
 use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
 use curio_core::extensions::extensions_i32::ExtensionsI32;
+use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
 use gameplay::traits::scope::Scope;
 use habit::habit;
-use rand::seq::index;
 use std::sync::Arc;
 
 pub struct ResponseBuilder {

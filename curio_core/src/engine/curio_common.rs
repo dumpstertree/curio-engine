@@ -1,6 +1,5 @@
 use crate::{
-    collections::key_state::KeyState,
-    input::{axis_code::AxisCode, key_code::ButtonCode},
+    input::{axis_code::AxisCode, key_code::ButtonCode, key_state::KeyState},
     Vector3,
 };
 

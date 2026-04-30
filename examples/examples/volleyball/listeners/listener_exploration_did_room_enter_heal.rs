@@ -1,10 +1,8 @@
 use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 
-use curio_core::{
-    collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, ledger::Ledger},
-};
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::{
     built_in::impulse::ui_events::UIEvents,

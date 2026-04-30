@@ -7,7 +7,7 @@ use habit::habit;
 use curio_core::{
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_network::SysRecordNetwork},
     collections::{event_queue::EventQueue, ledger::Ledger},
-    collections::network_modes::NetworkModes
+    network_modes::NetworkModes,
 };
 use std::vec;
 

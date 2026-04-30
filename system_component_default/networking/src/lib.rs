@@ -1,6 +1,7 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_mode::GameMode, ledger::Ledger, network_modes::NetworkModes, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
+    collections::{event_queue::EventQueue, game_mode::GameMode, ledger::Ledger, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
+    network_modes::NetworkModes,
     system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
 };
 use message_io::node::NodeEvent;

@@ -1,6 +1,7 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger},
+    network_modes::NetworkModes,
     random::Random,
 };
 

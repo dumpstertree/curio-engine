@@ -2,13 +2,10 @@ use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::game_mode::GameMode;
 use curio_core::collections::ledger::Ledger;
-use curio_core::{AxisCode, ButtonCode, InputMapping, PlayerInputSnapshot, Vector2, Vector3};
+use curio_core::{AxisCode, ButtonCode, InputMapping, KeyState, PlayerInputSnapshot, Vector2, Vector3};
 use std::collections::HashMap;
 
-use curio_core::{
-    collections::key_state::KeyState,
-    system::{system_component::SystemComponent, system_components::system_component_input::SystemComponentInput},
-};
+use curio_core::system::{system_component::SystemComponent, system_components::system_component_input::SystemComponentInput};
 
 pub struct SystemComponentDefaultInput {
     mappings_is_dirty: bool,

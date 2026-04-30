@@ -1,23 +1,8 @@
 use crate::assets::asset::AssetCommonFromBits;
-use crate::graphics::material::Material;
-use crate::graphics::material::ShaderDesc;
-use crate::graphics::mesh::Mesh;
-use crate::graphics::mesh::Vertex;
 use crate::io::asset_cache::AssetCache;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::asset_database::AssetDatabaseListing;
-use crate::system_adapters::adapter_system_gpu::SystemGPU;
-use crate::AssetCommon;
-use crate::FontDesc;
-use crate::Matrix4x4;
-use crate::ModelAsset;
-use crate::TextureAsset;
 use core::panic;
-use egui_wgpu::wgpu::Device;
-use egui_wgpu::wgpu::ShaderModule;
-use serde::Deserialize;
-use serde::Serialize;
-use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 

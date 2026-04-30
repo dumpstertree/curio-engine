@@ -1,7 +1,8 @@
 use curio_core::{
     ButtonCode,
     built_in::record::{sys_record_debug::SysRecordDebug, sys_record_input::SysRecordInput},
-    collections::{event_queue::EventQueue, ledger::Ledger, network_modes::NetworkModes},
+    collections::{event_queue::EventQueue, ledger::Ledger},
+    network_modes::NetworkModes,
 };
 
 use crate::{

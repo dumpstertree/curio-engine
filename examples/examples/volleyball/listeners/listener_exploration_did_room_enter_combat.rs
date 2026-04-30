@@ -12,13 +12,11 @@ use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{Assets, UIViewTypes};
 
 use curio_core::io::model_asset_animated::ModelAssetAnimated;
+use curio_core::network_modes::NetworkModes;
 use curio_core::{ModelAsset, Quaternion, Vector2Int, Vector3};
 
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
 use curio_core::io::asset_loader::AssetLoader;
-use curio_core::{
-    collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, ledger::Ledger},
-};
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::transform::transform3d::Transform3D;

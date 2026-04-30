@@ -12,8 +12,8 @@ use crate::{
     },
 };
 use curio_core::{
-    AxisCode, ButtonCode, Color, InputAxisState, PrefabGameObject, Quaternion, Vector2, Vector3,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    AxisCode, ButtonCode, Color, InputAxisState, KeyState, PrefabGameObject, Quaternion, Vector2, Vector3,
+    collections::{event_queue::EventQueue, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{

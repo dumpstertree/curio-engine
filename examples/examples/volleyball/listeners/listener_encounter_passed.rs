@@ -1,8 +1,8 @@
 use crate::game_events::GameEvents;
 use crate::state::host::state_currency::StateCurrency;
 use curio_core::{
-    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, ledger::Ledger},
+    network_modes::NetworkModes,
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};

@@ -1,6 +1,6 @@
 use crate::{
     assets::asset::AssetCommonFromBits,
-    collections::f32::FloatExtras,
+    f32::FloatExtras,
     graphics::{
         material::Material,
         mesh::{Mesh, Vertex},

@@ -2,10 +2,8 @@ use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
-use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
-    collections::network_modes::NetworkModes
-};
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::network_modes::NetworkModes;
 use gameplay::built_in::impulse::ui_events::UIEvents;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};

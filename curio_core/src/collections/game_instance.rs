@@ -1,4 +1,4 @@
-use crate::{collections::network_modes::NetworkModes, graphics::graphics_mapping::GraphicsMapping, input::input_mapping::InputMapping};
+use crate::{graphics::graphics_mapping::GraphicsMapping, input::input_mapping::InputMapping, network_modes::NetworkModes};
 
 pub struct GameInstance {
     pub name: String,

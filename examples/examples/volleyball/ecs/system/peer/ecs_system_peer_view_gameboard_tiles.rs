@@ -14,11 +14,9 @@ use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::StateTeamAssignments;
 
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::network_modes::NetworkModes;
 use curio_core::{Vector2Int, Vector3};
-use curio_core::{
-    collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, ledger::Ledger},
-};
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::renderer_common::RendererCommon;
 use gameplay::built_in::facet::transform::transform3d::Transform3D;
@@ -70,10 +68,7 @@ impl Habit for Instance {
                     .read::<StateTeamAssignments>()
                     .team_for(&ledger.instance_id)
                     .unwrap();
-                let pos_entity = state_entity_pos
-                    .positions
-                    .get(&ledger.instance_id)
-                    .unwrap();
+                let pos_entity = state_entity_pos.positions.get(&ledger.instance_id).unwrap();
                 let pos_ball = ledger.read::<StatePositionBall>();
                 let events = selected.get_attributes_events(ledger, ledger.instance_id);
                 let mut targets = Vec::new();

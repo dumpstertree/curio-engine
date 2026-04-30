@@ -5,7 +5,7 @@ use crate::{
 };
 use curio_core::{
     collections::{event_queue::EventQueue, ledger::Ledger},
-    collections::network_modes::NetworkModes
+    network_modes::NetworkModes,
 };
 use gameplay::{
     context_3d::Context3D,
@@ -186,10 +186,7 @@ impl ECsystemGameRequestManuever {
         return true;
     }
     fn check_player_id(ledger: &mut Ledger, id: i32) -> bool {
-        let state_teams = ledger
-            .read::<StateTeamAssignments>()
-            .team_for(&id)
-            .unwrap();
+        let state_teams = ledger.read::<StateTeamAssignments>().team_for(&id).unwrap();
         let is_active_player = ledger.read::<StateTurn>().active_instance_id == state_teams;
         if !is_active_player {
             println!("Requested for non-active player");

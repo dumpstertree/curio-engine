@@ -1,6 +1,6 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, Severity, Vector2, Vector3,
-    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
+    AxisCode, ButtonCode, InputAxisState, KeyState, Severity, Vector2, Vector3,
+    collections::{event_queue::EventQueue, ledger::Ledger},
     io::{asset_loader::AssetLoader, model_asset_animated::ModelAssetAnimated},
     log,
 };

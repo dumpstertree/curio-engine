@@ -2,7 +2,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::{any::Any, collections::HashMap, fmt::Display, time::Instant};
 
 use crate::{
-    collections::network_modes::NetworkModes,
+    network_modes::NetworkModes,
     static_data::global_events::{get_global_event_deserializer, get_global_event_serializer},
 };
 #[derive(Clone)]

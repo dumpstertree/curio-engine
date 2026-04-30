@@ -1,6 +1,6 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, TextureAsset, Vector2,
-    collections::{event_queue::EventQueue, key_state::KeyState, ledger::Ledger},
+    AxisCode, ButtonCode, InputAxisState, KeyState, TextureAsset, Vector2,
+    collections::{event_queue::EventQueue, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{

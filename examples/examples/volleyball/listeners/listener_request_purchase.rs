@@ -2,10 +2,8 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_currency::StateCurrency;
 use crate::state::host::state_deck_exploration::StateDeckExploration;
 use crate::state::host::state_shop::{StateShop, StockItems};
-use curio_core::{
-    collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, ledger::Ledger},
-};
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
 use impulse::impulse;

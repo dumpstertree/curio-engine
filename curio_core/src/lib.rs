@@ -31,6 +31,7 @@ pub use crate::input::input_mapping::InputMapping;
 pub use crate::input::input_snapshot_mapped::PlayerInputSnapshot;
 pub use crate::input::input_snapshot_raw::RawInputSnapshot;
 pub use crate::input::key_code::ButtonCode;
+pub use crate::input::key_state::KeyState;
 
 // graphics
 pub use crate::graphics::draw_call::DrawCall;
@@ -43,6 +44,16 @@ pub use crate::graphics::light_uniform::LightType;
 pub use crate::graphics::material::Material;
 pub use crate::graphics::mesh::Mesh;
 pub use crate::graphics::mesh::Vertex;
+
+// network
+pub use crate::network::network_capabilities;
+pub use crate::network::network_modes;
+
+// extensions
+pub use crate::extensions::extensions_f32;
+pub use crate::extensions::extensions_f64;
+pub use crate::extensions::extensions_i32;
+pub use crate::extensions::f32;
 
 //
 pub mod graphics {
@@ -62,6 +73,7 @@ pub mod input {
     pub(crate) mod input_snapshot_mapped;
     pub(crate) mod input_snapshot_raw;
     pub(crate) mod key_code;
+    pub(crate) mod key_state;
 }
 pub mod math {
     pub(crate) mod color;
@@ -109,6 +121,7 @@ pub mod extensions {
     pub mod extensions_f32;
     pub mod extensions_f64;
     pub mod extensions_i32;
+    pub mod f32;
 }
 pub mod assets {
     pub(crate) mod asset;
@@ -132,20 +145,19 @@ pub mod collections {
     pub mod curio_metadata;
     pub mod event_queue;
     pub mod event_runner;
-    pub mod f32;
     pub mod game_instance;
     pub mod game_mode;
-    pub mod key_state;
     pub mod ledger;
-    pub mod network_capabilities;
-    pub mod network_modes;
+
     pub mod projection;
-    pub mod state_map;
-    pub mod state_map2;
     pub mod state_ownerships;
     pub mod state_sync_event;
     pub mod version_number;
     pub mod window_layout;
+}
+pub mod network {
+    pub mod network_capabilities;
+    pub mod network_modes;
 }
 mod log;
 pub mod random;
@@ -171,8 +183,3 @@ pub mod system {
 pub mod system_adapters {
     pub mod adapter_system_gpu;
 }
-
-use std::any::TypeId;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicI32, Ordering};
-use std::sync::{LazyLock, Mutex};

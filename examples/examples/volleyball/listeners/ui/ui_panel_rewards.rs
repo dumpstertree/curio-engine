@@ -1,7 +1,7 @@
 use curio_core::{
-    AxisCode, ButtonCode, InputAxisState, Vector2,
+    AxisCode, ButtonCode, InputAxisState, KeyState, Vector2,
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, ledger::Ledger, key_state::KeyState},
+    collections::{event_queue::EventQueue, ledger::Ledger},
 };
 
 use gameplay::{

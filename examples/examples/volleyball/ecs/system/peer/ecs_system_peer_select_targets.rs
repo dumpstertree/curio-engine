@@ -9,10 +9,8 @@ use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_teams::StateTeamAssignments;
 use curio_core::Vector2Int;
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
-use curio_core::{
-    collections::network_modes::NetworkModes,
-    collections::{event_queue::EventQueue, ledger::Ledger},
-};
+use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
 use gameplay::traits::scope::Scope;

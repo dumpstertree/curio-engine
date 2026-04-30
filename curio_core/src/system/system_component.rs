@@ -1,8 +1,8 @@
 use crate::built_in::stimulant::engine_commands::EngineCommands;
 use crate::collections::game_mode::GameMode;
-use crate::collections::key_state::KeyState;
 use crate::collections::ledger::Ledger;
 use crate::input::axis_code::AxisCode;
+use crate::input::key_state::KeyState;
 use crate::Vector3;
 use crate::{collections::event_queue::EventQueue, input::key_code::ButtonCode};
 use winit::event::WindowEvent;

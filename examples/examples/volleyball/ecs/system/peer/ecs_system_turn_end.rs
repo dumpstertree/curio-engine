@@ -5,7 +5,7 @@ use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
     collections::{event_queue::EventQueue, ledger::Ledger},
-    collections::network_modes::NetworkModes
+    network_modes::NetworkModes,
 };
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{habit::Habit, scope::Scope};

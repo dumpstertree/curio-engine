@@ -1,6 +1,6 @@
 use curio_core::{
-    collections::network_modes::NetworkModes,
     collections::{event_queue::EventQueue, ledger::Ledger},
+    network_modes::NetworkModes,
     random::Random,
 };
 use gameplay::{
