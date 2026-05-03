@@ -1,4 +1,4 @@
-use curio_core::{Vector2Int, collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
+use curio_core::{StateOwnerships, Vector2Int};
 use record_serializable::record_serializable;
 use std::hash::Hash;
 

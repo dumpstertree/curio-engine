@@ -1,7 +1,4 @@
-use curio_core::{
-    collections::state_ownerships::StateOwnerships,
-    system::{record_id::RecordId, system_game_state::RecordCommon},
-};
+use curio_core::{RecordCommon, StateOwnerships, system::record_id::RecordId};
 use std::{
     hash::{Hash, Hasher},
     sync::OnceLock,

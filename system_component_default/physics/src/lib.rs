@@ -12,7 +12,7 @@ use curio_core::{
 };
 use curio_core::{
     collections::{event_queue::EventQueue, ledger::Ledger},
-    system::{system_component::SystemComponent, system_components::system_component_physics::SystemComponentPhysics},
+    system::system_component::SystemComponent,
 };
 
 pub struct SystemComponentDefaultPhysics {
@@ -45,10 +45,13 @@ impl SystemComponentDefaultPhysics {
     }
 }
 impl SystemComponentDefaultPhysics {}
-impl SystemComponentPhysics for SystemComponentDefaultPhysics {}
+// impl SystemComponentPhysics for SystemComponentDefaultPhysics {}
 impl SystemComponent for SystemComponentDefaultPhysics {
     fn order(&self) -> i32 {
         2000
+    }
+    fn name(&self) -> String {
+        "Physics".to_owned()
     }
     fn init(&mut self, _: &mut Vec<Ledger>) {}
 

@@ -1,10 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::{
-    graphics::light_uniform::DrawCallLight,
-    system::{record_id::RecordId, system_game_state::RecordCommon},
-    Color, LightType, Vector3,
-};
+use crate::{graphics::light_uniform::DrawCallLight, system::record_id::RecordId, Color, LightType, RecordCommon, Vector3};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 

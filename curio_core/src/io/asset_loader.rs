@@ -2,6 +2,8 @@ use crate::assets::asset::AssetCommonFromBits;
 use crate::io::asset_cache::AssetCache;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::asset_database::AssetDatabaseListing;
+use crate::Application;
+use crate::Severity;
 use core::panic;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -76,7 +78,7 @@ impl AssetLoader {
                 asset_cache.try_set_asset(uid, asset.clone());
             }
 
-            println!("created new asset for uid {}", uid);
+            Application::log(Severity::Info, &format!("Caching new asset for UID: {}", uid));
 
             asset
         }

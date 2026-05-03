@@ -28,7 +28,6 @@ use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::game_mode::GameMode;
 use curio_core::collections::ledger::Ledger;
 use curio_core::system::system_component::SystemComponent;
-use curio_core::system::system_components::system_component_graphics::SystemComponentGraphics;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 use curio_core::{GraphicsMapping, Matrix4x4};
 use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, TextureView};
@@ -48,6 +47,9 @@ pub struct SystemComponentDefaultGraphics {
 impl SystemComponent for SystemComponentDefaultGraphics {
     fn order(&self) -> i32 {
         9000
+    }
+    fn name(&self) -> String {
+        "Graphics".to_owned()
     }
     fn init(&mut self, _ledger: &mut Vec<Ledger>) {}
 
@@ -103,11 +105,9 @@ impl SystemComponent for SystemComponentDefaultGraphics {
 
         self.graphics_mappings = graphics_mapping;
         self.is_dirty = true;
-
-        println!("setting game mode, {}", game_mode.game_instances.len());
     }
 }
-impl SystemComponentGraphics for SystemComponentDefaultGraphics {}
+// impl SystemComponentGraphics for SystemComponentDefaultGraphics {}
 impl SystemComponentDefaultGraphics {
     // static
     pub fn register_feature_driver() {}

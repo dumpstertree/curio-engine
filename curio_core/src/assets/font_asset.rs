@@ -29,7 +29,7 @@ pub struct FontDesc {
 impl AssetCommon for FontDesc {}
 
 pub struct FontAsset {
-    desc: Arc<FontDesc>,
+    // desc: Arc<FontDesc>,
     material: Arc<Material>,
     mesh: HashMap<char, Arc<ModelAsset>>,
     glyph_width: f32,
@@ -123,7 +123,7 @@ impl FontAsset {
         }
 
         FontAsset {
-            desc: desc,
+            // desc: desc,
             material: material,
             mesh,
             glyph_width,

@@ -1,7 +1,7 @@
 use core::f32;
 use std::hash::Hash;
 
-use crate::{collections::projection::Projection, extensions::extensions_f32::ExtensionsF32, Quaternion, Vector3};
+use crate::{extensions::extensions_f32::ExtensionsF32, Frustrum, Quaternion, Vector3};
 use cgmath::{prelude::*, Matrix4, Point3};
 
 #[repr(C)]
@@ -24,7 +24,7 @@ impl CameraUniform {
     //     self.view_position = p.to_homogeneous().into();
     //     self.view_proj = (projection.calc_matrix() * camera.calc_matrix()).into()
     // }
-    pub fn update_view_proj2(&mut self, camera: &CameraSnapshot, projection: &Projection) {
+    pub fn update_view_proj2(&mut self, camera: &CameraSnapshot, projection: &Frustrum) {
         let p = Point3::new(camera.position.x, camera.position.y, camera.position.z);
         self.view_position = p.to_homogeneous().into();
         self.view_proj = (projection.calc_matrix() * camera.calc_matrix()).into()
@@ -80,8 +80,8 @@ impl CameraSnapshot {
 
         Matrix4::look_to_rh(p3, f, u)
     }
-    pub fn get_projection(&self, width: i32, height: i32) -> Projection {
-        Projection::new(width as u32, height as u32, cgmath::Deg(self.fovy), self.znear, self.zfar)
+    pub fn get_projection(&self, width: i32, height: i32) -> Frustrum {
+        Frustrum::new(width as u32, height as u32, cgmath::Deg(self.fovy), self.znear, self.zfar)
     }
     pub fn get_uniform(&self, width: i32, height: i32) -> CameraUniform {
         let mut c = CameraUniform::new();

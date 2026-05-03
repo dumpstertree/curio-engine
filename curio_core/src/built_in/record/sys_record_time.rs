@@ -4,7 +4,8 @@ static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 use crate::{
     extensions::{extensions_f32::ExtensionsF32, extensions_f64::ExtensionsF64},
-    system::{record_id::RecordId, system_game_state::RecordCommon},
+    system::record_id::RecordId,
+    RecordCommon,
 };
 
 #[derive(Default, PartialEq, Clone)]

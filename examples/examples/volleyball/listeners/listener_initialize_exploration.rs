@@ -1,4 +1,5 @@
 use curio_core::{
+    Severity,
     collections::{event_queue::EventQueue, ledger::Ledger},
     network_modes::NetworkModes,
     random::Random,
@@ -42,7 +43,7 @@ impl Impulse<GameEvents> for Listener {
         match event {
             GameEvents::InitializeExploration(exploration) => {
                 // log
-                println!("Exploration Initialized");
+                ledger.log(Severity::Info, "Exploration Initialized");
 
                 // assign and start the exploration
                 ledger.write::<StateExploration>(|x| {

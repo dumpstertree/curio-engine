@@ -3,6 +3,8 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
+use curio_core::{Application, Severity, log};
+
 use crate::traits::habit::Habit;
 
 /// Function that creates a boxed untyped value (what register stores)
@@ -20,7 +22,7 @@ pub fn register_global_ecs<T>()
 where
     T: Habit + Default + 'static,
 {
-    println!("reg system : {}", type_name::<T>());
+    // Application::log(Severity::Info, &format!("Registered Global Record: {}", type_name::<T>()));
     let mut reg = RECEIVER_REGISTRY.write().expect("Registry poisoned");
 
     reg.constructors.push(|| Box::new(T::default()));
@@ -29,6 +31,5 @@ pub fn get_global_ecs_instances() -> Vec<Box<dyn Habit>>
 where {
     let reg = RECEIVER_REGISTRY.read().expect("Registry poisoned");
 
-    println!("get all instance {}", reg.constructors.iter().len());
     reg.constructors.iter().map(|creator| creator()).collect()
 }

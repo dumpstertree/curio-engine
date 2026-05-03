@@ -1,3 +1,4 @@
+use crate::state::state_teams::StateTeamAssignments;
 use crate::{
     ai::{
         ai_simulator::AISimulator,
@@ -21,11 +22,11 @@ use crate::{
         state_turn::StateTurn,
     },
 };
+use curio_core::RecordCommon;
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
     collections::{event_queue::EventQueue, ledger::Ledger},
     network_modes::NetworkModes,
-    system::system_game_state::RecordCommon,
 };
 use gameplay::{
     context_3d::Context3D,
@@ -34,8 +35,6 @@ use gameplay::{
 use habit::habit;
 use impulse::impulse;
 use std::vec;
-
-use crate::state::state_teams::StateTeamAssignments;
 
 #[habit]
 #[impulse(GameEvents)]

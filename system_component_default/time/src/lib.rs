@@ -5,7 +5,7 @@ use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::built_in::stimulant::engine_commands::EngineCommands;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::ledger::Ledger;
-use curio_core::system::{system_component::SystemComponent, system_components::system_component_time::SystemComponentTime};
+use curio_core::system::system_component::SystemComponent;
 
 pub struct SystemComponentDefaultTime {
     instant: Instant,
@@ -24,10 +24,13 @@ impl SystemComponentDefaultTime {
         })
     }
 }
-impl SystemComponentTime for SystemComponentDefaultTime {}
+// impl SystemComponentTime for SystemComponentDefaultTime {}
 impl SystemComponent for SystemComponentDefaultTime {
     fn order(&self) -> i32 {
         1000
+    }
+    fn name(&self) -> String {
+        "Time".to_owned()
     }
     fn init(&mut self, ledger: &mut Vec<Ledger>) {
         for ledger in ledger {

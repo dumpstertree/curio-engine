@@ -24,7 +24,7 @@ pub fn record_serializable(attr: TokenStream, item: TokenStream) -> TokenStream 
 
     let ownership = match ownership_val {
         Some(path) => quote! { #path },
-        None => quote! { curio_core::collections::state_ownerships::StateOwnerships::Instance },
+        None => quote! { curio_core::StateOwnerships::Instance },
     };
 
     let mut input = parse_macro_input!(item as ItemStruct);
@@ -57,14 +57,14 @@ pub fn record_serializable(attr: TokenStream, item: TokenStream) -> TokenStream 
 
         static #static_id: std::sync::OnceLock<i32> = std::sync::OnceLock::new();
 
-        impl curio_core::system::system_game_state::RecordCommon for #name {
+        impl curio_core::RecordCommon for #name {
             fn id() -> i32 where Self: Sized + 'static {
                 *#static_id.get_or_init(|| {
                     curio_core::system::record_id::RecordId::of::<#name>()
                 })
             }
 
-            fn ownership() -> curio_core::collections::state_ownerships::StateOwnerships
+            fn ownership() -> curio_core::StateOwnerships
             where
                 Self: Sized + 'static,
             {

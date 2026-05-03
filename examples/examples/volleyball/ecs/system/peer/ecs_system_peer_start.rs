@@ -6,7 +6,7 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
-    Color, PrefabGameObject, Vector3,
+    Color, PrefabGameObject, Severity, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_sun::SysRecordSun},
     collections::{event_queue::EventQueue, ledger::Ledger},
     io::asset_loader::AssetLoader,
@@ -30,10 +30,10 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn init(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
-        println!("Instance: {}. Peer Init", ledger.instance_id);
+        ledger.log(Severity::Info, "Init");
     }
     fn enable(&mut self, ledger: &mut Ledger, world: &mut Context3D, _event_queue: &mut EventQueue) {
-        println!("Instance: {}. Peer Startup", ledger.instance_id);
+        ledger.log(Severity::Info, "Enabled");
 
         // load any remote assets now
         AssetLoader::preload_remote_assets(false);
@@ -55,18 +55,18 @@ impl Habit for Instance {
             .read::<StateTeamAssignments>()
             .team_for(&ledger.instance_id)
         else {
-            println!("Spawned Fallback Camera");
+            ledger.log(Severity::Info, "Spawned Fallback Camera");
             world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabCamera.into()));
             return;
         };
 
         match team {
             Teams::Red => {
-                println!("Spawned Red Camera");
+                ledger.log(Severity::Info, "Spawned Red Camera");
                 world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabCamera.into()));
             }
             Teams::Blue => {
-                println!("Spawned Blue Camera");
+                ledger.log(Severity::Info, "Spawned Blue Camera");
                 world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabCamera.into()));
             }
         }

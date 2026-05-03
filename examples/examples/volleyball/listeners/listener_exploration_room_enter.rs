@@ -1,6 +1,8 @@
 use crate::exploration::exploration_path::RoomTypes;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_initialize_exploration::{EncounterLibrary, ShopLibrary};
+use curio_core::Severity;
+use curio_core::collections::ledger;
 use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
@@ -20,11 +22,11 @@ impl Scope for ECsystemGamePointScored {
     }
 }
 impl Impulse<GameEvents> for ECsystemGamePointScored {
-    fn dequeue_event(&mut self, _ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
         match event {
             GameEvents::ExplorationRoomEnter(room) => {
                 // log
-                println!("Enter Exploration Room: {}", room.guid);
+                ledger.log(Severity::Info, &format!("Enter Room: Exploration '{}'", room.guid));
 
                 // get the newly assigned state
                 match room.room_type {

@@ -1,6 +1,6 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::{collections::HashMap, hash::Hash};
 
+use curio_core::StateOwnerships;
 use record_serializable::record_serializable;
 
 use crate::listeners::listener_initialize_encounter::Controller;

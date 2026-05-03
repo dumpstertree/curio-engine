@@ -5,6 +5,7 @@ use gameplay::{
 use habit::habit;
 
 use curio_core::{
+    Severity,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_network::SysRecordNetwork},
     collections::{event_queue::EventQueue, ledger::Ledger},
     network_modes::NetworkModes,
@@ -29,8 +30,11 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
+    fn init(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
+        ledger.log(Severity::Info, "Init");
+    }
     fn enable(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
-        println!("Instance: {}. Host Startup", ledger.instance_id);
+        ledger.log(Severity::Info, "Enabled");
 
         // set resolution
         ledger.write::<SysRecordCamera>(|x| {

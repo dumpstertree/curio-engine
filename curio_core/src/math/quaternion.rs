@@ -1,6 +1,5 @@
 use crate::extensions::extensions_f32::ExtensionsF32;
 use crate::Vector3;
-use cgmath::num_traits::real::Real;
 use core::fmt;
 use fmt::Display;
 use serde::Deserialize;

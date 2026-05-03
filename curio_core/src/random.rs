@@ -4,6 +4,19 @@ use crate::Vector3;
 
 pub struct Random {}
 impl Random {
+    pub fn range_u8(a_inclusive: u8, b_inclusive: u8) -> u8 {
+        if a_inclusive == b_inclusive {
+            return a_inclusive;
+        }
+
+        let mut rng = rand::rng();
+
+        if a_inclusive < b_inclusive {
+            rng.random_range(a_inclusive..b_inclusive)
+        } else {
+            rng.random_range(b_inclusive..a_inclusive)
+        }
+    }
     pub fn range_float(a_inclusive: f32, b_inclusive: f32) -> f32 {
         if a_inclusive == b_inclusive {
             return a_inclusive;

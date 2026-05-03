@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::{collections::version_number::VersionNumber, random::Random};
 
 #[derive(Clone)]

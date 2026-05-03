@@ -4,13 +4,17 @@ use crate::{
     traits::ui_events::IUIEvent,
 };
 use curio_core::{
-    AxisCode, ButtonCode, KeyState, Vector3,
+    AxisCode,
+    ButtonCode,
+    KeyState,
+    Vector3,
     collections::{
         event_queue::{EventQueue, IGameEvent},
         game_mode::GameMode,
         ledger::Ledger,
     },
-    system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
+    // system::{system_component::SystemComponent, system_components::system_component_gameplay::SystemComponentGameplay},
+    system::system_component::SystemComponent,
 };
 use std::{fmt::Display, vec};
 
@@ -37,18 +41,21 @@ where
         Box::new(SystemComponentDefaultGameplay::<T, U> { game_instance: vec![] })
     }
 }
-impl<T, U> SystemComponentGameplay for SystemComponentDefaultGameplay<T, U>
-where
-    T: IGameEvent + Display + 'static + Clone,
-    U: IUIEvent + 'static,
-{
-    // fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECsystemEventless>>) {}
-}
+// impl<T, U> SystemComponentGameplay for SystemComponentDefaultGameplay<T, U>
+// where
+//     T: IGameEvent + Display + 'static + Clone,
+//     U: IUIEvent + 'static,
+// {
+//     // fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECsystemEventless>>) {}
+// }
 impl<T, U> SystemComponent for SystemComponentDefaultGameplay<T, U>
 where
     T: IGameEvent + Display + 'static + Clone,
     U: IUIEvent + 'static,
 {
+    fn name(&self) -> String {
+        "Gameplay".to_owned()
+    }
     fn input_button(&mut self, _ledger: &mut Vec<Ledger>, _key_code: ButtonCode, _val: KeyState) {}
     fn input_axis(&mut self, _ledgere: &mut Vec<Ledger>, _axis_code: AxisCode, _val: Vector3) {}
     fn order(&self) -> i32 {

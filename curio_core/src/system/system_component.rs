@@ -8,6 +8,7 @@ use crate::{collections::event_queue::EventQueue, input::key_code::ButtonCode};
 use winit::event::WindowEvent;
 
 pub trait SystemComponent {
+    fn name(&self) -> String;
     //
     fn order(&self) -> i32 {
         0

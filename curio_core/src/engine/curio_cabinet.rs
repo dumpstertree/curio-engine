@@ -18,9 +18,10 @@ use crate::{
     collections::{curio_metadata::CurioMetadata, window_layout::WindowLayout},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode, key_state::KeyState},
+    log::{self, log_unformated},
     static_data,
     system_adapters::adapter_system_gpu::SystemGPU,
-    GPUInstance, Vector3,
+    Application, GPUInstance, Severity, Vector3,
 };
 
 static mut ALL_META: Mutex<Vec<CurioMetadata>> = Mutex::new(Vec::new());
@@ -53,6 +54,31 @@ where
         T: 'static + CurioCommon,
     {
         register_built_in_records();
+
+        log_unformated(
+            "
+ a88888b.                   oo              88888888b                   oo                   
+d8'   `88                                   88                                               
+88        dP    dP 88d888b. dP .d8888b.    a88aaaa    88d888b. .d8888b. dP 88d888b. .d8888b. 
+88        88    88 88'  `88 88 88'  `88     88        88'  `88 88'  `88 88 88'  `88 88ooood8 
+Y8.   .88 88.  .88 88       88 88.  .88     88        88    88 88.  .88 88 88    88 88.  ... 
+ Y88888P' `88888P' dP       dP `88888P'     88888888P dP    dP `8888P88 dP dP    dP `88888P' 
+                                                                    .88                      
+                                                                d8888P",
+        );
+        log_unformated(&format!(
+            "
+    Name: {}
+    Version: {}
+    Icon: {}
+    Habits: 10
+    Records: 10
+    Plugins: 0
+    Resolution: {}x{}
+            ",
+            meta.name, meta.version, meta.icon, portal.width, portal.height
+        ));
+
         // store this curio metadata
         if let Ok(mut m) = unsafe { ALL_META.lock() } {
             m.push(meta.clone());

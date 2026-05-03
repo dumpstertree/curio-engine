@@ -1,6 +1,6 @@
-use curio_core::collections::event_queue::IGameEvent;
+use curio_core::{Application, Severity, collections::event_queue::IGameEvent};
 use std::{
-    any::Any,
+    any::{Any, type_name},
     collections::HashMap,
     sync::{LazyLock, RwLock},
 };
@@ -23,6 +23,8 @@ where
     T: IGameEvent + Clone + 'static,
     R: Impulse<T> + Default + Any + 'static,
 {
+    // Application::log(Severity::Info, &format!("Registered Global Impulse: {}", type_name::<T>()));
+
     let mut reg = RECEIVER_REGISTRY.write().expect("Registry poisoned");
 
     let id = T::id();

@@ -1,6 +1,6 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
 use std::fmt;
 
+use curio_core::StateOwnerships;
 use record_serializable::record_serializable;
 use serde::{Deserialize, Serialize};
 

@@ -1,8 +1,9 @@
 use curio_core::{
+    Severity, StateOwnerships, StateSyncEvent,
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_mode::GameMode, ledger::Ledger, state_ownerships::StateOwnerships, state_sync_event::StateSyncEvent},
+    collections::{event_queue::EventQueue, game_mode::GameMode, ledger::Ledger},
     network_modes::NetworkModes,
-    system::{system_component::SystemComponent, system_components::system_component_networking::SystemComponentNetworking},
+    system::system_component::SystemComponent,
 };
 use message_io::node::NodeEvent;
 use message_io::{
@@ -26,7 +27,7 @@ pub struct SystemComponentDefaultNetworking {
     incoming_events: Arc<Mutex<Vec<StateSyncEvent>>>,
 }
 
-impl SystemComponentNetworking for SystemComponentDefaultNetworking {}
+// impl SystemComponentNetworking for SystemComponentDefaultNetworking {}
 impl SystemComponentDefaultNetworking {
     pub fn new() -> Box<SystemComponentDefaultNetworking> {
         let (handler, _) = node::split::<Signal>();
@@ -171,8 +172,13 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     fn order(&self) -> i32 {
         10000
     }
-    fn init(&mut self, _: &mut Vec<Ledger>) {
-        println!("init networking");
+    fn name(&self) -> String {
+        "Networking".to_owned()
+    }
+    fn init(&mut self, ledger: &mut Vec<Ledger>) {
+        for i in 0..ledger.len() {
+            ledger[i].log(Severity::Info, "Init Networking");
+        }
     }
     fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
         // save all pending changes and apply them at the end

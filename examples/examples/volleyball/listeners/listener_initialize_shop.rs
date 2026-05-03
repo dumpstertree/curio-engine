@@ -1,4 +1,5 @@
 use curio_core::{
+    Severity,
     collections::{event_queue::EventQueue, ledger::Ledger},
     network_modes::NetworkModes,
 };
@@ -30,7 +31,7 @@ impl Impulse<GameEvents> for Listener {
         match event {
             GameEvents::InitializeShop(shop) => {
                 // log
-                println!("Shop Initialized");
+                ledger.log(Severity::Info, "Shop Initialized");
 
                 //
                 ledger.write::<StateShop>(|x| {

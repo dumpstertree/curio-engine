@@ -4,6 +4,8 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
+use curio_core::{Application, Severity};
+
 use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
@@ -30,7 +32,7 @@ where
         .to_lowercase();
     let mut reg: std::sync::RwLockWriteGuard<'_, ReceiverRegistry> = COMPONENT_REGISTRY.write().expect("Registry poisoned");
 
-    println!("TRY ADD component {}", type_name::<T>());
+    // Application::log(Severity::Info, &format!("Registered Global Habit: {}", type_name::<T>()));
 
     reg.add_component.insert(key, |x, y| {
         if x.has_facet::<T>() {

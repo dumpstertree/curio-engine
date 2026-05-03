@@ -1,13 +1,13 @@
 use cgmath::*;
 use cgmath::{Matrix4, Rad};
 
-pub struct Projection {
+pub struct Frustrum {
     aspect: f32,
     fovy: Rad<f32>,
     znear: f32,
     zfar: f32,
 }
-impl Projection {
+impl Frustrum {
     pub fn new<F: Into<Rad<f32>>>(width: u32, height: u32, fovy: F, znear: f32, zfar: f32) -> Self {
         Self {
             aspect: width as f32 / height as f32,

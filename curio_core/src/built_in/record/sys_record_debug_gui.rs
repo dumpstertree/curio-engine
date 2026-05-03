@@ -9,8 +9,8 @@ use crate::{
     },
     collections::{event_queue::EventQueue, ledger::Ledger},
     extensions::extensions_f32::ExtensionsF32,
-    system::{record_id::RecordId, system_game_state::RecordCommon},
-    Color, Vector3,
+    system::record_id::RecordId,
+    Color, RecordCommon, Vector3,
 };
 
 #[derive(Default, PartialEq, Clone)]

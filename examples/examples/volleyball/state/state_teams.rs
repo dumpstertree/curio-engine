@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, random::Random, system::system_game_state::RecordCommon};
+use curio_core::{StateOwnerships, random::Random};
 use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use record_serializable::record_serializable;

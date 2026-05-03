@@ -1,7 +1,4 @@
-use crate::{
-    system::{record_id::RecordId, system_game_state::RecordCommon},
-    Color, TextureAsset,
-};
+use crate::{system::record_id::RecordId, Color, RecordCommon, TextureAsset};
 use std::sync::{Arc, OnceLock};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();

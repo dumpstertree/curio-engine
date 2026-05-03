@@ -2,10 +2,10 @@ use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::event_queue::EventQueue;
 use curio_core::collections::game_mode::GameMode;
 use curio_core::collections::ledger::Ledger;
-use curio_core::{AxisCode, ButtonCode, InputMapping, KeyState, PlayerInputSnapshot, Vector2, Vector3};
+use curio_core::{Application, AxisCode, ButtonCode, InputMapping, KeyState, PlayerInputSnapshot, Severity, Vector2, Vector3};
 use std::collections::HashMap;
 
-use curio_core::system::{system_component::SystemComponent, system_components::system_component_input::SystemComponentInput};
+use curio_core::system::system_component::SystemComponent;
 
 pub struct SystemComponentDefaultInput {
     mappings_is_dirty: bool,
@@ -24,12 +24,15 @@ impl SystemComponentDefaultInput {
         })
     }
 }
-impl SystemComponentInput for SystemComponentDefaultInput {}
+// impl SystemComponentInput for SystemComponentDefaultInput {}
 impl SystemComponent for SystemComponentDefaultInput {
     fn order(&self) -> i32 {
         1000
     }
 
+    fn name(&self) -> String {
+        "Input".to_owned()
+    }
     fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
         let mut cur_state = 0;
         // iterate over each
@@ -70,11 +73,13 @@ impl SystemComponent for SystemComponentDefaultInput {
     fn input_button(&mut self, _: &mut Vec<Ledger>, code: ButtonCode, val: KeyState) {
         self.state_button.insert(code, val == KeyState::Down);
     }
-    fn set_game_mode(&mut self, _ledger: &mut Vec<Ledger>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, game_mode: &GameMode) {
         let mut active_mappings = vec![];
+        let mut index = 0;
         for game_instance in &game_mode.game_instances {
             active_mappings.push(game_instance.input_mappings.clone());
-            println!("set game mode with num inputs {}", game_instance.input_mappings.len());
+            ledger[index].log(Severity::Info, &format!("Set num of Inputs: {}", game_instance.input_mappings.len()));
+            index += 1;
         }
         self.active_mappings = active_mappings;
         self.mappings_is_dirty = true;

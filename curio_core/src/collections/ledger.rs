@@ -4,13 +4,11 @@ use std::vec;
 
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
-use crate::collections::state_ownerships::StateOwnerships;
-use crate::collections::state_sync_event::StateSyncEvent;
+use crate::engine::curio::CurioNetwork;
 use crate::network_capabilities::NetworkCapabilities;
 use crate::network_modes::NetworkModes;
 use crate::static_data::global_states::get_global_state_constructor_all;
-use crate::system::system_game_state::RecordCommon;
-use crate::{log, Severity};
+use crate::{log, RecordCommon, Severity, StateOwnerships, StateSyncEvent};
 
 // -------------------------------------------------------------------------
 // Internal entry — owns both sides of a single state type
@@ -55,13 +53,14 @@ impl Clone for Entry {
 #[derive(Clone)]
 pub struct Ledger {
     pub name: String,
-    pub instance_id: i32,
-    pub all_instance_id: Vec<i32>,
+    // pub instance_id: i32,
+    // pub all_instance_id: Vec<i32>,
     /// Direct-indexed by sequential state ID. `None` means that slot is
     /// unregistered. Because IDs are 0-based and packed, indexing is O(1)
     /// with no hashing and excellent cache locality.
     entries: Vec<Option<Entry>>,
     pub network_capabilities: Option<NetworkCapabilities>,
+    pub network: CurioNetwork,
 }
 
 impl Ledger {
@@ -70,7 +69,7 @@ impl Ledger {
     // -------------------------------------------------------------------------
 
     /// Full instance populated from the global state registry, with networking.
-    pub fn new(name: &str, network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>) -> Self {
+    pub fn new(name: &str, network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>, network: CurioNetwork) -> Self {
         let constructors = get_global_state_constructor_all();
 
         let max_id = constructors.iter().map(|(id, _)| *id).max().unwrap_or(-1);
@@ -86,9 +85,9 @@ impl Ledger {
             all_instance_id,
             entries,
             network_capabilities: Some(NetworkCapabilities::new(network_mode)),
+            network,
         };
 
-        ledger.log(Severity::Info, "Created!");
         ledger
     }
 
@@ -109,6 +108,7 @@ impl Ledger {
             all_instance_id: vec![-1],
             entries,
             network_capabilities: None,
+            network: CurioNetwork::new(Vec::new(), 0),
         };
 
         ledger.log(Severity::Info, "Created (single instance)!");
@@ -120,7 +120,7 @@ impl Ledger {
     // -------------------------------------------------------------------------
 
     pub fn log(&self, severity: Severity, contents: &str) {
-        log(severity, &format!("[{}]: {}", self.instance_id, contents));
+        log(self.instance_id, severity, &format!("[{}~{}]: {}", self.network_capabilities.clone().unwrap().privilege, self.instance_id, contents));
     }
 
     // -------------------------------------------------------------------------
@@ -188,7 +188,7 @@ impl Ledger {
 
         if let Some(net) = &self.network_capabilities {
             if !net.has_write_privilege(ownership.clone()) {
-                eprintln!("[{}] write: no write permission for '{}'", instance_id, type_name::<TRecord>());
+                self.log(Severity::Warning, &format!("[{}] write: no write permission for '{}'", instance_id, type_name::<TRecord>()));
                 return;
             }
         }

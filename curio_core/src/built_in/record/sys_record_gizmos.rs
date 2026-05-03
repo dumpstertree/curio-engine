@@ -1,9 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::{
-    system::{record_id::RecordId, system_game_state::RecordCommon},
-    Gizmo,
-};
+use crate::{system::record_id::RecordId, Gizmo, RecordCommon};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 

@@ -1,4 +1,4 @@
-use curio_core::{collections::state_ownerships::StateOwnerships, system::system_game_state::RecordCommon};
+use curio_core::StateOwnerships;
 use record_serializable::record_serializable;
 
 use crate::state::state_teams::Teams;

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::{collections::event_queue::EventScope, Vector3};
+use crate::Vector3;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -27,30 +27,6 @@ pub enum EngineCommands {
     //
     SetHost(),
     SetPeer(),
-}
-
-impl EngineCommands {
-    fn ownership(&self) -> EventScope {
-        EventScope::Instance
-    }
-
-    fn id(&self) -> i32 {
-        match self {
-            EngineCommands::Redraw => 0,
-            EngineCommands::Tick => 1,
-            EngineCommands::Exit => 2,
-            EngineCommands::Resize(_vector3) => 3,
-            EngineCommands::Fullscreen(_) => 4,
-            EngineCommands::Resizable(_) => 5,
-            EngineCommands::Cursor(_) => 6,
-            EngineCommands::SetDebugMode(_) => 7,
-            EngineCommands::SetPauseMode(_) => 8,
-            EngineCommands::SetNumInputs(_) => 9,
-            EngineCommands::SetNumScreens(_) => 10,
-            EngineCommands::SetHost() => 11,
-            EngineCommands::SetPeer() => 12,
-        }
-    }
 }
 
 impl Display for EngineCommands {

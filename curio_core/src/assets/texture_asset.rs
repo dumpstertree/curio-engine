@@ -26,7 +26,7 @@ impl TextureAsset {
             depth_or_array_layers: 1,
         };
 
-        println!("create depth with size {}, {}", config.width.max(1), config.height.max(1));
+        // println!("create depth with size {}, {}", config.width.max(1), config.height.max(1));
         let desc = egui_wgpu::wgpu::TextureDescriptor {
             label: Some(label),
             mip_level_count: 1,

@@ -56,7 +56,6 @@ impl UICommon for UIPanelInstance {
     }
 
     fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
-        println!("try dismiss!");
         self.go_desc.clone().unwrap().destroy();
         for x in &self.go_opts {
             x.destroy();

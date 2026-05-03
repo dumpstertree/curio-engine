@@ -2,7 +2,8 @@ use std::sync::OnceLock;
 
 use crate::{
     input::{input_snapshot_mapped::PlayerInputSnapshot, input_snapshot_raw::RawInputSnapshot},
-    system::{record_id::RecordId, system_game_state::RecordCommon},
+    system::record_id::RecordId,
+    RecordCommon,
 };
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();

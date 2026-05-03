@@ -1,10 +1,11 @@
-use crate::system::system_game_state::RecordCommon;
 use serde::{de::DeserializeOwned, Serialize};
 use std::any::Any;
 use std::{
     collections::HashMap,
     sync::{Arc, LazyLock, RwLock},
 };
+
+use crate::{Application, RecordCommon};
 
 // `CreateFn` returns a boxed concrete type.
 // The closure captures `T` so Box<dyn RecordCommon> retains the correct TypeId
@@ -89,12 +90,15 @@ pub fn get_global_state_constructor(id: &i32) -> Option<CreateFn> {
 }
 
 pub fn get_global_state_deserializer(id: &i32) -> Option<DeserializerFn> {
-    REGISTRY
+    let x = REGISTRY
         .read()
         .expect("Registry poisoned")
         .deserializers
         .get(id)
-        .copied()
+        .copied();
+
+    Application::log(crate::Severity::Warning, &format!("Failed: {}", id));
+    x
 }
 
 pub fn get_global_state_serializer(id: &i32) -> Option<SerializerFn> {

@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    collections::state_ownerships::StateOwnerships,
     static_data::global_states::{get_global_state_deserializer, get_global_state_serializer},
-    system::system_game_state::RecordCommon,
+    RecordCommon, StateOwnerships,
 };
 
 // The "erased" event you actually store in Vec

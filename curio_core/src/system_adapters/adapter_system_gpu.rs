@@ -214,7 +214,7 @@ impl SystemGPU {
                 panic!("Failed to lock GPU Instance");
             };
 
-            println!("{:#?}", gpu_instance.adapter.get_info());
+            // println!("{:#?}", gpu_instance.adapter.get_info());
 
             //
             guard.surface = Some(gpu_instance.surface.clone());
