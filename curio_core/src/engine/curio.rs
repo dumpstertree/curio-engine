@@ -3,15 +3,11 @@ use crate::{
     collections::{event_queue::EventQueue, game_mode::GameMode, ledger::Ledger},
     engine::curio_common::CurioCommon,
     input::{axis_code::AxisCode, key_code::ButtonCode, key_state::KeyState},
-    network_capabilities::NetworkCapabilities,
-    network_modes::{self, NetworkModes},
+    network_modes::NetworkModes,
     random::Random,
-    static_data::{
-        global_events::{get_global_event_constructor, get_global_event_constructor_all},
-        global_states::{get_global_state_constructor, get_global_state_constructor_all},
-    },
+    static_data::{global_events::get_global_event_constructor_all, global_states::get_global_state_constructor_all},
     system::system_component::SystemComponent,
-    Application, Severity, StateOwnerships, Vector3,
+    Application, Severity, Vector3,
 };
 
 /// An object that will be imbued with the logic of your application.
@@ -28,10 +24,10 @@ pub struct Curio {
 impl Curio {
     /// Create a curio and imbue it with logic
     pub fn imbue(plugins: Vec<Box<dyn SystemComponent>>, game_mode: GameMode) -> Curio {
+        // log
         Application::log(Severity::Info, "Imbuing Curio...");
 
         // create empty vecs with capacities based on number of game modes
-        let mut ids = Vec::with_capacity(game_mode.game_instances.len());
         let mut all_ledgers = Vec::with_capacity(game_mode.game_instances.len());
         let mut all_nerves: Vec<EventQueue> = Vec::with_capacity(game_mode.game_instances.len());
 
@@ -40,20 +36,19 @@ impl Curio {
         Curio::log_nerve();
 
         // // populate all ids
-        let mut insts = Vec::new();
-        for _ in &game_mode.game_instances {
-            ids.push(Random::range_int(-999, 999));
-            let curio_inst = CurioNetworkInstance::new(Random::range_int(-999, 999), NetworkModes::LocalHost);
-            insts.push(curio_inst);
-        }
+        let network_instances: Vec<_> = game_mode
+            .game_instances
+            .iter()
+            .map(|inst| CurioNetworkInstance::new(Random::guid(6), inst.network_mode))
+            .collect();
 
         // populate all ledgers and nerves
         for i in 0..game_mode.game_instances.len() {
             //create the network
-            let network = CurioNetwork::new(insts.clone(), i);
+            let network = CurioNetwork::new(network_instances.clone(), i);
 
             // create all ledgers
-            all_ledgers.push(Ledger::new(&format!("ledger__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode, ids[i], ids.clone(), network));
+            all_ledgers.push(Ledger::new(network));
 
             // create all nerves
             all_nerves.push(EventQueue::new(&format!("event_queue__{}", game_mode.game_instances[i].name), game_mode.game_instances[i].network_mode));

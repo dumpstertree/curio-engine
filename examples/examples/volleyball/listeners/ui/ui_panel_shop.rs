@@ -126,7 +126,7 @@ impl UICommon for UIPanelInstance {
                     let stock = &state_shop.shop.stock;
 
                     if let Some(s) = stock.get(self.selected_index as usize) {
-                        event_queue.enqueue_event(GameEvents::RequestPurchase(ledger.instance_id, s.instance_id));
+                        event_queue.enqueue_event(GameEvents::RequestPurchase(ledger.network.me().guid, s.instance_id));
                     }
                 }
                 is_dirty = true;

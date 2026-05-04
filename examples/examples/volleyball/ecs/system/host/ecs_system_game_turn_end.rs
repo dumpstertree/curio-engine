@@ -31,7 +31,7 @@ impl Impulse<GameEvents> for ECsystemGameEndTurn {
         match event {
             GameEvents::TurnEnd(team) => {
                 // end this turn
-                println!("Instance: {}. End Turn {}", ledger.instance_id, team);
+                println!("Instance: {}. End Turn {}", ledger.network.me().guid, team);
 
                 let state_position_ball = ledger.read::<StatePositionBall>();
 

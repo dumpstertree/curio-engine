@@ -30,7 +30,6 @@ impl Impulse<GameEvents> for ECsystemGameRequestManuever {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event
-                println!("----------------------------use manuever!!! for {} with id {}", ledger.name, id);
 
                 if !ECsystemGameRequestManuever::check_player_id(ledger, *id) {
                     println!("mismatch player id");
@@ -62,7 +61,6 @@ impl Impulse<GameEvents> for ECsystemGameRequestManuever {
 
                 // play
                 ECsystemGameRequestManuever::try_play_card(ledger, event_queue, card_instance, data, id);
-                println!("-----------------------------------did use manuever!!! for {} with id {}", ledger.name, id);
             }
             GameEvents::RequestUseManeuverConsumable(id, card_instance, data) => {
                 // make sure the correct player is sending an event
@@ -93,7 +91,6 @@ impl Impulse<GameEvents> for ECsystemGameRequestManuever {
                     println!("card not found in deck");
                     return;
                 };
-                println!("-----------------------------------did use manuever!!! for {}", ledger.name);
 
                 let card_instance = deck.get_instance(*card_instance);
                 // play

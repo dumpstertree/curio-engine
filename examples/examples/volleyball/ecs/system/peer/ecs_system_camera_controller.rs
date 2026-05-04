@@ -38,7 +38,7 @@ impl Habit for Instance {
         let state_pos_ball = ledger.read::<StatePositionBall>();
         let state_pos_entity = ledger.read::<StatePositionEntities>();
         let state_turn = ledger.read::<StateTurn>();
-        let Some(tile_player) = state_pos_entity.positions.get(&ledger.instance_id) else {
+        let Some(tile_player) = state_pos_entity.positions.get(&ledger.network.me().guid) else {
             return;
         };
         let pos_ball = GameBoard::get_world_position(state_pos_ball.column, state_pos_ball.row);

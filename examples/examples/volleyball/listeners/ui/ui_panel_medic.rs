@@ -90,7 +90,7 @@ impl UICommon for UIPanelMedic {
                 .went_up
             {
                 if self.selected_index == 0 {
-                    event_queue.enqueue_event(GameEvents::RequestHeal(ledger.instance_id));
+                    event_queue.enqueue_event(GameEvents::RequestHeal(ledger.network.me().guid));
                 }
                 if self.selected_index == 1 {
                     event_queue.enqueue_event(GameEvents::RequestLeaveExplorationRoom);

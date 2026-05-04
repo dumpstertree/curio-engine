@@ -51,7 +51,7 @@ impl UICommon for UIHUD {
     fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
         // get cur turn
         let cur_heat = ledger.read::<StateHeat>().all_players.clone();
-        let heat = cur_heat.get(&ledger.instance_id).unwrap().clone();
+        let heat = cur_heat.get(&ledger.network.me().guid).unwrap().clone();
 
         if let Some(ui) = &self.f_ui {
             ui.try_edit_facet_in_child::<Transform2D>("marker", |x| {

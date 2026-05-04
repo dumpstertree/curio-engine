@@ -34,7 +34,7 @@ impl Impulse<GameEvents> for ECsystemGameTurnBegin {
         match event {
             GameEvents::TurnBegin(id) => {
                 // end this turn
-                println!("Instance: {}. Begin Turn {}", ledger.instance_id, id);
+                println!("Instance: {}. Begin Turn {}", ledger.network.me().guid, id);
 
                 ledger.write::<StateTurn>(|x| {
                     x.active_instance_id = *id;

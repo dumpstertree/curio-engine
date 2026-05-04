@@ -29,7 +29,7 @@ impl Scope for Instance {
         // ledger.get::<StateTurn>().active_instance_id
         //     == ledger
         //         .get::<StateTeamAssignments>()
-        //         .team_for(&ledger.instance_id)
+        //         .team_for(&ledger.network.me().guid)
         //         .unwrap()
     }
 }
@@ -50,6 +50,6 @@ impl Habit for Instance {
         }
 
         // send event to end turn
-        events.enqueue_event(GameEvents::RequestTurnEnd(ledger.instance_id));
+        events.enqueue_event(GameEvents::RequestTurnEnd(ledger.network.me().guid));
     }
 }

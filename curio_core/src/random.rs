@@ -4,6 +4,14 @@ use crate::Vector3;
 
 pub struct Random {}
 impl Random {
+    pub fn guid(len: usize) -> i32 {
+        // rand::rng()
+        //     .sample_iter(&rand::distr::Alphanumeric)
+        //     .take(len)
+        //     .map(char::from)
+        //     .collect()
+        Self::range_int(0, 999999)
+    }
     pub fn range_u8(a_inclusive: u8, b_inclusive: u8) -> u8 {
         if a_inclusive == b_inclusive {
             return a_inclusive;

@@ -108,7 +108,7 @@ impl Habit for Instance {
                 }
             }
         }
-        // let is_turn = d == ledger.instance_id;
+        // let is_turn = d == ledger.network.me().guid;
         if do_move && any_ai && ledger.read::<SysRecordTime>().scaled_time - self.lastmove > self.move_time {
             let simulator = AISimulator::new(Box::new(CustomDelegate {}), Box::new(CustomDataSource {}), Box::new(CustomHasher {}), Box::new(CustomEvaluator {}), |ledger| {
                 Ledger::new_single_instance(vec![

@@ -333,7 +333,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                 continue;
             };
             if network_capabilities.privilege == NetworkModes::LocalPeer || network_capabilities.privilege == NetworkModes::OnlinePeer {
-                v.push(x.instance_id);
+                v.push(x.network.me().guid);
             }
         }
         for gs in ledger.iter_mut() {

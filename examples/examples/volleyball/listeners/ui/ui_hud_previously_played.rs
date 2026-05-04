@@ -82,7 +82,7 @@ impl UICommon for UIHUD {
             return;
         };
 
-        if state_play_history.history.last().unwrap().0 == ledger.instance_id {
+        if state_play_history.history.last().unwrap().0 == ledger.network.me().guid {
             return;
         };
 
@@ -127,7 +127,7 @@ impl UIHUD {
             x.set_contents(&format!("{}", card_inst.get_title()));
         });
         f_card.try_edit_facet_in_child::<RendererText>("cost", |x| {
-            x.set_contents(&format!("{}", card_inst.get_cost(ledger, ledger.instance_id)));
+            x.set_contents(&format!("{}", card_inst.get_cost(ledger, ledger.network.me().guid)));
         });
 
         f_card.try_edit_facet_in_child::<RendererStatic>("background", |renderer: &mut RendererStatic| {

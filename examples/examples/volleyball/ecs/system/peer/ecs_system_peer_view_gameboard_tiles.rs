@@ -53,7 +53,7 @@ impl Habit for Instance {
         }
         world.edit::<(&mut Transform3D, &ComponentGameBoardTile, &mut RendererStatic)>(|query| {
             for (_, (transform, gameboard_tile, renderer)) in query {
-                let Some(deck) = state_deck.deck.get(&ledger.instance_id) else {
+                let Some(deck) = state_deck.deck.get(&ledger.network.me().guid) else {
                     return;
                 };
 
@@ -66,14 +66,17 @@ impl Habit for Instance {
                 };
                 let team = ledger
                     .read::<StateTeamAssignments>()
-                    .team_for(&ledger.instance_id)
+                    .team_for(&ledger.network.me().guid)
                     .unwrap();
-                let pos_entity = state_entity_pos.positions.get(&ledger.instance_id).unwrap();
+                let pos_entity = state_entity_pos
+                    .positions
+                    .get(&ledger.network.me().guid)
+                    .unwrap();
                 let pos_ball = ledger.read::<StatePositionBall>();
-                let events = selected.get_attributes_events(ledger, ledger.instance_id);
+                let events = selected.get_attributes_events(ledger, ledger.network.me().guid);
                 let mut targets = Vec::new();
                 let state_attribute_stack = ledger.read::<StateCardAttributeModifierStack>();
-                let s0 = state_attribute_stack.get_flat_stack_for_entity(ledger.instance_id);
+                let s0 = state_attribute_stack.get_flat_stack_for_entity(ledger.network.me().guid);
                 // let s1 = state_attribute_stack.get_flat_stack_for_card(selected.instance_id);
                 // let stack = s0.;
 

@@ -45,7 +45,7 @@ impl Habit for Instance {
         match mode {
             SelectStates::Enabled(target, _working_state) => {
                 let state_team = ledger.read::<StateTeamAssignments>();
-                let team = state_team.team_for(&ledger.instance_id).unwrap();
+                let team = state_team.team_for(&ledger.network.me().guid).unwrap();
                 let mut all_targets = self.get_all_tiles(ledger, *target);
 
                 if all_targets.len() == 0 {
@@ -263,7 +263,7 @@ impl Instance {
     fn get_all_tiles(&self, ledger: &Ledger, target_type: AttributeTargetTypesTiles) -> Vec<Vector2Int> {
         match target_type {
             AttributeTargetTypesTiles::SelectOpponentBackCorner => {
-                let user_uid = ledger.instance_id;
+                let user_uid = ledger.network.me().guid;
                 let team = ledger
                     .read::<StateTeamAssignments>()
                     .team_for(&user_uid)
@@ -273,7 +273,7 @@ impl Instance {
 
             AttributeTargetTypesTiles::SelectInRangeLocalToBall(min, max) => {
                 let pos_ball = ledger.read::<StatePositionBall>();
-                let user_uid = ledger.instance_id;
+                let user_uid = ledger.network.me().guid;
                 let team = ledger
                     .read::<StateTeamAssignments>()
                     .team_for(&user_uid)
@@ -292,7 +292,7 @@ impl Instance {
             }
             AttributeTargetTypesTiles::SelectAny => GameBoard::get_tiles(),
             AttributeTargetTypesTiles::SelectOnTeamUser => {
-                let user_uid = ledger.instance_id;
+                let user_uid = ledger.network.me().guid;
                 let team = ledger.read::<StateTeamAssignments>().team_for(&user_uid);
                 if let Some(team) = team {
                     return GameBoard::get_tiles_for_team(&team);
@@ -301,7 +301,7 @@ impl Instance {
                 return Vec::new();
             }
             AttributeTargetTypesTiles::SelectOnTeamOpponent => {
-                let user_uid = ledger.instance_id;
+                let user_uid = ledger.network.me().guid;
                 let team = ledger.read::<StateTeamAssignments>().team_for(&user_uid);
                 if let Some(team) = team {
                     return GameBoard::get_tiles_for_team(&team.next_team());

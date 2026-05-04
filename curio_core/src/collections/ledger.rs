@@ -52,7 +52,7 @@ impl Clone for Entry {
 
 #[derive(Clone)]
 pub struct Ledger {
-    pub name: String,
+    // pub name: String,
     // pub instance_id: i32,
     // pub all_instance_id: Vec<i32>,
     /// Direct-indexed by sequential state ID. `None` means that slot is
@@ -69,7 +69,7 @@ impl Ledger {
     // -------------------------------------------------------------------------
 
     /// Full instance populated from the global state registry, with networking.
-    pub fn new(name: &str, network_mode: NetworkModes, instance_id: i32, all_instance_id: Vec<i32>, network: CurioNetwork) -> Self {
+    pub fn new(network: CurioNetwork) -> Self {
         let constructors = get_global_state_constructor_all();
 
         let max_id = constructors.iter().map(|(id, _)| *id).max().unwrap_or(-1);
@@ -80,11 +80,10 @@ impl Ledger {
         }
 
         let ledger = Ledger {
-            name: name.to_string(),
-            instance_id,
-            all_instance_id,
+            // instance_id,
+            // all_instance_id,
             entries,
-            network_capabilities: Some(NetworkCapabilities::new(network_mode)),
+            network_capabilities: Some(NetworkCapabilities::new(network.me().mode)),
             network,
         };
 
@@ -103,9 +102,9 @@ impl Ledger {
         }
 
         let ledger = Ledger {
-            name: String::from(""),
-            instance_id: -1,
-            all_instance_id: vec![-1],
+            // name: String::from(""),
+            // instance_id: -1,
+            // all_instance_id: vec![-1],
             entries,
             network_capabilities: None,
             network: CurioNetwork::new(Vec::new(), 0),
@@ -120,7 +119,7 @@ impl Ledger {
     // -------------------------------------------------------------------------
 
     pub fn log(&self, severity: Severity, contents: &str) {
-        log(self.instance_id, severity, &format!("[{}~{}]: {}", self.network_capabilities.clone().unwrap().privilege, self.instance_id, contents));
+        log(self.network.me().guid, severity, &format!("[{}~{}]: {}", self.network_capabilities.clone().unwrap().privilege, self.network.me().guid, contents));
     }
 
     // -------------------------------------------------------------------------
@@ -144,7 +143,7 @@ impl Ledger {
         self.entries
             .get(id as usize)
             .and_then(|slot| slot.as_ref())
-            .unwrap_or_else(|| panic!("[{}] type '{}' is not registered (id {})", self.instance_id, type_str, id))
+            .unwrap_or_else(|| panic!("[{}] type '{}' is not registered (id {})", self.network.me().guid, type_str, id))
     }
 
     #[inline]
@@ -172,7 +171,7 @@ impl Ledger {
 
         Rc::clone(&entry.read)
             .downcast_rc::<TRecord>()
-            .unwrap_or_else(|_| panic!("[{}] read: downcast failed for '{}' — this should never happen", self.instance_id, type_name::<TRecord>()))
+            .unwrap_or_else(|_| panic!("[{}] read: downcast failed for '{}' — this should never happen", self.network.me().guid, type_name::<TRecord>()))
     }
 
     /// Mutate `TRecord` via `edit_fn`, then immediately publish a new read snapshot.
@@ -184,7 +183,7 @@ impl Ledger {
     {
         let id = TRecord::id();
         let ownership = TRecord::ownership();
-        let instance_id = self.instance_id;
+        let instance_id = self.network.me().guid;
 
         if let Some(net) = &self.network_capabilities {
             if !net.has_write_privilege(ownership.clone()) {
@@ -241,10 +240,10 @@ impl Ledger {
                     entry.write = value;
                     entry.sync_read();
                 } else {
-                    eprintln!("[{}] try_apply_network_sync_events: no entry for id {}", self.instance_id, evnt.id);
+                    eprintln!("[{}] try_apply_network_sync_events: no entry for id {}", self.network.me().guid, evnt.id);
                 }
             } else {
-                eprintln!("[{}] try_apply_network_sync_events: deserialize failed for id {}", self.instance_id, evnt.id);
+                eprintln!("[{}] try_apply_network_sync_events: deserialize failed for id {}", self.network.me().guid, evnt.id);
             }
         }
     }

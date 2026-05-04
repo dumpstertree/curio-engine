@@ -53,13 +53,13 @@ impl Habit for Instance {
         }
 
         let state_team = ledger.read::<StateTeamAssignments>();
-        let Some(team) = state_team.team_for(&ledger.instance_id) else {
+        let Some(team) = state_team.team_for(&ledger.network.me().guid) else {
             return;
         };
         let state_position_player = ledger.read::<StatePositionEntities>();
         let pos = state_position_player
             .positions
-            .get(&ledger.instance_id)
+            .get(&ledger.network.me().guid)
             .unwrap();
         // get states
         let state_input = ledger.read::<SysRecordInput>();
@@ -81,19 +81,19 @@ impl Habit for Instance {
         // if any movement detected
         if move_forward || move_back || move_left || move_right {
             if move_forward && GameBoard::can_move(&team, pos, crate::game_board::Directions::Forward) {
-                event_queue.enqueue_event(GameEvents::RequestMoveZPos(ledger.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveZPos(ledger.network.me().guid));
             }
 
             if move_back && GameBoard::can_move(&team, pos, crate::game_board::Directions::Back) {
-                event_queue.enqueue_event(GameEvents::RequestMoveZNeg(ledger.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveZNeg(ledger.network.me().guid));
             }
 
             if move_left && GameBoard::can_move(&team, pos, crate::game_board::Directions::Left) {
-                event_queue.enqueue_event(GameEvents::RequestMoveXNeg(ledger.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveXNeg(ledger.network.me().guid));
             }
 
             if move_right && GameBoard::can_move(&team, pos, crate::game_board::Directions::Right) {
-                event_queue.enqueue_event(GameEvents::RequestMoveXPos(ledger.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestMoveXPos(ledger.network.me().guid));
             }
         }
     }

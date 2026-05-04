@@ -53,7 +53,7 @@ impl Habit for Instance {
         // fn tick(&mut self, ledger: &mut GameState, world: &mut WorldContext, _: &mut EventQueue) {
         let Some(team) = ledger
             .read::<StateTeamAssignments>()
-            .team_for(&ledger.instance_id)
+            .team_for(&ledger.network.me().guid)
         else {
             ledger.log(Severity::Info, "Spawned Fallback Camera");
             world.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabCamera.into()));

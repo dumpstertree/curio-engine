@@ -57,7 +57,7 @@ impl UICommon for UIHUDInstance {
         let state_deck = ledger.read::<StateDeck>();
 
         // get deck
-        let Some(deck) = state_deck.deck.get(&ledger.instance_id) else {
+        let Some(deck) = state_deck.deck.get(&ledger.network.me().guid) else {
             return;
         };
 
@@ -75,7 +75,7 @@ impl UICommon for UIHUDInstance {
     fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
         // get the state
         let state_cards = ledger.read::<StateDeck>();
-        let Some(deck) = state_cards.deck.get(&ledger.instance_id) else {
+        let Some(deck) = state_cards.deck.get(&ledger.network.me().guid) else {
             return;
         };
 
@@ -139,7 +139,7 @@ impl UICommon for UIHUDInstance {
                     // edit background color
                     form_card.try_edit_facet_in_child::<RendererStatic>("background", |renderer: &mut RendererStatic| {
                         // check if can use order to change visual
-                        let req_met = card_inst.has_statement(ledger, ledger.instance_id);
+                        let req_met = card_inst.has_statement(ledger, ledger.network.me().guid);
 
                         // match to manuever type
                         match &card_inst.clone().get_manuever_type() {
@@ -238,7 +238,7 @@ impl UIHUDInstance {
             x.set_contents(&format!("{}", card_inst.get_title()));
         });
         f_card.try_edit_facet_in_child::<RendererText>("cost", |x| {
-            x.set_contents(&format!("{}", card_inst.get_cost(ledger, ledger.instance_id)));
+            x.set_contents(&format!("{}", card_inst.get_cost(ledger, ledger.network.me().guid)));
         });
 
         // edit component on self

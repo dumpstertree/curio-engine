@@ -33,11 +33,11 @@ pub struct ResponseBuilder {
 impl ResponseBuilder {
     pub fn new(ledger: &Ledger, card: Arc<CardInstance>) -> ResponseBuilder {
         let mut mod_builders = Vec::new();
-        for x in card.get_attributes_modifiers(ledger, ledger.instance_id) {
+        for x in card.get_attributes_modifiers(ledger, ledger.network.me().guid) {
             mod_builders.push(AttributeBuilder::new(x.get_data_dependencies_empty()));
         }
         let mut event_builders = Vec::new();
-        for x in card.get_attributes_events(ledger, ledger.instance_id) {
+        for x in card.get_attributes_events(ledger, ledger.network.me().guid) {
             event_builders.push(AttributeBuilder::new(x.get_data_dependencies_empty()));
         }
         ResponseBuilder {
@@ -48,7 +48,7 @@ impl ResponseBuilder {
     }
     pub fn update(&mut self, ledger: &mut Ledger) -> bool {
         // the get the id of the user from the gamestate - possible change to pass in
-        let user_id = ledger.instance_id;
+        let user_id = ledger.network.me().guid;
 
         // iterate over each modifier
         for x in self.mods.iter_mut() {
@@ -209,7 +209,7 @@ impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
         let team = ledger
             .read::<StateTeamAssignments>()
-            .team_for(&ledger.instance_id);
+            .team_for(&ledger.network.me().guid);
         let Some(team) = team else {
             return;
         };
@@ -239,11 +239,11 @@ impl Habit for Instance {
                 .went_up;
 
             let state_team = ledger.read::<StateTeamAssignments>();
-            let Some(_) = state_team.team_for(&ledger.instance_id) else {
+            let Some(_) = state_team.team_for(&ledger.network.me().guid) else {
                 return;
             };
             // my deck
-            let my_deck = &state_deck.deck[&ledger.instance_id];
+            let my_deck = &state_deck.deck[&ledger.network.me().guid];
             let my_cards_in_hand = my_deck.get_cards_from_hand(|x| x.get_manuever_type() != CardTypes::Move);
 
             // new bounds for looping
@@ -262,7 +262,7 @@ impl Habit for Instance {
                     return;
                 }
 
-                event_queue.enqueue_event(GameEvents::RequestBurnCard(ledger.instance_id, card.instance_id));
+                event_queue.enqueue_event(GameEvents::RequestBurnCard(ledger.network.me().guid, card.instance_id));
 
                 println!("card burned");
             }
@@ -303,7 +303,7 @@ impl Habit for Instance {
                     let x = card_response.1.clone();
                     println!("sending {}", x.event.len());
                     // finished building run event
-                    event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(ledger.instance_id, card_response.0.instance_id, card_response.1));
+                    event_queue.enqueue_event(GameEvents::RequestUseManeuverConsumable(ledger.network.me().guid, card_response.0.instance_id, card_response.1));
                     // mark as finalized
                     did_finalize = true;
                 }

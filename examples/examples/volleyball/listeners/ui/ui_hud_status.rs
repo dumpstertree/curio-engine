@@ -53,7 +53,7 @@ impl UICommon for UIHUD {
         let state_health = ledger.read::<StateHealthExploration>();
         if let Some(x) = &self.go_health {
             x.edit_facet::<RendererText>(|y| {
-                y.set_contents(&format!("{} of {} Health ", state_health.all.get(&ledger.instance_id).unwrap().0, state_health.all.get(&ledger.instance_id).unwrap().1));
+                y.set_contents(&format!("{} of {} Health ", state_health.all.get(&ledger.network.me().guid).unwrap().0, state_health.all.get(&ledger.network.me().guid).unwrap().1));
             });
         }
 
@@ -64,7 +64,7 @@ impl UICommon for UIHUD {
                     "{} Cards",
                     state_deck_exploration
                         .deck
-                        .get(&ledger.instance_id)
+                        .get(&ledger.network.me().guid)
                         .unwrap()
                         .all_cards
                         .len()
