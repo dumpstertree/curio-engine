@@ -5,7 +5,7 @@ use crate::{
 };
 use curio_core::{
     Vector3,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -27,7 +27,7 @@ impl Scope for ECsystemGameRequestManuever {
     }
 }
 impl Impulse<GameEvents> for ECsystemGameRequestManuever {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::PlayCard(id, card_instance, data) => {
                 // creates an event runner to all the events on

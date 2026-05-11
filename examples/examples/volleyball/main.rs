@@ -219,7 +219,7 @@ pub mod impulse {
 use curio_core::{
     ButtonCode, InputMapping,
     collections::{curio_metadata::CurioMetadata, game_mode::GameMode, version_number::VersionNumber, window_layout::WindowLayout},
-    engine::{curio::Curio, curio_cabinet::CurioCabinet},
+    engine::curio::{Curio, load_curio},
     io::{
         asset_cache::AssetCache,
         asset_database::{AssetDatabase, AssetDatabaseListing},
@@ -234,7 +234,7 @@ use input::SystemComponentDefaultInput;
 use networking::SystemComponentDefaultNetworking;
 use rendering::SystemComponentDefaultGraphics;
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::{fmt::Display, path::Path};
 use strum::{AsRefStr, EnumString};
 use time::SystemComponentDefaultTime;
 #[repr(u16)]
@@ -285,172 +285,205 @@ impl Into<String> for Assets {
     }
 }
 fn main() {
-    AssetLoader::set_cache(
-        // set the max num of objects to keep in memory
-        AssetCache::new(100),
-    );
-    AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
-        // remote100
-        (
-            Assets::Goblin.into(),
-            Assets::Goblin.into(),
-            AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/z-P4xIan")),
-        ),
-        (
-            Assets::EnergyToken.into(),
-            Assets::EnergyToken.into(),
-            AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu")),
-        ),
-        (
-            Assets::CharCrab.into(), //
-            Assets::CharCrab.into(),
-            AssetDatabaseListing::Local(String::from("mesh/char_crab.asset")),
-        ),
-        (
-            Assets::CharGrunt.into(), //
-            Assets::CharGrunt.into(),
-            AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset")),
-        ),
-        (
-            Assets::GameBoardTileActive.into(),
-            Assets::GameBoardTileActive.into(), //
-            AssetDatabaseListing::Local(String::from("mesh/gameboard_tile_available.glb")),
-        ),
-        // local
-        (
-            Assets::Court.into(),
-            Assets::Court.into(), //
-            AssetDatabaseListing::Local(String::from("mesh/court.glb")),
-        ),
-        (
-            Assets::Card.into(),
-            Assets::Card.into(), //
-            AssetDatabaseListing::Local(String::from("mesh/card_empty.glb")),
-        ),
-        (
-            Assets::Ball.into(),
-            Assets::Ball.into(), //
-            AssetDatabaseListing::Local(String::from("mesh/ball.glb")),
-        ),
-        (
-            Assets::Ball.into(),
-            Assets::Ball.into(), //
-            AssetDatabaseListing::Local(String::from("mesh/ball.glb")),
-        ),
-        (
-            Assets::PrefabCamera.into(),
-            Assets::PrefabCamera.into(), //
-            AssetDatabaseListing::Local(String::from("prefabs/camera.yaml")),
-        ),
-        (
-            Assets::PrefabUIPanelShop.into(),
-            Assets::PrefabUIPanelShop.into(), //
-            AssetDatabaseListing::Local(String::from("prefabs/ui_shop.yaml")),
-        ),
-        (
-            Assets::Button.into(),
-            Assets::Button.into(), //
-            AssetDatabaseListing::Local(String::from("prefabs/button.yaml")),
-        ),
-        (
-            Assets::PrefabUICard.into(),
-            Assets::PrefabUICard.into(), //
-            AssetDatabaseListing::Local(String::from("prefabs/ui_card.yaml")),
-        ),
-        (
-            Assets::PrefabUIHeat.into(),
-            Assets::PrefabUIHeat.into(), //
-            AssetDatabaseListing::Local(String::from("prefabs/ui_heat.yaml")),
-        ),
-        (
-            Assets::TextureScoreGuage.into(),
-            Assets::TextureScoreGuage.into(), //
-            AssetDatabaseListing::Local(String::from("texture/score_guage.png")),
-        ),
-        (
-            Assets::TextureHeatGuageMarker.into(),
-            Assets::TextureHeatGuageMarker.into(), //
-            AssetDatabaseListing::Local(String::from("texture/heat_guage_marker.png")),
-        ),
-        (
-            Assets::TextureHeatGuage.into(),
-            Assets::TextureHeatGuage.into(), //
-            AssetDatabaseListing::Local(String::from("texture/heat_guage.png")),
-        ),
-        (
-            Assets::TextureHeatGuageTopper.into(),
-            Assets::TextureHeatGuageTopper.into(), //
-            AssetDatabaseListing::Local(String::from("texture/heat_guage_topper.png")),
-        ),
-        (
-            Assets::TextureHeatGuageFill.into(),
-            Assets::TextureHeatGuageFill.into(), //
-            AssetDatabaseListing::Local(String::from("texture/heat_guage_fill.png")),
-        ),
-        (
-            Assets::TexturePortraitRed.into(),
-            Assets::TexturePortraitRed.into(), //
-            AssetDatabaseListing::Local(String::from("texture/portrait_red.png")),
-        ),
-        (
-            Assets::TexturePortraitBlue.into(),
-            Assets::TexturePortraitBlue.into(), //
-            AssetDatabaseListing::Local(String::from("texture/portrait_blue.png")),
-        ),
-    ]));
-    // create instance
-    CurioCabinet::display_curio(
-        CurioMetadata::new(
-            "Volleyball", //
-            "icon.png",
-            VersionNumber::new(0, 1, 0),
-        ),
-        || {
-            Curio::imbue(
-                vec![
-                    // components
-                    SystemComponentDefaultTime::new(),
-                    SystemComponentDefaultInput::new(),
-                    // SystemComponentDefaultPhysics::new(),
-                    SystemComponentDefaultGameplay::<GameEvents, UIViewTypes>::new(),
-                    SystemComponentDefaultGraphics::new(),
-                    SystemComponentDefaultNetworking::new(),
-                ],
-                GameMode::new_local_single(
-                    InputMapping::new(
-                        vec![
-                            (String::from("card_mode"), ButtonCode::ShiftLeft),
-                            (String::from("move_forward"), ButtonCode::KeyW),
-                            (String::from("move_back"), ButtonCode::KeyS),
-                            (String::from("move_left"), ButtonCode::KeyA),
-                            (String::from("move_right"), ButtonCode::KeyD),
-                            (String::from("turn_end"), ButtonCode::KeyP),
-                            (String::from("card_left"), ButtonCode::KeyA),
-                            (String::from("card_right"), ButtonCode::KeyD),
-                            (String::from("card_submit"), ButtonCode::ArrowUp),
-                            (String::from("card_burn"), ButtonCode::KeyB),
-                        ],
-                        vec![],
-                    ),
-                    // InputMapping::new(
-                    //     vec![
-                    //         (String::from("card_mode"), ButtonCode::ShiftLeft),
-                    //         (String::from("move_forward"), ButtonCode::KeyW),
-                    //         (String::from("move_back"), ButtonCode::KeyS),
-                    //         (String::from("move_left"), ButtonCode::KeyA),
-                    //         (String::from("move_right"), ButtonCode::KeyD),
-                    //         (String::from("turn_end"), ButtonCode::KeyP),
-                    //         (String::from("card_left"), ButtonCode::KeyA),
-                    //         (String::from("card_right"), ButtonCode::KeyD),
-                    //         (String::from("card_submit"), ButtonCode::ArrowUp),
-                    //     ],
-                    //     vec![],
-                    // ),
-                ),
-            )
-        },
-        WindowLayout::fullscreen_1080(),
-    );
+    // AssetLoader::set_cache(
+    //     // set the max num of objects to keep in memory
+    //     AssetCache::new(100),
+    // );
+    // AssetLoader::set_database(AssetDatabase::new_from_explicit(vec![
+    //     // remote100
+    //     (
+    //         Assets::Goblin.into(),
+    //         Assets::Goblin.into(),
+    //         AssetDatabaseListing::RemoteToCache(String::from("downloaded_spine.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/z-P4xIan")),
+    //     ),
+    //     (
+    //         Assets::EnergyToken.into(),
+    //         Assets::EnergyToken.into(),
+    //         AssetDatabaseListing::RemoteToCache(String::from("energy.asset"), String::from("https://drive.dumpstertree.com/api/public/dl/A3DUMAqu")),
+    //     ),
+    //     (
+    //         Assets::CharCrab.into(), //
+    //         Assets::CharCrab.into(),
+    //         AssetDatabaseListing::Local(String::from("mesh/char_crab.asset")),
+    //     ),
+    //     (
+    //         Assets::CharGrunt.into(), //
+    //         Assets::CharGrunt.into(),
+    //         AssetDatabaseListing::Local(String::from("mesh/char_grunt.asset")),
+    //     ),
+    //     (
+    //         Assets::GameBoardTileActive.into(),
+    //         Assets::GameBoardTileActive.into(), //
+    //         AssetDatabaseListing::Local(String::from("mesh/gameboard_tile_available.glb")),
+    //     ),
+    //     // local
+    //     (
+    //         Assets::Court.into(),
+    //         Assets::Court.into(), //
+    //         AssetDatabaseListing::Local(String::from("mesh/court.glb")),
+    //     ),
+    //     (
+    //         Assets::Card.into(),
+    //         Assets::Card.into(), //
+    //         AssetDatabaseListing::Local(String::from("mesh/card_empty.glb")),
+    //     ),
+    //     (
+    //         Assets::Ball.into(),
+    //         Assets::Ball.into(), //
+    //         AssetDatabaseListing::Local(String::from("mesh/ball.glb")),
+    //     ),
+    //     (
+    //         Assets::Ball.into(),
+    //         Assets::Ball.into(), //
+    //         AssetDatabaseListing::Local(String::from("mesh/ball.glb")),
+    //     ),
+    //     (
+    //         Assets::PrefabCamera.into(),
+    //         Assets::PrefabCamera.into(), //
+    //         AssetDatabaseListing::Local(String::from("prefabs/camera.yaml")),
+    //     ),
+    //     (
+    //         Assets::PrefabUIPanelShop.into(),
+    //         Assets::PrefabUIPanelShop.into(), //
+    //         AssetDatabaseListing::Local(String::from("prefabs/ui_shop.yaml")),
+    //     ),
+    //     (
+    //         Assets::Button.into(),
+    //         Assets::Button.into(), //
+    //         AssetDatabaseListing::Local(String::from("prefabs/button.yaml")),
+    //     ),
+    //     (
+    //         Assets::PrefabUICard.into(),
+    //         Assets::PrefabUICard.into(), //
+    //         AssetDatabaseListing::Local(String::from("prefabs/ui_card.yaml")),
+    //     ),
+    //     (
+    //         Assets::PrefabUIHeat.into(),
+    //         Assets::PrefabUIHeat.into(), //
+    //         AssetDatabaseListing::Local(String::from("prefabs/ui_heat.yaml")),
+    //     ),
+    //     (
+    //         Assets::TextureScoreGuage.into(),
+    //         Assets::TextureScoreGuage.into(), //
+    //         AssetDatabaseListing::Local(String::from("texture/score_guage.png")),
+    //     ),
+    //     (
+    //         Assets::TextureHeatGuageMarker.into(),
+    //         Assets::TextureHeatGuageMarker.into(), //
+    //         AssetDatabaseListing::Local(String::from("texture/heat_guage_marker.png")),
+    //     ),
+    //     (
+    //         Assets::TextureHeatGuage.into(),
+    //         Assets::TextureHeatGuage.into(), //
+    //         AssetDatabaseListing::Local(String::from("texture/heat_guage.png")),
+    //     ),
+    //     (
+    //         Assets::TextureHeatGuageTopper.into(),
+    //         Assets::TextureHeatGuageTopper.into(), //
+    //         AssetDatabaseListing::Local(String::from("texture/heat_guage_topper.png")),
+    //     ),
+    //     (
+    //         Assets::TextureHeatGuageFill.into(),
+    //         Assets::TextureHeatGuageFill.into(), //
+    //         AssetDatabaseListing::Local(String::from("texture/heat_guage_fill.png")),
+    //     ),
+    //     (
+    //         Assets::TexturePortraitRed.into(),
+    //         Assets::TexturePortraitRed.into(), //
+    //         AssetDatabaseListing::Local(String::from("texture/portrait_red.png")),
+    //     ),
+    //     (
+    //         Assets::TexturePortraitBlue.into(),
+    //         Assets::TexturePortraitBlue.into(), //
+    //         AssetDatabaseListing::Local(String::from("texture/portrait_blue.png")),
+    //     ),
+    // ]));
+    //     // create instance
+    //     CurioCabinet::display_curio(
+    //         CurioMetadata::new(
+    //             "Volleyball", //
+    //             "icon.png",
+    //             VersionNumber::new(0, 1, 0),
+    //         ),
+    //         || {
+    //             Curio::imbue(
+    //                 vec![
+    //                     // components
+    //                     SystemComponentDefaultTime::new(),
+    //                     SystemComponentDefaultInput::new(),
+    //                     // SystemComponentDefaultPhysics::new(),
+    //                     SystemComponentDefaultGameplay::<GameEvents, UIViewTypes>::new(),
+    //                     SystemComponentDefaultGraphics::new(),
+    //                     SystemComponentDefaultNetworking::new(),
+    //                 ],
+    //                 GameMode::new_local_single(
+    //                     InputMapping::new(
+    //                         vec![
+    //                             (String::from("card_mode"), ButtonCode::ShiftLeft),
+    //                             (String::from("move_forward"), ButtonCode::KeyW),
+    //                             (String::from("move_back"), ButtonCode::KeyS),
+    //                             (String::from("move_left"), ButtonCode::KeyA),
+    //                             (String::from("move_right"), ButtonCode::KeyD),
+    //                             (String::from("turn_end"), ButtonCode::KeyP),
+    //                             (String::from("card_left"), ButtonCode::KeyA),
+    //                             (String::from("card_right"), ButtonCode::KeyD),
+    //                             (String::from("card_submit"), ButtonCode::ArrowUp),
+    //                             (String::from("card_burn"), ButtonCode::KeyB),
+    //                         ],
+    //                         vec![],
+    //                     ),
+    //                     // InputMapping::new(
+    //                     //     vec![
+    //                     //         (String::from("card_mode"), ButtonCode::ShiftLeft),
+    //                     //         (String::from("move_forward"), ButtonCode::KeyW),
+    //                     //         (String::from("move_back"), ButtonCode::KeyS),
+    //                     //         (String::from("move_left"), ButtonCode::KeyA),
+    //                     //         (String::from("move_right"), ButtonCode::KeyD),
+    //                     //         (String::from("turn_end"), ButtonCode::KeyP),
+    //                     //         (String::from("card_left"), ButtonCode::KeyA),
+    //                     //         (String::from("card_right"), ButtonCode::KeyD),
+    //                     //         (String::from("card_submit"), ButtonCode::ArrowUp),
+    //                     //     ],
+    //                     //     vec![],
+    //                     // ),
+    //                 ),
+    //             )
+    //         },
+    //         WindowLayout::fullscreen_1080(),
+    //     );
+
+    // CurioCabinet::put_on_display(|| load_curio(Path::new("./plugins")).curio);
+    // for x in curios {
+    //     println!("loading curio: {}", x.curio.meta.name);
+    // }
+    // return;
+
+    // CurioCabinet::put_on_display(|| {
+    //     Curio::create()
+    //         .set_metadata(CurioMetadata::new("Vollyball", "", VersionNumber::new(0, 1, 0)))
+    //         .add_plugin_path("./plugins")
+    //         .add_plugin(SystemComponentDefaultTime::new())
+    //         .add_plugin(SystemComponentDefaultInput::new())
+    //         .add_plugin(SystemComponentDefaultGraphics::new())
+    //         .add_plugin(SystemComponentDefaultNetworking::new())
+    //         .add_plugin(SystemComponentDefaultGameplay::<GameEvents, UIViewTypes>::new())
+    //         .set_game_mode(GameMode::new_local_single(InputMapping::new(
+    //             vec![
+    //                 (String::from("card_mode"), ButtonCode::ShiftLeft),
+    //                 (String::from("move_forward"), ButtonCode::KeyW),
+    //                 (String::from("move_back"), ButtonCode::KeyS),
+    //                 (String::from("move_left"), ButtonCode::KeyA),
+    //                 (String::from("move_right"), ButtonCode::KeyD),
+    //                 (String::from("turn_end"), ButtonCode::KeyP),
+    //                 (String::from("card_left"), ButtonCode::KeyA),
+    //                 (String::from("card_right"), ButtonCode::KeyD),
+    //                 (String::from("card_submit"), ButtonCode::ArrowUp),
+    //                 (String::from("card_burn"), ButtonCode::KeyB),
+    //             ],
+    //             vec![],
+    //         )))
+    //         .imbue()
+    // });
 }
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]

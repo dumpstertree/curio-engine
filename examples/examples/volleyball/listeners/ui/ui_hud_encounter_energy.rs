@@ -1,7 +1,8 @@
+use animation::assets::model_asset_animated::ModelAssetAnimated;
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, KeyState, Severity, Vector2, Vector3,
-    collections::{event_queue::EventQueue, ledger::Ledger},
-    io::{asset_loader::AssetLoader, model_asset_animated::ModelAssetAnimated},
+    collections::{event_queue::Nerve, ledger::Ledger},
+    io::asset_loader::AssetLoader,
     log,
 };
 use std::collections::HashMap;
@@ -38,7 +39,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, context: &mut Context2D) {
         ledger.log(Severity::Info, "present hud counter");
 
         let asset = AssetLoader::load_asset::<ModelAssetAnimated>(&Assets::EnergyToken.into());
@@ -93,7 +94,7 @@ impl UICommon for UIHUD {
         }
     }
 
-    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {
         for x in &self.go_energy_0 {
             for go in x.1 {
                 go.destroy();
@@ -103,7 +104,7 @@ impl UICommon for UIHUD {
         self.go_energy_0.clear();
     }
 
-    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {
         let state_energy = ledger.read::<StateEnergy>();
 
         for user_uid in state_energy.all_players.clone() {

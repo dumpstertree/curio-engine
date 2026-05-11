@@ -4,7 +4,7 @@ use crate::{
     state::{state_deck::StateDeck, state_energy::StateEnergy, state_teams::StateTeamAssignments, state_turn::StateTurn},
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -26,7 +26,7 @@ impl Scope for ECsystemGameRequestManuever {
     }
 }
 impl Impulse<GameEvents> for ECsystemGameRequestManuever {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::RequestUseManeuverPersistent(id, card_instance, data) => {
                 // make sure the correct player is sending an event
@@ -212,7 +212,7 @@ impl ECsystemGameRequestManuever {
 
         return true;
     }
-    fn try_play_card(ledger: &mut Ledger, event_queue: &mut EventQueue, card_instance: Arc<CardInstance>, data: &FilledCardResponse, id: &i32) {
+    fn try_play_card(ledger: &mut Ledger, event_queue: &mut Nerve, card_instance: Arc<CardInstance>, data: &FilledCardResponse, id: &i32) {
         // let library = CardLibrary::new();
         // let card = &library.get_card(&card_instance.card_id);
 

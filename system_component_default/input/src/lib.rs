@@ -1,5 +1,5 @@
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
-use curio_core::collections::event_queue::EventQueue;
+use curio_core::collections::event_queue::Nerve;
 use curio_core::collections::game_mode::GameMode;
 use curio_core::collections::ledger::Ledger;
 use curio_core::{Application, AxisCode, ButtonCode, InputMapping, KeyState, PlayerInputSnapshot, Severity, Vector2, Vector3};
@@ -33,7 +33,7 @@ impl SystemComponent for SystemComponentDefaultInput {
     fn name(&self) -> String {
         "Input".to_owned()
     }
-    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) {
         let mut cur_state = 0;
         // iterate over each
         for ledger in ledger {

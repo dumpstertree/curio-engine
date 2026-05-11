@@ -1,4 +1,4 @@
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use hecs::World;
 
 use crate::{context_3d::Context3D, traits::scope::Scope};
@@ -9,17 +9,17 @@ pub trait Habit: Scope {
         0
     }
     // init
-    fn init(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
+    fn init(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
 
     // events
-    fn debug(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
+    fn debug(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
 
     // life
-    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
-    fn disable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
+    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
+    fn disable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
 
     // tick
-    fn will_tick(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
-    fn tick(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
-    fn did_tick(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
+    fn will_tick(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
+    fn tick(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
+    fn did_tick(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
 }

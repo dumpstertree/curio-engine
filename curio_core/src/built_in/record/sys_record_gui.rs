@@ -6,7 +6,7 @@ use std::{
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 use crate::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     extensions::extensions_f32::ExtensionsF32,
     system::record_id::RecordId,
     Color, RecordCommon, Vector3,
@@ -43,7 +43,7 @@ impl Hash for LabelDesc {
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub struct ButtonDesc {
     pub contents: String,
-    pub on_click: fn(ledger: &mut Ledger, &mut EventQueue),
+    pub on_click: fn(ledger: &mut Ledger, &mut Nerve),
 }
 
 #[derive(Clone, Hash, PartialEq, Eq)]
@@ -69,7 +69,7 @@ impl GuiElement {
             gui_type: GuiElementTypes::Label(LabelDesc { contents: label, font_size: size, color: color }),
         }
     }
-    pub fn new_text_button(contents: &str, on_click: fn(&mut Ledger, &mut EventQueue)) -> GuiElement {
+    pub fn new_text_button(contents: &str, on_click: fn(&mut Ledger, &mut Nerve)) -> GuiElement {
         GuiElement {
             gui_type: GuiElementTypes::Button(ButtonDesc { contents: contents.to_string(), on_click: on_click }),
         }

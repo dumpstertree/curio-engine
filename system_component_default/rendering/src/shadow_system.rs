@@ -1,3 +1,4 @@
+use curio_core::engine_services::services;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 use curio_core::{DrawCall, Matrix4x4, Vector3, Vertex};
 use std::num::NonZeroU64;
@@ -33,7 +34,8 @@ pub struct ShadowSystem {
 impl ShadowSystem {
     /// Create a shadow system for `num_screens` screens. Each screen will get its own shadow map and uniform buffer.
     pub fn new(initial_light_view_proj: Matrix4x4, num_screens: usize) -> Self {
-        let device = SystemGPU::get_device();
+        let s = services();
+        let device = s.gpu.device();
 
         // -------------------------
         // 4) Layout: matrix only (for shadow-pass pipeline)
@@ -226,7 +228,8 @@ impl ShadowSystem {
     /// Ensure the system has resources for at least `num_screens`.
     /// This will allocate additional per-screen resources if needed using `initial_matrix` as initial contents.
     pub fn ensure_screens(&mut self, num_screens: usize, initial_matrix: Matrix4x4) {
-        let device = SystemGPU::get_device();
+        let s = services();
+        let device = s.gpu.device();
 
         if self.buffers.len() >= num_screens {
             return;
@@ -309,7 +312,8 @@ impl ShadowSystem {
 
     /// Recompute light matrix for a specific screen and write into its buffer.
     pub fn update_for_screen(&mut self, screen_index: usize, direction: &Vector3) {
-        let queue = SystemGPU::get_queue();
+        let s = services();
+        let queue = s.gpu.queue();
 
         if screen_index >= self.buffers.len() {
             // silently ignore or consider logging; here we early return
@@ -334,7 +338,8 @@ impl ShadowSystem {
             return;
         }
 
-        let device = SystemGPU::get_device();
+        let s = services();
+        let device = s.gpu.device();
         let depth_view = &self.depth_views[screen_index];
 
         let mut shadow_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {

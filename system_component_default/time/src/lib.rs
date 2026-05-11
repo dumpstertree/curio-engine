@@ -3,7 +3,7 @@ use std::time::Instant;
 use curio_core::built_in::record::sys_record_debug::SysRecordDebug;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
 use curio_core::built_in::stimulant::engine_commands::EngineCommands;
-use curio_core::collections::event_queue::EventQueue;
+use curio_core::collections::event_queue::Nerve;
 use curio_core::collections::ledger::Ledger;
 use curio_core::system::system_component::SystemComponent;
 
@@ -40,7 +40,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) {
         for ledger in ledger {
             let state_debug = ledger.read::<SysRecordDebug>();
 
@@ -77,7 +77,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn refresh(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
+    fn refresh(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) -> Vec<EngineCommands> {
         // get state
         let state_time = ledger[0].read::<SysRecordTime>();
 

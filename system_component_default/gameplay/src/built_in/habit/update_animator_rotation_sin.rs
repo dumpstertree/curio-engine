@@ -7,7 +7,7 @@ use crate::{
 use curio_core::{
     Quaternion,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -27,7 +27,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, context3d: &mut Context3D, _: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, context3d: &mut Context3D, _: &mut Nerve) {
         // get state
         let state_time = ledger.read::<SysRecordTime>();
         let time = state_time.scaled_time as f32;

@@ -1,7 +1,7 @@
 use curio_core::{
     Severity, StateOwnerships, StateSyncEvent,
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, game_mode::GameMode, ledger::Ledger},
+    collections::{event_queue::Nerve, game_mode::GameMode, ledger::Ledger},
     network_modes::NetworkModes,
     system::system_component::SystemComponent,
 };
@@ -136,8 +136,8 @@ impl SystemComponentDefaultNetworking {
             });
         });
     }
-    fn tick_offline(&mut self, _ledger: &mut Ledger, _: &mut EventQueue) {}
-    fn tick_online_host(&mut self, ledger: &mut Ledger, _: &mut EventQueue) {
+    fn tick_offline(&mut self, _ledger: &mut Ledger, _: &mut Nerve) {}
+    fn tick_online_host(&mut self, ledger: &mut Ledger, _: &mut Nerve) {
         let Ok(guard) = self.endpoints.lock() else {
             println!("couldnot lock");
             return;
@@ -157,7 +157,7 @@ impl SystemComponentDefaultNetworking {
             }
         }
     }
-    fn tick_online_peer(&mut self, ledger: &mut Ledger, _: &mut EventQueue) {
+    fn tick_online_peer(&mut self, ledger: &mut Ledger, _: &mut Nerve) {
         let Ok(mut guard) = self.incoming_events.lock() else {
             println!("couldnot lock");
             return;
@@ -180,7 +180,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             ledger[i].log(Severity::Info, "Init Networking");
         }
     }
-    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {
         // save all pending changes and apply them at the end
         let mut pending_changes: HashMap<usize, Vec<StateSyncEvent>> = HashMap::new();
 

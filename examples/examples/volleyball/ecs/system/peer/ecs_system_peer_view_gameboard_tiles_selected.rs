@@ -5,7 +5,7 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -28,7 +28,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut Nerve) {
         let state_selection = ledger.read::<StatePeerSelectTargets>();
 
         world.edit::<(&mut Transform3D, &ComponentGameBoardSelection, &mut RendererStatic)>(|query| {

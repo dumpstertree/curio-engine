@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
     random::Random,
 };
@@ -42,7 +42,7 @@ impl Scope for Listener {
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::InitializeEncounter(encounter) => {
                 // log

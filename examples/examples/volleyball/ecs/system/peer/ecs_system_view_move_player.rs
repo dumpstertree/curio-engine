@@ -3,7 +3,7 @@ use crate::ecs::components::component_view_player::ComponentViewPlayer;
 use crate::game_board::GameBoard;
 use crate::state::state_position_player::StatePositionEntities;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use curio_core::{Quaternion, Vector3};
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
@@ -25,7 +25,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut Nerve) {
         let state_position_player = ledger.read::<StatePositionEntities>();
         let state_time = ledger.read::<SysRecordTime>();
 

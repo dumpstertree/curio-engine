@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, Color, InputAxisState, KeyState, PrefabGameObject, Vector2,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use std::sync::Arc;
@@ -49,9 +49,9 @@ impl UIPanel for UIHUD {
 }
 impl UICommon for UIHUD {
     fn init(&mut self) {}
-    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
-    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {}
-    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {}
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {}
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, context: &mut Context2D) {
         for i in (0..self.open_gos.len()).rev() {
             let f = &self.open_gos[i].0;
             let t = &self.open_gos[i].1;

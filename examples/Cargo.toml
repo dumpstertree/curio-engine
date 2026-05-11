@@ -26,6 +26,8 @@ physics = { workspace = true }
 gameplay = { workspace = true }
 networking = { workspace = true }
 rendering = { workspace = true }
+animation = { workspace = true }
+
 #used by macros
 ctor = "0.2"
 #used for stimulant

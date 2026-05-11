@@ -5,7 +5,7 @@ use crate::{
 };
 use curio_core::{
     Vector2Int,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -59,7 +59,7 @@ impl Scope for ECsystemGameRequestMove {
     }
 }
 impl Impulse<GameEvents> for ECsystemGameRequestMove {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::RequestMoveZPos(id) => {
                 if !ECsystemGameRequestMove::check_player_id(ledger, *id) {

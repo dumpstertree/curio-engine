@@ -1,5 +1,5 @@
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -28,7 +28,7 @@ impl Scope for Listener {
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, _ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, _ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::SetUIMode(ui) => {
                 println!("set ui");

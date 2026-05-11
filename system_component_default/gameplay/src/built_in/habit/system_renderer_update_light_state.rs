@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -25,14 +25,14 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
+    fn enable(&mut self, _ledger: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
         // ledger.edit::<StateSun>(|x| {
         //     x.cast_shadows = true;
         //     x.color = Color::green();
         //     x.direction = (Vector3::down() + Vector3::forward()).normalize_and_copy()
         // });
     }
-    fn did_tick(&mut self, state: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut Ledger, _world: &mut Context3D, _: &mut Nerve) {
         //edit draw call states
         let _t = state.read::<SysRecordTime>().scaled_time;
         // state.edit::<StateLights>(|x| {

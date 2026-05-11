@@ -1,345 +1,344 @@
-use std::sync::{Arc, Mutex};
+// use std::{
+//     cell::RefCell,
+//     sync::{Arc, Mutex},
+// };
 
-use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages};
-use pollster::FutureExt;
-use winit::{
-    application::ApplicationHandler,
-    dpi::PhysicalSize,
-    event::WindowEvent,
-    event_loop::{ActiveEventLoop, EventLoop},
-    window::Window,
-};
+// use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages};
+// use pollster::FutureExt;
+// use winit::{
+//     application::ApplicationHandler,
+//     dpi::PhysicalSize,
+//     event::WindowEvent,
+//     event_loop::{ActiveEventLoop, EventLoop},
+//     window::Window,
+// };
 
-use crate::{
-    built_in::record::{
-        sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_gizmos::SysRecordGizmos, sys_record_gui::SysRecordGui, sys_record_input::SysRecordInput, sys_record_lights::SysRecordLights, sys_record_network::SysRecordNetwork,
-        sys_record_rendering::SysRecordRendering, sys_record_screen::SysRecordScreen, sys_record_skybox::SysRecordSkybox, sys_record_sun::SysRecordSun, sys_record_time::SysRecordTime,
-    },
-    collections::{curio_metadata::CurioMetadata, window_layout::WindowLayout},
-    engine::curio_common::CurioCommon,
-    input::{axis_code::AxisCode, key_code::ButtonCode, key_state::KeyState},
-    log::{self, log_unformated},
-    static_data,
-    system_adapters::adapter_system_gpu::SystemGPU,
-    Application, GPUInstance, Severity, Vector3,
-};
+// use crate::{
+//     built_in::record::{
+//         sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_gizmos::SysRecordGizmos, sys_record_gui::SysRecordGui, sys_record_input::SysRecordInput, sys_record_lights::SysRecordLights, sys_record_network::SysRecordNetwork,
+//         sys_record_rendering::SysRecordRendering, sys_record_screen::SysRecordScreen, sys_record_skybox::SysRecordSkybox, sys_record_sun::SysRecordSun, sys_record_time::SysRecordTime,
+//     },
+//     collections::{curio_metadata::CurioMetadata, version_number::VersionNumber, window_layout::WindowLayout},
+//     engine::{curio::Curio, curio_common::CurioCommon},
+//     input::{axis_code::AxisCode, key_code::ButtonCode, key_state::KeyState},
+//     static_data,
+//     system_adapters::adapter_system_gpu::SystemGPU,
+//     Application, GPUInstance, Severity, Vector3,
+// };
 
-static mut ALL_META: Mutex<Vec<CurioMetadata>> = Mutex::new(Vec::new());
+// static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
 
-pub fn curios_on_display() -> Vec<CurioMetadata> {
-    if let Ok(meta) = unsafe { ALL_META.lock() } {
-        return meta.clone();
-    }
+// pub struct CurioCabinet {}
+// impl CurioCabinet {
+//     pub fn on_display() -> Vec<CabinetWindow> {
+//         // if let Ok(meta) = unsafe { OPEN_DISPLAY_WINDOWS.lock() } {
+//         //     return meta.to_vec();
+//         // }
 
-    return Vec::new();
-}
+//         return Vec::new();
+//     }
 
-pub struct CurioCabinet<T>
-where
-    T: 'static + CurioCommon,
-{
-    gpu_instance: Option<Arc<GPUInstance>>,
-    app_instance: Option<Box<dyn CurioCommon>>,
-    app_constructor: fn() -> T,
-    portal: WindowLayout,
-    meta: CurioMetadata,
-}
-impl<T> CurioCabinet<T>
-where
-    T: 'static + CurioCommon,
-{
-    pub fn display_curio(meta: CurioMetadata, curio: fn() -> T, portal: WindowLayout)
-    // add a metadata object - Name, Version Num, IconPath
-    where
-        T: 'static + CurioCommon,
-    {
-        register_built_in_records();
+//     pub fn put_on_display(curio: fn() -> Box<Curio>) {
+//         //
+//         register_built_in_records();
 
-        log_unformated(
-            "
- a88888b.                   oo              88888888b                   oo                   
-d8'   `88                                   88                                               
-88        dP    dP 88d888b. dP .d8888b.    a88aaaa    88d888b. .d8888b. dP 88d888b. .d8888b. 
-88        88    88 88'  `88 88 88'  `88     88        88'  `88 88'  `88 88 88'  `88 88ooood8 
-Y8.   .88 88.  .88 88       88 88.  .88     88        88    88 88.  .88 88 88    88 88.  ... 
- Y88888P' `88888P' dP       dP `88888P'     88888888P dP    dP `8888P88 dP dP    dP `88888P' 
-                                                                    .88                      
-                                                                d8888P",
-        );
-        log_unformated(&format!(
-            "
-    Name: {}
-    Version: {}
-    Icon: {}
-    Habits: 10
-    Records: 10
-    Plugins: 0
-    Resolution: {}x{}
-            ",
-            meta.name, meta.version, meta.icon, portal.width, portal.height
-        ));
+//         //
+//         Application::log(Severity::Info, "Putting Curio on display...");
 
-        // store this curio metadata
-        if let Ok(mut m) = unsafe { ALL_META.lock() } {
-            m.push(meta.clone());
-        }
+//         // add to list of windows
+//         let window_owner = CabinetWindowOwner::new(curio, WindowLayout::fullscreen_1080());
 
-        // create a new curio_engine instance
-        let mut curio_engine = CurioCabinet {
-            app_instance: None,
-            gpu_instance: None,
-            app_constructor: curio,
-            portal,
-            meta,
-        };
+//         // wrap the window so its easily sharable
+//         let mut window = CabinetWindow::new(window_owner);
 
-        // build an event loop to base everthing off of
-        let Ok(event_loop) = EventLoop::builder().build() else {
-            panic!("Failed to build an EventLoop parent for Curio");
-        };
+//         // store
+//         if let Ok(mut open_windows) = unsafe { OPEN_DISPLAY_WINDOWS.lock() } {
+//             open_windows.push(window.clone());
+//         }
 
-        // run the app. this will continue to loop
-        let Ok(_result) = event_loop.run_app(&mut curio_engine) else {
-            panic!("Failed to run Curio");
-        };
-    }
-}
+//         // run the window
+//         window.run();
+//     }
+// }
 
-// Impl - Public Fns
-impl<T> CurioCabinet<T>
-where
-    T: 'static + CurioCommon,
-{
-    pub fn set_curio_instance(&mut self, curio_instance: T) {
-        // save instance
-        self.app_instance = Some(Box::new(curio_instance));
+// pub fn register_built_in_records() {
+//     static_data::global_states::register_global_state::<SysRecordTime>();
+//     static_data::global_states::register_global_state::<SysRecordCamera>();
+//     static_data::global_states::register_global_state::<SysRecordDebug>();
+//     static_data::global_states::register_global_state::<SysRecordRendering>();
+//     static_data::global_states::register_global_state::<SysRecordGizmos>();
+//     static_data::global_states::register_global_state::<SysRecordDebugGui>();
+//     static_data::global_states::register_global_state::<SysRecordGui>();
+//     static_data::global_states::register_global_state::<SysRecordInput>();
+//     static_data::global_states::register_global_state::<SysRecordLights>();
+//     static_data::global_states::register_global_state::<SysRecordNetwork>();
+//     static_data::global_states::register_global_state::<SysRecordScreen>();
+//     static_data::global_states::register_global_state::<SysRecordSkybox>();
+//     static_data::global_states::register_global_state::<SysRecordSun>();
+// }
 
-        // window has now been opened and alert the app
-        if let Some(app_instance) = &mut self.app_instance {
-            app_instance.window_opened();
-        }
-    }
-    pub fn get_gpu_settings(&self) -> Arc<GPUInstance> {
-        if let Some(gpu_settings) = &self.gpu_instance {
-            gpu_settings.clone()
-        } else {
-            panic!("Failed to retrieve GPU");
-        }
-    }
-}
+// pub struct CabinetWindowOwner {
+//     did_run: bool,
+//     gpu_instance: Option<Arc<GPUInstance>>,
+//     app_instance: Option<Box<Curio>>,
+//     app_constructor: fn() -> Box<Curio>,
+//     portal: WindowLayout,
+// }
+// impl CabinetWindowOwner {
+//     pub fn new(curio: fn() -> Box<Curio>, portal: WindowLayout) -> CabinetWindowOwner {
+//         println!("Created window");
+//         CabinetWindowOwner {
+//             did_run: false,
+//             gpu_instance: None,
+//             app_instance: None,
+//             app_constructor: curio,
+//             portal: portal,
+//         }
+//     }
+//     pub fn run(&mut self) {
+//         // guard - dont run if already running
+//         if self.did_run {
+//             return;
+//         }
 
-// Impl - Private Fns
-impl<T> CurioCabinet<T>
-where
-    T: 'static + CurioCommon,
-{
-    fn get_instance() -> Instance {
-        let instance = egui_wgpu::wgpu::Instance::new(&egui_wgpu::wgpu::InstanceDescriptor {
-            backends: egui_wgpu::wgpu::Backends::all(),
-            ..Default::default()
-        });
+//         // enable flag
+//         self.did_run = true;
 
-        instance
-    }
-    fn get_window(event_loop: &ActiveEventLoop, meta: &CurioMetadata, portal: &WindowLayout) -> Arc<Window> {
-        // populate all the attributes to spawn the window
-        let atts = Window::default_attributes()
-            .with_title(format!(" {} - {}.{}.{}", meta.name, meta.version.major, meta.version.minor, meta.version.patch))
-            .with_inner_size(PhysicalSize::new(portal.width, portal.height))
-            .with_resizable(true);
+//         // build an event loop to base everthing off of
+//         let Ok(event_loop) = EventLoop::builder().build() else {
+//             panic!("Failed to build an EventLoop parent for Curio");
+//         };
 
-        // create the window we are using
-        let Ok(window) = event_loop.create_window(atts) else {
-            panic!("Failed to create Window");
-        };
+//         // run the app. this will continue to loop
+//         let Ok(_result) = event_loop.run_app(self) else {
+//             panic!("Failed to run Curio");
+//         };
+//     }
+//     pub fn set_curio_instance(&mut self, curio_instance: Box<Curio>) {
+//         // save instance
+//         self.app_instance = Some(curio_instance);
 
-        Arc::new(window)
-    }
-    fn get_surface(instance: &Instance, window: &Arc<Window>) -> Arc<Surface<'static>> {
-        let surface = instance.create_surface(window.clone()).unwrap();
-        Arc::new(surface)
-    }
-    fn get_adapter(instance: &Instance, surface: &Arc<Surface>) -> Arc<Adapter> {
-        let Some(adapter) = instance
-            .request_adapter(&RequestAdapterOptions {
-                power_preference: PowerPreference::default(),
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-            })
-            .block_on()
-        else {
-            panic!("Failed to create Adapter");
-        };
+//         // window has now been opened and alert the app
+//         if let Some(app_instance) = &mut self.app_instance {
+//             app_instance.window_opened();
+//         }
+//     }
+//     pub fn get_gpu_settings(&self) -> Arc<GPUInstance> {
+//         if let Some(gpu_settings) = &self.gpu_instance {
+//             gpu_settings.clone()
+//         } else {
+//             panic!("Failed to retrieve GPU");
+//         }
+//     }
 
-        Arc::new(adapter)
-    }
-    fn get_device_queue(adapter: &Arc<Adapter>) -> (Arc<Device>, Arc<Queue>) {
-        let Ok(device_queue) = adapter
-            .request_device(
-                &DeviceDescriptor {
-                    label: None,
-                    required_features: Features::POLYGON_MODE_LINE | Features::BUFFER_BINDING_ARRAY,
-                    required_limits: Limits::default(),
-                    memory_hints: Default::default(),
-                },
-                None,
-            )
-            .block_on()
-        else {
-            panic!("Failed to create Device or Queue");
-        };
-        (Arc::new(device_queue.0), Arc::new(device_queue.1))
-    }
+//     fn get_instance() -> Instance {
+//         let instance = egui_wgpu::wgpu::Instance::new(&egui_wgpu::wgpu::InstanceDescriptor {
+//             backends: egui_wgpu::wgpu::Backends::all(),
+//             ..Default::default()
+//         });
 
-    fn get_config(surface: &Surface, adapter: &Adapter, portal: &WindowLayout) -> Arc<SurfaceConfiguration> {
-        let surface_capabilities = surface.get_capabilities(&adapter);
+//         instance
+//     }
+//     fn get_window(event_loop: &ActiveEventLoop, meta: &CurioMetadata, portal: &WindowLayout) -> Arc<Window> {
+//         // populate all the attributes to spawn the window
+//         let atts = Window::default_attributes()
+//             .with_title(format!(" {} - {}.{}.{}", meta.name, meta.version.major, meta.version.minor, meta.version.patch))
+//             .with_inner_size(PhysicalSize::new(portal.width, portal.height))
+//             .with_resizable(true);
 
-        let surface_format: TextureFormat = surface_capabilities
-            .formats
-            .iter()
-            .copied()
-            .find(|f| f.is_srgb())
-            .unwrap_or(surface_capabilities.formats[0]);
+//         // create the window we are using
+//         let Ok(window) = event_loop.create_window(atts) else {
+//             panic!("Failed to create Window");
+//         };
 
-        let config = SurfaceConfiguration {
-            usage: TextureUsages::RENDER_ATTACHMENT,
-            format: surface_format,
-            width: portal.width as u32,
-            height: portal.height as u32,
-            present_mode: surface_capabilities.present_modes[0],
-            alpha_mode: surface_capabilities.alpha_modes[0],
-            view_formats: vec![],
-            desired_maximum_frame_latency: 2,
-        };
+//         Arc::new(window)
+//     }
+//     fn get_surface(instance: &Instance, window: &Arc<Window>) -> Arc<Surface<'static>> {
+//         let surface = instance.create_surface(window.clone()).unwrap();
+//         Arc::new(surface)
+//     }
+//     fn get_adapter(instance: &Instance, surface: &Arc<Surface>) -> Arc<Adapter> {
+//         let Some(adapter) = instance
+//             .request_adapter(&RequestAdapterOptions {
+//                 power_preference: PowerPreference::default(),
+//                 compatible_surface: Some(&surface),
+//                 force_fallback_adapter: false,
+//             })
+//             .block_on()
+//         else {
+//             panic!("Failed to create Adapter");
+//         };
 
-        Arc::new(config)
-    }
-}
+//         Arc::new(adapter)
+//     }
+//     fn get_device_queue(adapter: &Arc<Adapter>) -> (Arc<Device>, Arc<Queue>) {
+//         let Ok(device_queue) = adapter
+//             .request_device(
+//                 &DeviceDescriptor {
+//                     label: None,
+//                     required_features: Features::POLYGON_MODE_LINE | Features::BUFFER_BINDING_ARRAY,
+//                     required_limits: Limits::default(),
+//                     memory_hints: Default::default(),
+//                 },
+//                 None,
+//             )
+//             .block_on()
+//         else {
+//             panic!("Failed to create Device or Queue");
+//         };
+//         (Arc::new(device_queue.0), Arc::new(device_queue.1))
+//     }
+//     fn get_config(surface: &Surface, adapter: &Adapter, portal: &WindowLayout) -> Arc<SurfaceConfiguration> {
+//         let surface_capabilities = surface.get_capabilities(&adapter);
 
-impl<T> ApplicationHandler for CurioCabinet<T>
-where
-    T: 'static + CurioCommon,
-{
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        // generate an instance of wgpu to create rendering components
-        let instance = &Self::get_instance();
+//         let surface_format: TextureFormat = surface_capabilities
+//             .formats
+//             .iter()
+//             .copied()
+//             .find(|f| f.is_srgb())
+//             .unwrap_or(surface_capabilities.formats[0]);
 
-        // generate the window. Window is the bounds and controller to the app.
-        let window = Self::get_window(event_loop, &self.meta, &self.portal);
+//         let config = SurfaceConfiguration {
+//             usage: TextureUsages::RENDER_ATTACHMENT,
+//             format: surface_format,
+//             width: portal.width as u32,
+//             height: portal.height as u32,
+//             present_mode: surface_capabilities.present_modes[0],
+//             alpha_mode: surface_capabilities.alpha_modes[0],
+//             view_formats: vec![],
+//             desired_maximum_frame_latency: 2,
+//         };
 
-        // create the surface to render to
-        let surface = Self::get_surface(instance, &window);
+//         Arc::new(config)
+//     }
+// }
+// impl ApplicationHandler for CabinetWindowOwner {
+//     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+//         // generate an instance of wgpu to create rendering components
+//         let instance = &Self::get_instance();
 
-        // create the handle to the physical graphics
-        let adapter = Self::get_adapter(instance, &surface);
+//         // generate the window. Window is the bounds and controller to the app.
+//         let window = Self::get_window(event_loop, &CurioMetadata::new("", "", VersionNumber::new(0, 0, 0)), &self.portal);
 
-        // create a connection to the device through the adapter and create a command queue to make changes to it
-        let device_queue = Self::get_device_queue(&adapter);
+//         // create the surface to render to
+//         let surface = Self::get_surface(instance, &window);
 
-        // find the format we are going to write our texture to based on the capabilities
-        let surface_configuration = Self::get_config(&surface, &adapter, &self.portal);
+//         // create the handle to the physical graphics
+//         let adapter = Self::get_adapter(instance, &surface);
 
-        // package values to represent this instance of wgpu to reference later
-        self.gpu_instance = Some(Arc::new(GPUInstance {
-            device: device_queue.0,
-            queue: device_queue.1,
-            surface: surface,
-            adapter: adapter,
-            window: window,
-            config: surface_configuration,
-        }));
+//         // create a connection to the device through the adapter and create a command queue to make changes to it
+//         let device_queue = Self::get_device_queue(&adapter);
 
-        // now that the curio_engine is initialized use those values to populate the system
-        SystemGPU::set_global_values(self.get_gpu_settings());
+//         // find the format we are going to write our texture to based on the capabilities
+//         let surface_configuration = Self::get_config(&surface, &adapter, &self.portal);
 
-        // generate an instance of the curio that we will then put into the curio_engine
-        // this need to take place after populating the gpu settings incase something uses them
-        self.app_instance = Some(Box::new((self.app_constructor)()));
+//         // package values to represent this instance of wgpu to reference later
+//         self.gpu_instance = Some(Arc::new(GPUInstance {
+//             device: device_queue.0,
+//             queue: device_queue.1,
+//             surface: surface,
+//             adapter: adapter,
+//             window: window,
+//             config: surface_configuration,
+//         }));
 
-        // assuming the app instance was created successfully we trigger window opened - the start of the application logic
-        if let Some(app_instance) = &mut self.app_instance {
-            app_instance.window_opened();
-        };
-    }
+//         println!("resumed!");
+//         // now that the curio_engine is initialized use those values to populate the system
+//         SystemGPU::set_global_values(self.get_gpu_settings());
 
-    fn window_event(&mut self, _: &winit::event_loop::ActiveEventLoop, _: winit::window::WindowId, event: winit::event::WindowEvent) {
-        match event {
-            WindowEvent::RedrawRequested => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.application_refresh();
-                }
+//         // generate an instance of the curio that we will then put into the curio_engine
+//         // this need to take place after populating the gpu settings incase something uses them
+//         self.app_instance = Some((self.app_constructor)());
 
-                if let Some(x) = &self.gpu_instance {
-                    x.window.request_redraw()
-                };
-            }
-            WindowEvent::Resized(_physical_size) => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.window_resized();
-                }
-            }
-            WindowEvent::Moved(_physical_position) => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.window_moved();
-                }
-            }
-            WindowEvent::Focused(is_focused) => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.window_focused(is_focused);
-                }
-            }
-            WindowEvent::Occluded(is_occluded) => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.window_occluded(is_occluded);
-                }
-            }
-            WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    if let Some(button_code) = ButtonCode::from_winit_physical_key(event.physical_key) {
-                        // get the current button state to propogate
-                        let state = if event.state.is_pressed() { KeyState::Down } else { KeyState::Up };
+//         // assuming the app instance was created successfully we trigger window opened - the start of the application logic
+//         if let Some(app_instance) = &mut self.app_instance {
+//             app_instance.window_opened();
+//         };
+//     }
+//     fn window_event(&mut self, _: &winit::event_loop::ActiveEventLoop, _: winit::window::WindowId, event: winit::event::WindowEvent) {
+//         match event {
+//             WindowEvent::RedrawRequested => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     app_instance.application_refresh();
+//                 }
 
-                        // if button was resolved we propogate the event
-                        app_instance.input_button(button_code, state);
-                    };
-                }
-            }
-            WindowEvent::CursorMoved { device_id: _, position } => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.input_axis(AxisCode::Cursor, Vector3::new(position.x as f32, position.y as f32, 0.0));
-                }
-            }
-            WindowEvent::MouseWheel { device_id: _, delta: _, phase: _ } => {}
-            WindowEvent::MouseInput { device_id: _, state, button } => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    // if button was resolved we propogate the event
-                    if let Some(button_code) = ButtonCode::from_winit_mousebutton(button) {
-                        // get the current button state to propogate
-                        let state = if state.is_pressed() { KeyState::Down } else { KeyState::Up };
+//                 if let Some(x) = &self.gpu_instance {
+//                     x.window.request_redraw()
+//                 };
+//             }
+//             WindowEvent::Resized(_physical_size) => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     app_instance.window_resized();
+//                 }
+//             }
+//             WindowEvent::Moved(_physical_position) => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     app_instance.window_moved();
+//                 }
+//             }
+//             WindowEvent::Focused(is_focused) => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     app_instance.window_focused(is_focused);
+//                 }
+//             }
+//             WindowEvent::Occluded(is_occluded) => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     app_instance.window_occluded(is_occluded);
+//                 }
+//             }
+//             WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     if let Some(button_code) = ButtonCode::from_winit_physical_key(event.physical_key) {
+//                         // get the current button state to propogate
+//                         let state = if event.state.is_pressed() { KeyState::Down } else { KeyState::Up };
 
-                        // if button was resolved we propogate the event
-                        app_instance.input_button(button_code, state);
-                    };
-                }
-            }
+//                         // if button was resolved we propogate the event
+//                         app_instance.input_button(button_code, state);
+//                     };
+//                 }
+//             }
+//             WindowEvent::CursorMoved { device_id: _, position } => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     app_instance.input_axis(AxisCode::Cursor, Vector3::new(position.x as f32, position.y as f32, 0.0));
+//                 }
+//             }
+//             WindowEvent::MouseWheel { device_id: _, delta: _, phase: _ } => {}
+//             WindowEvent::MouseInput { device_id: _, state, button } => {
+//                 if let Some(app_instance) = &mut self.app_instance {
+//                     // if button was resolved we propogate the event
+//                     if let Some(button_code) = ButtonCode::from_winit_mousebutton(button) {
+//                         // get the current button state to propogate
+//                         let state = if state.is_pressed() { KeyState::Down } else { KeyState::Up };
 
-            _ => {}
-        }
-    }
-}
+//                         // if button was resolved we propogate the event
+//                         app_instance.input_button(button_code, state);
+//                     };
+//                 }
+//             }
 
-pub fn register_built_in_records() {
-    static_data::global_states::register_global_state::<SysRecordTime>();
-    static_data::global_states::register_global_state::<SysRecordCamera>();
-    static_data::global_states::register_global_state::<SysRecordDebug>();
-    static_data::global_states::register_global_state::<SysRecordRendering>();
-    static_data::global_states::register_global_state::<SysRecordGizmos>();
-    static_data::global_states::register_global_state::<SysRecordDebugGui>();
-    static_data::global_states::register_global_state::<SysRecordGui>();
-    static_data::global_states::register_global_state::<SysRecordInput>();
-    static_data::global_states::register_global_state::<SysRecordLights>();
-    static_data::global_states::register_global_state::<SysRecordNetwork>();
-    static_data::global_states::register_global_state::<SysRecordScreen>();
-    static_data::global_states::register_global_state::<SysRecordSkybox>();
-    static_data::global_states::register_global_state::<SysRecordSun>();
-}
+//             _ => {}
+//         }
+//     }
+// }
+
+// #[derive(Clone)]
+// pub struct CabinetWindow {
+//     owner: Arc<RefCell<CabinetWindowOwner>>,
+// }
+// impl CabinetWindow {
+//     pub fn new(window: CabinetWindowOwner) -> CabinetWindow {
+//         CabinetWindow { owner: Arc::new(RefCell::new(window)) }
+//     }
+//     pub fn run(&mut self) {
+//         self.owner.borrow_mut().run();
+//     }
+//     pub fn curio(&self) -> CurioMetadata {
+//         self.owner
+//             .borrow()
+//             .app_instance
+//             .as_ref()
+//             .unwrap()
+//             .meta
+//             .clone()
+//     }
+// }

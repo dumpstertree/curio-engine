@@ -9,7 +9,7 @@ use habit::habit;
 use curio_core::{
     Quaternion, Vector3,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -29,9 +29,9 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {}
-    fn enable(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue) {}
-    fn did_tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _: &mut Nerve) {}
+    fn enable(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut Nerve) {}
+    fn did_tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _: &mut Nerve) {
         // get state
         let state_select_target = ledger.read::<StatePeerSelectTargets>();
         let _state_time = ledger.read::<SysRecordTime>();

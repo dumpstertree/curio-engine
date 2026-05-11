@@ -11,11 +11,11 @@ use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
 use crate::state::state_teams::{StateTeamAssignments, Teams};
 use crate::{Assets, UIViewTypes};
 
-use curio_core::io::model_asset_animated::ModelAssetAnimated;
+use animation::assets::model_asset_animated::ModelAssetAnimated;
 use curio_core::network_modes::NetworkModes;
 use curio_core::{ModelAsset, Quaternion, Vector2Int, Vector3};
 
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::io::asset_loader::AssetLoader;
 use gameplay::built_in::facet::renderer::renderer_dynamic::RendererDynamic;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
@@ -38,7 +38,7 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, world: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomEnterCombat(_, _) => {
                 println!("enter combat room");

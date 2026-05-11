@@ -1,7 +1,7 @@
 use crate::game_events::GameEvents;
 use crate::state::host::state_currency::StateCurrency;
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::context_3d::Context3D;
@@ -21,7 +21,7 @@ impl Scope for ECsystemGamePointScored {
     }
 }
 impl Impulse<GameEvents> for ECsystemGamePointScored {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::EncounterPassed => {
                 // log

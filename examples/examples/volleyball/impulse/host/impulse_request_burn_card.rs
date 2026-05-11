@@ -3,7 +3,7 @@ use crate::{
     state::{state_deck::StateDeck, state_energy::StateEnergy},
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -25,7 +25,7 @@ impl Scope for ImpulseInstance {
     }
 }
 impl Impulse<GameEvents> for ImpulseInstance {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::RequestBurnCard(user_guid, card_guid) => {
                 ledger.write::<StateDeck>(|x| {

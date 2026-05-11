@@ -1,6 +1,6 @@
 use curio_core::{
     Severity,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -27,7 +27,7 @@ impl Scope for Listener {
 }
 // Impl - Listener
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::InitializeShop(shop) => {
                 // log

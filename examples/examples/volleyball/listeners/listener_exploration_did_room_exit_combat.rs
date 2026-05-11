@@ -2,7 +2,7 @@ use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::listeners::listener_ui_set_mode::UITypes;
 use crate::state::peer::state_peer_entity_ids::{EntityIDTypes, StateEntityIDs};
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::built_in::impulse::ui_events::UIEvents;
 use gameplay::context_3d::Context3D;
@@ -22,7 +22,7 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, world: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidRoomExitCombat(_, _) => {
                 println!("exit combat room");

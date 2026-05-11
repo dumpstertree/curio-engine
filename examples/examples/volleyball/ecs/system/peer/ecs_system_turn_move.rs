@@ -6,7 +6,7 @@ use habit::habit;
 
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -45,7 +45,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve) {
         // currently serving and cant move
         let state_ball = ledger.read::<StateBallMode>();
         if state_ball.mode == BallModes::Serve {

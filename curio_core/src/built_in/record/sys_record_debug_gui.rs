@@ -7,7 +7,7 @@ use crate::{
         sys_record_debug::SysRecordDebug,
         sys_record_gui::{GuiElement, GuiWindow},
     },
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     extensions::extensions_f32::ExtensionsF32,
     system::record_id::RecordId,
     Color, RecordCommon, Vector3,
@@ -52,7 +52,7 @@ impl SysRecordDebugGui {
             size: 18.0,
         }
     }
-    fn pause_on_click(_ledger: &mut Ledger, _event_queue: &mut EventQueue) {
+    fn pause_on_click(_ledger: &mut Ledger, _event_queue: &mut Nerve) {
         // event_queue.enqueue_event(EngineCommands::SetPauseMode(!ledger.get::<StateDebug>().is_paused));
     }
 }

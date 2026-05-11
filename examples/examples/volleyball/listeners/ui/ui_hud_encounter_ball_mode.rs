@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, KeyState, Vector2,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
 };
 use gameplay::{
     built_in::facet::{renderer::renderer_text::RendererText, transform::transform2d::Transform2D},
@@ -27,7 +27,7 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, _ledger: &mut Ledger, _event_queue: &mut Nerve, context: &mut Context2D) {
         // create obj
         let go_text = context
             .spawn("text.ball_mode", Transform2D::default().set_position_01(Vector2::new(0.5, 0.7)))
@@ -37,11 +37,11 @@ impl UICommon for UIHUD {
         self.go_text = Some(go_text);
     }
 
-    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {
         self.go_text.clone().unwrap().destroy();
     }
 
-    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {
         // try to unwrap
         let Some(go_text) = &self.go_text else {
             return;

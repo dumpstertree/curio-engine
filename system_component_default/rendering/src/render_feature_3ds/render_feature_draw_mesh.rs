@@ -3,6 +3,7 @@ use curio_core::{
     LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
     built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
     collections::ledger::Ledger,
+    engine_services::services,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::ahash::{HashMap, HashMapExt};
@@ -18,10 +19,12 @@ impl RenderFeatureDrawMesh {
         Box::new(RenderFeatureDrawMesh { light_system: Vec::new() })
     }
 
-    fn draw_all_mesh(&mut self, ledger: &mut Ledger, config: &Arc<SurfaceConfiguration>, device: &Arc<Device>, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+    fn draw_all_mesh(&mut self, ledger: &mut Ledger, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         let state_draws = ledger.read::<SysRecordRendering>();
         let mut draw_calls = state_draws.draw_calls.clone();
         let mut batching: HashMap<(Arc<Mesh>, Arc<Material>), Vec<Matrix4x4>> = HashMap::new();
+
+        println!("{}", draw_calls.len());
         for draw_call in draw_calls.drain(..) {
             let mesh = draw_call.mesh;
             let material = draw_call.materials;
@@ -33,10 +36,12 @@ impl RenderFeatureDrawMesh {
                 batching.insert((mesh, material), matrix);
             }
         }
+        println!("{}", batching.len());
 
         // println!("Saved by batching {} => {}", was, batching.len());
 
         for ((mesh, material), matrix) in batching {
+            println!("draw");
             self.draw_draw_call(mesh, material, matrix, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
         }
     }
@@ -174,15 +179,17 @@ impl RenderFeatureDrawMesh {
 
 impl RenderFeature3D for RenderFeatureDrawMesh {
     fn render(&mut self, ledger: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+        println!("rf draw mesh");
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
         self.light_system[camera_index].update(&ledger.read::<SysRecordSun>().get_draw_call(), &ledger.read::<SysRecordLights>().all_lights);
 
-        let config = SystemGPU::get_config();
-        let device = SystemGPU::get_device();
+        let s = services();
+        let config = s.gpu.config();
+        let device = s.gpu.device();
 
-        self.draw_all_mesh(ledger, &config, &device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
+        self.draw_all_mesh(ledger, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
     }
 
     fn clear(&mut self, ledger: &mut Ledger) {

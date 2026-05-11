@@ -24,9 +24,10 @@ use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePost
 use crate::shadow_system::ShadowSystem;
 use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::built_in::record::sys_record_sun::SysRecordSun;
-use curio_core::collections::event_queue::EventQueue;
+use curio_core::collections::event_queue::Nerve;
 use curio_core::collections::game_mode::GameMode;
 use curio_core::collections::ledger::Ledger;
+use curio_core::engine_services::services;
 use curio_core::system::system_component::SystemComponent;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 use curio_core::{GraphicsMapping, Matrix4x4};
@@ -52,8 +53,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         "Graphics".to_owned()
     }
     fn init(&mut self, _ledger: &mut Vec<Ledger>) {}
-
-    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {
         // initialize frame and get resources for rendering
         let drawing_resources = Self::initialize_frame();
 
@@ -88,10 +88,13 @@ impl SystemComponent for SystemComponentDefaultGraphics {
 
         // finalize the frame and render to the gpu
         Self::finalize_frame(output, encoder);
+
+        println!("finalize")
     }
 
     fn raw_event(&mut self, _event: WindowEvent) {
-        let _window = SystemGPU::get_window();
+        // let s = services().gpu.window;
+        // let _window = SystemGPU::get_window();
         // self.egui_renderer.handle_input(&window, &event);
     }
     fn set_game_mode(&mut self, _: &mut Vec<Ledger>, game_mode: &GameMode) {
@@ -131,8 +134,9 @@ impl SystemComponentDefaultGraphics {
     // frame lifecycle
     pub fn initialize_frame() -> (SurfaceTexture, CommandEncoder, TextureView) {
         // get Surface and Device from the GPU
-        let surface = &SystemGPU::get_surface();
-        let device = &SystemGPU::get_device();
+        let s = services();
+        let surface = s.gpu.surface();
+        let device = s.gpu.device();
 
         // create the output
         let output = surface.get_current_texture().unwrap();
@@ -147,7 +151,8 @@ impl SystemComponentDefaultGraphics {
     }
     pub fn finalize_frame(output: SurfaceTexture, encoder: CommandEncoder) {
         // get queue from the GPU
-        let queue = SystemGPU::get_queue();
+        let s = services();
+        let queue = s.gpu.queue();
 
         // submit commands for execution
         queue.submit(iter::once(encoder.finish()));
@@ -158,8 +163,9 @@ impl SystemComponentDefaultGraphics {
 
     // dependency
     pub fn generate_render_texture() -> (egui_wgpu::wgpu::Texture, TextureView) {
-        let surface_config = SystemGPU::get_config();
-        let device = SystemGPU::get_device();
+        let s = services();
+        let surface_config = s.gpu.config();
+        let device = s.gpu.device();
 
         // --- Offscreen texture ---
         let offscreen_texture = device.create_texture(&egui_wgpu::wgpu::TextureDescriptor {

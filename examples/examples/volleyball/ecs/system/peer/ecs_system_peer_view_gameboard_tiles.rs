@@ -14,7 +14,7 @@ use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::StateTeamAssignments;
 
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use curio_core::{Vector2Int, Vector3};
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
@@ -39,7 +39,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut Nerve) {
         let state_mode = ledger.read::<StatePeerInputMode>();
         let state_deck = ledger.read::<StateDeck>();
         let state_index = ledger.read::<StatePeerSelectedCards>();

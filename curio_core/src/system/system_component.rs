@@ -4,7 +4,7 @@ use crate::collections::ledger::Ledger;
 use crate::input::axis_code::AxisCode;
 use crate::input::key_state::KeyState;
 use crate::Vector3;
-use crate::{collections::event_queue::EventQueue, input::key_code::ButtonCode};
+use crate::{collections::event_queue::Nerve, input::key_code::ButtonCode};
 use winit::event::WindowEvent;
 
 pub trait SystemComponent {
@@ -13,14 +13,14 @@ pub trait SystemComponent {
     fn order(&self) -> i32 {
         0
     }
-    fn refresh(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<EventQueue>) -> Vec<EngineCommands> {
+    fn refresh(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<Nerve>) -> Vec<EngineCommands> {
         vec![]
     }
 
     // lifecycle
     fn init(&mut self, _ledger: &mut Vec<Ledger>) {}
-    fn tick(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<EventQueue>) {}
-    fn debug(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<EventQueue>) {}
+    fn tick(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<Nerve>) {}
+    fn debug(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<Nerve>) {}
 
     // input
     fn input_axis(&mut self, _ledgere: &mut Vec<Ledger>, _axis_code: AxisCode, _val: Vector3) {}

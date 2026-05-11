@@ -3,7 +3,7 @@ use std::any::{Any, TypeId};
 use curio_core::{
     Quaternion, Vector2, Vector3,
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -401,7 +401,7 @@ impl Scope for Instance {
 }
 
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _: &mut Nerve) {
         let dt = ledger.time().scaled_delta_time;
 
         context.edit::<&mut Tween>(|q| {

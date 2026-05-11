@@ -19,6 +19,7 @@ pub use crate::random::Random;
 
 // assets
 pub use crate::assets::asset::AssetCommon;
+pub use crate::assets::asset::AssetCommonFromBits;
 pub use crate::assets::font_asset::FontAsset;
 pub use crate::assets::font_asset::FontDesc;
 pub use crate::assets::model_asset::ModelAsset;
@@ -184,3 +185,14 @@ pub mod system {
 pub mod system_adapters {
     pub mod adapter_system_gpu;
 }
+pub mod engine_services;
+
+pub mod plugin;
+pub mod plugin_loader;
+
+pub const ENGINE_API_VERSION: u32 = 1;
+
+// each plugin also exports this
+// loader checks they match before calling _plugin_create
+pub type PluginVersionFn = unsafe extern "C" fn() -> u32;
+

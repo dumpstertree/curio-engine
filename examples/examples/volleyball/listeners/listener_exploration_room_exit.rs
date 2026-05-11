@@ -3,7 +3,7 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_enounter_mode::StateEncounter;
 use crate::state::host::state_shop::StateShop;
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -25,7 +25,7 @@ impl Scope for ECsystemGamePointScored {
     }
 }
 impl Impulse<GameEvents> for ECsystemGamePointScored {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::ExplorationRoomExit(room) => {
                 println!("Exit Exploration Room: {}", room.guid);

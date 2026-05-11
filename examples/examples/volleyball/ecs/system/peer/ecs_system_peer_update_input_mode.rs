@@ -3,7 +3,7 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_input_mode::InputModes;
 use crate::state::peer::state_peer_input_mode::StatePeerInputMode;
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::habit::Habit;
@@ -26,8 +26,8 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {}
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _events: &mut EventQueue) {
+    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {}
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _events: &mut Nerve) {
         let state_input = ledger.read::<SysRecordInput>();
 
         ledger.write::<StatePeerInputMode>(|x| {

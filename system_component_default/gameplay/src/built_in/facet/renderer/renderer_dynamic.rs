@@ -1,7 +1,5 @@
-use curio_core::{
-    Color, ModelAsset,
-    io::{asset_loader::AssetLoader, model_asset_animated::ModelAssetAnimated},
-};
+use animation::assets::model_asset_animated::ModelAssetAnimated;
+use curio_core::{Color, ModelAsset, io::asset_loader::AssetLoader};
 use std::sync::Arc;
 
 use crate::{built_in::facet::renderer_common::RendererCommon, form::Form, traits::facet_common::FacetCommon, traits::field_override::FieldOverride};

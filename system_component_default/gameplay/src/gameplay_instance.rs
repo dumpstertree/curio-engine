@@ -1,5 +1,5 @@
 use curio_core::collections::{
-    event_queue::{EventQueue, IGameEvent},
+    event_queue::{IGameEvent, Nerve},
     ledger::Ledger,
 };
 use hecs::World;
@@ -64,7 +64,7 @@ where
             phantom_u: PhantomData::default(),
         }
     }
-    pub fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut EventQueue) {
+    pub fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut Nerve) {
         // if not init -> init
         if !self.has_been_init {
             // flip flag

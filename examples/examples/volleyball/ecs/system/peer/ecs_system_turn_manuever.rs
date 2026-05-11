@@ -15,7 +15,7 @@ use crate::state::state_deck::CardTypes;
 use crate::state::state_teams::StateTeamAssignments;
 use crate::state::{state_deck::StateDeck, state_turn::StateTurn};
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::extensions::extensions_i32::ExtensionsI32;
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
@@ -206,7 +206,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve) {
         let team = ledger
             .read::<StateTeamAssignments>()
             .team_for(&ledger.network.me().guid);

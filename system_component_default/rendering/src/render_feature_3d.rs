@@ -1,4 +1,4 @@
-use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::ledger::Ledger, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, collections::ledger::Ledger, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};
@@ -30,8 +30,9 @@ impl RenderFeature3DHelper {
         target_view: &mut egui_wgpu::wgpu::TextureView, // <-- changed from SurfaceTexture
         shadow_system: &ShadowSystem,
     ) {
+        let s = services();
         // generate a render pass for this instance
-        let depth = SystemGPU::get_depth_texture();
+        let depth = s.gpu.depth();
 
         //
         let mut render_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
@@ -61,6 +62,7 @@ impl RenderFeature3DHelper {
 
             //
             if state_camera.resolution_height == 0 || state_camera.resolution_height == 0 {
+                println!("Invalid camera resolution");
                 continue;
             }
 

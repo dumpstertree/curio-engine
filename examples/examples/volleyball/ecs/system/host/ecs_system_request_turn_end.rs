@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -28,7 +28,7 @@ impl Scope for ECsystemGameRequestTurnEnd {
     }
 }
 impl Impulse<GameEvents> for ECsystemGameRequestTurnEnd {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::RequestTurnEnd(id) => {
                 let Some(team) = ledger.read::<StateTeamAssignments>().team_for(id) else {

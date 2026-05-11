@@ -1,6 +1,6 @@
 use crate::state::state_teams::Teams;
 use crate::{game_events::GameEvents, state::state_score::StateScore};
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
@@ -19,7 +19,7 @@ impl Scope for ECsystemGamePointScored {
     }
 }
 impl Impulse<GameEvents> for ECsystemGamePointScored {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::PointScored(team) => {
                 // update score

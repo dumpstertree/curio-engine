@@ -1,4 +1,4 @@
-use curio_core::{collections::ledger::Ledger, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{collections::ledger::Ledger, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::TextureView;
@@ -24,15 +24,16 @@ pub struct RenderFeaturePostProcessHelper {
 impl RenderFeaturePostProcessHelper {
     pub fn new(offscreen_view: &TextureView) -> RenderFeaturePostProcessHelper {
         // get resources from GPU
-        let config = SystemGPU::get_config();
-        let device = SystemGPU::get_device();
-        let depth_view = &SystemGPU::get_depth_texture().view;
+        let s = services();
+        let config = s.gpu.config();
+        let device = Arc::new(s.gpu.device().clone());
+        let depth_view = s.gpu.depth().view.clone();
 
         let pp_resource = PostProcessResources::new(device.clone(), config.width, config.height, config.format);
         let features: Vec<Box<dyn RenderFeaturePostProcess>> = vec![
             // RenderFeaturePostProcessKuwahara::new(device.clone(), config.format, &pp_resource, depth_view, &offscreen_view),
             // RenderFeaturePostProcessOutline::new(device.clone(), config.format, &pp_resource, depth_view, &offscreen_view),
-            RenderFeaturePostProcessFog::new(device.clone(), config.format, &pp_resource, depth_view, &offscreen_view),
+            RenderFeaturePostProcessFog::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
         ];
         // construct -> return
         RenderFeaturePostProcessHelper { pp_resource, features }

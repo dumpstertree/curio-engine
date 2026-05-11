@@ -14,7 +14,7 @@ use crate::{
 use curio_core::{
     DrawCall, Matrix4x4, Quaternion, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_rendering::SysRecordRendering, sys_record_time::SysRecordTime},
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -34,7 +34,8 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn did_tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut EventQueue) {
+    fn did_tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
+        println!("update");
         let state_camera = state.read::<SysRecordCamera>();
 
         let time = state.read::<SysRecordTime>().scaled_time;
@@ -146,7 +147,6 @@ impl Habit for Instance {
                     renderer.update_mesh(time);
                 }
             });
-
             world.edit::<(&RendererDynamic, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {
@@ -171,7 +171,6 @@ impl Habit for Instance {
                     }
                 }
             });
-
             world.edit::<(&mut RendererText, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // if !renderer.enabled_in_hierarchy(&world) {

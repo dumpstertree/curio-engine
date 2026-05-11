@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug},
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 // use habit::habit;
@@ -24,7 +24,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut EventQueue) {
+    fn tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
         if state.read::<SysRecordDebug>().is_paused {
             return;
         }

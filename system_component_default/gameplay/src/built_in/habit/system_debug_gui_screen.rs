@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui},
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
@@ -26,15 +26,15 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
-        // get gpu data
-        let sys_config = SystemGPU::get_config();
-        let sys_window = SystemGPU::get_window();
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
+        // // get gpu data
+        // let sys_config = SystemGPU::get_config();
+        // let sys_window = SystemGPU::get_window();
 
-        // edit state
-        ledger.write::<SysRecordDebugGui>(|x| {
-            x.append(format!("Resolution: ({}, {})", sys_config.width, sys_config.height));
-            x.append(format!("Screen Size: ({}, {})", sys_window.inner_size().width, sys_window.inner_size().height));
-        });
+        // // edit state
+        // ledger.write::<SysRecordDebugGui>(|x| {
+        //     x.append(format!("Resolution: ({}, {})", sys_config.width, sys_config.height));
+        //     x.append(format!("Screen Size: ({}, {})", sys_window.inner_size().width, sys_window.inner_size().height));
+        // });
     }
 }

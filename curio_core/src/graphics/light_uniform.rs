@@ -3,7 +3,7 @@ use egui_wgpu::wgpu;
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, num::NonZeroU64};
 
-use crate::{extensions::extensions_f32::ExtensionsF32, system_adapters::adapter_system_gpu::SystemGPU};
+use crate::{engine_services::services, extensions::extensions_f32::ExtensionsF32, system_adapters::adapter_system_gpu::SystemGPU};
 
 // CPU-side light types for your ECS
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
@@ -71,7 +71,7 @@ pub struct LightSystem {
 impl LightSystem {
     /// Create a LightSystem: allocates uniform buffer sized for MAX_LIGHTS and creates bind group layout.
     pub fn new() -> Self {
-        let device = SystemGPU::get_device();
+        let device = services().gpu.device();
 
         // Each GpuLight is 64 bytes, plus a 16-byte header
         let header_size = 16u64;
@@ -114,7 +114,7 @@ impl LightSystem {
 
     /// Write lights to GPU buffer. Call each frame before drawing 3D.
     pub fn update(&self, sun: &DrawCallLight, lights: &[DrawCallLight]) {
-        let queue = &SystemGPU::get_queue();
+        let queue = services().gpu.queue();
         let n = lights.len().min(MAX_LIGHTS);
 
         // Header: first 16 bytes. First u32 = count

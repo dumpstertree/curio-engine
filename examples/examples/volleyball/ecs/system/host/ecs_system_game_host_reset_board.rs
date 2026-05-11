@@ -7,7 +7,7 @@ use crate::state::state_energy::StateEnergy;
 use crate::state::state_position_ball::StatePositionBall;
 use crate::state::state_position_player::StatePositionEntities;
 use crate::state::state_teams::{StateTeamAssignments, Teams};
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
@@ -26,7 +26,7 @@ impl Scope for ECsystemGameResetBoard {
 }
 
 impl Impulse<GameEvents> for ECsystemGameResetBoard {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::ResetBoard(serving_team) => {
                 println!("Board Reset------------------------------------------------");

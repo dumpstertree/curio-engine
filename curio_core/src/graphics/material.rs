@@ -5,9 +5,10 @@ use std::{hash::Hash, sync::Arc};
 
 use crate::{
     assets::asset::AssetCommonFromBits,
+    engine_services::services,
     io::asset_loader::{ASSET_UID_SHADER_MODULE_LIT, ASSET_UID_SHADER_MODULE_UNLIT},
     random::Random,
-    system_adapters::adapter_system_gpu::SystemGPU,
+    system_adapters::adapter_system_gpu::{get_shader_module, SystemGPU},
     AssetCommon, Color, TextureAsset,
 };
 
@@ -77,11 +78,13 @@ impl Material {
         // let device = &SystemGPU::get_device();
         // AssetLoader::load_shader_module(device, Builtin &self.shader_desc.shader_module_path)
 
+        let s = services();
+
         if self.shader_desc.shader_module_path == "shader_module_lit" {
-            return SystemGPU::get_shader_module(&ASSET_UID_SHADER_MODULE_LIT);
+            return get_shader_module(&ASSET_UID_SHADER_MODULE_LIT);
         }
         if self.shader_desc.shader_module_path == "shader_module_unlit" {
-            return SystemGPU::get_shader_module(&ASSET_UID_SHADER_MODULE_UNLIT);
+            return get_shader_module(&ASSET_UID_SHADER_MODULE_UNLIT);
         }
         // SystemGPU::get_shader_module(&self.shader_desc.shader_module_path).unwrap()
 
@@ -147,7 +150,7 @@ impl Material {
     // Helpers
     //=========================================
     fn upload_color_buffer(&mut self, index: usize) {
-        let device = SystemGPU::get_device();
+        let device = services().gpu.device();
         let c = self.colors[index];
         let buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Color Buffer"),
@@ -161,7 +164,7 @@ impl Material {
     // Combined Binding Group
     //=========================================
     pub fn finalize(&mut self) {
-        let device = SystemGPU::get_device();
+        let device = services().gpu.device();
         let mut entries: Vec<egui_wgpu::wgpu::BindGroupEntry> = Vec::new();
         let mut layouts: Vec<egui_wgpu::wgpu::BindGroupLayoutEntry> = Vec::new();
         let mut binding_index = 0u32;

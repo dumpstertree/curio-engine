@@ -8,7 +8,7 @@ use habit::habit;
 use curio_core::{
     Color, PrefabGameObject, Severity, Vector3,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_sun::SysRecordSun},
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     io::asset_loader::AssetLoader,
     network_modes::NetworkModes,
 };
@@ -29,10 +29,10 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _: &mut Nerve) {
         ledger.log(Severity::Info, "Init");
     }
-    fn enable(&mut self, ledger: &mut Ledger, world: &mut Context3D, _event_queue: &mut EventQueue) {
+    fn enable(&mut self, ledger: &mut Ledger, world: &mut Context3D, _event_queue: &mut Nerve) {
         ledger.log(Severity::Info, "Enabled");
 
         // load any remote assets now

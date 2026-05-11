@@ -25,7 +25,7 @@ use crate::{
 use curio_core::RecordCommon;
 use curio_core::{
     built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -69,12 +69,12 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn init(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {}
-    fn enable(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _: &mut EventQueue) {
+    fn init(&mut self, _ledger: &mut Ledger, _world: &mut Context3D, _: &mut Nerve) {}
+    fn enable(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _: &mut Nerve) {
         self.move_time = 1.5;
         self.lastmove = ledger.read::<SysRecordTime>().scaled_time;
     }
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut Nerve) {
         let state_score = ledger.read::<StateScore>();
         if state_score.all_scores.iter().any(|x| *x.1 <= 0) {
             return;
@@ -174,7 +174,7 @@ impl Habit for Instance {
 //     }
 // }
 impl Impulse<GameEvents> for Instance {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, _event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::DidTurnBegin(_id) => {}
             _ => {

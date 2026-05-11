@@ -13,7 +13,7 @@ use crate::{
 };
 use curio_core::{
     AxisCode, ButtonCode, Color, InputAxisState, KeyState, PrefabGameObject, Quaternion, Vector2, Vector3,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use gameplay::{
@@ -52,7 +52,7 @@ impl UIPanel for UIHUDInstance {
 }
 impl UICommon for UIHUDInstance {
     fn init(&mut self) {}
-    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, context: &mut Context2D) {
         // get state
         let state_deck = ledger.read::<StateDeck>();
 
@@ -67,12 +67,12 @@ impl UICommon for UIHUDInstance {
                 .push(Self::spawn_card(ledger, context, card.clone()));
         }
     }
-    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {
         for f in &self.f_cards {
             f.destroy();
         }
     }
-    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {
         // get the state
         let state_cards = ledger.read::<StateDeck>();
         let Some(deck) = state_cards.deck.get(&ledger.network.me().guid) else {

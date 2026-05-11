@@ -8,6 +8,7 @@ use egui_wgpu::wgpu::VertexAttribute;
 use egui_wgpu::wgpu::VertexBufferLayout;
 use mesh_tools::primitives::{generate_plane, generate_sphere};
 
+use crate::engine_services::services;
 use crate::extensions::extensions_f32::ExtensionsF32;
 use crate::random::Random;
 use crate::system_adapters::adapter_system_gpu::SystemGPU;
@@ -291,7 +292,9 @@ impl Mesh {
         Mesh::new(String::from("Sphere"), v, i, Matrix4x4::default())
     }
     pub fn new(name: String, verticies: Vec<Vertex>, indicies: Vec<u32>, matrix: Matrix4x4) -> Mesh {
-        let device = SystemGPU::get_device();
+        // panic!("GPU CONVERSION FAILURE");
+
+        let device = services().gpu.device();
         let i_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(&indicies),

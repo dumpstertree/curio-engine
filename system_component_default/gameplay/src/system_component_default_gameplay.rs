@@ -9,7 +9,7 @@ use curio_core::{
     KeyState,
     Vector3,
     collections::{
-        event_queue::{EventQueue, IGameEvent},
+        event_queue::{Nerve, IGameEvent},
         game_mode::GameMode,
         ledger::Ledger,
     },
@@ -67,8 +67,8 @@ where
             self.game_instance.push(GameplayInstance::new());
         }
     }
-    fn debug(&mut self, _ledger: &mut Vec<Ledger>, _system_queue: &mut Vec<EventQueue>) {}
-    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<EventQueue>) {
+    fn debug(&mut self, _ledger: &mut Vec<Ledger>, _system_queue: &mut Vec<Nerve>) {}
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {
         // iterate over each gamestate
         for i in 0..ledger.len() {
             // get this index values

@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "curio_core",
+    "curio_engine",
     "examples",
     "system_component_default/gameplay",
     "system_component_default/gameplay_macros/impulse",
@@ -14,9 +15,12 @@ members = [
     "system_component_default/time",
     "system_component_default/physics",
     "system_component_default/networking",
+    "system_component_default/animation",
+
 ]
 
 [workspace.dependencies]
+curio_engine = { path = "curio_engine" }
 curio_core = { path = "curio_core" }
 record = { path = "system_component_default/gameplay_macros/record" }
 record_serializable = { path = "system_component_default/gameplay_macros/record_serializable" }
@@ -30,6 +34,7 @@ networking = { path = "system_component_default/networking" }
 physics = { path = "system_component_default/physics" }
 input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
+animation = { path = "system_component_default/animation" }
 
 [workspace.package]
 version = "0.1.0"

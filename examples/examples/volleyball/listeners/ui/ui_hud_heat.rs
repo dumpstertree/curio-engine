@@ -1,6 +1,6 @@
 use curio_core::{
     AxisCode, ButtonCode, InputAxisState, KeyState, PrefabGameObject, Quaternion, Random, TextureAsset, Vector2, Vector3,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     io::asset_loader::AssetLoader,
 };
 use std::collections::HashMap;
@@ -37,18 +37,18 @@ impl UIPanel for UIHUD {
 impl UICommon for UIHUD {
     fn init(&mut self) {}
 
-    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn present(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, context: &mut Context2D) {
         self.f_ui = Some(context.spawn_prefab_recursive(&AssetLoader::load_asset::<PrefabGameObject>(&Assets::PrefabUIHeat.into())));
     }
 
-    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut EventQueue, _context: &mut Context2D) {
+    fn dismiss(&mut self, _ledger: &mut Ledger, _event_queue: &mut Nerve, _context: &mut Context2D) {
         if let Some(ui) = &self.f_ui {
             ui.destroy();
         }
         self.f_ui = None;
     }
 
-    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut EventQueue, context: &mut Context2D) {
+    fn tick(&mut self, ledger: &mut Ledger, _event_queue: &mut Nerve, context: &mut Context2D) {
         // get cur turn
         let cur_heat = ledger.read::<StateHeat>().all_players.clone();
         let heat = cur_heat.get(&ledger.network.me().guid).unwrap().clone();

@@ -3,10 +3,11 @@ use crate::render_feature_2d::RenderFeature2D;
 use curio_core::{
     built_in::record::{
         sys_record_debug::SysRecordDebug,
-        sys_record_gui::{GuiElementTypes, SysRecordGui},
         sys_record_debug_gui::SysRecordDebugGui,
+        sys_record_gui::{GuiElementTypes, SysRecordGui},
     },
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
+    engine_services::services,
     system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::{Color32, Frame, Pos2, Ui};
@@ -21,11 +22,12 @@ impl RenderFeatureDrawUI {
         Box::new(RenderFeatureDrawUI {})
     }
 
-    fn draw_all_ui(ledger: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
-        let window = SystemGPU::get_window();
-        let queue = SystemGPU::get_queue();
-        let device = SystemGPU::get_device();
-        let config = SystemGPU::get_config();
+    fn draw_all_ui(ledger: &mut Ledger, system_event_queue: &mut Nerve, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
+        let s = services();
+        let window = s.gpu.window();
+        let queue = s.gpu.queue();
+        let device = s.gpu.device();
+        let config = s.gpu.config();
         let state_gui_debug = &ledger.read::<SysRecordDebugGui>();
 
         // start gui
@@ -79,7 +81,7 @@ impl RenderFeatureDrawUI {
     }
 }
 impl RenderFeature2D for RenderFeatureDrawUI {
-    fn render(&mut self, ledger: &mut Ledger, system_event_queue: &mut EventQueue, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
+    fn render(&mut self, ledger: &mut Ledger, system_event_queue: &mut Nerve, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer) {
         RenderFeatureDrawUI::draw_all_ui(ledger, system_event_queue, output, encoder, egui_renderer);
     }
 

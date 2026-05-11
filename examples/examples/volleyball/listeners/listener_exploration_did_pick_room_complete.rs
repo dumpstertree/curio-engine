@@ -1,7 +1,7 @@
 use crate::UIViewTypes;
 use crate::game_events::GameEvents;
 use crate::state::host::state_exploration::StateExploration;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::{
@@ -23,7 +23,7 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::ExplorationDidPickRoomComplete => {
                 // turn off selection value

@@ -2,7 +2,7 @@ use crate::game_events::GameEvents;
 use crate::state::host::state_currency::StateCurrency;
 use crate::state::state_score::StateScore;
 use crate::state::state_teams::StateTeamAssignments;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::traits::{impulse::Impulse, scope::Scope};
@@ -21,7 +21,7 @@ impl Scope for Listener {
     }
 }
 impl Impulse<GameEvents> for Listener {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _world: &mut Context3D, _event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::RequestHeal(user_guid) => {
                 let state_currency = ledger.read::<StateCurrency>();

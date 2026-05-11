@@ -1,4 +1,4 @@
-use curio_core::{collections::camera_uniform::CameraUniform, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{collections::camera_uniform::CameraUniform, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
 use egui_wgpu::wgpu::{self, BindGroup, BindGroupLayout, Buffer};
 use std::num::NonZeroU64;
 
@@ -12,7 +12,9 @@ pub struct CameraRenderingComponents {
 
 impl CameraRenderingComponents {
     pub fn new(max_cameras: usize) -> CameraRenderingComponents {
-        let device = SystemGPU::get_device();
+        assert!(max_cameras > 0, "max_cameras must be > 0, got 0");
+        let s = services();
+        let device = s.gpu.device();
 
         // Each camera takes 256 bytes (aligned requirement)
         let aligned_size: u64 = 256;
@@ -67,7 +69,8 @@ impl CameraRenderingComponents {
     /// Update a single camera’s GPU buffer (including tint)
     pub fn update(&self, i: usize, camera_uniform: &CameraUniform) {
         assert!(i < self.max_cameras);
-        let queue = SystemGPU::get_queue();
+        let s = services();
+        let queue = s.gpu.queue();
         let aligned_size: u64 = 256;
         let offset = (i as u64) * aligned_size;
 

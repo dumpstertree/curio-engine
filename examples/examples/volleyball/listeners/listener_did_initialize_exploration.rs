@@ -1,6 +1,6 @@
 use crate::UIViewTypes;
 use crate::game_events::GameEvents;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::context_3d::Context3D;
 use gameplay::{
@@ -22,7 +22,7 @@ impl Scope for ECsystemGamePointScored {
     }
 }
 impl Impulse<GameEvents> for ECsystemGamePointScored {
-    fn dequeue_event(&mut self, _ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, _ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::DidInitializeExploration(_) => {
                 event_queue.enqueue_event(UIEvents::Open(UIViewTypes::HudStatus));

@@ -4,7 +4,7 @@ use crate::state::host::state_exploration::StateExploration;
 use crate::state::peer::state_peer_select_targets::StatePeerSelectTargets;
 use curio_core::{
     built_in::record::sys_record_input::SysRecordInput,
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::context_3d::Context3D;
@@ -34,10 +34,10 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
+    fn enable(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
         println!("enabled turn end");
     }
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut Nerve) {
         // get input
         let state_input = ledger.read::<SysRecordInput>();
 

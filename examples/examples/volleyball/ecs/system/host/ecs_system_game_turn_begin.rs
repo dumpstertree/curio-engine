@@ -9,7 +9,7 @@ use crate::{
     },
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 use gameplay::{
@@ -30,7 +30,7 @@ impl Scope for ECsystemGameTurnBegin {
     }
 }
 impl Impulse<GameEvents> for ECsystemGameTurnBegin {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, events: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::TurnBegin(id) => {
                 // end this turn

@@ -3,7 +3,7 @@ use crate::game_board::GameBoard;
 use crate::state::state_position_ball::StatePositionBall;
 use curio_core::Vector3;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
-use curio_core::collections::{event_queue::EventQueue, ledger::Ledger};
+use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
 use curio_core::network_modes::NetworkModes;
 use gameplay::built_in::facet::renderer::renderer_static::RendererStatic;
 use gameplay::built_in::facet::transform::transform3d::Transform3D;
@@ -24,7 +24,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _events: &mut Nerve) {
         let state_position_ball = ledger.read::<StatePositionBall>();
         let state_time = ledger.read::<SysRecordTime>();
 

@@ -9,9 +9,10 @@ use curio_core::{
         facet::component_collider::{ColliderShape, ColliderSnapshot, CollisionSnapshot, Contact},
         record::{sys_record_colliders::SysRecordCollider, sys_record_collision::SysRecordCollision},
     },
+    plugin::Plugin,
 };
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     system::system_component::SystemComponent,
 };
 
@@ -55,7 +56,7 @@ impl SystemComponent for SystemComponentDefaultPhysics {
     }
     fn init(&mut self, _: &mut Vec<Ledger>) {}
 
-    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<EventQueue>) {
+    fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) {
         for ledger in ledger {
             // reset
             self.buffer_collider_box_cnt = 0;
@@ -146,4 +147,26 @@ impl SystemComponent for SystemComponentDefaultPhysics {
             });
         }
     }
+}
+
+// physics/src/lib.rs
+
+pub struct PhysicsPlugin;
+
+impl Plugin for PhysicsPlugin {
+    fn name(&self) -> &str {
+        "physics"
+    }
+
+    fn build(&self) {
+        println!("build");
+    }
+}
+
+/// This is the only symbol the engine looks for.
+/// The name must be exactly this — the loader will look for it by string.
+#[unsafe(no_mangle)]
+pub extern "C" fn _plugin_create() -> *mut dyn Plugin {
+    let plugin = Box::new(PhysicsPlugin);
+    Box::into_raw(plugin) // transfer ownership across the boundary
 }

@@ -1,6 +1,6 @@
 use curio_core::{
     built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_time::SysRecordTime},
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -25,7 +25,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut EventQueue) {
+    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
         // get state
         let state_time = ledger.read::<SysRecordTime>();
 

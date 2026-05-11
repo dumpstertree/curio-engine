@@ -5,7 +5,7 @@ use gameplay::{
 use impulse::impulse;
 
 use curio_core::{
-    collections::{event_queue::EventQueue, ledger::Ledger},
+    collections::{event_queue::Nerve, ledger::Ledger},
     network_modes::NetworkModes,
 };
 
@@ -27,7 +27,7 @@ impl Scope for ECsystemGameEndTurn {
     }
 }
 impl Impulse<GameEvents> for ECsystemGameEndTurn {
-    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut EventQueue, event: &GameEvents) {
+    fn dequeue_event(&mut self, ledger: &mut Ledger, _: &mut Context3D, event_queue: &mut Nerve, event: &GameEvents) {
         match event {
             GameEvents::TurnEnd(team) => {
                 // end this turn

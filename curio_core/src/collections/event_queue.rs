@@ -2,6 +2,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::{any::Any, collections::HashMap, fmt::Display, time::Instant};
 
 use crate::{
+    engine::curio::CurioNetwork,
     network_modes::NetworkModes,
     static_data::global_events::{get_global_event_deserializer, get_global_event_serializer},
 };
@@ -169,20 +170,22 @@ impl NetworkCapabilities {
     }
 }
 
-pub struct EventQueue {
-    pub name: String,
+pub struct Nerve {
+    // pub name: String,
     cache: HashMap<i32, Queue>,
     network_capabilities: Option<NetworkCapabilities>,
     delayed: Vec<(Instant, i32, Box<dyn Any>, Option<EventSyncEvent>)>,
+    network: CurioNetwork,
 }
 
-impl EventQueue {
-    pub fn new(name: &str, privilege: NetworkModes) -> Self {
-        EventQueue {
-            name: String::from(name),
+impl Nerve {
+    pub fn new(network: CurioNetwork) -> Self {
+        Nerve {
+            // name: String::from(name),
             cache: HashMap::new(),
-            network_capabilities: Some(NetworkCapabilities::new(privilege)),
+            network_capabilities: Some(NetworkCapabilities::new(network.me().mode)),
             delayed: Vec::new(),
+            network,
         }
     }
     pub fn update_timed_events(&mut self) {
