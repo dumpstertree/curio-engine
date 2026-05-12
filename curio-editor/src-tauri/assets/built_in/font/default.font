@@ -1,0 +1,13 @@
+{
+  "texture_path": "font2.png",
+  "shader_path": "shader/unlit_shader.shader",
+  "char_spacing": -0.1,
+  "line_spacing": 0.1,
+  "padding_left": 1,
+  "padding_right": 99,
+  "padding_top": 1,
+  "padding_bottom": 19,
+  "columns": 13,
+  "rows": 9,
+  "char_order": "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890   .,:;!?$"
+}

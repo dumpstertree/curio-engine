@@ -1,0 +1,24 @@
+name: "Button"
+components:
+  - type: "transform2d"
+    fields:
+      - "position: (0.0,0.0)"
+      - "scale: (1,1,1)"
+  - type: "RendererText"
+    fields:
+      - "contents:BUTTON"
+      - "font_size:0.055"
+      - "bounds:(5,5)"
+  - type: "AnimatorScaleSin"
+    fields:
+      - "enabled:true"
+      - "min:(0.9,0.9,0.9)"
+      - "max:(1.1,1.1,1.1)"
+      - "speed:8.0"
+  - type: "AnimatorRotationSin"
+    fields:
+      - "enabled:true"
+      - "min:(0.0,0.0,-5.0)"
+      - "max:(0.0,0.0,5.0)"
+      - "speed:4.0"
+children: []

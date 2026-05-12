@@ -53,7 +53,7 @@ serde_json = "1.0.48"
 serde_yaml = "0.9.34"
 serde = { version = "1.0.104", features = ["derive"] }
 bytemuck = { version = "1.16", features = ["derive"] }
-message-io = "0.19.0"
+# message-io = "0.19.0"
 # rusty_spine = { path = "../../rusty_spine3.8" }
 reqwest = { version = "0.12.23", features = ["blocking"] }
 chrono = "0.4.42"

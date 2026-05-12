@@ -1,0 +1,77 @@
+name: "ui_card"
+components:
+  - type: "transform2d"
+    fields:
+      - "position: (0.5,0.5)"
+  - type: "AnimatorRotationSin"
+    fields:
+      - "enabled:false"
+      - "min:(0.0,0.0,-5.0)"
+      - "max:(0.0, 0.0,5.0)"
+      - "speed:8.0"
+  - type: "componentcard"
+    fields: []
+
+children:
+  - name: "description"
+    components:
+      - type: "transform2d"
+        fields:
+          - "position: (0.5,0.3)"
+          - "order:1"
+      - type: "RendererText"
+        fields:
+          - "contents:description"
+          - "font_size:0.02"
+          - "bounds:(0.25,0.2)"
+    children: []
+
+  - name: "title"
+    components:
+      - type: "transform2d"
+        fields:
+          - "position: (0.5,0.67)"
+          - "order:1"
+      - type: "RendererText"
+        fields:
+          - "contents:description"
+          - "font_size:0.03"
+          - "bounds:(0.5,0.2)"
+    children: []
+
+  - name: "cost"
+    components:
+      - type: "transform2d"
+        fields:
+          - "position: (0.565,0.21)"
+          - "order:1"
+      - type: "RendererText"
+        fields:
+          - "contents:description"
+          - "font_size:0.03"
+          - "bounds:(5,5)"
+    children: []
+
+  - name: "type"
+    components:
+      - type: "Transform2D"
+        fields:
+          - "position: (0.5,0.4)"
+          - "order:1"
+      - type: "RendererText"
+        fields:
+          - "contents:description"
+          - "font_size:0.02"
+          - "bounds:(0.25,0.2)"
+    children: []
+
+  - name: "background"
+    components:
+      - type: "Transform2D"
+        fields:
+          - "position:(0.5,0.45)"
+          - "rotation:(0.0,180.0,0.0)"
+      - type: "RendererStatic"
+        fields:
+          - "asset:card"
+    children: []

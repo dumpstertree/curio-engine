@@ -1,0 +1,27 @@
+name: "Camera"
+components:
+  - type: "transform2d"
+    fields:
+      - "position: (0.5,0.5)"
+      - "rotation: (0.0, 45.0, 0.0)"
+      - "scale: (1,1,1)"
+  - type: "RendererText"
+    fields:
+      - "contents:my contents"
+      - "enabled:true"
+      - "font_size:0.1"
+      - "bounds:(5,5)"
+children:
+  - name: "prefab"
+    components:
+      - type: "transform2d"
+        fields:
+          - "position: (0.0,0.6)"
+          - "scale: (1,1,1)"
+      - type: "RendererText"
+        fields:
+          - "contents:my contents child"
+          - "enabled:true"
+          - "font_size:0.1"
+          - "bounds:(5,5)"
+    children: []
