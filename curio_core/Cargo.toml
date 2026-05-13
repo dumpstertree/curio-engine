@@ -65,8 +65,4 @@ simple_logger = "5"
 downcast-rs = "2.0.1"
 colored = "3.1.1"
 libloading = "0.8"
-
-[dependencies.image]
-version = "0.24"
-default-features = false
-features = ["png", "jpeg"]
+image = { version = "0.24", default-features = false, features = ["jpeg"] }

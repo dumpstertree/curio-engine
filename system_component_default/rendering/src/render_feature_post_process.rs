@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use egui_wgpu::wgpu::TextureView;
 
-use crate::render_feature_post_processes::render_feature_post_process_fog::RenderFeaturePostProcessFog;
+use crate::render_feature_post_processes::{render_feature_post_process_fog::RenderFeaturePostProcessFog, render_feature_post_process_kuwahara::RenderFeaturePostProcessKuwahara, render_feature_post_process_sobel_outline::RenderFeaturePostProcessOutline};
 
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &egui_wgpu::wgpu::TextureView, output_view: &egui_wgpu::wgpu::TextureView, source: PostProcessSource);
@@ -31,9 +31,9 @@ impl RenderFeaturePostProcessHelper {
 
         let pp_resource = PostProcessResources::new(device.clone(), config.width, config.height, config.format);
         let features: Vec<Box<dyn RenderFeaturePostProcess>> = vec![
-            // RenderFeaturePostProcessKuwahara::new(device.clone(), config.format, &pp_resource, depth_view, &offscreen_view),
-            // RenderFeaturePostProcessOutline::new(device.clone(), config.format, &pp_resource, depth_view, &offscreen_view),
-            RenderFeaturePostProcessFog::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
+            RenderFeaturePostProcessKuwahara::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
+            RenderFeaturePostProcessOutline::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
+            // RenderFeaturePostProcessFog::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
         ];
         // construct -> return
         RenderFeaturePostProcessHelper { pp_resource, features }

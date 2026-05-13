@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::mpsc::{self, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
-use tauri::State;
+use tauri::{Emitter, State};
 use winit::platform::wayland::EventLoopBuilderExtWayland;
 // use winit::platform::x11::EventLoopBuilderExtX11;
 // ─────────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ use curio_core::{
     Application, AxisCode, ButtonCode, GPUInstance, KeyState, Severity, TextureAsset, Vector3,
 };
 
-use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages};
+use egui_wgpu::wgpu::{Adapter, Buffer, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages};
 use pollster::FutureExt;
 use std::sync::mpsc::Receiver;
 use winit::{
@@ -93,7 +93,13 @@ use winit::{
     window::Window,
 };
 
+use egui_wgpu::wgpu::{BufferDescriptor, BufferUsages, Extent3d, Texture, TextureDescriptor, TextureDimension};
+
+const CAPTURE_WIDTH: u32 = 1280;
+const CAPTURE_HEIGHT: u32 = 720;
+
 struct GameRunner {
+    app_handle: tauri::AppHandle,
     rx: Receiver<GameMessage>,
     gpu_instance: Option<Arc<GPUInstance>>,
     gpu: Option<Arc<SystemGPU>>,
@@ -101,11 +107,16 @@ struct GameRunner {
     app_instance: Option<LoadedCurio>,
     paused: bool,
     should_stop: bool,
+    capture_texture: Option<Arc<Texture>>,
+    readback_buffer: Option<Buffer>,
+    frame_counter: u32,
+    surface_format: egui_wgpu::wgpu::TextureFormat,
 }
 
 impl GameRunner {
-    fn new(rx: Receiver<GameMessage>) -> Self {
+    fn new(rx: Receiver<GameMessage>, app_handle: tauri::AppHandle) -> Self {
         Self {
+            app_handle,
             rx,
             gpu_instance: None,
             gpu: None,
@@ -113,10 +124,88 @@ impl GameRunner {
             app_instance: None,
             paused: false,
             should_stop: false,
+            capture_texture: None,
+            readback_buffer: None,
+            frame_counter: 0,
+            surface_format: egui_wgpu::wgpu::TextureFormat::Rgba8UnormSrgb,
         }
     }
 }
 impl GameRunner {
+    fn capture_and_emit(&mut self) {
+        let (Some(gpu), Some(capture_tex), Some(readback_buf)) = (self.gpu_instance.as_ref(), self.capture_texture.as_ref(), self.readback_buffer.as_ref()) else {
+            println!("[capture] missing gpu/texture/buffer — skipping");
+            return;
+        };
+
+        let device = &gpu.device;
+        let queue = &gpu.queue;
+        let bytes_per_row = align_to(CAPTURE_WIDTH * 4, 256);
+
+        // copy capture texture → readback buffer
+        let mut encoder = device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor { label: Some("capture") });
+
+        encoder.copy_texture_to_buffer(
+            egui_wgpu::wgpu::TexelCopyTextureInfo {
+                texture: capture_tex,
+                mip_level: 0,
+                origin: egui_wgpu::wgpu::Origin3d::ZERO,
+                aspect: egui_wgpu::wgpu::TextureAspect::All,
+            },
+            egui_wgpu::wgpu::TexelCopyBufferInfo {
+                buffer: readback_buf,
+                layout: egui_wgpu::wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(bytes_per_row),
+                    rows_per_image: Some(CAPTURE_HEIGHT),
+                },
+            },
+            egui_wgpu::wgpu::Extent3d {
+                width: CAPTURE_WIDTH,
+                height: CAPTURE_HEIGHT,
+                depth_or_array_layers: 1,
+            },
+        );
+
+        queue.submit(std::iter::once(encoder.finish()));
+
+        // map buffer and read pixels back to CPU
+        let slice = readback_buf.slice(..);
+        slice.map_async(egui_wgpu::wgpu::MapMode::Read, |_| {});
+        device.poll(egui_wgpu::wgpu::MaintainBase::Wait);
+
+        let pixels: Vec<u8> = {
+            let view = slice.get_mapped_range();
+            // strip row padding — each row is bytes_per_row wide but we only want width * 4
+            view.chunks(bytes_per_row as usize)
+                .flat_map(|row| &row[..CAPTURE_WIDTH as usize * 4])
+                .copied()
+                .collect()
+        };
+
+        readback_buf.unmap();
+
+        // diagnostic — check if we actually got non-black pixels
+        let non_zero = pixels.iter().any(|&b| b != 0);
+        // println!("[capture] read {} bytes, non-zero pixels: {}", pixels.len(), non_zero);
+
+        // copy out of self before spawning so self isn't captured by the closure
+        let format = self.surface_format;
+        let app_handle = self.app_handle.clone();
+
+        std::thread::spawn(move || match encode_frame(&pixels, CAPTURE_WIDTH, CAPTURE_HEIGHT, format) {
+            Some(jpeg) => {
+                // println!("[capture] jpeg encoded: {} bytes", jpeg.len());
+                let b64 = base64_encode(&jpeg);
+                // println!("[capture] emitting viewport_frame");
+                app_handle.emit("viewport_frame", b64).ok();
+            }
+            None => {
+                // println!("[capture] encode_jpeg returned None");
+            }
+        });
+    }
+
     fn run(mut self) {
         // detect which display server is running
         // and use any_thread() on the appropriate extension
@@ -158,6 +247,9 @@ pub extern "C" fn set_fullscreen(_x: bool) {}
 #[unsafe(no_mangle)]
 pub extern "C" fn set_cursor_visible(_x: bool) {}
 
+fn align_to(value: u32, alignment: u32) -> u32 {
+    (value + alignment - 1) & !(alignment - 1)
+}
 impl ApplicationHandler for GameRunner {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         // build window + GPU — same as your existing CabinetWindowOwner::resumed
@@ -212,7 +304,7 @@ impl ApplicationHandler for GameRunner {
             .unwrap_or(caps.formats[0]);
 
         let config = Arc::new(SurfaceConfiguration {
-            usage: TextureUsages::RENDER_ATTACHMENT,
+            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::COPY_SRC, // ← add COPY_SRC
             format,
             width: 1920,
             height: 1080,
@@ -236,6 +328,35 @@ impl ApplicationHandler for GameRunner {
 
         let gpu = Arc::new(SystemGPU::new(self.gpu_instance.as_ref().unwrap().clone()));
 
+        let surface_format = config.format;
+        let capture_texture = Arc::new(device.create_texture(&TextureDescriptor {
+            label: Some("capture_texture"),
+            size: Extent3d {
+                width: CAPTURE_WIDTH,
+                height: CAPTURE_HEIGHT,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: surface_format,                                                                      // ← match the offscreen format
+            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::COPY_SRC | TextureUsages::COPY_DST, // ← needs COPY_DST to receive the copy
+            view_formats: &[],
+        }));
+
+        // bytes per row must be aligned to 256
+        let bytes_per_row = align_to(CAPTURE_WIDTH * 4, 256);
+        let readback_buffer = device.create_buffer(&BufferDescriptor {
+            label: Some("readback_buffer"),
+            size: (bytes_per_row * CAPTURE_HEIGHT) as u64,
+            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
+
+        self.capture_texture = Some(capture_texture.clone());
+        self.readback_buffer = Some(readback_buffer);
+
+        // now build services WITH capture texture pointer
         self.services = Some(Box::new(EngineServices {
             gpu: GpuHandle {
                 device: Arc::as_ptr(&gpu.device) as *const (),
@@ -244,6 +365,9 @@ impl ApplicationHandler for GameRunner {
                 window: Arc::as_ptr(&gpu.window) as *const (),
                 surface: Arc::as_ptr(&gpu.surface) as *const (),
                 depth: Arc::as_ptr(&depth_texture) as *const (),
+                capture_texture: Arc::as_ptr(&capture_texture) as *const (),
+                capture_width: CAPTURE_WIDTH,
+                capture_height: CAPTURE_HEIGHT,
             },
             set_fullscreen: set_fullscreen,
             set_resolution: set_resolution,
@@ -261,31 +385,20 @@ impl ApplicationHandler for GameRunner {
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         while let Ok(msg) = self.rx.try_recv() {
             match msg {
-                GameMessage::Pause => {
-                    println!("[game] received Pause");
-                    self.paused = true;
-                }
-                GameMessage::Resume => {
-                    println!("[game] received Resume");
-                    self.paused = false;
-                }
-                GameMessage::Stop => {
-                    println!("[game] received Stop");
-                    self.should_stop = true;
-                }
+                GameMessage::Stop => self.should_stop = true,
+                GameMessage::Pause => self.paused = true,
+                GameMessage::Resume => self.paused = false,
             }
         }
 
         if self.should_stop {
-            println!("[game] calling window_closed");
             if let Some(app) = &mut self.app_instance {
                 app.curio.window_closed();
             }
-            println!("[game] calling event_loop.exit()");
             event_loop.exit();
-            println!("[game] exit called");
         }
     }
+
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: winit::window::WindowId, event: WindowEvent) {
         match event {
             WindowEvent::RedrawRequested => {
@@ -310,6 +423,12 @@ impl ApplicationHandler for GameRunner {
                     if let Some(app) = &mut self.app_instance {
                         app.curio.application_refresh();
                     }
+                }
+
+                // capture right after render — GPU work is submitted
+                self.frame_counter = self.frame_counter.wrapping_add(1);
+                if self.frame_counter % 2 == 0 {
+                    self.capture_and_emit();
                 }
 
                 if let Some(gpu) = &self.gpu_instance {
@@ -374,7 +493,7 @@ impl ApplicationHandler for GameRunner {
 // ─────────────────────────────────────────────────────────────
 
 #[tauri::command]
-fn press_play(state: State<Mutex<EditorState>>) -> Result<(), String> {
+fn press_play(state: State<Mutex<EditorState>>, app_handle: tauri::AppHandle) -> Result<(), String> {
     let mut s = state.lock().unwrap();
 
     if s.mode == EditorMode::Playing {
@@ -395,7 +514,7 @@ fn press_play(state: State<Mutex<EditorState>>) -> Result<(), String> {
     s.game_tx = Some(tx);
 
     s.game_thread = Some(std::thread::spawn(move || {
-        GameRunner::new(rx).run();
+        GameRunner::new(rx, app_handle).run(); // ← pass it in
     }));
 
     s.mode = EditorMode::Playing;
@@ -502,4 +621,54 @@ fn create_depth_texture(device: &Device, label: &str) -> TextureAsset {
     });
 
     TextureAsset { texture, view, sampler }
+}
+// fn encode_jpeg(pixels: &[u8], width: u32, height: u32, format: TextureFormat) -> Option<Vec<u8>> {
+//     use image::{ImageBuffer, Rgba};
+//     use std::io::Cursor;
+
+//     // convert BGRA → RGBA if needed
+//     let rgba: Vec<u8> = match format {
+//         TextureFormat::Bgra8UnormSrgb | TextureFormat::Bgra8Unorm => pixels
+//             .chunks(4)
+//             .flat_map(|p| [p[2], p[1], p[0], p[3]])
+//             .collect(),
+//         _ => pixels.to_vec(),
+//     };
+
+//     let img = ImageBuffer::<Rgba<u8>, _>::from_raw(width, height, rgba)?;
+//     let mut buf = Cursor::new(Vec::new());
+//     img.write_to(&mut buf, image::ImageFormat::Jpeg).ok()?;
+//     Some(buf.into_inner())
+// }
+fn encode_frame(pixels: &[u8], width: u32, height: u32, format: TextureFormat) -> Option<Vec<u8>> {
+    use image::{ImageBuffer, Rgba};
+    use std::io::Cursor;
+
+    // log the actual format and raw bytes before any swap
+    // println!("[encode] format: {:?}", format);
+    if pixels.len() >= 4 {
+        // println!("[encode] raw bytes pixel 0 (before swap): {:?}", &pixels[0..4]);
+    }
+
+    let rgba: Vec<u8> = match format {
+        TextureFormat::Bgra8UnormSrgb | TextureFormat::Bgra8Unorm => pixels
+            .chunks(4)
+            .flat_map(|p| [p[2], p[1], p[0], p[3]])
+            .collect(),
+        _ => pixels.to_vec(),
+    };
+
+    if rgba.len() >= 4 {
+        // println!("[encode] after swap pixel 0: {:?}", &rgba[0..4]);
+    }
+
+    let img = ImageBuffer::<Rgba<u8>, _>::from_raw(width, height, rgba)?;
+    let mut buf = Cursor::new(Vec::new());
+    img.write_to(&mut buf, image::ImageFormat::Png).ok()?;
+    Some(buf.into_inner())
+}
+
+fn base64_encode(data: &[u8]) -> String {
+    use base64::{engine::general_purpose::STANDARD, Engine};
+    STANDARD.encode(data)
 }

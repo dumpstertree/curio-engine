@@ -2,7 +2,7 @@ use std::ptr;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 // use egui::Window;
-use egui_wgpu::wgpu::{Device, Queue, Surface, SurfaceConfiguration};
+use egui_wgpu::wgpu::{Device, Queue, Surface, SurfaceConfiguration, Texture};
 use winit::window::Window;
 
 use crate::TextureAsset;
@@ -15,6 +15,9 @@ pub struct GpuHandle {
     pub config: *const (),
     pub window: *const (),
     pub depth: *const (),
+    pub capture_texture: *const (),
+    pub capture_width: u32,
+    pub capture_height: u32,
 }
 
 impl GpuHandle {
@@ -35,6 +38,13 @@ impl GpuHandle {
     }
     pub fn surface(&self) -> &Surface<'_> {
         unsafe { &*(self.surface as *const Surface) }
+    }
+    pub fn capture_texture(&self) -> Option<&Texture> {
+        if self.capture_texture.is_null() {
+            None
+        } else {
+            Some(unsafe { &*(self.capture_texture as *const Texture) })
+        }
     }
 }
 #[repr(C)]

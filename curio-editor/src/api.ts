@@ -1,4 +1,5 @@
 import type { SceneSnapshot } from './types';
+import { listen } from '@tauri-apps/api/event';
 
 // ─────────────────────────────────────────────────────────────
 // Mock data — used when running outside Tauri (browser dev)
@@ -15,8 +16,8 @@ const MOCK_SNAPSHOT: SceneSnapshot = {
           children: [],
           components: [
             { name: 'Transform', fields: { x: 0.0, y: 1.2, z: 0.0, scale: 1.0 } },
-            { name: 'Health',    fields: { max: 100, current: 87 } },
-            { name: 'Velocity',  fields: { dx: 0.0, dy: -0.1 } },
+            { name: 'Health', fields: { max: 100, current: 87 } },
+            { name: 'Velocity', fields: { dx: 0.0, dy: -0.1 } },
           ],
         },
         {
@@ -25,7 +26,7 @@ const MOCK_SNAPSHOT: SceneSnapshot = {
           children: [],
           components: [
             { name: 'Transform', fields: { x: 0.0, y: 5.0, z: -10.0, scale: 1.0 } },
-            { name: 'Camera',    fields: { fov: 60.0, near: 0.1, far: 1000.0 } },
+            { name: 'Camera', fields: { fov: 60.0, near: 0.1, far: 1000.0 } },
           ],
         },
         {
@@ -38,7 +39,7 @@ const MOCK_SNAPSHOT: SceneSnapshot = {
               children: [],
               components: [
                 { name: 'Transform', fields: { x: 0.0, y: 0.0, z: 0.0, scale: 10.0 } },
-                { name: 'Mesh',      fields: { path: 'mesh/court.glb', visible: true } },
+                { name: 'Mesh', fields: { path: 'mesh/court.glb', visible: true } },
               ],
             },
             {
@@ -47,7 +48,7 @@ const MOCK_SNAPSHOT: SceneSnapshot = {
               children: [],
               components: [
                 { name: 'Transform', fields: { x: 10.0, y: 20.0, z: 5.0, scale: 1.0 } },
-                { name: 'Light',     fields: { intensity: 1.0, color: '#ffffff', shadows: true } },
+                { name: 'Light', fields: { intensity: 1.0, color: '#ffffff', shadows: true } },
               ],
             },
           ],
@@ -94,5 +95,14 @@ export const api = {
   getSceneSnapshot: async (): Promise<SceneSnapshot> => {
     if (!isTauri()) return MOCK_SNAPSHOT;
     return invoke<SceneSnapshot>('get_scene_snapshot');
+  },
+
+  onViewportFrame: (cb: (arg0: string) => void) => {
+    if (!isTauri()) return () => { };
+    const unlisten = listen<string>('viewport_frame', (e) => {
+      console.log('[viewport] received frame, payload length:', e.payload.length);
+      cb(`data:image/png;base64,${e.payload}`);
+    });
+    return () => { unlisten.then(f => f()); };
   },
 };

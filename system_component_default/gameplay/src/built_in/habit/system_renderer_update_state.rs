@@ -35,7 +35,6 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn did_tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
-        println!("update");
         let state_camera = state.read::<SysRecordCamera>();
 
         let time = state.read::<SysRecordTime>().scaled_time;

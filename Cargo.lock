@@ -1070,8 +1070,10 @@ checksum = "52560adf09603e58c9a7ee1fe1dcb95a16927b17c127f0ac02d6e768a0e25bc1"
 name = "curio-editor"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "curio_core",
  "egui-wgpu",
+ "image 0.24.9",
  "pollster",
  "serde",
  "serde_json",

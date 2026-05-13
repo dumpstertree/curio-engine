@@ -1,29 +1,52 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useEditorStore } from '../store';
+import { api } from '../api';
 
 export function Viewport() {
   const { mode, play } = useEditorStore();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (mode !== 'playing' && mode !== 'paused') return;
+
+    const unlisten = api.onViewportFrame((dataUrl) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      img.src = dataUrl;
+    });
+
+    return unlisten;
+  }, [mode]);
 
   return (
     <div className="viewport-area">
-      {/* tabs */}
       <div className="viewport-tabs">
         <div className="viewport-tab active">Viewport</div>
       </div>
 
-      {/* content */}
       <div className="viewport-content">
         <div className="viewport-grid" />
+
+        {/* game canvas — always present, hidden when stopped */}
+        <canvas
+          ref={canvasRef}
+          width={1280}
+          height={720}
+          className="viewport-canvas"
+          style={{ display: mode !== 'stopped' ? 'block' : 'none' }}
+        />
 
         {mode === 'stopped' && (
           <div className="viewport-label">
             <div className="viewport-label-title">No active game window</div>
             <div className="viewport-label-sub">
               Press{' '}
-              <span
-                className="viewport-play-hint"
-                onClick={play}
-              >
+              <span className="viewport-play-hint" onClick={play}>
                 ▶ Play
               </span>{' '}
               to launch
@@ -31,25 +54,8 @@ export function Viewport() {
           </div>
         )}
 
-        {mode === 'playing' && (
-          <div className="viewport-playing">
-            <div className="viewport-playing-indicator">
-              <div className="play-dot" />
-              Game running in separate window
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              Viewport streaming coming soon
-            </div>
-          </div>
-        )}
-
         {mode === 'paused' && (
-          <div className="viewport-playing">
-            <div className="viewport-playing-indicator" style={{ color: 'var(--pause)' }}>
-              <div className="play-dot" style={{ background: 'var(--pause)', animationPlayState: 'paused' }} />
-              Paused
-            </div>
-          </div>
+          <div className="viewport-paused-overlay">⏸ Paused</div>
         )}
       </div>
     </div>

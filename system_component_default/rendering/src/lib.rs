@@ -31,12 +31,13 @@ use curio_core::engine_services::services;
 use curio_core::system::system_component::SystemComponent;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 use curio_core::{GraphicsMapping, Matrix4x4};
-use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, TextureView};
+use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, Texture, TextureView};
 use std::iter;
 use winit::event::WindowEvent;
 
 pub struct SystemComponentDefaultGraphics {
     shadow_system: ShadowSystem,
+    offscreen_texture: Texture,
     offscreen_view: TextureView,
     render_feature_2d_helper: RenderFeature2DHelper,
     render_feature_3d_helper: RenderFeature3DHelper,
@@ -54,14 +55,8 @@ impl SystemComponent for SystemComponentDefaultGraphics {
     }
     fn init(&mut self, _ledger: &mut Vec<Ledger>) {}
     fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {
-        // initialize frame and get resources for rendering
-        let drawing_resources = Self::initialize_frame();
-
-        // seperate resourcees
-        let mut encoder = drawing_resources.1;
-        let output = drawing_resources.0;
-        let output_view = drawing_resources.2;
-
+        let (output, mut encoder, output_view) = Self::initialize_frame();
+        // shadows
         self.shadow_system
             .ensure_screens(ledger.len(), Matrix4x4::default());
         for i in 0..ledger.len() {
@@ -74,24 +69,54 @@ impl SystemComponent for SystemComponentDefaultGraphics {
             }
         }
 
-        // draw 3D into offscreen
         self.render_feature_3d_helper
             .draw_3d_features(&mut self.graphics_mappings, ledger, &mut encoder, &mut self.offscreen_view, &self.shadow_system);
 
-        // post-processing into swapchain output
+        // post-process offscreen → swapchain
         self.render_feature_pp_helper
             .draw_post_features(&mut encoder, &self.offscreen_view, &output_view);
 
-        // draw all 2d
+        // 2D overlay on swapchain
         self.render_feature_2d_helper
             .draw_2d_features(ledger, &mut self.graphics_mappings, &mut encoder, &output, event_queue);
 
-        // finalize the frame and render to the gpu
+        // ── capture step ────────────────────────────────────────
+        // capture AFTER post-processing and 2D — from swapchain, not offscreen
+        let s = services();
+        if let Some(capture_tex) = s.gpu.capture_texture() {
+            let cap_size = capture_tex.size();
+            let out_size = output.texture.size();
+
+            let copy_width = cap_size.width.min(out_size.width);
+            let copy_height = cap_size.height.min(out_size.height);
+
+            // println!("[render] capture_texture found — copying from swapchain");
+
+            encoder.copy_texture_to_texture(
+                egui_wgpu::wgpu::TexelCopyTextureInfo {
+                    texture: &output.texture, // ← swapchain, not offscreen
+                    mip_level: 0,
+                    origin: egui_wgpu::wgpu::Origin3d::ZERO,
+                    aspect: egui_wgpu::wgpu::TextureAspect::All,
+                },
+                egui_wgpu::wgpu::TexelCopyTextureInfo {
+                    texture: capture_tex,
+                    mip_level: 0,
+                    origin: egui_wgpu::wgpu::Origin3d::ZERO,
+                    aspect: egui_wgpu::wgpu::TextureAspect::All,
+                },
+                egui_wgpu::wgpu::Extent3d {
+                    width: copy_width,
+                    height: copy_height,
+                    depth_or_array_layers: 1,
+                },
+            );
+        }
+        // ────────────────────────────────────────────────────────
+
+        // finalize — present swapchain
         Self::finalize_frame(output, encoder);
-
-        println!("finalize")
     }
-
     fn raw_event(&mut self, _event: WindowEvent) {
         // let s = services().gpu.window;
         // let _window = SystemGPU::get_window();
@@ -118,7 +143,7 @@ impl SystemComponentDefaultGraphics {
     // construction
     pub fn new() -> Box<SystemComponentDefaultGraphics> {
         // generate a texture to pass between RenderDrivers that can be written to
-        let rt = Self::generate_render_texture();
+        let (offscreen_texture, offscreen_view) = Self::generate_render_texture();
 
         Box::new(SystemComponentDefaultGraphics {
             is_dirty: true,
@@ -126,8 +151,9 @@ impl SystemComponentDefaultGraphics {
             shadow_system: ShadowSystem::new(Matrix4x4::default(), 1),
             render_feature_2d_helper: RenderFeature2DHelper::new(),
             render_feature_3d_helper: RenderFeature3DHelper::new(),
-            render_feature_pp_helper: RenderFeaturePostProcessHelper::new(&rt.1),
-            offscreen_view: rt.1,
+            render_feature_pp_helper: RenderFeaturePostProcessHelper::new(&offscreen_view),
+            offscreen_texture, // ← store texture too
+            offscreen_view,
         })
     }
 
@@ -167,7 +193,6 @@ impl SystemComponentDefaultGraphics {
         let surface_config = s.gpu.config();
         let device = s.gpu.device();
 
-        // --- Offscreen texture ---
         let offscreen_texture = device.create_texture(&egui_wgpu::wgpu::TextureDescriptor {
             label: Some("offscreen color"),
             size: egui_wgpu::wgpu::Extent3d {
@@ -179,11 +204,11 @@ impl SystemComponentDefaultGraphics {
             sample_count: 1,
             dimension: egui_wgpu::wgpu::TextureDimension::D2,
             format: surface_config.format,
-            usage: egui_wgpu::wgpu::TextureUsages::RENDER_ATTACHMENT | egui_wgpu::wgpu::TextureUsages::TEXTURE_BINDING,
+            usage: egui_wgpu::wgpu::TextureUsages::RENDER_ATTACHMENT | egui_wgpu::wgpu::TextureUsages::TEXTURE_BINDING | egui_wgpu::wgpu::TextureUsages::COPY_SRC, // ← add this
             view_formats: &[],
         });
-        let offscreen_view = offscreen_texture.create_view(&Default::default());
 
+        let offscreen_view = offscreen_texture.create_view(&Default::default());
         (offscreen_texture, offscreen_view)
     }
 }

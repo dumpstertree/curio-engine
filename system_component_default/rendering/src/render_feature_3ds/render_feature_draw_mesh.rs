@@ -24,7 +24,6 @@ impl RenderFeatureDrawMesh {
         let mut draw_calls = state_draws.draw_calls.clone();
         let mut batching: HashMap<(Arc<Mesh>, Arc<Material>), Vec<Matrix4x4>> = HashMap::new();
 
-        println!("{}", draw_calls.len());
         for draw_call in draw_calls.drain(..) {
             let mesh = draw_call.mesh;
             let material = draw_call.materials;
@@ -36,12 +35,10 @@ impl RenderFeatureDrawMesh {
                 batching.insert((mesh, material), matrix);
             }
         }
-        println!("{}", batching.len());
 
         // println!("Saved by batching {} => {}", was, batching.len());
 
         for ((mesh, material), matrix) in batching {
-            println!("draw");
             self.draw_draw_call(mesh, material, matrix, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
         }
     }
@@ -179,7 +176,6 @@ impl RenderFeatureDrawMesh {
 
 impl RenderFeature3D for RenderFeatureDrawMesh {
     fn render(&mut self, ledger: &mut Ledger, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
-        println!("rf draw mesh");
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
