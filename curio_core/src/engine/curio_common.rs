@@ -1,7 +1,4 @@
-use crate::{
-    input::{axis_code::AxisCode, key_code::ButtonCode, key_state::KeyState},
-    Vector3,
-};
+use crate::{input::axis_code::AxisCode, ButtonCode, ButtonPressed, Vector3};
 
 /// Base trait that an object needs to implement to be a Curio.
 /// Handles propogating external events into the Curio such as Application, Window and Input events.
@@ -17,5 +14,5 @@ pub trait CurioCommon {
     fn window_occluded(&mut self, _is_occluded: bool) {}
     // input
     fn input_axis(&mut self, _axis: AxisCode, _state: Vector3) {}
-    fn input_button(&mut self, _button: ButtonCode, _state: KeyState) {}
+    fn input_button(&mut self, _button: ButtonCode, _state: ButtonPressed) {}
 }

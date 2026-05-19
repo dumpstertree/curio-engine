@@ -1,4 +1,4 @@
-use curio_core::{Application, Severity, collections::event_queue::IGameEvent};
+use curio_core::IGameEvent;
 use std::{
     any::{Any, type_name},
     collections::HashMap,

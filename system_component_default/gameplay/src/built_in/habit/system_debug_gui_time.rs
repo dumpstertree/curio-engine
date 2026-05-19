@@ -1,7 +1,7 @@
 use curio_core::{
+    Nerve, NetworkModes,
     built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_time::SysRecordTime},
-    collections::{event_queue::Nerve, ledger::Ledger},
-    network_modes::NetworkModes,
+    Ledger,
 };
 
 use crate::{

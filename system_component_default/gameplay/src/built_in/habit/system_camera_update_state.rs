@@ -1,7 +1,6 @@
 use curio_core::{
+    Ledger, Nerve, NetworkModes,
     built_in::record::{sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug},
-    collections::{event_queue::Nerve, ledger::Ledger},
-    network_modes::NetworkModes,
 };
 // use habit::habit;
 

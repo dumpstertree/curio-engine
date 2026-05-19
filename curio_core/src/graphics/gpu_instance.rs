@@ -12,4 +12,4 @@ pub struct GPUInstance {
     pub window: Arc<Window>,
     pub config: Arc<SurfaceConfiguration>,
     pub depth_texture: Arc<TextureAsset>,
-} // now that the curio_engine is initialized use those values to populate the system
+}

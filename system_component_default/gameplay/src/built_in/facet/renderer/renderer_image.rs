@@ -4,7 +4,7 @@ use crate::{
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
 use curio_core::{
-    Color, Material, Matrix4x4, Mesh, ModelAsset, Quaternion, ShaderDesc, TextureAsset, Vector3, Vertex,
+    Color, FieldState, Material, Matrix4x4, Mesh, ModelAsset, Quaternion, ShaderDesc, TextureAsset, Vector3, Vertex,
     io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader},
 };
 use std::sync::Arc;
@@ -40,6 +40,13 @@ impl FieldOverride for RendererImage {
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("asset", "TODO"),
+            FieldState::new("enabled", self.enabled), //
+            FieldState::new("tint", self.tint),
+        ]
     }
 }
 

@@ -1,6 +1,5 @@
 use curio_core::{
-    AssetCommon, AssetCommonFromBits, Material, Matrix4x4, Mesh, ModelAsset, ShaderDesc, TextureAsset, Vertex,
-    f32::FloatExtras,
+    AssetCommon, AssetCommonFromBits, ExtensionsF32, Material, Matrix4x4, Mesh, ModelAsset, ShaderDesc, TextureAsset, Vertex,
     io::asset_loader::{ASSET_UID_SHADER_LIT, AssetLoader},
 };
 

@@ -3,7 +3,7 @@ use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
-use curio_core::{Color, ModelAsset, io::asset_loader::AssetLoader};
+use curio_core::{Color, FieldState, ModelAsset, io::asset_loader::AssetLoader};
 use std::sync::Arc;
 
 #[derive(Clone, Default)]
@@ -24,6 +24,13 @@ impl FieldOverride for RendererStatic {
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("asset", "TODO"), //
+            FieldState::new("enabled", self.enabled),
+            FieldState::new("tint", self.tint),
+        ]
     }
 }
 

@@ -1,9 +1,8 @@
-use std::{hash::Hash, sync::Arc};
-
 use crate::{
     graphics::{material::Material, mesh::Mesh},
     Color, Matrix4x4,
 };
+use std::{hash::Hash, sync::Arc};
 
 #[derive(Clone, PartialEq)]
 pub struct DrawCall {

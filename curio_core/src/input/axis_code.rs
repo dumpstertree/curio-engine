@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+///Definitions for all types of range based inputs
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub enum AxisCode {

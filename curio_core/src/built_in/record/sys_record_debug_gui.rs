@@ -1,3 +1,4 @@
+use crate::Nerve;
 use std::{hash::Hash, sync::OnceLock};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
@@ -7,10 +8,9 @@ use crate::{
         sys_record_debug::SysRecordDebug,
         sys_record_gui::{GuiElement, GuiWindow},
     },
-    collections::{event_queue::Nerve, ledger::Ledger},
     extensions::extensions_f32::ExtensionsF32,
     system::record_id::RecordId,
-    Color, RecordCommon, Vector3,
+    Color, Ledger, RecordCommon, Vector3,
 };
 
 #[derive(Default, PartialEq, Clone)]

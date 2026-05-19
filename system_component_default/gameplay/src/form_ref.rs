@@ -1,8 +1,12 @@
-use curio_core::random::Random;
+use curio_core::{FieldState, ObjectState, Random};
 use hecs::{Entity, Query, World};
 use std::{any::type_name, cell::RefCell, hash::Hash, rc::Rc};
 
-use crate::{form::Form, traits::facet_common::FacetCommon};
+use crate::{
+    form::Form,
+    static_data::{global_components::COMPONENT_REGISTRY, global_ecs::register_global_ecs},
+    traits::facet_common::FacetCommon,
+};
 
 /// Representation of an object in the world
 pub struct FormRef {
@@ -25,6 +29,7 @@ impl FormRef {
             instance_id: Random::range_int(-99999, 9999),
         })))
     }
+
     pub fn instance_id(&self) -> i32 {
         self.instance_id
     }

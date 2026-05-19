@@ -1,9 +1,11 @@
-use curio_core::Vector3;
+use curio_core::{FieldState, Vector3};
 
 use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
+
+#[derive(Clone)]
 
 pub struct AnimatorScaleSin {
     owner: Option<Form>,
@@ -47,6 +49,14 @@ impl FieldOverride for AnimatorScaleSin {
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("min", self.min), //
+            FieldState::new("max", self.max),
+            FieldState::new("speed", self.speed),
+            FieldState::new("enabled", self.enabled),
+        ]
     }
 }
 impl Default for AnimatorScaleSin {

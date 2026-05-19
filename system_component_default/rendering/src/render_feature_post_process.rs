@@ -1,4 +1,4 @@
-use curio_core::{collections::ledger::Ledger, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{Ledger, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::TextureView;

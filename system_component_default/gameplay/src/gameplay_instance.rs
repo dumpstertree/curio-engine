@@ -1,16 +1,14 @@
-use curio_core::collections::{
-    event_queue::{IGameEvent, Nerve},
-    ledger::Ledger,
-};
+use curio_core::{ComponentState, FieldState, IGameEvent, Ledger, Nerve, ObjectState, TabState};
 use hecs::World;
 use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, vec};
 
 use crate::{
-    built_in::impulse::ui_events::UIEvents,
+    built_in::{facet::transform::transform3d::Transform3D, impulse::ui_events::UIEvents},
     context_2d::Context2D,
     context_3d::Context3D,
     static_data::{global_ecs::get_global_ecs_instances, global_event_recievers::get_global_event_receivers},
-    traits::{habit::Habit, impulse::Impulse, ui_events::IUIEvent, ui_panel::UIPanel},
+    traits::{facet_common::FacetCommon, field_override::FieldOverride, habit::Habit, impulse::Impulse, ui_events::IUIEvent, ui_panel::UIPanel},
+    traits_internal::world_context_common::ContextCommon,
 };
 
 pub struct GameplayInstance<T, U>
@@ -33,6 +31,17 @@ where
     T: IGameEvent + Clone + 'static,
     U: IUIEvent + Clone + 'static,
 {
+    pub fn get_state(&self) -> TabState {
+        (TabState {
+            tab_name: String::from("Context"),
+            objects: self
+                .context_32
+                .get::<Transform3D>()
+                .iter()
+                .map(|x| x.form().get_state())
+                .collect(),
+        })
+    }
     pub fn new() -> GameplayInstance<T, U> {
         // create the base world for our contexts
         let hecs_world = Rc::new(RefCell::new(World::new()));

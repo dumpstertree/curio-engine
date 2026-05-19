@@ -1,4 +1,4 @@
-use curio_core::{Matrix4x4, Quaternion, Vector2, Vector3};
+use curio_core::{FieldState, Matrix4x4, Quaternion, Vector2, Vector3};
 use std::{
     cell::RefMut,
     collections::{HashMap, VecDeque},
@@ -41,6 +41,14 @@ impl FieldOverride for Transform2D {
             // "scale" => self.scale = val.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("order", self.render_order), //
+            FieldState::new("position", self.position),
+            FieldState::new("scale", self.scale),
+            FieldState::new("rotation", self.rotation),
+        ]
     }
 }
 impl Default for Transform2D {

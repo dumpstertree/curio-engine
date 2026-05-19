@@ -1,14 +1,11 @@
 use std::any::type_name;
 use std::rc::Rc;
-use std::vec;
 
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
-use crate::engine::curio::CurioNetwork;
-use crate::network_capabilities::NetworkCapabilities;
-use crate::network_modes::NetworkModes;
-use crate::static_data::global_states::get_global_state_constructor_all;
-use crate::{log, RecordCommon, Severity, StateOwnerships, StateSyncEvent};
+use crate::engine::curio::{CurioNetwork, EditorLedgerState, EditorRecordState};
+use crate::static_data::global_states::{get_global_state_constructor_all, get_global_state_serializer};
+use crate::{log, RecordCommon, Severity, StateNetworkCapabilities, StateOwnerships, StateSyncEvent};
 
 // -------------------------------------------------------------------------
 // Internal entry — owns both sides of a single state type
@@ -52,18 +49,26 @@ impl Clone for Entry {
 
 #[derive(Clone)]
 pub struct Ledger {
-    // pub name: String,
-    // pub instance_id: i32,
-    // pub all_instance_id: Vec<i32>,
-    /// Direct-indexed by sequential state ID. `None` means that slot is
-    /// unregistered. Because IDs are 0-based and packed, indexing is O(1)
-    /// with no hashing and excellent cache locality.
     entries: Vec<Option<Entry>>,
-    pub network_capabilities: Option<NetworkCapabilities>,
+    pub network_capabilities: Option<StateNetworkCapabilities>,
     pub network: CurioNetwork,
 }
 
 impl Ledger {
+    pub fn for_editor(&self) -> EditorLedgerState {
+        EditorLedgerState {
+            owner: self.network.me().guid,
+            mode: self.network.me().mode.to_string(),
+            records: self
+                .entries
+                .iter()
+                .map(|x| EditorRecordState {
+                    typeid: String::from("test name"),
+                    value: serde_json::to_value("test").unwrap(), // value: get_global_state_serializer(x.unwrap().read.id()).unwrap(),
+                })
+                .collect(),
+        }
+    }
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -83,7 +88,7 @@ impl Ledger {
             // instance_id,
             // all_instance_id,
             entries,
-            network_capabilities: Some(NetworkCapabilities::new(network.me().mode)),
+            network_capabilities: Some(StateNetworkCapabilities::new(network.me().mode)),
             network,
         };
 

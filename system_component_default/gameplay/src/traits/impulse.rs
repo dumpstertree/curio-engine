@@ -1,6 +1,6 @@
-use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
-
 use crate::{context_3d::Context3D, traits::scope::Scope};
+use curio_core::Nerve;
+use curio_core::Ledger;
 
 pub trait Impulse<T>: Scope
 where

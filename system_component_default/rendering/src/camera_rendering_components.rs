@@ -1,4 +1,4 @@
-use curio_core::{collections::camera_uniform::CameraUniform, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{CameraUniform, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
 use egui_wgpu::wgpu::{self, BindGroup, BindGroupLayout, Buffer};
 use std::num::NonZeroU64;
 

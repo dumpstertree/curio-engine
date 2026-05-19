@@ -1,0 +1,14 @@
+[profile.dev]
+opt-level = 0
+
+[profile.release]
+opt-level = 3
+
+[package]
+name = "curio_core-tests"
+version = "0.1.0"
+authors = ["dumpstertree@gmail.com"]
+edition = "2018"
+
+[dependencies]
+curio_core = { workspace = true }

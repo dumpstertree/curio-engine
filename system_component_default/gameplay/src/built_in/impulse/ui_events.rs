@@ -1,5 +1,5 @@
 use crate::traits::ui_events::IUIEvent;
-use curio_core::collections::event_queue::{EventScope, IGameEvent};
+use curio_core::{EventScope, IGameEvent};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 

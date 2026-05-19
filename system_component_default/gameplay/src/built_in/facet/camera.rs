@@ -1,3 +1,5 @@
+use curio_core::FieldState;
+
 use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
@@ -30,5 +32,10 @@ impl FieldOverride for Camera {
             "fov" => self.fov = value.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("fov", self.fov), //
+        ]
     }
 }

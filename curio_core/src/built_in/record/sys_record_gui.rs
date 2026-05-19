@@ -1,3 +1,4 @@
+use crate::Nerve;
 use std::{
     hash::{self, Hash},
     sync::OnceLock,
@@ -5,12 +6,7 @@ use std::{
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
-use crate::{
-    collections::{event_queue::Nerve, ledger::Ledger},
-    extensions::extensions_f32::ExtensionsF32,
-    system::record_id::RecordId,
-    Color, RecordCommon, Vector3,
-};
+use crate::{extensions::extensions_f32::ExtensionsF32, system::record_id::RecordId, Color, Ledger, RecordCommon, Vector3};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordGui {

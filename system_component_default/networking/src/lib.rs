@@ -1,10 +1,5 @@
-use curio_core::{
-    Severity, StateOwnerships, StateSyncEvent,
-    built_in::record::sys_record_network::SysRecordNetwork,
-    collections::{event_queue::Nerve, game_mode::GameMode, ledger::Ledger},
-    network_modes::NetworkModes,
-    system::system_component::SystemComponent,
-};
+use curio_core::{EventScope, Formation, Ledger, Nerve, Severity, StateOwnerships, StateSyncEvent, built_in::record::sys_record_network::SysRecordNetwork};
+use curio_core::{NetworkModes, SystemComponent};
 use message_io::node::NodeEvent;
 use message_io::{
     network::Endpoint,
@@ -259,7 +254,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
 
             for event in events {
                 match event.ownership {
-                    curio_core::collections::event_queue::EventScope::All => {
+                    EventScope::All => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             if i == j {
@@ -273,7 +268,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
-                    curio_core::collections::event_queue::EventScope::ConnectedHost => {
+                    EventScope::ConnectedHost => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             if i == j {
@@ -297,7 +292,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
-                    curio_core::collections::event_queue::EventScope::ConnectedPeers => {
+                    EventScope::ConnectedPeers => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             // if i == j {
@@ -326,7 +321,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
     }
-    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, _game_mode: &GameMode) {
+    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, _game_mode: &Formation) {
         let mut v = vec![];
         for x in ledger.iter() {
             let Some(network_capabilities) = &x.network_capabilities else {

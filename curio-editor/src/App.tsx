@@ -1,62 +1,50 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useEditorStore } from './store';
-import { TitleBar } from './components/TitleBar';
-import { ActivityBar } from './components/ActivityBar';
-import { SceneHierarchy } from './components/SceneHierarchy';
-import { Viewport } from './components/Viewport';
-import { Inspector } from './components/Inspector';
+import { Toolbar } from './components/Toolbar';
+import { TabBar } from './components/TabBar';
+import { LeftPanel } from './components/LeftPanel';
+import { CenterPanel } from './components/CenterPanel';
+import { InspectorView } from './components/forms/InspectorView';
 import { StatusBar } from './components/StatusBar';
+import { PlaceholderTab } from './components/tabs/PlaceholderTab';
 import './App.css';
 
-type PanelId = 'hierarchy' | 'search' | 'settings';
-
 export default function App() {
-  const { refreshSnapshot, mode } = useEditorStore();
-  const [activePanel, setActivePanel] = useState<PanelId>('hierarchy');
+  const { activeTab, mode, refreshForms, refreshLedger } = useEditorStore();
 
-  // load scene on mount
   useEffect(() => {
-    refreshSnapshot();
+    refreshForms();
+    refreshLedger();
   }, []);
 
-  // poll snapshot while playing
   useEffect(() => {
     if (mode !== 'playing') return;
-    const id = setInterval(refreshSnapshot, 1000);
+    const id = setInterval(() => {
+      refreshForms();
+      refreshLedger();
+    }, 1000);
     return () => clearInterval(id);
   }, [mode]);
 
   return (
     <div className="editor">
-      <TitleBar />
-      <div className="editor-body">
-        <ActivityBar active={activePanel} onChange={setActivePanel} />
+      <Toolbar />
+      <TabBar />
 
-        {/* side panel — swappable by activity bar */}
-        {activePanel === 'hierarchy' && <SceneHierarchy />}
-        {activePanel === 'search' && (
-          <div className="side-panel">
-            <div className="panel-section-header">
-              <span className="panel-section-title">Search</span>
-            </div>
-            <div className="empty-state">Coming soon</div>
-          </div>
+      <div className="main-layout">
+        {activeTab === 'play' ? (
+          // Play tab IS the combined scene + viewport + inspector layout
+          <>
+            <LeftPanel />
+            <CenterPanel />
+            <InspectorView />
+          </>
+        ) : (
+          // TBD tabs show a placeholder over the full area
+          <PlaceholderTab tab={activeTab} />
         )}
-        {activePanel === 'settings' && (
-          <div className="side-panel">
-            <div className="panel-section-header">
-              <span className="panel-section-title">Settings</span>
-            </div>
-            <div className="empty-state">Coming soon</div>
-          </div>
-        )}
-
-        {/* main content */}
-        <Viewport />
-
-        {/* right panel */}
-        <Inspector />
       </div>
+
       <StatusBar />
     </div>
   );

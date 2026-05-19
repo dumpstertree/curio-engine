@@ -1,4 +1,5 @@
-use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
+use curio_core::Nerve;
+use curio_core::Ledger;
 use hecs::World;
 
 use crate::{context_3d::Context3D, traits::scope::Scope};

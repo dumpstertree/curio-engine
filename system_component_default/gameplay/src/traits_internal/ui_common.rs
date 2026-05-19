@@ -1,5 +1,6 @@
 use crate::context_2d::Context2D;
-use curio_core::collections::{event_queue::Nerve, ledger::Ledger};
+use curio_core::Nerve;
+use curio_core::Ledger;
 
 pub trait UICommon {
     fn init(&mut self);

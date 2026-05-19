@@ -1,11 +1,6 @@
 use std::any::{Any, TypeId};
 
-use curio_core::{
-    Quaternion, Vector2, Vector3,
-    built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::Nerve, ledger::Ledger},
-    network_modes::NetworkModes,
-};
+use curio_core::{Ledger, Nerve, NetworkModes, Quaternion, Vector2, Vector3};
 
 use crate::{
     built_in::facet::transform::transform2d::Transform2D,
@@ -88,7 +83,7 @@ impl TweenTarget {
 // ──────────────────────────────────────────────────────────────────────────
 //
 
-pub trait TweenCommon: Any + Send + Sync {
+pub trait TweenCommon: Any + Send + Sync + TweenClone {
     fn as_any(&self) -> &dyn Any;
 
     fn update(&mut self, dt: f32) -> bool;
@@ -99,6 +94,24 @@ pub trait TweenCommon: Any + Send + Sync {
     fn set_curve(&mut self, curve: TweenCurve);
     fn set_paused(&mut self, paused: bool);
 }
+pub trait TweenClone {
+    fn clone_box(&self) -> Box<dyn TweenCommon>;
+}
+
+impl<T> TweenClone for T
+where
+    T: 'static + TweenCommon + Clone,
+{
+    fn clone_box(&self) -> Box<dyn TweenCommon> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn TweenCommon> {
+    fn clone(&self) -> Self {
+        self.clone_box()
+    }
+}
 
 //
 // ──────────────────────────────────────────────────────────────────────────
@@ -106,6 +119,7 @@ pub trait TweenCommon: Any + Send + Sync {
 // ──────────────────────────────────────────────────────────────────────────
 //
 
+#[derive(Clone)]
 pub struct Tween {
     pub tweens: Vec<Box<dyn TweenCommon>>,
     owner: Option<Form>,
@@ -122,6 +136,9 @@ impl Default for Tween {
 
 impl FieldOverride for Tween {
     fn apply(&mut self, _field: &str, _val: &str) {}
+    fn get_state(&self) -> Vec<curio_core::FieldState> {
+        vec![]
+    }
 }
 
 impl Tween {
@@ -157,7 +174,6 @@ impl FacetCommon for Tween {
 // Base Tween State
 // ──────────────────────────────────────────────────────────────────────────
 //
-
 struct TweenState {
     duration: f32,
     elapsed: f32,
@@ -165,6 +181,19 @@ struct TweenState {
     curve: TweenCurve,
     paused: bool,
     complete: Option<Box<dyn FnOnce() + Send + Sync>>,
+}
+impl Clone for TweenState {
+    fn clone(&self) -> Self {
+        println!("Complete is not yet cloned");
+        Self {
+            duration: self.duration.clone(),
+            elapsed: self.elapsed.clone(),
+            delay: self.delay.clone(),
+            curve: self.curve.clone(),
+            paused: self.paused.clone(),
+            complete: None,
+        }
+    }
 }
 
 impl TweenState {
@@ -211,6 +240,7 @@ impl TweenState {
 // ──────────────────────────────────────────────────────────────────────────
 //
 
+#[derive(Clone)]
 pub struct TweenTransform2DPosition {
     state: TweenState,
     start: Vector2,
@@ -276,7 +306,7 @@ impl TweenCommon for TweenTransform2DPosition {
         self.state.paused = p;
     }
 }
-
+#[derive(Clone)]
 pub struct TweenTransform2DRotation {
     state: TweenState,
     start: Quaternion,
@@ -335,6 +365,7 @@ impl TweenCommon for TweenTransform2DRotation {
     }
 }
 
+#[derive(Clone)]
 pub struct TweenTransform2DScale {
     state: TweenState,
     start: Vector3,

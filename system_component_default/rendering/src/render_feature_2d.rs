@@ -1,7 +1,7 @@
 use crate::{egui_tools::EguiRenderer, render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI};
 use curio_core::{
-    GraphicsMapping,
-    collections::{event_queue::Nerve, ledger::Ledger},
+    GraphicsMapping, Nerve,
+    Ledger,
     engine_services::{EngineServices, services},
     system_adapters::adapter_system_gpu::SystemGPU,
 };

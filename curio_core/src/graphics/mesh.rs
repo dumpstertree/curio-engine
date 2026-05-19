@@ -11,7 +11,6 @@ use mesh_tools::primitives::{generate_plane, generate_sphere};
 use crate::engine_services::services;
 use crate::extensions::extensions_f32::ExtensionsF32;
 use crate::random::Random;
-use crate::system_adapters::adapter_system_gpu::SystemGPU;
 use crate::Matrix4x4;
 use crate::Vector3;
 #[derive(PartialEq)]

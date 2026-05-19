@@ -1,10 +1,11 @@
-use crate::collections::event_queue::IGameEvent;
 use serde::{de::DeserializeOwned, Serialize};
 use std::{
     any::Any,
     collections::HashMap,
     sync::{LazyLock, RwLock},
 };
+
+use crate::IGameEvent;
 
 struct StateRegistry {
     creators: HashMap<i32, CreateFn>,

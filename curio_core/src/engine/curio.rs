@@ -1,31 +1,27 @@
+use crate::{ButtonCode, ButtonPressed, Nerve, NetworkModes};
 use core::panic;
-use std::path::Path;
-
-use log::Metadata;
+use std::{collections::HashMap, path::Path};
 
 use crate::{
     built_in::stimulant::engine_commands::EngineCommands,
-    collections::{curio_metadata::CurioMetadata, event_queue::Nerve, game_instance::GameInstance, game_mode::GameMode, ledger::Ledger, version_number::VersionNumber},
-    engine::curio_common::CurioCommon,
+    engine::{curio_common::CurioCommon, curio_metadata::CurioMetadata},
     engine_services::EngineServices,
-    input::{axis_code::AxisCode, key_code::ButtonCode, key_state::KeyState},
-    network_modes::NetworkModes,
-    plugin::{Plugin, PluginCreateFn},
+    input::axis_code::AxisCode,
     plugin_loader::load_library,
     random::Random,
     static_data::{global_events::get_global_event_constructor_all, global_states::get_global_state_constructor_all},
     system::system_component::SystemComponent,
-    Application, GPUInstance, PluginVersionFn, Severity, Vector3,
+    Application, Formation, GPUInstance, Ledger, Severity, Vector3, Version,
 };
 
 pub struct CurioBuilder {
     metadata: CurioMetadata,
     plugins: Vec<Box<dyn SystemComponent>>,
     plugin_paths: Vec<String>,
-    gamemode: GameMode,
+    gamemode: Formation,
 }
 impl CurioBuilder {
-    pub fn set_game_mode(mut self, gamemode: GameMode) -> Self {
+    pub fn set_game_mode(mut self, gamemode: Formation) -> Self {
         self.gamemode = gamemode;
         self
     }
@@ -52,20 +48,28 @@ impl CurioBuilder {
 pub struct Curio {
     pub meta: CurioMetadata,
     command_buffer: Vec<EngineCommands>,
-    plugins: Vec<Box<dyn SystemComponent>>,
-    nerves: Vec<Nerve>,
-    ledgers: Vec<Ledger>,
-    game_mode: GameMode,
+    pub plugins: Vec<Box<dyn SystemComponent>>,
+    pub nerves: Vec<Nerve>,
+    pub ledgers: Vec<Ledger>,
+    pub game_mode: Formation,
 }
 
 // impl - Public fns
 impl Curio {
+    pub fn ledger_snapshot(&self) -> LedgerSnapshot {
+        LedgerSnapshot {
+            instances: self.ledgers.iter().map(|x| x.for_editor()).collect(),
+        }
+    }
+    pub fn context_snapshot(&self) -> FormsSnapshot {
+        FormsSnapshot { forms: vec![] }
+    }
     pub fn create() -> CurioBuilder {
         CurioBuilder {
-            metadata: CurioMetadata::new("", "", VersionNumber::new(0, 0, 0)),
+            metadata: CurioMetadata::new("", "", Version::new(0, 0, 0)),
             plugins: Vec::new(),
             plugin_paths: Vec::new(),
-            gamemode: GameMode::new(Vec::new()),
+            gamemode: Formation::custom(Vec::new()),
         }
     }
 
@@ -74,8 +78,8 @@ impl Curio {
         Application::log(Severity::Info, "Imbuing Curio...");
 
         // create empty vecs with capacities based on number of game modes
-        let mut all_ledgers = Vec::with_capacity(builder.gamemode.game_instances.len());
-        let mut all_nerves: Vec<Nerve> = Vec::with_capacity(builder.gamemode.game_instances.len());
+        let mut all_ledgers = Vec::with_capacity(builder.gamemode.seats.len());
+        let mut all_nerves: Vec<Nerve> = Vec::with_capacity(builder.gamemode.seats.len());
 
         // log
         Curio::log_ledger();
@@ -84,13 +88,13 @@ impl Curio {
         // // populate all ids
         let network_instances: Vec<_> = builder
             .gamemode
-            .game_instances
+            .seats
             .iter()
-            .map(|inst| CurioNetworkInstance::new(Random::guid(6), inst.network_mode))
+            .map(|inst| CurioNetworkInstance::new(Random::guid(6), inst.network))
             .collect();
 
         // populate all ledgers and nerves
-        for i in 0..builder.gamemode.game_instances.len() {
+        for i in 0..builder.gamemode.seats.len() {
             //create the network
             let network = CurioNetwork::new(network_instances.clone(), i);
 
@@ -119,57 +123,6 @@ impl Curio {
             game_mode: builder.gamemode,
         }
     }
-
-    // Create a curio and imbue it with logic
-    // pub fn imbue(plugins: Vec<Box<dyn SystemComponent>>, game_mode: GameMode) -> Curio {
-    //     // log
-    //     Application::log(Severity::Info, "Imbuing Curio...");
-
-    //     // create empty vecs with capacities based on number of game modes
-    //     let mut all_ledgers = Vec::with_capacity(game_mode.game_instances.len());
-    //     let mut all_nerves: Vec<Nerve> = Vec::with_capacity(game_mode.game_instances.len());
-
-    //     // log
-    //     Curio::log_ledger();
-    //     Curio::log_nerve();
-
-    //     // // populate all ids
-    //     let network_instances: Vec<_> = game_mode
-    //         .game_instances
-    //         .iter()
-    //         .map(|inst| CurioNetworkInstance::new(Random::guid(6), inst.network_mode))
-    //         .collect();
-
-    //     // populate all ledgers and nerves
-    //     for i in 0..game_mode.game_instances.len() {
-    //         //create the network
-    //         let network = CurioNetwork::new(network_instances.clone(), i);
-
-    //         // create all ledgers
-    //         all_ledgers.push(Ledger::new(network.clone()));
-
-    //         // create all nerves
-    //         all_nerves.push(Nerve::new(network));
-    //     }
-
-    //     // order components - this is only done on creation
-    //     let mut sorted = Vec::new();
-    //     sorted.extend(plugins);
-    //     sorted.sort_by(|a, b| a.order().cmp(&b.order()));
-
-    //     //
-    //     Application::log(Severity::Info, "Sorting Plugins...");
-
-    //     // create and return the instance
-    //     // Curio {
-    //     //     curiomne
-    //     //     command_buffer: vec![],
-    //     //     plugins: sorted,
-    //     //     ledgers: all_ledgers,
-    //     //     nerves: all_nerves,
-    //     //     game_mode,
-    //     // }
-    // }
 }
 // impl -Private fns
 impl Curio {
@@ -241,7 +194,7 @@ impl CurioCommon for Curio {
             c.input_axis(&mut self.ledgers, axis, state);
         }
     }
-    fn input_button(&mut self, button: ButtonCode, state: KeyState) {
+    fn input_button(&mut self, button: ButtonCode, state: ButtonPressed) {
         // log
         Application::log(Severity::Info, "Input: Button");
 
@@ -326,6 +279,94 @@ impl CurioNetworkInstance {
 // matches your curio_init signature exactly
 type InitCurioFn = unsafe extern "C" fn(gpu: *const EngineServices) -> *mut Curio;
 
+#[derive(Default, Clone, Serialize)]
+pub struct LedgerSnapshot {
+    pub instances: Vec<EditorLedgerState>,
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct EditorLedgerState {
+    pub owner: i32,
+    pub mode: String,
+    pub records: Vec<EditorRecordState>,
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct EditorRecordState {
+    pub typeid: String,
+    pub value: serde_json::Value,
+}
+#[derive(Default, Clone, Serialize)]
+pub struct FormsSnapshot {
+    pub forms: Vec<EditorSceneState>,
+}
+#[derive(Default, Clone, Serialize)]
+
+pub struct EditorSceneState {
+    pub forms: Vec<EditorFormState>,
+}
+#[derive(Default, Clone, Serialize)]
+pub struct TabGroupState {
+    //populates the left menu. ids are used for the dropdown and value are all the tabs in the tabgroup
+    pub id_for_tabs: HashMap<String, Vec<TabState>>,
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct TabState {
+    // name of the tab
+    pub tab_name: String,
+    // all the objects to display vertically
+    pub objects: Vec<ObjectState>,
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct ObjectState {
+    // name of object
+    pub object_name: String,
+    // objects can be recusive but dont have to be
+    pub children: Vec<ObjectState>,
+    // when clicked this data is populated into the inspector
+    pub components: Vec<ComponentState>,
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct ComponentState {
+    // name of component
+    pub component_name: String,
+    // all the actual data in the component
+    pub fields: Vec<FieldState>,
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct FieldState {
+    // name of the field
+    pub field_name: String,
+    // serialized data in the field
+    pub data: serde_json::Value,
+}
+impl FieldState {
+    pub fn new<T: Serialize>(field_name: &str, value: T) -> FieldState {
+        FieldState {
+            field_name: field_name.to_string(),
+            data: serde_json::to_value(value).unwrap(),
+        }
+    }
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct EditorFormState {
+    pub guid: i32,
+    pub name: String,
+    pub facets: Vec<EditorFacetState>,
+    pub children: Vec<EditorSceneState>,
+}
+#[derive(Default, Clone, Serialize)]
+pub struct EditorFacetState {
+    pub guid: i32,
+    pub name: String,
+    pub value: serde_json::Value,
+}
+
 pub struct LoadedCurio {
     pub curio: Box<Curio>,
     _lib: Library,
@@ -379,57 +420,4 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
     panic!("");
 }
 use libloading::{Library, Symbol};
-
-pub struct LoadedPlugin {
-    plugin: Box<dyn Plugin>,
-    _lib: Library, // keep the .so alive — drop order matters
-}
-
-// pub fn load_curio(folder: &Path) -> Vec<*mut Curio> {
-//     let mut loaded = Vec::new();
-
-//     let lib = load_library(folder).unwrap();
-//     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
-
-//     for entry in entries.flatten() {
-//         let path = entry.path();
-
-//         // pick up .so on Linux, .dll on Windows, .dylib on Mac
-//         let is_plugin = match path.extension().and_then(|e| e.to_str()) {
-//             Some("so") | Some("dll") | Some("dylib") => true,
-//             _ => false,
-//         };
-
-//         if !is_plugin {
-//             continue;
-//         }
-
-//         let init_curio: Symbol<InitCurioFn> = unsafe { lib.get(b"curio_init").unwrap() };
-//         let raw = unsafe { init_curio() };
-//         let app = raw;
-
-//         loaded.push(app);
-//     }
-
-//     loaded
-// }
-// fn load_plugin(path: &Path) -> Result<LoadedPlugin, Box<dyn std::error::Error>> {
-//     unsafe {
-//         let lib = load_library(path)?;
-
-//         // check version before doing anything else
-//         // let version_fn: Symbol<PluginVersionFn> = lib.get(b"_plugin_api_version")?;
-//         // let version = version_fn();
-//         // if version != engine::ENGINE_API_VERSION {
-//         //     return Err(format!("plugin version mismatch: expected {}, got {}", engine::ENGINE_API_VERSION, version).into());
-//         // }
-
-//         let create_fn: Symbol<PluginCreateFn> = lib.get(b"_plugin_create")?;
-//         let raw = create_fn();
-//         let plugin = Box::from_raw(raw);
-
-//         Ok(LoadedPlugin { plugin, _lib: lib })
-//     }
-// }
-
-// pub type InitCurioFn = unsafe extern "C" fn() -> *mut Curio;
+use serde::Serialize;

@@ -2,7 +2,7 @@ use crate::{camera_rendering_components::CameraRenderingComponents, render_featu
 use curio_core::{
     LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
     built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
-    collections::ledger::Ledger,
+    Ledger,
     engine_services::services,
     system_adapters::adapter_system_gpu::SystemGPU,
 };

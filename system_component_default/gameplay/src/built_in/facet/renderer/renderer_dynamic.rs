@@ -1,5 +1,5 @@
 use animation::assets::model_asset_animated::ModelAssetAnimated;
-use curio_core::{Color, ModelAsset, io::asset_loader::AssetLoader};
+use curio_core::{Color, FieldState, ModelAsset, io::asset_loader::AssetLoader};
 use std::sync::Arc;
 
 use crate::{built_in::facet::renderer_common::RendererCommon, form::Form, traits::facet_common::FacetCommon, traits::field_override::FieldOverride};
@@ -51,6 +51,15 @@ impl FieldOverride for RendererDynamic {
 
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("asset", "TODO"), //
+            FieldState::new("enabled", self.enabled),
+            FieldState::new("tint", self.tint),
+            FieldState::new("animation", self.animation.clone()),
+            FieldState::new("looping", self.looping),
+        ]
     }
 }
 impl Clone for RendererDynamic {

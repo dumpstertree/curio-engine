@@ -22,15 +22,13 @@ use crate::render_feature_2d::RenderFeature2DHelper;
 use crate::render_feature_3d::RenderFeature3DHelper;
 use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePostProcessHelper};
 use crate::shadow_system::ShadowSystem;
+use curio_core::Nerve;
 use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::built_in::record::sys_record_sun::SysRecordSun;
-use curio_core::collections::event_queue::Nerve;
-use curio_core::collections::game_mode::GameMode;
-use curio_core::collections::ledger::Ledger;
 use curio_core::engine_services::services;
-use curio_core::system::system_component::SystemComponent;
 use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
-use curio_core::{GraphicsMapping, Matrix4x4};
+use curio_core::{Formation, GraphicsMapping, Matrix4x4};
+use curio_core::{Ledger, SystemComponent};
 use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, Texture, TextureView};
 use std::iter;
 use winit::event::WindowEvent;
@@ -122,10 +120,10 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // let _window = SystemGPU::get_window();
         // self.egui_renderer.handle_input(&window, &event);
     }
-    fn set_game_mode(&mut self, _: &mut Vec<Ledger>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, _: &mut Vec<Ledger>, game_mode: &Formation) {
         let mut graphics_mapping = vec![];
-        for x in &game_mode.game_instances {
-            graphics_mapping.push(x.graphics_mappings.clone());
+        for x in &game_mode.seats {
+            graphics_mapping.push(x.graphics.clone());
         }
 
         self.render_feature_3d_helper

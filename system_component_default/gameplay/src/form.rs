@@ -1,7 +1,9 @@
 use crate::{
     form_ref::{FormRef, MutQuery},
+    static_data::global_components::COMPONENT_REGISTRY,
     traits::facet_common::FacetCommon,
 };
+use curio_core::{FieldState, ObjectState};
 use hecs::{Entity, Query};
 use std::{cell::RefCell, hash::Hash, rc::Rc};
 
@@ -22,6 +24,21 @@ unsafe impl Sync for Form {}
 
 // Public Methods
 impl Form {
+    /// Get the serialized state
+    pub fn get_state(&self) -> ObjectState {
+        let x = COMPONENT_REGISTRY.read().expect("msg");
+
+        let mut data = Vec::new();
+        for z in &x.get_state {
+            data.push(z.1(&self));
+        }
+
+        ObjectState {
+            object_name: self.name(),
+            children: vec![],
+            components: data,
+        }
+    }
     /// Get the instance ID of this Form
     pub fn instance_id(&self) -> i32 {
         self.form_ref.borrow().instance_id()

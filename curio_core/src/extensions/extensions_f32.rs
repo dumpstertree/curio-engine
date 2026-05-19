@@ -1,42 +1,63 @@
-// use std::hash::{Hash, Hasher};
-
-// /// Wrapper type that enables hashing of f32 values by bit pattern.
-// #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-// pub struct HashableF32(pub f32);
-
-// impl Eq for HashableF32 {} // safe because we treat equal bits as equal
-
-// impl Hash for HashableF32 {
-//     #[inline]
-//     fn hash<H: Hasher>(&self, state: &mut H) {
-//         // Use the raw bit pattern of the float.
-//         // This distinguishes +0.0 vs -0.0 and different NaNs.
-//         self.0.to_bits().hash(state);
-//     }
-// }
-
-// impl From<f32> for HashableF32 {
-//     fn from(v: f32) -> Self {
-//         HashableF32(v)
-//     }
-// }
-
-// impl From<HashableF32> for f32 {
-//     fn from(v: HashableF32) -> Self {
-//         v.0
-//     }
-// }
-
-// impl HashableF32 for f32 {}
-
 use std::hash::{Hash, Hasher};
 
 pub trait ExtensionsF32 {
     fn hash<H: Hasher>(&self, state: &mut H);
+    fn map(s: f32, a1: f32, a2: f32, b1: f32, b2: f32) -> f32;
+    fn round_to_int(x: f32) -> i32;
+    fn repeat(&self, modulus: f32) -> f32;
 }
 
 impl ExtensionsF32 for f32 {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.to_bits().hash(state)
     }
+    fn map(s: f32, a1: f32, a2: f32, b1: f32, b2: f32) -> f32 {
+        return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
+    }
+    fn round_to_int(x: f32) -> i32 {
+        x.round() as i32
+    }
+    fn repeat(&self, modulus: f32) -> f32 {
+        if modulus == 0.0 {
+            return *self; // avoid division by zero
+        }
+        self - (*self / modulus).floor() * modulus
+    }
 }
+
+// pub trait Map {
+//     fn map(s: f32, a1: f32, a2: f32, b1: f32, b2: f32) -> f32;
+// }
+// pub trait RoundToInt {
+//     fn round_to_int(x: f32) -> i32;
+// }
+// impl Map for f32 {
+//     fn map(s: f32, a1: f32, a2: f32, b1: f32, b2: f32) -> f32 {
+//         return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
+//     }
+// }
+// impl RoundToInt for f32 {
+//     fn round_to_int(x: f32) -> i32 {
+//         x.round() as i32
+//     }
+// }
+
+// pub struct F32Extensions {}
+// impl F32Extensions {
+//     pub fn map(s: f32, a1: f32, a2: f32, b1: f32, b2: f32) -> f32 {
+//         return b1 + (s - a1) * (b2 - b1) / (a2 - a1);
+//     }
+// }
+
+// pub trait FloatExtras {
+//     fn repeat(&self, modulus: f32) -> f32;
+// }
+
+// impl FloatExtras for f32 {
+//     fn repeat(&self, modulus: f32) -> f32 {
+//         if modulus == 0.0 {
+//             return *self; // avoid division by zero
+//         }
+//         self - (*self / modulus).floor() * modulus
+//     }
+// }

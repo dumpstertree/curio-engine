@@ -8,7 +8,7 @@ use crate::{
     engine_services::services,
     io::asset_loader::{ASSET_UID_SHADER_MODULE_LIT, ASSET_UID_SHADER_MODULE_UNLIT},
     random::Random,
-    system_adapters::adapter_system_gpu::{get_shader_module, SystemGPU},
+    system_adapters::adapter_system_gpu::get_shader_module,
     AssetCommon, Color, TextureAsset,
 };
 

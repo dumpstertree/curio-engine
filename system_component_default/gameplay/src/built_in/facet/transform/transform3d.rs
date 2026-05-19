@@ -1,4 +1,4 @@
-use curio_core::{Matrix4x4, Quaternion, Vector3};
+use curio_core::{FieldState, Matrix4x4, Quaternion, Vector3};
 use std::collections::{HashMap, VecDeque};
 
 use crate::{
@@ -25,6 +25,13 @@ impl FieldOverride for Transform3D {
             "scale" => self.scale = val.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("position", self.position), //
+            FieldState::new("rotation", self.rotation),
+            FieldState::new("scale", self.scale),
+        ]
     }
 }
 impl FacetCommon for Transform3D {

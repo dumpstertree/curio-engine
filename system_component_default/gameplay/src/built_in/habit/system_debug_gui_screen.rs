@@ -1,9 +1,4 @@
-use curio_core::{
-    built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui},
-    collections::{event_queue::Nerve, ledger::Ledger},
-    network_modes::NetworkModes,
-    system_adapters::adapter_system_gpu::SystemGPU,
-};
+use curio_core::{Nerve, NetworkModes, built_in::record::sys_record_debug::SysRecordDebug, Ledger};
 
 use crate::{
     context_3d::Context3D,

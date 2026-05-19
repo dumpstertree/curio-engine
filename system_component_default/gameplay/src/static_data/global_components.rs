@@ -4,7 +4,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use curio_core::{Application, Severity};
+use curio_core::{Application, ComponentState, FieldState, Severity};
 
 use crate::{
     form::Form,
@@ -13,16 +13,23 @@ use crate::{
 
 /// Function that creates a boxed untyped value (what register stores)
 type AddComponentFn = fn(&mut Form, &Vec<String>) -> bool;
+type GetStateFn = fn(&Form) -> ComponentState;
 
-struct ReceiverRegistry {
-    add_component: HashMap<String, AddComponentFn>,
+pub struct ReceiverRegistry {
+    pub add_component: HashMap<String, AddComponentFn>,
+    pub get_state: HashMap<String, GetStateFn>,
 }
 
-static COMPONENT_REGISTRY: LazyLock<RwLock<ReceiverRegistry>> = LazyLock::new(|| RwLock::new(ReceiverRegistry { add_component: HashMap::new() }));
+pub static COMPONENT_REGISTRY: LazyLock<RwLock<ReceiverRegistry>> = LazyLock::new(|| {
+    RwLock::new(ReceiverRegistry {
+        add_component: HashMap::new(),
+        get_state: HashMap::new(),
+    })
+});
 
 pub fn register_global_component<T>()
 where
-    T: Default + FacetCommon + FieldOverride,
+    T: Default + Clone + FacetCommon + FieldOverride,
 {
     let key = type_name::<T>()
         .split("::")
@@ -34,6 +41,19 @@ where
 
     // Application::log(Severity::Info, &format!("Registered Global Habit: {}", type_name::<T>()));
 
+    reg.get_state.insert(key.clone(), |x| {
+        let key = type_name::<T>()
+            .split("::")
+            .last()
+            .filter(|_x| true)
+            .unwrap()
+            .to_lowercase();
+        if let Some(f) = x.get_facet::<T>() {
+            return ComponentState { component_name: key, fields: f.get_state() };
+        }
+
+        panic!("")
+    });
     reg.add_component.insert(key, |x, y| {
         if x.has_facet::<T>() {
             x.edit_facet::<T>(|f| {

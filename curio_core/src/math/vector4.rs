@@ -158,7 +158,7 @@ impl Add<Vector4> for Vector4 {
             x: self.x + x.x,
             y: self.y + x.y,
             z: self.z + x.z,
-            w: self.z + x.w,
+            w: self.w + x.w,
         }
     }
 }

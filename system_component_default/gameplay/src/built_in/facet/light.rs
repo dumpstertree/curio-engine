@@ -2,9 +2,9 @@ use crate::{
     form::Form,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
 };
-use curio_core::{Color, LightType, Vector3};
+use curio_core::{Color, FieldState, LightType, Vector3};
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct Light {
     pub asset: LightType,
     pub direction: Vector3,
@@ -45,5 +45,13 @@ impl FieldOverride for Light {
             "intensity" => self.intensity = value.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("direction", self.direction), //
+            FieldState::new("color", self.color),
+            FieldState::new("radius", self.radius),
+            FieldState::new("intensity", self.intensity),
+        ]
     }
 }

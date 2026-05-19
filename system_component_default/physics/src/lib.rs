@@ -3,17 +3,13 @@ use rapier3d::{
     parry::{query, shape::Cuboid},
 };
 
+use curio_core::{Ledger, Nerve, SystemComponent};
 use curio_core::{
     Vector3,
     built_in::{
         facet::component_collider::{ColliderShape, ColliderSnapshot, CollisionSnapshot, Contact},
         record::{sys_record_colliders::SysRecordCollider, sys_record_collision::SysRecordCollision},
     },
-    plugin::Plugin,
-};
-use curio_core::{
-    collections::{event_queue::Nerve, ledger::Ledger},
-    system::system_component::SystemComponent,
 };
 
 pub struct SystemComponentDefaultPhysics {
@@ -147,26 +143,4 @@ impl SystemComponent for SystemComponentDefaultPhysics {
             });
         }
     }
-}
-
-// physics/src/lib.rs
-
-pub struct PhysicsPlugin;
-
-impl Plugin for PhysicsPlugin {
-    fn name(&self) -> &str {
-        "physics"
-    }
-
-    fn build(&self) {
-        println!("build");
-    }
-}
-
-/// This is the only symbol the engine looks for.
-/// The name must be exactly this — the loader will look for it by string.
-#[unsafe(no_mangle)]
-pub extern "C" fn _plugin_create() -> *mut dyn Plugin {
-    let plugin = Box::new(PhysicsPlugin);
-    Box::into_raw(plugin) // transfer ownership across the boundary
 }

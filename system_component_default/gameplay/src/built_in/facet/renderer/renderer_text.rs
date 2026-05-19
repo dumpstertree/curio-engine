@@ -1,5 +1,5 @@
 use curio_core::{
-    Color, FontAsset, Matrix4x4, ModelAsset, Quaternion, Vector2, Vector3,
+    Color, FieldState, FontAsset, Matrix4x4, ModelAsset, Quaternion, Vector2, Vector3,
     io::asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader},
 };
 use std::sync::Arc;
@@ -64,6 +64,15 @@ impl FieldOverride for RendererText {
             "bounds" => self.bounds = value.parse().unwrap_or_default(),
             _ => {}
         }
+    }
+    fn get_state(&self) -> Vec<FieldState> {
+        vec![
+            FieldState::new("asset", "TODO"), //
+            FieldState::new("contents", self.contents.clone()),
+            FieldState::new("enabled", self.enabled),
+            FieldState::new("font_size", self.font_size),
+            FieldState::new("bounds", self.bounds),
+        ]
     }
 }
 

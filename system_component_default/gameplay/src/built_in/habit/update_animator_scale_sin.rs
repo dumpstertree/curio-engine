@@ -4,11 +4,7 @@ use crate::{
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
 };
-use curio_core::{
-    built_in::record::sys_record_time::SysRecordTime,
-    collections::{event_queue::Nerve, ledger::Ledger},
-    network_modes::NetworkModes,
-};
+use curio_core::{Nerve, NetworkModes, built_in::record::sys_record_time::SysRecordTime, Ledger};
 
 #[derive(Default)]
 pub struct Instance {}

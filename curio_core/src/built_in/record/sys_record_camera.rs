@@ -1,4 +1,4 @@
-use crate::{collections::camera_uniform::CameraSnapshot, system::record_id::RecordId, RecordCommon, Vector3};
+use crate::{system::record_id::RecordId, CameraSnapshot, RecordCommon, Vector3};
 use std::sync::OnceLock;
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();

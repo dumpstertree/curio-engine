@@ -1,7 +1,7 @@
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::collections::event_queue::Nerve;
 use curio_core::collections::game_mode::GameMode;
-use curio_core::collections::ledger::Ledger;
+use curio_core::Ledger;
 use curio_core::{Application, AxisCode, ButtonCode, InputMapping, KeyState, PlayerInputSnapshot, Severity, Vector2, Vector3};
 use std::collections::HashMap;
 

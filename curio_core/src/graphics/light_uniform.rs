@@ -3,7 +3,7 @@ use egui_wgpu::wgpu;
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, num::NonZeroU64};
 
-use crate::{engine_services::services, extensions::extensions_f32::ExtensionsF32, system_adapters::adapter_system_gpu::SystemGPU};
+use crate::{engine_services::services, extensions::extensions_f32::ExtensionsF32};
 
 // CPU-side light types for your ECS
 #[derive(Clone, Copy, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]

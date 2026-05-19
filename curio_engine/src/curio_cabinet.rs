@@ -15,19 +15,8 @@ use winit::{
 };
 
 use curio_core::{
-    built_in::record::{
-        sys_record_camera::SysRecordCamera, sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_gizmos::SysRecordGizmos, sys_record_gui::SysRecordGui, sys_record_input::SysRecordInput, sys_record_lights::SysRecordLights, sys_record_network::SysRecordNetwork,
-        sys_record_rendering::SysRecordRendering, sys_record_screen::SysRecordScreen, sys_record_skybox::SysRecordSkybox, sys_record_sun::SysRecordSun, sys_record_time::SysRecordTime,
-    },
-    collections::{curio_metadata::CurioMetadata, version_number::VersionNumber, window_layout::WindowLayout},
-    engine::{
-        curio::{load_curio, Curio, LoadedCurio},
-        curio_common::CurioCommon,
-    },
     engine_services::{EngineServices, GpuHandle},
-    static_data,
-    system_adapters::adapter_system_gpu::SystemGPU,
-    Application, AxisCode, ButtonCode, GPUInstance, KeyState, Severity, TextureAsset, Vector3,
+    load_curio, static_data, Application, AxisCode, ButtonCode, ButtonPressed, CurioCommon, CurioMetadata, GPUInstance, LoadedCurio, Portal, Severity, TextureAsset, Vector3, Version,
 };
 
 static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
@@ -50,7 +39,7 @@ impl CurioCabinet {
         Application::log(Severity::Info, "Putting Curio on display...");
 
         // add to list of windows
-        let window_owner = CabinetWindowOwner::new(WindowLayout::fullscreen_1080());
+        let window_owner = CabinetWindowOwner::new(Portal::fullscreen_1080());
 
         // wrap the window so its easily sharable
         let mut window = CabinetWindow::new(window_owner);
@@ -88,11 +77,11 @@ pub struct CabinetWindowOwner {
     services: Option<Box<EngineServices>>, // ← new, Box gives stable address
     // loaded_curio: Option<LoadedCurio>,     // ← new, keeps .so alive
     app_instance: Option<LoadedCurio>,
-    portal: WindowLayout,
+    portal: Portal,
 }
 
 impl CabinetWindowOwner {
-    pub fn new(portal: WindowLayout) -> CabinetWindowOwner {
+    pub fn new(portal: Portal) -> CabinetWindowOwner {
         CabinetWindowOwner {
             did_run: false,
             gpu_instance: None,
@@ -159,7 +148,7 @@ impl CabinetWindowOwner {
 
         instance
     }
-    fn get_window(event_loop: &ActiveEventLoop, meta: &CurioMetadata, portal: &WindowLayout) -> Arc<Window> {
+    fn get_window(event_loop: &ActiveEventLoop, meta: &CurioMetadata, portal: &Portal) -> Arc<Window> {
         // populate all the attributes to spawn the window
         let atts = Window::default_attributes()
             .with_title(format!(" {} - {}.{}.{}", meta.name, meta.version.major, meta.version.minor, meta.version.patch))
@@ -208,7 +197,7 @@ impl CabinetWindowOwner {
         };
         (Arc::new(device_queue.0), Arc::new(device_queue.1))
     }
-    fn get_config(surface: &Surface, adapter: &Adapter, portal: &WindowLayout) -> Arc<SurfaceConfiguration> {
+    fn get_config(surface: &Surface, adapter: &Adapter, portal: &Portal) -> Arc<SurfaceConfiguration> {
         let surface_capabilities = surface.get_capabilities(&adapter);
 
         let surface_format: TextureFormat = surface_capabilities
@@ -242,7 +231,7 @@ pub extern "C" fn set_cursor_visible(_x: bool) {}
 impl ApplicationHandler for CabinetWindowOwner {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let instance = Self::get_instance();
-        let window = Self::get_window(event_loop, &CurioMetadata::new("", "", VersionNumber::new(0, 0, 0)), &self.portal);
+        let window = Self::get_window(event_loop, &CurioMetadata::new("", "", Version::new(0, 0, 0)), &self.portal);
         let surface = Self::get_surface(&instance, &window);
         let adapter = Self::get_adapter(&instance, &surface);
         let (device, queue) = Self::get_device_queue(&adapter);
@@ -331,7 +320,7 @@ impl ApplicationHandler for CabinetWindowOwner {
                 if let Some(app_instance) = &mut self.app_instance {
                     if let Some(button_code) = ButtonCode::from_winit_physical_key(event.physical_key) {
                         // get the current button state to propogate
-                        let state = if event.state.is_pressed() { KeyState::Down } else { KeyState::Up };
+                        let state = if event.state.is_pressed() { ButtonPressed::Down } else { ButtonPressed::Up };
 
                         // if button was resolved we propogate the event
                         app_instance.curio.input_button(button_code, state);
@@ -351,7 +340,7 @@ impl ApplicationHandler for CabinetWindowOwner {
                     // if button was resolved we propogate the event
                     if let Some(button_code) = ButtonCode::from_winit_mousebutton(button) {
                         // get the current button state to propogate
-                        let state = if state.is_pressed() { KeyState::Down } else { KeyState::Up };
+                        let state = if state.is_pressed() { ButtonPressed::Down } else { ButtonPressed::Up };
 
                         // if button was resolved we propogate the event
                         app_instance.curio.input_button(button_code, state);

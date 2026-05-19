@@ -1,4 +1,4 @@
-use crate::{assets::asset::AssetCommonFromBits, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
+use crate::{assets::asset::AssetCommonFromBits, engine_services::services};
 
 use super::asset::AssetCommon;
 
