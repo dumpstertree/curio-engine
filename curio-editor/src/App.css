@@ -330,3 +330,185 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .panel-header { display: flex; align-items: center; justify-content: space-between; height: 30px; padding: 0 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
 .panel-title  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; }
 .panel-empty  { padding: 16px; text-align: center; color: var(--text-muted); font-size: 12px; }
+
+/* ── PluginFieldsTree ───────────────────────────────────────── */
+.pf-tree { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 8px; }
+.pf-tree::-webkit-scrollbar { width: 8px; }
+.pf-tree::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+
+.pf-row {
+  display: flex; align-items: center;
+  height: 22px; padding-right: 8px; cursor: pointer;
+}
+.pf-row:hover    { background: var(--bg-hover); }
+.pf-row.selected { background: var(--bg-selected); }
+.pf-row.selected:hover { background: var(--bg-selected-hover); }
+
+.pf-chevron {
+  width: 14px; height: 14px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); transition: transform .12s;
+}
+.pf-chevron.expanded { transform: rotate(90deg); }
+.pf-chevron.leaf     { opacity: 0; pointer-events: none; }
+
+.pf-name { font-size: 13px; color: var(--text-primary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-row.selected .pf-name { color: #fff; }
+.pf-data-count { font-size: 10px; color: var(--text-muted); font-family: var(--mono); flex-shrink: 0; }
+
+.left-tab-empty { font-size: 11px; color: var(--text-muted); padding: 0 10px; line-height: 28px; }
+
+/* ── Custom Select ──────────────────────────────────────────── */
+.custom-select {
+  position: relative;
+  flex: 1;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  background: var(--bg-tertiary);
+  border: 0.5px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-family: var(--font);
+  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .1s;
+}
+.custom-select-trigger:hover       { border-color: var(--accent); }
+.custom-select.open .custom-select-trigger { border-color: var(--accent); }
+
+.custom-select-value { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.custom-select-arrow { color: var(--text-muted); flex-shrink: 0; transition: transform .12s; }
+.custom-select-arrow.open { transform: rotate(180deg); }
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0; right: 0;
+  background: #252526;
+  border: 0.5px solid var(--border-light);
+  border-radius: 4px;
+  z-index: 200;
+  box-shadow: 0 4px 12px rgba(0,0,0,.5);
+  overflow: hidden;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.custom-select-menu::-webkit-scrollbar { width: 6px; }
+.custom-select-menu::-webkit-scrollbar-thumb { background: #424242; border-radius: 3px; }
+
+.custom-select-option {
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.custom-select-option:hover    { background: var(--bg-hover); }
+.custom-select-option.selected { background: var(--bg-selected); color: #fff; }
+
+/* instance dropdown fills the bar */
+.instance-dropdown  { flex: 1; }
+/* resolution dropdown — fixed width */
+.resolution-dropdown .custom-select-trigger { min-width: 120px; }
+
+/* ── ObjectTree — chevron button + icons ────────────────────── */
+.pf-row {
+  display: flex;
+  align-items: center;
+  height: 22px;
+  padding-right: 8px;
+  cursor: default;       /* row itself no longer clickable */
+}
+.pf-row:hover    { background: var(--bg-hover); }
+.pf-row.selected { background: var(--bg-selected); }
+.pf-row.selected:hover { background: var(--bg-selected-hover); }
+
+.pf-chevron-btn {
+  width: 16px; height: 16px;
+  background: transparent; border: none;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer; flex-shrink: 0; padding: 0;
+  border-radius: 2px;
+}
+.pf-chevron-btn:hover:not(.pf-chevron-hidden) { background: var(--bg-active); color: var(--text-primary); }
+.pf-chevron-btn.pf-chevron-hidden { cursor: default; pointer-events: none; }
+
+.node-icon { flex-shrink: 0; margin: 0 4px; color: var(--text-secondary); }
+.pf-row.selected .node-icon { color: #fff; }
+
+/* name is the click target for inspector */
+.pf-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+.pf-name:hover       { color: #fff; }
+.pf-row.selected .pf-name { color: #fff; }
+.pf-data-count { font-size: 10px; color: var(--text-muted); font-family: var(--mono); flex-shrink: 0; }
+
+/* ── Inspector — nested object fields ───────────────────────── */
+.comp-fields-list { display: flex; flex-direction: column; }
+
+.field-row {
+  display: flex; align-items: center;
+  min-height: 20px; gap: 8px;
+  padding: 2px 0;
+}
+
+.field-key {
+  font-size: 12px; color: var(--blue);
+  font-family: var(--mono);
+  min-width: 72px; flex-shrink: 0;
+}
+
+.field-val {
+  font-size: 12px; color: var(--orange);
+  font-family: var(--mono);
+  background: #2a2a2a; border: 0.5px solid #3d3d3d;
+  border-radius: 3px; padding: 1px 5px;
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.field-val.fv-true  { color: #569cd6; }
+.field-val.fv-false { color: var(--text-secondary); }
+.field-val.fv-null  { color: var(--text-muted); font-style: italic; }
+.field-val.fv-obj   { color: var(--text-secondary); font-style: italic; }
+.field-val.fv-num   { color: var(--green); }
+.field-val.fv-str   { color: var(--orange); }
+.field-empty { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+/* nested object group */
+.field-obj-group { display: flex; flex-direction: column; }
+
+.field-obj-header {
+  cursor: pointer;
+  padding: 2px 0;
+}
+.field-obj-header:hover { background: var(--bg-hover); }
+
+.field-obj-chevron {
+  width: 12px; height: 12px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  margin-right: 4px; flex-shrink: 0;
+  transition: transform .12s;
+}
+.field-obj-chevron.expanded { transform: rotate(90deg); }
+
+.field-obj-hint {
+  font-size: 10px; color: var(--text-muted);
+  font-family: var(--mono); margin-left: 4px;
+}

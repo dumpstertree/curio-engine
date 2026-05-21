@@ -1,15 +1,21 @@
 import React from 'react';
 import { useEditorStore } from '../store';
+import type { ObjectState } from '../types';
 
-function countForms(forms: import('../types').Form[]): number {
-  return forms.reduce((acc, f) => acc + 1 + countForms(f.children), 0);
+function countObjects(objects: ObjectState[]): number {
+  return objects.reduce((acc, o) => acc + 1 + countObjects(o.children), 0);
 }
 
 export function StatusBar() {
-  const { mode, forms, ledger } = useEditorStore();
+  const { mode, tabGroupState, selectedInstance } = useEditorStore();
 
-  const formCount     = forms  ? countForms(forms.forms)            : 0;
-  const instanceCount = ledger ? ledger.instances.length            : 0;
+  const instanceCount = Object.keys(tabGroupState?.id_for_tabs ?? {}).length;
+
+  const nodeCount = tabGroupState
+    ? Object.values(tabGroupState.id_for_tabs)
+        .flat()
+        .reduce((acc, tab) => acc + countObjects(tab.objects), 0)
+    : 0;
 
   return (
     <div className={`status-bar mode-${mode}`}>
@@ -18,17 +24,13 @@ export function StatusBar() {
         {mode === 'paused'  && '⏸ Paused'}
         {mode === 'stopped' && '■ Stopped'}
       </div>
-      <div className="status-item">
-        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" strokeWidth="1.2">
-          <rect x="1" y="1" width="4" height="4" rx="0.5" />
-          <rect x="6" y="1" width="4" height="4" rx="0.5" />
-          <rect x="1" y="6" width="4" height="4" rx="0.5" />
-          <rect x="6" y="6" width="4" height="4" rx="0.5" />
-        </svg>
-        {formCount} forms
-      </div>
+      {nodeCount > 0 && (
+        <div className="status-item">{nodeCount} objects</div>
+      )}
       {instanceCount > 0 && (
-        <div className="status-item">{instanceCount} instance{instanceCount !== 1 ? 's' : ''}</div>
+        <div className="status-item">
+          {instanceCount} instance{instanceCount !== 1 ? 's' : ''}
+        </div>
       )}
       <div className="status-item" style={{ marginLeft: 'auto' }}>curio engine</div>
     </div>

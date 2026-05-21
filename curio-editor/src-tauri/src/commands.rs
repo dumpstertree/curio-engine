@@ -2,44 +2,70 @@ use crate::{
     game::{GameMessage, GameRunner},
     state::{EditorMode, EditorState},
     types::{ComponentData, EntityData, SceneSnapshot},
-    SHARED_DATA,
+    PROJECT, SHARED_DATA,
 };
 
-use std::sync::{mpsc, Mutex};
+use std::{
+    process::Command,
+    sync::{mpsc, Mutex},
+};
 
-use curio_core::{FormsSnapshot, LedgerSnapshot, LoadedCurio, TabGroupState};
+use curio_core::{engine_services::services, FormsSnapshot, LedgerSnapshot, LoadedCurio, TabGroupState};
 use tauri::{AppHandle, State};
 
 #[tauri::command]
 pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Result<(), String> {
-    let mut state = state.lock().unwrap();
+    unsafe {
+        let Some(ref project) = PROJECT else {
+            panic!("No Project Loaded");
+        };
 
-    match state.mode {
-        EditorMode::Playing => return Ok(()),
+        let p = project.lock().unwrap().clone();
 
-        EditorMode::Paused => {
-            if let Some(tx) = &state.game_tx {
-                tx.send(GameMessage::Resume).ok();
+        let mut state = state.lock().unwrap();
+
+        match state.mode {
+            EditorMode::Playing => return Ok(()),
+
+            EditorMode::Paused => {
+                if let Some(tx) = &state.game_tx {
+                    tx.send(GameMessage::Resume).ok();
+                }
+
+                state.mode = EditorMode::Playing;
+                return Ok(());
             }
 
-            state.mode = EditorMode::Playing;
-            return Ok(());
+            EditorMode::Stopped => {}
         }
 
-        EditorMode::Stopped => {}
+        let (tx, rx) = mpsc::channel();
+
+        state.game_tx = Some(tx);
+
+        let mut command = Command::new("cargo");
+        command.arg("build");
+        for arg in p.build_args {
+            command.arg(arg);
+        }
+
+        println!("building");
+        // state.game_thread = Some(std::thread::spawn(move || {
+        let status = command.current_dir(p.project_path.clone()).status();
+
+        let Ok(stat) = status else { panic!() };
+        // }));
+
+        println!("built");
+
+        state.game_thread = Some(std::thread::spawn(move || {
+            GameRunner::new(rx, app_handle).run();
+        }));
+
+        state.mode = EditorMode::Playing;
+
+        Ok(())
     }
-
-    let (tx, rx) = mpsc::channel();
-
-    state.game_tx = Some(tx);
-
-    state.game_thread = Some(std::thread::spawn(move || {
-        GameRunner::new(rx, app_handle).run();
-    }));
-
-    state.mode = EditorMode::Playing;
-
-    Ok(())
 }
 
 #[tauri::command]
@@ -134,10 +160,19 @@ pub fn get_forms(state: State<Mutex<EditorState>>) -> FormsSnapshot {
     data.forms.clone()
 }
 
-pub fn get_plugin_state() -> TabGroupState {
+#[tauri::command]
+pub fn get_tab_group_state(state: State<Mutex<EditorState>>) -> TabGroupState {
     let Ok(data) = SHARED_DATA.lock() else {
         panic!("Failed to get data");
     };
 
     data.plugin.clone()
+}
+
+#[tauri::command]
+pub fn set_resolution(state: State<Mutex<EditorState>>, app_handle: AppHandle, w: u32, h: u32) {
+    let state = state.lock().unwrap();
+    if let Some(tx) = &state.game_tx {
+        tx.send(GameMessage::Resize(w, h)).ok();
+    }
 }

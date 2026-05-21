@@ -6,6 +6,7 @@ mod types;
 mod utils;
 
 use curio_core::{FormsSnapshot, LedgerSnapshot, TabGroupState};
+use serde::Deserialize;
 use serde::Serialize;
 use state::EditorState;
 use std::sync::Mutex;
@@ -15,7 +16,15 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(EditorState::default()))
-        .invoke_handler(tauri::generate_handler![commands::press_play, commands::press_pause, commands::press_stop, commands::get_scene_snapshot, commands::get_ledger_snapshot, commands::get_forms,])
+        .invoke_handler(tauri::generate_handler![
+            commands::press_play,
+            commands::press_pause,
+            commands::press_stop,
+            commands::get_scene_snapshot,
+            commands::get_ledger_snapshot,
+            commands::get_forms,
+            commands::get_tab_group_state,
+        ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri app");
 }
@@ -27,8 +36,18 @@ pub struct SharedGameData {
     pub plugin: TabGroupState,
 }
 
-type SharedData = Mutex<SharedGameData>;
-
 use std::sync::LazyLock;
 
 pub static SHARED_DATA: LazyLock<Mutex<SharedGameData>> = LazyLock::new(|| Mutex::new(SharedGameData::default()));
+
+pub static mut PROJECT: Option<Mutex<Project>> = None;
+
+#[derive(Default, Deserialize, Clone)]
+pub struct Project {
+    pub name: String,
+    pub project_path: String,
+    pub build_args: Vec<String>,
+}
+
+unsafe impl Send for Project {}
+unsafe impl Sync for Project {}

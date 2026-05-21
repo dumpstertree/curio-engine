@@ -54,6 +54,11 @@ pub struct EngineServices {
     pub set_fullscreen: unsafe extern "C" fn(fullscreen: bool),
     pub set_cursor_visible: unsafe extern "C" fn(visible: bool),
 }
+impl EngineServices {
+    pub fn set_resolution2(&mut self, w: u32, h: u32) {
+        println!("try set resolution {} x {}", w, h)
+    }
+}
 
 // the one static — safe to duplicate because both copies
 // get set to the same pointer value at init

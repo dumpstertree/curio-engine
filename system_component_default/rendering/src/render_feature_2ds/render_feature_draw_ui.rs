@@ -1,15 +1,13 @@
 use crate::egui_tools::EguiRenderer;
 use crate::render_feature_2d::RenderFeature2D;
 use curio_core::{
-    Nerve,
+    Ledger, Nerve,
     built_in::record::{
         sys_record_debug::SysRecordDebug,
         sys_record_debug_gui::SysRecordDebugGui,
         sys_record_gui::{GuiElementTypes, SysRecordGui},
     },
-    Ledger,
     engine_services::services,
-    system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::{Color32, Frame, Pos2, Ui};
 use egui_wgpu::{

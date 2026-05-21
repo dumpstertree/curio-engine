@@ -56,6 +56,30 @@ pub struct Curio {
 
 // impl - Public fns
 impl Curio {
+    pub fn tab_snapshot(&self) -> TabGroupState {
+        let mut id_for_tabs = HashMap::new();
+        for x in &self.ledgers {
+            if !id_for_tabs.contains_key(&x.network.me().guid.to_string()) {
+                id_for_tabs.insert(x.network.me().guid.to_string(), Vec::new());
+            }
+            if let Some(rr) = id_for_tabs.get_mut(&x.network.me().guid.to_string()) {
+                rr.push(TabState { tab_name: "Ledger".to_string(), objects: vec![] });
+            }
+        }
+        for x in &self.plugins {
+            let y = x.get_state(&self.ledgers);
+            for r in y {
+                if !id_for_tabs.contains_key(&r.0) {
+                    id_for_tabs.insert(r.0.clone(), Vec::new());
+                }
+                if let Some(rr) = id_for_tabs.get_mut(&r.0) {
+                    rr.push(r.1);
+                }
+            }
+        }
+
+        TabGroupState { id_for_tabs }
+    }
     pub fn ledger_snapshot(&self) -> LedgerSnapshot {
         LedgerSnapshot {
             instances: self.ledgers.iter().map(|x| x.for_editor()).collect(),

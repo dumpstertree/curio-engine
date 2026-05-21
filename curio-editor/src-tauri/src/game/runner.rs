@@ -11,7 +11,7 @@ use curio_core::{
     load_curio, AxisCode, ButtonCode, ButtonPressed, CurioCommon, FieldState, FormsSnapshot, GPUInstance, LedgerSnapshot, LoadedCurio, ObjectState, TabGroupState, TextureAsset, Vector3,
 };
 
-use egui_wgpu::wgpu::{Buffer, BufferDescriptor, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
+use egui_wgpu::wgpu::{Buffer, BufferDescriptor, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages};
 
 use pollster::FutureExt;
 use serde::Serialize;
@@ -39,15 +39,15 @@ pub enum GameMessage {
     Pause,
     Resume,
     Stop,
+    Resize(u32, u32),
 }
 
-pub struct GameRunner {
+pub struct GameRunner<'a> {
     app_handle: AppHandle,
     rx: Receiver<GameMessage>,
 
     gpu_instance: Option<Arc<GPUInstance>>,
-    gpu: Option<Arc<SystemGPU>>,
-
+    // gpu: Option<Arc<SystemGPU>>,
     services: Option<Box<EngineServices>>,
     app_instance: Option<LoadedCurio>,
 
@@ -58,19 +58,19 @@ pub struct GameRunner {
     readback_buffer: Option<Buffer>,
 
     surface_format: TextureFormat,
+    surface: Option<Arc<Surface<'a>>>,
 
     frame_counter: u32,
 }
 
-impl GameRunner {
+impl GameRunner<'_> {
     pub fn new(rx: Receiver<GameMessage>, app_handle: AppHandle) -> Self {
         Self {
             app_handle,
             rx,
 
             gpu_instance: None,
-            gpu: None,
-
+            // gpu: None,
             services: None,
             app_instance: None,
 
@@ -83,6 +83,7 @@ impl GameRunner {
             surface_format: TextureFormat::Rgba8UnormSrgb,
 
             frame_counter: 0,
+            surface: None,
         }
     }
 
@@ -96,7 +97,7 @@ impl GameRunner {
 
         drop(self.app_instance.take());
         drop(self.services.take());
-        drop(self.gpu.take());
+        // drop(self.gpu.take());
         drop(self.gpu_instance.take());
     }
 
@@ -114,12 +115,17 @@ impl GameRunner {
                 GameMessage::Stop => {
                     self.should_stop = true;
                 }
+                GameMessage::Resize(w, h) => {
+                    if let Some(x) = self.services.as_mut() {
+                        x.set_resolution2(w, h);
+                    }
+                }
             }
         }
     }
 }
 
-impl ApplicationHandler for GameRunner {
+impl ApplicationHandler for GameRunner<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let instance = Instance::new(&egui_wgpu::wgpu::InstanceDescriptor {
             backends: egui_wgpu::wgpu::Backends::all(),
@@ -131,7 +137,7 @@ impl ApplicationHandler for GameRunner {
                 .create_window(
                     Window::default_attributes()
                         .with_title("Curio")
-                        .with_inner_size(PhysicalSize::new(1920, 1080))
+                        .with_inner_size(PhysicalSize::new(1, 1))
                         .with_resizable(true),
                 )
                 .unwrap(),
@@ -177,13 +183,15 @@ impl ApplicationHandler for GameRunner {
 
         self.surface_format = format;
 
+        let width = 1920;
+        let height = 720;
         let config = Arc::new(SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::COPY_SRC,
 
             format,
 
-            width: 1920,
-            height: 1080,
+            width: width,
+            height: height,
 
             present_mode: caps.present_modes[0],
             alpha_mode: caps.alpha_modes[0],
@@ -193,7 +201,9 @@ impl ApplicationHandler for GameRunner {
             desired_maximum_frame_latency: 2,
         });
 
-        let depth_texture = Arc::new(create_depth_texture(&device));
+        let depth_texture = Arc::new(create_depth_texture(&device, width, height));
+
+        surface.configure(&device, &config);
 
         self.gpu_instance = Some(Arc::new(GPUInstance {
             device: device.clone(),
@@ -205,7 +215,7 @@ impl ApplicationHandler for GameRunner {
             depth_texture: depth_texture.clone(),
         }));
 
-        let gpu = Arc::new(SystemGPU::new(self.gpu_instance.as_ref().unwrap().clone()));
+        // let gpu = Arc::new(SystemGPU::new(self.gpu_instance.as_ref().unwrap().clone()));
 
         let capture_texture = Arc::new(device.create_texture(&TextureDescriptor {
             label: Some("capture_texture"),
@@ -244,6 +254,12 @@ impl ApplicationHandler for GameRunner {
 
         self.readback_buffer = Some(readback_buffer);
 
+        let Some(ref gpu) = self.gpu_instance else {
+            panic!();
+        };
+
+        self.surface = Some(surface.clone());
+
         self.services = Some(Box::new(EngineServices {
             gpu: GpuHandle {
                 device: Arc::as_ptr(&gpu.device) as *const (),
@@ -269,11 +285,11 @@ impl ApplicationHandler for GameRunner {
             set_cursor_visible,
         }));
 
-        self.gpu = Some(gpu);
+        // self.gpu = Some(gpu);
 
         let services_ptr = self.services.as_deref().unwrap() as *const EngineServices;
 
-        let mut loaded = load_curio(Path::new("./plugins"), services_ptr);
+        let mut loaded = load_curio(Path::new("/home/dumpstertree/Git/Rust/system_test/target/release/"), services_ptr);
 
         loaded.curio.window_opened();
 
@@ -329,97 +345,11 @@ impl ApplicationHandler for GameRunner {
                     gpu.window.request_redraw();
                 }
 
-                println!("try update data");
                 if let Ok(mut shared_data) = SHARED_DATA.lock() {
                     if let Some(app_instance) = &self.app_instance {
                         shared_data.forms = app_instance.curio.context_snapshot();
                         shared_data.ledger = app_instance.curio.ledger_snapshot();
-                        // shared_data.plugin = TabGroupState {
-                        //     fields: vec![
-                        //         (
-                        //             "host".to_owned(),
-                        //             vec![
-                        //                 ObjectState {
-                        //                     object_name: "field 1".to_owned(),
-                        //                     children: vec![],
-                        //                     components: vec![FieldState {
-                        //                         field_name: "data 0".to_string(),
-                        //                         data: serde_json::to_value("Val 0").unwrap(),
-                        //                     }],
-                        //                 },
-                        //                 ObjectState {
-                        //                     object_name: "field 2".to_owned(),
-                        //                     children: vec![],
-                        //                     components: vec![
-                        //                         FieldState {
-                        //                             field_name: "data 0".to_string(),
-                        //                             data: serde_json::to_value("Val 0").unwrap(),
-                        //                         },
-                        //                         FieldState {
-                        //                             field_name: "data 1".to_string(),
-                        //                             data: serde_json::to_value("Val 1").unwrap(),
-                        //                         },
-                        //                     ],
-                        //                 },
-                        //                 ObjectState {
-                        //                     object_name: "field 3".to_owned(),
-                        //                     children: vec![ObjectState {
-                        //                         object_name: "field 3 - child".to_owned(),
-                        //                         children: vec![],
-                        //                         components: vec![
-                        //                             FieldState {
-                        //                                 field_name: "data 0".to_string(),
-                        //                                 data: serde_json::to_value("Val 0").unwrap(),
-                        //                             },
-                        //                             FieldState {
-                        //                                 field_name: "data 1".to_string(),
-                        //                                 data: serde_json::to_value("Val 1").unwrap(),
-                        //                             },
-                        //                             FieldState {
-                        //                                 field_name: "data 2".to_string(),
-                        //                                 data: serde_json::to_value("Val 2").unwrap(),
-                        //                             },
-                        //                             FieldState {
-                        //                                 field_name: "data 3".to_string(),
-                        //                                 data: serde_json::to_value("Val 0").unwrap(),
-                        //                             },
-                        //                             FieldState {
-                        //                                 field_name: "data 4".to_string(),
-                        //                                 data: serde_json::to_value("Val 1").unwrap(),
-                        //                             },
-                        //                             FieldState {
-                        //                                 field_name: "data 5".to_string(),
-                        //                                 data: serde_json::to_value("Val 2").unwrap(),
-                        //                             },
-                        //                         ],
-                        //                     }],
-                        //                     components: vec![
-                        //                         FieldState {
-                        //                             field_name: "data 0".to_string(),
-                        //                             data: serde_json::to_value("Val 0").unwrap(),
-                        //                         },
-                        //                         FieldState {
-                        //                             field_name: "data 1".to_string(),
-                        //                             data: serde_json::to_value("Val 1").unwrap(),
-                        //                         },
-                        //                         FieldState {
-                        //                             field_name: "data 2".to_string(),
-                        //                             data: serde_json::to_value("Val 2").unwrap(),
-                        //                         },
-                        //                     ],
-                        //                 },
-                        //             ],
-                        //         ),
-                        //         (
-                        //             "peer".to_owned(),
-                        //             vec![ObjectState {
-                        //                 object_name: "".to_owned(),
-                        //                 children: vec![],
-                        //                 components: vec![],
-                        //             }],
-                        //         ),
-                        //     ],
-                        // };
+                        shared_data.plugin = app_instance.curio.tab_snapshot();
                     }
                 }
             }
@@ -484,8 +414,8 @@ impl ApplicationHandler for GameRunner {
     }
 }
 
-fn create_depth_texture(device: &Device) -> TextureAsset {
-    let size = Extent3d { width: 1920, height: 1080, depth_or_array_layers: 1 };
+fn create_depth_texture(device: &Device, width: u32, height: u32) -> TextureAsset {
+    let size = Extent3d { width: width, height: height, depth_or_array_layers: 1 };
 
     let texture = device.create_texture(&TextureDescriptor {
         label: Some("depth_texture"),

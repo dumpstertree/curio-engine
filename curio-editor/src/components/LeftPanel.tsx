@@ -1,55 +1,60 @@
 import React from 'react';
 import { useEditorStore } from '../store';
-import { LedgerView }     from './ledger/LedgerView';
-import { FormScrollView } from './forms/FormScrollView';
+import { ObjectTree }     from './ObjectTree';
+import { CustomSelect }   from './CustomSelect';
 
 export function LeftPanel() {
-  const { ledger, selectedInstance, selectInstance, leftTab, setLeftTab } = useEditorStore();
+  const {
+    tabGroupState,
+    selectedInstance, selectInstance,
+    activeLeftTab,    setActiveLeftTab,
+  } = useEditorStore();
 
-  const instances = ledger?.instances ?? [];
+  const idForTabs     = tabGroupState?.id_for_tabs ?? {};
+  const instanceKeys  = Object.keys(idForTabs).sort();
+  const tabs          = idForTabs[selectedInstance] ?? [];
+  const activeObjects = tabs[activeLeftTab]?.objects ?? [];
+
+  const instanceOptions = instanceKeys.map(k => ({ value: k, label: k }));
 
   return (
     <div className="left-panel">
 
-      {/* Instance dropdown — top level of scene tab */}
+      {/* Instance dropdown — custom to fix Tauri WebKit styling */}
       <div className="instance-bar">
         <label className="instance-label">Instance</label>
-        <select
-          className="instance-select"
+        <CustomSelect
           value={selectedInstance}
-          onChange={e => selectInstance(Number(e.target.value))}
-        >
-          {instances.length === 0
-            ? <option value={0}>No instances</option>
-            : instances.map(inst => (
-                <option key={inst.id} value={inst.id}>
-                  {inst.name} ({inst.role})
-                </option>
-              ))
-          }
-        </select>
+          options={instanceOptions.length > 0 ? instanceOptions : [{ value: '', label: 'No instances' }]}
+          onChange={selectInstance}
+          className="instance-dropdown"
+        />
       </div>
 
-      {/* Ledger / Forms tab strip */}
+      {/* Dynamic tab strip */}
       <div className="left-panel-tabs">
-        <button
-          className={`left-tab ${leftTab === 'ledger' ? 'active' : ''}`}
-          onClick={() => setLeftTab('ledger')}
-        >
-          Ledger
-        </button>
-        <button
-          className={`left-tab ${leftTab === 'forms' ? 'active' : ''}`}
-          onClick={() => setLeftTab('forms')}
-        >
-          Forms
-        </button>
+        {tabs.length === 0 ? (
+          <span className="left-tab-empty">No tabs</span>
+        ) : (
+          tabs.map((tab, idx) => (
+            <button
+              key={tab.tab_name}
+              className={`left-tab ${activeLeftTab === idx ? 'active' : ''}`}
+              onClick={() => setActiveLeftTab(idx)}
+            >
+              {tab.tab_name}
+            </button>
+          ))
+        )}
       </div>
 
-      {/* Content */}
+      {/* Object tree */}
       <div className="left-panel-content">
-        {leftTab === 'ledger' && <LedgerView />}
-        {leftTab === 'forms'  && <FormScrollView />}
+        {!tabGroupState ? (
+          <div className="panel-empty">No data</div>
+        ) : (
+          <ObjectTree objects={activeObjects} />
+        )}
       </div>
 
     </div>

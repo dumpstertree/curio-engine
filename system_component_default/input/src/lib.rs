@@ -1,11 +1,13 @@
-use curio_core::built_in::record::sys_record_input::SysRecordInput;
-use curio_core::collections::event_queue::Nerve;
-use curio_core::collections::game_mode::GameMode;
+use curio_core::ButtonPressed;
+use curio_core::ButtonState;
+use curio_core::Formation;
+use curio_core::InputMapped;
 use curio_core::Ledger;
-use curio_core::{Application, AxisCode, ButtonCode, InputMapping, KeyState, PlayerInputSnapshot, Severity, Vector2, Vector3};
+use curio_core::Nerve;
+use curio_core::SystemComponent;
+use curio_core::built_in::record::sys_record_input::SysRecordInput;
+use curio_core::{Application, AxisCode, ButtonCode, InputMapping, Severity, Vector2, Vector3};
 use std::collections::HashMap;
-
-use curio_core::system::system_component::SystemComponent;
 
 pub struct SystemComponentDefaultInput {
     mappings_is_dirty: bool,
@@ -46,7 +48,7 @@ impl SystemComponent for SystemComponentDefaultInput {
 
                     // create new
                     for mapping in &self.active_mappings[cur_state] {
-                        x.mapped.push(PlayerInputSnapshot::new(mapping.clone()));
+                        x.mapped.push(InputMapped::new(mapping.clone()));
                     }
                 }
 
@@ -70,15 +72,15 @@ impl SystemComponent for SystemComponentDefaultInput {
     fn input_axis(&mut self, _: &mut Vec<Ledger>, code: AxisCode, val: Vector3) {
         self.state_axis.insert(code, val.to_vector2());
     }
-    fn input_button(&mut self, _: &mut Vec<Ledger>, code: ButtonCode, val: KeyState) {
-        self.state_button.insert(code, val == KeyState::Down);
+    fn input_button(&mut self, _: &mut Vec<Ledger>, code: ButtonCode, val: ButtonPressed) {
+        self.state_button.insert(code, val == ButtonPressed::Down);
     }
-    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, game_mode: &GameMode) {
+    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, game_mode: &Formation) {
         let mut active_mappings = vec![];
         let mut index = 0;
-        for game_instance in &game_mode.game_instances {
-            active_mappings.push(game_instance.input_mappings.clone());
-            ledger[index].log(Severity::Info, &format!("Set num of Inputs: {}", game_instance.input_mappings.len()));
+        for game_instance in &game_mode.seats {
+            active_mappings.push(game_instance.input.clone());
+            ledger[index].log(Severity::Info, &format!("Set num of Inputs: {}", game_instance.input.len()));
             index += 1;
         }
         self.active_mappings = active_mappings;

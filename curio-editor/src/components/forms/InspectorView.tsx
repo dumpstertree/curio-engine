@@ -1,36 +1,83 @@
 import React, { useState } from 'react';
 import { useEditorStore } from '../../store';
-import type { Component, Form, LedgerRecord, RecordPermission } from '../../types';
+import type { ComponentState, FieldState } from '../../types';
 
 // ─────────────────────────────────────────────────────────────
-// Helpers
+// Field rendering — handles nested objects recursively
 // ─────────────────────────────────────────────────────────────
 
-function findForm(forms: Form[], id: number): Form | null {
-  for (const f of forms) {
-    if (f.id === id) return f;
-    const found = findForm(f.children, id);
-    if (found) return found;
-  }
-  return null;
-}
-
-function formatValue(value: unknown): { text: string; cls: string } {
-  if (value === null || value === undefined) return { text: 'null',         cls: 'fv-null' };
-  if (typeof value === 'boolean')            return { text: String(value),  cls: value ? 'fv-true' : 'fv-false' };
-  if (typeof value === 'number')             return { text: Number.isInteger(value) ? String(value) : value.toFixed(3), cls: 'fv-num' };
-  if (typeof value === 'string')             return { text: `"${value}"`,   cls: 'fv-str' };
-  if (typeof value === 'object')             return { text: '{…}',          cls: 'fv-obj' };
+function formatPrimitive(value: unknown): { text: string; cls: string } {
+  if (value === null || value === undefined) return { text: 'null',        cls: 'fv-null' };
+  if (typeof value === 'boolean')            return { text: String(value), cls: value ? 'fv-true' : 'fv-false' };
+  if (typeof value === 'number')             return { text: Number.isInteger(value) ? String(value) : (value as number).toFixed(3), cls: 'fv-num' };
+  if (typeof value === 'string')             return { text: `"${value}"`,  cls: 'fv-str' };
   return { text: String(value), cls: '' };
 }
 
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+interface FieldRowProps {
+  name:   string;
+  value:  unknown;
+  depth?: number;
+}
+
+function FieldRow({ name, value, depth = 0 }: FieldRowProps) {
+  const [open, setOpen] = useState(true);
+  const indent = depth * 12;
+
+  if (isPlainObject(value)) {
+    const entries = Object.entries(value);
+    return (
+      <div className="field-obj-group">
+        {/* object header — clickable to collapse */}
+        <div
+          className="field-row field-obj-header"
+          style={{ paddingLeft: 12 + indent }}
+          onClick={() => setOpen(o => !o)}
+        >
+          <span className={`field-obj-chevron ${open ? 'expanded' : ''}`}>
+            <svg width="7" height="7" viewBox="0 0 7 7" fill="currentColor">
+              <polygon points="1,1 6,3.5 1,6" />
+            </svg>
+          </span>
+          <span className="field-key">{name}</span>
+          <span className="field-obj-hint">{`{${entries.length}}`}</span>
+        </div>
+
+        {open && entries.map(([k, v]) => (
+          <FieldRow key={k} name={k} value={v} depth={depth + 1} />
+        ))}
+      </div>
+    );
+  }
+
+  if (Array.isArray(value)) {
+    return (
+      <div className="field-row" style={{ paddingLeft: 12 + indent }}>
+        <span className="field-key">{name}</span>
+        <span className="field-val fv-obj">[{(value as unknown[]).length}]</span>
+      </div>
+    );
+  }
+
+  const { text, cls } = formatPrimitive(value);
+  return (
+    <div className="field-row" style={{ paddingLeft: 12 + indent }}>
+      <span className="field-key">{name}</span>
+      <span className={`field-val ${cls}`}>{text}</span>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────
-// Form inspector
+// Component block
 // ─────────────────────────────────────────────────────────────
 
-function ComponentBlock({ comp }: { comp: Component }) {
+function ComponentBlock({ comp }: { comp: ComponentState }) {
   const [open, setOpen] = useState(true);
-  const fields = Object.entries(comp.fields);
 
   return (
     <div className="comp-block">
@@ -40,98 +87,22 @@ function ComponentBlock({ comp }: { comp: Component }) {
             <polygon points="2,1 7,4 2,7" />
           </svg>
         </span>
-        <span className="comp-name">{comp.name}</span>
-        <span className="comp-field-count">{fields.length}</span>
+        <span className="comp-name">{comp.component_name}</span>
+        <span className="comp-field-count">{comp.fields.length}</span>
       </div>
+
       {open && (
-        <div className="comp-fields">
-          {fields.length === 0
-            ? <span className="field-empty">no fields</span>
-            : fields.map(([key, val]) => {
-                const { text, cls } = formatValue(val);
-                return (
-                  <div key={key} className="field-row">
-                    <span className="field-key">{key}</span>
-                    <span className={`field-val ${cls}`}>{text}</span>
-                  </div>
-                );
-              })
-          }
+        <div className="comp-fields-list">
+          {comp.fields.length === 0 ? (
+            <span className="field-empty" style={{ paddingLeft: 12 }}>no fields</span>
+          ) : (
+            comp.fields.map((f, i) => (
+              <FieldRow key={f.field_name + i} name={f.field_name} value={f.data} />
+            ))
+          )}
         </div>
       )}
     </div>
-  );
-}
-
-function FormInspector({ form }: { form: Form }) {
-  return (
-    <>
-      <div className="inspector-header">
-        <div className="inspector-subject-label">Form</div>
-        <div className="inspector-subject-name">{form.name}</div>
-        <div className="inspector-subject-meta">
-          id: {form.id}
-          {form.children.length > 0 && ` · ${form.children.length} children`}
-          {` · ${form.components.length} component${form.components.length !== 1 ? 's' : ''}`}
-        </div>
-      </div>
-      <div className="inspector-content">
-        {form.components.length === 0
-          ? <div className="panel-empty">No components</div>
-          : form.components.map(comp => (
-              <ComponentBlock key={comp.name} comp={comp} />
-            ))
-        }
-      </div>
-    </>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
-// Record inspector
-// ─────────────────────────────────────────────────────────────
-
-function PermBadge({ perm }: { perm: RecordPermission }) {
-  return (
-    <div className="perm-badge-group">
-      <span className={`perm-badge ${perm === 'read'  || perm === 'readwrite' ? 'perm-on' : 'perm-off'}`}>R</span>
-      <span className={`perm-badge ${perm === 'write' || perm === 'readwrite' ? 'perm-on' : 'perm-off'}`}>W</span>
-    </div>
-  );
-}
-
-function RecordInspector({ record }: { record: LedgerRecord }) {
-  const fields = Object.entries(record.value);
-
-  return (
-    <>
-      <div className="inspector-header">
-        <div className="inspector-subject-label">Record</div>
-        <div className="inspector-subject-name">{record.name}</div>
-        <div className="inspector-subject-meta" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>{record.record_type}</span>
-          <PermBadge perm={record.permissions} />
-        </div>
-      </div>
-      <div className="inspector-content">
-        <div className="comp-block">
-          <div className="comp-fields" style={{ paddingLeft: 12 }}>
-            {fields.length === 0
-              ? <span className="field-empty">no fields</span>
-              : fields.map(([key, val]) => {
-                  const { text, cls } = formatValue(val);
-                  return (
-                    <div key={key} className="field-row">
-                      <span className="field-key">{key}</span>
-                      <span className={`field-val ${cls}`}>{text}</span>
-                    </div>
-                  );
-                })
-            }
-          </div>
-        </div>
-      </div>
-    </>
   );
 }
 
@@ -140,11 +111,7 @@ function RecordInspector({ record }: { record: LedgerRecord }) {
 // ─────────────────────────────────────────────────────────────
 
 export function InspectorView() {
-  const { forms, selectedForm, selectedRecord } = useEditorStore();
-
-  const form = selectedForm != null && forms
-    ? findForm(forms.forms, selectedForm)
-    : null;
+  const { selectedObject } = useEditorStore();
 
   return (
     <div className="inspector-view">
@@ -152,15 +119,29 @@ export function InspectorView() {
         <span className="panel-title">Inspector</span>
       </div>
 
-      {!form && !selectedRecord ? (
-        <div className="panel-empty">
-          Select a form or record
-        </div>
-      ) : form ? (
-        <FormInspector form={form} />
-      ) : selectedRecord ? (
-        <RecordInspector record={selectedRecord} />
-      ) : null}
+      {!selectedObject ? (
+        <div className="panel-empty">Select an object</div>
+      ) : (
+        <>
+          <div className="inspector-header">
+            <div className="inspector-subject-name">{selectedObject.object_name}</div>
+            <div className="inspector-subject-meta">
+              {selectedObject.components.length} component{selectedObject.components.length !== 1 ? 's' : ''}
+              {selectedObject.children.length > 0 && ` · ${selectedObject.children.length} children`}
+            </div>
+          </div>
+
+          <div className="inspector-content">
+            {selectedObject.components.length === 0 ? (
+              <div className="panel-empty">No components</div>
+            ) : (
+              selectedObject.components.map((comp, i) => (
+                <ComponentBlock key={comp.component_name + i} comp={comp} />
+              ))
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

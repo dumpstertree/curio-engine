@@ -1,9 +1,7 @@
 use crate::{egui_tools::EguiRenderer, render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI};
 use curio_core::{
-    GraphicsMapping, Nerve,
-    Ledger,
+    GraphicsMapping, Ledger, Nerve,
     engine_services::{EngineServices, services},
-    system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture};
 

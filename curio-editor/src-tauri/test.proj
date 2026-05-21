@@ -1,0 +1,4 @@
+name: "test project"
+project_path: "/home/dumpstertree/Git/Rust/system_test"
+build_args:
+  - "--release"

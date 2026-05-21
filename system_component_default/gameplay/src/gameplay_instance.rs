@@ -32,15 +32,16 @@ where
     U: IUIEvent + Clone + 'static,
 {
     pub fn get_state(&self) -> TabState {
-        (TabState {
+        TabState {
             tab_name: String::from("Context"),
             objects: self
                 .context_32
                 .get::<Transform3D>()
                 .iter()
+                .filter(|x| x.form().parent().is_none())
                 .map(|x| x.form().get_state())
                 .collect(),
-        })
+        }
     }
     pub fn new() -> GameplayInstance<T, U> {
         // create the base world for our contexts

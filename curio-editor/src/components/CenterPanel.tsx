@@ -1,14 +1,21 @@
 import React from 'react';
 import { useEditorStore } from '../store';
 import { ViewportCanvas } from './ViewportCanvas';
+import { CustomSelect }   from './CustomSelect';
 
-const RESOLUTIONS = ['1280 × 720', '1920 × 1080', '2560 × 1440'];
+const RESOLUTION_OPTIONS = [
+  { value: '1280x720',  label: '1280 × 720'  },
+  { value: '1920x1080', label: '1920 × 1080' },
+  { value: '2560x1440', label: '2560 × 1440' },
+];
 
 export function CenterPanel() {
   const { mode, play, stop, pause } = useEditorStore();
+  const [resolution, setResolution] = React.useState('1280x720');
 
   return (
     <div className="center-panel">
+
       {/* Viewport */}
       <div className="center-viewport">
         {mode === 'stopped' ? (
@@ -31,13 +38,16 @@ export function CenterPanel() {
         )}
       </div>
 
-      {/* Play controls bar — always visible */}
+      {/* Play controls bar */}
       <div className="play-bar">
         <div className="play-bar-left">
           <label className="play-bar-label">Resolution</label>
-          <select className="resolution-select">
-            {RESOLUTIONS.map(r => <option key={r}>{r}</option>)}
-          </select>
+          <CustomSelect
+            value={resolution}
+            options={RESOLUTION_OPTIONS}
+            onChange={setResolution}
+            className="resolution-dropdown"
+          />
         </div>
 
         <div className="play-bar-center">
@@ -45,7 +55,6 @@ export function CenterPanel() {
             className={`ctrl-btn ${mode === 'playing' ? 'active-play' : ''}`}
             onClick={play}
             disabled={mode === 'playing'}
-            title="Play"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor">
               <polygon points="2,1 10,5.5 2,10" />
@@ -57,7 +66,6 @@ export function CenterPanel() {
             className={`ctrl-btn ${mode === 'paused' ? 'active-pause' : ''}`}
             onClick={pause}
             disabled={mode === 'stopped'}
-            title="Pause"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor">
               <rect x="1.5" y="1" width="3" height="9" />
@@ -70,7 +78,6 @@ export function CenterPanel() {
             className="ctrl-btn"
             onClick={stop}
             disabled={mode === 'stopped'}
-            title="Stop"
           >
             <svg width="11" height="11" viewBox="0 0 11 11" fill="currentColor">
               <rect x="1" y="1" width="9" height="9" />

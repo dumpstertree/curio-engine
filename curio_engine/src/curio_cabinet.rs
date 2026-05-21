@@ -73,7 +73,7 @@ impl CurioCabinet {
 pub struct CabinetWindowOwner {
     did_run: bool,
     gpu_instance: Option<Arc<GPUInstance>>,
-    gpu: Option<Arc<SystemGPU>>,           // ← new, keeps Arc alive
+    // gpu: Option<Arc<SystemGPU>>,           // ← new, keeps Arc alive
     services: Option<Box<EngineServices>>, // ← new, Box gives stable address
     // loaded_curio: Option<LoadedCurio>,     // ← new, keeps .so alive
     app_instance: Option<LoadedCurio>,
@@ -85,7 +85,7 @@ impl CabinetWindowOwner {
         CabinetWindowOwner {
             did_run: false,
             gpu_instance: None,
-            gpu: None,
+            // gpu: None,
             services: None,
             // loaded_curio: None,
             app_instance: None,
@@ -249,9 +249,12 @@ impl ApplicationHandler for CabinetWindowOwner {
         }));
 
         // gpu lives on self — Arc won't drop until CabinetWindowOwner drops
-        let gpu = Arc::new(SystemGPU::new(
-            self.gpu_instance.as_ref().unwrap().clone(), // clone the Arc, don't move
-        ));
+        // let gpu = Arc::new(SystemGPU::new(
+        //     self.gpu_instance.as_ref().unwrap().clone(), // clone the Arc, don't move
+        // ));
+        let Some(ref gpu) = self.gpu_instance else {
+            panic!();
+        };
 
         // services is Boxed so it has a stable heap address
         // the Box lives on self — won't drop until CabinetWindowOwner drops
@@ -272,7 +275,7 @@ impl ApplicationHandler for CabinetWindowOwner {
             set_cursor_visible: set_cursor_visible,
         }));
 
-        self.gpu = Some(gpu);
+        // self.gpu = Some(gpu);
 
         // get a raw pointer to the Boxed services — stable as long as Box lives
         let services_ptr: *const EngineServices = self.services.as_deref().unwrap();

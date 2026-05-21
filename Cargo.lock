@@ -1061,6 +1061,7 @@ dependencies = [
  "pollster",
  "serde",
  "serde_json",
+ "serde_yaml",
  "tauri",
  "tauri-build",
  "tauri-plugin-opener",
@@ -2793,6 +2794,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "879f10e63c20629ecabbb64a8010319738c66a5cd0c29b02d63d272b03751d01"
 dependencies = [
  "generic-array",
+]
+
+[[package]]
+name = "input"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
 ]
 
 [[package]]

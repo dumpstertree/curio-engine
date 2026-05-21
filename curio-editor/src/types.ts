@@ -1,39 +1,37 @@
-export interface Component {
-  name:   string;
-  fields: Record<string, unknown>;
+// ─────────────────────────────────────────────────────────────
+// Matches Rust structs exactly
+// ─────────────────────────────────────────────────────────────
+
+export interface FieldState {
+  field_name: string;
+  data:       unknown;
 }
 
-export interface Form {
-  id:         number;
-  name:       string;
-  children:   Form[];
-  components: Component[];
+export interface ComponentState {
+  component_name: string;
+  fields:         FieldState[];
 }
 
-export interface FormsSnapshot {
-  forms: Form[];
+export interface ObjectState {
+  object_name: string;
+  children:    ObjectState[];
+  components:  ComponentState[];
 }
 
-export type RecordPermission = 'read' | 'write' | 'readwrite';
-
-export interface LedgerRecord {
-  name:        string;
-  record_type: string;
-  permissions: RecordPermission;
-  value:       Record<string, unknown>;
+export interface TabState {
+  tab_name: string;
+  objects:  ObjectState[];
 }
 
-export interface GameInstance {
-  id:      number;
-  name:    string;
-  role:    'host' | 'peer';
-  records: LedgerRecord[];
+// id_for_tabs: HashMap<String, Vec<TabState>>
+// serializes as { "Host": [...], "Peer 1": [...] }
+export interface TabGroupState {
+  id_for_tabs: Record<string, TabState[]>;
 }
 
-export interface LedgerSnapshot {
-  instances: GameInstance[];
-}
+// ─────────────────────────────────────────────────────────────
+// Editor state
+// ─────────────────────────────────────────────────────────────
 
 export type PlayMode = 'stopped' | 'playing' | 'paused';
-export type TopTab   = 'play' | 'asset' | 'input' | 'prefab'; // scene removed — play IS the scene
-export type LeftTab  = 'ledger' | 'forms';
+export type TopTab   = 'play' | 'asset' | 'input' | 'prefab';

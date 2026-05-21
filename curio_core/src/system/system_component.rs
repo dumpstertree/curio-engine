@@ -33,7 +33,7 @@ pub trait SystemComponent {
     fn set_game_mode(&mut self, _ledger: &mut Vec<Ledger>, _game_mode: &Formation) {}
 
     // state
-    fn get_state(&self, _ledger: Vec<Ledger>) -> Vec<(String, TabState)> {
+    fn get_state(&self, _ledger: &Vec<Ledger>) -> Vec<(String, TabState)> {
         vec![]
     }
 }

@@ -67,7 +67,7 @@ where
             self.game_instance[i].tick(ledger, event_queue);
         }
     }
-    fn get_state(&self, ledger: Vec<Ledger>) -> Vec<(String, TabState)> {
+    fn get_state(&self, ledger: &Vec<Ledger>) -> Vec<(String, TabState)> {
         let mut result = Vec::new();
         for i in 0..self.game_instance.len() {
             let name = ledger[i].network.me().guid.to_string();

@@ -1,10 +1,8 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use curio_core::{
-    LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
+    Ledger, LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
     built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
-    Ledger,
     engine_services::services,
-    system_adapters::adapter_system_gpu::SystemGPU,
 };
 use egui::ahash::{HashMap, HashMapExt};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};

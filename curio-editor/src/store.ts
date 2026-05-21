@@ -1,57 +1,43 @@
 import { create } from 'zustand';
-import type {
-  FormsSnapshot, LedgerSnapshot, LedgerRecord,
-  PlayMode, TopTab, LeftTab,
-} from './types';
+import type { TabGroupState, ObjectState, PlayMode, TopTab } from './types';
 import { api } from './api';
 
 interface EditorStore {
-  // ── Tab navigation ───────────────────────────────────────
   activeTab:    TopTab;
   setActiveTab: (tab: TopTab) => void;
-  leftTab:      LeftTab;
-  setLeftTab:   (tab: LeftTab) => void;
 
-  // ── Play state ───────────────────────────────────────────
   mode:  PlayMode;
   play:  () => Promise<void>;
   stop:  () => Promise<void>;
   pause: () => Promise<void>;
 
-  // ── Ledger ───────────────────────────────────────────────
-  ledger:           LedgerSnapshot | null;
-  selectedInstance: number;
-  selectInstance:   (id: number) => void;
-  refreshLedger:    () => Promise<void>;
+  tabGroupState:      TabGroupState | null;
+  refreshTabGroup:    () => Promise<void>;
 
-  // ── Forms ────────────────────────────────────────────────
-  forms:         FormsSnapshot | null;
-  expandedForms: Set<number>;
-  toggleForm:    (id: number) => void;
-  refreshForms:  () => Promise<void>;
+  // selectedInstance is the HashMap key (instance name string)
+  selectedInstance:   string;
+  selectInstance:     (key: string) => void;
 
-  // ── Inspector — shared selection ─────────────────────────
-  selectedForm:   number | null;
-  selectedRecord: LedgerRecord | null;
-  selectForm:     (id: number | null) => void;
-  selectRecord:   (record: LedgerRecord | null) => void;
+  activeLeftTab:      number;
+  setActiveLeftTab:   (idx: number) => void;
+
+  selectedObject:     ObjectState | null;
+  expandedNodes:      Set<string>;
+  selectObject:       (obj: ObjectState | null) => void;
+  toggleNode:         (path: string) => void;
 }
 
 export const useEditorStore = create<EditorStore>((set, get) => ({
-  // ── Tab navigation ───────────────────────────────────────
   activeTab:    'play',
   setActiveTab: (tab) => set({ activeTab: tab }),
-  leftTab:      'ledger',
-  setLeftTab:   (tab) => set({ leftTab: tab }),
 
-  // ── Play state ───────────────────────────────────────────
   mode: 'stopped',
 
   play: async () => {
     try {
       await api.pressPlay();
       set({ mode: 'playing' });
-      get().refreshForms();
+      get().refreshTabGroup();
     } catch (e) { console.error('[store] play failed:', e); }
   },
 
@@ -59,7 +45,7 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     try {
       await api.pressStop();
       set({ mode: 'stopped' });
-      get().refreshForms();
+      get().refreshTabGroup();
     } catch (e) { console.error('[store] stop failed:', e); }
   },
 
@@ -70,40 +56,33 @@ export const useEditorStore = create<EditorStore>((set, get) => ({
     } catch (e) { console.error('[store] pause failed:', e); }
   },
 
-  // ── Ledger ───────────────────────────────────────────────
-  ledger:           null,
-  selectedInstance: 0,
-  selectInstance:   (id) => set({ selectedInstance: id }),
+  tabGroupState: null,
 
-  refreshLedger: async () => {
+  refreshTabGroup: async () => {
     try {
-      const ledger = await api.getLedgerSnapshot();
-      set({ ledger });
-    } catch (e) { console.error('[store] refreshLedger failed:', e); }
+      const tabGroupState = await api.getTabGroupState();
+      // if no instance selected yet, default to first key
+      const currentKey = get().selectedInstance;
+      const keys = Object.keys(tabGroupState.id_for_tabs);
+      const validKey = keys.includes(currentKey) ? currentKey : (keys[0] ?? '');
+      set({ tabGroupState, selectedInstance: validKey });
+    } catch (e) { console.error('[store] refreshTabGroup failed:', e); }
   },
 
-  // ── Forms ────────────────────────────────────────────────
-  forms:         null,
-  expandedForms: new Set<number>(),
+  selectedInstance:  '',
+  selectInstance:    (key) => set({ selectedInstance: key, activeLeftTab: 0, selectedObject: null }),
 
-  toggleForm: (id) => {
-    const next = new Set(get().expandedForms);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    set({ expandedForms: next });
+  activeLeftTab:     0,
+  setActiveLeftTab:  (idx) => set({ activeLeftTab: idx, selectedObject: null }),
+
+  selectedObject:    null,
+  expandedNodes:     new Set<string>(),
+
+  selectObject: (obj) => set({ selectedObject: obj }),
+
+  toggleNode: (path) => {
+    const next = new Set(get().expandedNodes);
+    if (next.has(path)) next.delete(path); else next.add(path);
+    set({ expandedNodes: next });
   },
-
-  refreshForms: async () => {
-    try {
-      const forms = await api.getForms();
-      set({ forms });
-    } catch (e) { console.error('[store] refreshForms failed:', e); }
-  },
-
-  // ── Inspector ────────────────────────────────────────────
-  selectedForm:   null,
-  selectedRecord: null,
-
-  // selecting a form clears record selection and vice versa
-  selectForm:   (id)     => set({ selectedForm: id, selectedRecord: null }),
-  selectRecord: (record) => set({ selectedRecord: record, selectedForm: null }),
 }));

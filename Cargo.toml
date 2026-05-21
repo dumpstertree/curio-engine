@@ -17,6 +17,7 @@ members = [
     "system_component_default/physics",
     "system_component_default/networking",
     "system_component_default/animation",
+    "system_component_default/input",
     "curio-editor/src-tauri",
 ]
 

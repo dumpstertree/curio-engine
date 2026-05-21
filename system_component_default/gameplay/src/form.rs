@@ -30,12 +30,15 @@ impl Form {
 
         let mut data = Vec::new();
         for z in &x.get_state {
-            data.push(z.1(&self));
+            let d = z.1(&self);
+            if let Some(dd) = d {
+                data.push(dd);
+            }
         }
 
         ObjectState {
             object_name: self.name(),
-            children: vec![],
+            children: self.children().iter().map(|x| x.get_state()).collect(),
             components: data,
         }
     }

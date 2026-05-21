@@ -26,7 +26,6 @@ use curio_core::Nerve;
 use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::built_in::record::sys_record_sun::SysRecordSun;
 use curio_core::engine_services::services;
-use curio_core::system_adapters::adapter_system_gpu::SystemGPU;
 use curio_core::{Formation, GraphicsMapping, Matrix4x4};
 use curio_core::{Ledger, SystemComponent};
 use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, Texture, TextureView};

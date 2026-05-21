@@ -186,8 +186,8 @@ pub(crate) mod log;
 pub(crate) mod random;
 
 pub mod static_data {
-    pub(crate) mod global_events;
-    pub(crate) mod global_states;
+    pub mod global_events;
+    pub mod global_states;
 }
 pub mod system {
     pub(crate) mod record_common;

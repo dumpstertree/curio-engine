@@ -1,4 +1,4 @@
-use curio_core::{GraphicsMapping, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, Ledger, engine_services::services, system_adapters::adapter_system_gpu::SystemGPU};
+use curio_core::{GraphicsMapping, Ledger, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, engine_services::services};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};
@@ -22,14 +22,7 @@ impl RenderFeature3DHelper {
     pub fn set_graphics_mappings(&mut self, graphics_mappings: &[GraphicsMapping]) {
         self.camera_rendering = CameraRenderingComponents::new(graphics_mappings.len());
     }
-    pub fn draw_3d_features(
-        &mut self,
-        graphics_mappings: &mut Vec<GraphicsMapping>,
-        ledger: &mut Vec<Ledger>,
-        encoder: &mut egui_wgpu::wgpu::CommandEncoder,
-        target_view: &mut egui_wgpu::wgpu::TextureView, // <-- changed from SurfaceTexture
-        shadow_system: &ShadowSystem,
-    ) {
+    pub fn draw_3d_features(&mut self, graphics_mappings: &mut Vec<GraphicsMapping>, ledger: &mut Vec<Ledger>, encoder: &mut egui_wgpu::wgpu::CommandEncoder, target_view: &mut egui_wgpu::wgpu::TextureView, shadow_system: &ShadowSystem) {
         let s = services();
         // generate a render pass for this instance
         let depth = s.gpu.depth();
@@ -66,8 +59,13 @@ impl RenderFeature3DHelper {
                 continue;
             }
 
+            let width = services().gpu.capture_width;
+            let height = services().gpu.capture_height;
+
             // create viewport bounds
-            let viewport = Viewport::new(Vector2::new(state_camera.resolution_width as f32, state_camera.resolution_height as f32), cur_graphics_mapping.viewport_min, cur_graphics_mapping.viewport_max);
+            // let viewport = Viewport::new(Vector2::new(state_camera.resolution_width as f32, state_camera.resolution_height as f32), cur_graphics_mapping.viewport_min, cur_graphics_mapping.viewport_max);
+
+            let viewport = Viewport::new(Vector2::new(width as f32, height as f32), cur_graphics_mapping.viewport_min, cur_graphics_mapping.viewport_max);
 
             // set the viewport based on mapping
             render_pass.set_viewport(viewport.x, viewport.y, viewport.width, viewport.height, 0.0, 1.0);

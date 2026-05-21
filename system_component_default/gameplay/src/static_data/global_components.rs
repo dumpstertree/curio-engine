@@ -13,7 +13,7 @@ use crate::{
 
 /// Function that creates a boxed untyped value (what register stores)
 type AddComponentFn = fn(&mut Form, &Vec<String>) -> bool;
-type GetStateFn = fn(&Form) -> ComponentState;
+type GetStateFn = fn(&Form) -> Option<ComponentState>;
 
 pub struct ReceiverRegistry {
     pub add_component: HashMap<String, AddComponentFn>,
@@ -49,10 +49,9 @@ where
             .unwrap()
             .to_lowercase();
         if let Some(f) = x.get_facet::<T>() {
-            return ComponentState { component_name: key, fields: f.get_state() };
+            return Some(ComponentState { component_name: key, fields: f.get_state() });
         }
-
-        panic!("")
+        return None;
     });
     reg.add_component.insert(key, |x, y| {
         if x.has_facet::<T>() {
