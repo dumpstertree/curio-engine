@@ -348,7 +348,7 @@ impl ApplicationHandler for GameRunner<'_> {
                 if let Ok(mut shared_data) = SHARED_DATA.lock() {
                     if let Some(app_instance) = &self.app_instance {
                         shared_data.forms = app_instance.curio.context_snapshot();
-                        shared_data.ledger = app_instance.curio.ledger_snapshot();
+                        // shared_data.ledger = app_instance.curio.ledger_snapshot();
                         shared_data.plugin = app_instance.curio.tab_snapshot();
                     }
                 }

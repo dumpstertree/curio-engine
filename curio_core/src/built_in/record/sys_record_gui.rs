@@ -1,4 +1,4 @@
-use crate::Nerve;
+use crate::{system::record_common::RecordOverride, Nerve};
 use std::{
     hash::{self, Hash},
     sync::OnceLock,
@@ -18,6 +18,9 @@ impl SysRecordGui {
     }
 }
 impl RecordCommon for SysRecordGui {
+    fn name(&self) -> String {
+        String::from("GUI")
+    }
     fn id() -> i32 {
         *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordGui>())
     }
@@ -95,5 +98,11 @@ impl GuiWindow {
     pub fn add(&mut self, element: GuiElement) -> &mut GuiWindow {
         self.children.push(element);
         self
+    }
+}
+impl RecordOverride for SysRecordGui {
+    fn apply(&mut self, field: &str, val: &str) {}
+    fn get_state(&self) -> Vec<crate::FieldState> {
+        vec![]
     }
 }

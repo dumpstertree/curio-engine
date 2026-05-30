@@ -121,6 +121,8 @@ dependencies = [
  "image 0.24.9",
  "libc",
  "rayon",
+ "rendering",
+ "rendering_dynamic",
  "rusty_spine",
  "serde",
  "zip",
@@ -652,6 +654,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "camera"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "cgmath",
+ "ctor",
+ "curio_core",
+ "facet",
+ "gameplay",
+ "habit",
+ "record_serializable",
+ "serde",
+]
+
+[[package]]
 name = "camino"
 version = "1.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -795,6 +812,22 @@ checksum = "3538270d33cc669650c4b093848450d380def10c331d38c768e34cac80576e6e"
 dependencies = [
  "termcolor",
  "unicode-width",
+]
+
+[[package]]
+name = "collision"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "ext_rendering",
+ "gameplay",
+ "gltf",
+ "habit",
+ "record_serializable",
+ "serde",
 ]
 
 [[package]]
@@ -1643,6 +1676,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ext_rendering"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "ctor",
+ "curio_core",
+ "egui-wgpu",
+ "facet",
+ "gameplay",
+ "record_serializable",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "facet"
 version = "0.1.0"
 dependencies = [
@@ -1856,7 +1904,6 @@ dependencies = [
 name = "gameplay"
 version = "0.1.0"
 dependencies = [
- "animation",
  "curio_core",
  "hecs",
  "serde",
@@ -3114,6 +3161,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "lighting"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "egui-wgpu",
+ "ext_rendering",
+ "facet",
+ "gameplay",
+ "gltf",
+ "habit",
+ "record_serializable",
+ "serde",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4280,6 +4345,7 @@ dependencies = [
 name = "physics"
 version = "0.1.0"
 dependencies = [
+ "collision",
  "curio_core",
  "rapier3d",
 ]
@@ -4770,11 +4836,113 @@ name = "rendering"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "camera",
  "curio_core",
  "egui",
  "egui-wgpu",
  "egui-winit",
+ "ext_rendering",
+ "lighting",
  "winit",
+]
+
+[[package]]
+name = "rendering_dynamic"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "egui",
+ "ext_rendering",
+ "facet",
+ "gameplay",
+ "habit",
+ "image 0.24.9",
+ "libc",
+ "rayon",
+ "record_serializable",
+ "rendering_static",
+ "rusty_spine",
+ "serde",
+ "zip",
+]
+
+[[package]]
+name = "rendering_gizmos"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "egui",
+ "ext_rendering",
+ "gameplay",
+ "habit",
+ "image 0.24.9",
+ "libc",
+ "rayon",
+ "record_serializable",
+ "rendering_static",
+ "rusty_spine",
+ "serde",
+ "zip",
+]
+
+[[package]]
+name = "rendering_image"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "ext_rendering",
+ "facet",
+ "gameplay",
+ "gltf",
+ "habit",
+ "record_serializable",
+ "rendering_static",
+ "serde",
+]
+
+[[package]]
+name = "rendering_static"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "ext_rendering",
+ "facet",
+ "gameplay",
+ "gltf",
+ "habit",
+ "record_serializable",
+ "serde",
+]
+
+[[package]]
+name = "rendering_text"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "ext_rendering",
+ "facet",
+ "gameplay",
+ "gltf",
+ "habit",
+ "record_serializable",
+ "rendering_static",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -5412,6 +5580,22 @@ name = "siphasher"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ee5873ec9cce0195efcb7a4e9507a04cd49aec9c83d0389df45b1ef7ba2e649"
+
+[[package]]
+name = "skybox"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "ctor",
+ "curio_core",
+ "ext_rendering",
+ "gameplay",
+ "gltf",
+ "habit",
+ "record_serializable",
+ "serde",
+]
 
 [[package]]
 name = "slab"

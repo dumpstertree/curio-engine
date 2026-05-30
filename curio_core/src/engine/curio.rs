@@ -58,14 +58,20 @@ pub struct Curio {
 impl Curio {
     pub fn tab_snapshot(&self) -> TabGroupState {
         let mut id_for_tabs = HashMap::new();
+
+        // get all the ledger tabs
         for x in &self.ledgers {
-            if !id_for_tabs.contains_key(&x.network.me().guid.to_string()) {
-                id_for_tabs.insert(x.network.me().guid.to_string(), Vec::new());
+            let s = x.to_state();
+            let key = &s.0;
+            if !id_for_tabs.contains_key(key) {
+                id_for_tabs.insert(key.clone(), Vec::new());
             }
-            if let Some(rr) = id_for_tabs.get_mut(&x.network.me().guid.to_string()) {
-                rr.push(TabState { tab_name: "Ledger".to_string(), objects: vec![] });
+            if let Some(rr) = id_for_tabs.get_mut(key) {
+                rr.push(s.1);
             }
         }
+
+        // get all the plugin tabs
         for x in &self.plugins {
             let y = x.get_state(&self.ledgers);
             for r in y {
@@ -80,11 +86,7 @@ impl Curio {
 
         TabGroupState { id_for_tabs }
     }
-    pub fn ledger_snapshot(&self) -> LedgerSnapshot {
-        LedgerSnapshot {
-            instances: self.ledgers.iter().map(|x| x.for_editor()).collect(),
-        }
-    }
+
     pub fn context_snapshot(&self) -> FormsSnapshot {
         FormsSnapshot { forms: vec![] }
     }

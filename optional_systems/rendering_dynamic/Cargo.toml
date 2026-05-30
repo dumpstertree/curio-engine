@@ -1,0 +1,28 @@
+[package]
+name = "rendering_dynamic"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+facet = { workspace = true }
+camera = { workspace = true }
+habit = { workspace = true }
+gameplay = { workspace = true }
+curio_core = { workspace = true }
+ext_rendering = { workspace = true }
+rendering_static = { workspace = true }
+record_serializable = { workspace = true }
+serde = { version = "1.0.104", features = ["derive"] }
+bytemuck = { version = "1.16", features = ["derive"] }
+ctor = "0.8.0"
+rusty_spine = { path = "../../../rusty_spine3.8" }
+zip = "0.6"
+rayon = "1.11.0"
+egui = "0.31.1"
+libc = "0.2"
+
+[dependencies.image]
+version = "0.24"
+default-features = false
+features = ["png", "jpeg"]

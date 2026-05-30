@@ -5,9 +5,11 @@ edition = "2024"
 
 
 [dependencies]
+curio_core = { workspace = true }
+rendering = { workspace = true }
+rendering_dynamic = { workspace = true }
 rusty_spine = { path = "../../../rusty_spine3.8" }
 serde = { version = "1.0.104", features = ["derive"] }
-curio_core = { workspace = true }
 zip = "0.6"
 rayon = "1.11.0"
 egui = "0.31.1"

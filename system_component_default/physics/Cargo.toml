@@ -5,6 +5,7 @@ edition = "2024"
 
 
 [dependencies]
+collision = { workspace = true }
 curio_core = { workspace = true }
 rapier3d = "0.25.1"
 

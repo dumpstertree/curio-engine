@@ -1,5 +1,5 @@
 use crate::{
-    game::{GameMessage, GameRunner},
+    game::runner2::{GameMessage2, GameRunner2},
     state::{EditorMode, EditorState},
     types::{ComponentData, EntityData, SceneSnapshot},
     PROJECT, SHARED_DATA,
@@ -29,7 +29,7 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
 
             EditorMode::Paused => {
                 if let Some(tx) = &state.game_tx {
-                    tx.send(GameMessage::Resume).ok();
+                    tx.send(GameMessage2::Resume).ok();
                 }
 
                 state.mode = EditorMode::Playing;
@@ -38,10 +38,6 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
 
             EditorMode::Stopped => {}
         }
-
-        let (tx, rx) = mpsc::channel();
-
-        state.game_tx = Some(tx);
 
         let mut command = Command::new("cargo");
         command.arg("build");
@@ -52,15 +48,21 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
         println!("building");
         // state.game_thread = Some(std::thread::spawn(move || {
         let status = command.current_dir(p.project_path.clone()).status();
-
-        let Ok(stat) = status else { panic!() };
         // }));
 
         println!("built");
 
-        state.game_thread = Some(std::thread::spawn(move || {
-            GameRunner::new(rx, app_handle).run();
-        }));
+        if state.game_thread.is_none() {
+            let (tx, rx) = mpsc::channel();
+            state.game_tx = Some(tx);
+            state.game_thread = Some(std::thread::spawn(move || {
+                GameRunner2::new(rx, app_handle).run();
+            }));
+        }
+
+        if let Some(x) = &state.game_tx {
+            let _ = x.send(GameMessage2::Start);
+        }
 
         state.mode = EditorMode::Playing;
 
@@ -75,7 +77,7 @@ pub fn press_pause(state: State<Mutex<EditorState>>) -> Result<(), String> {
     match state.mode {
         EditorMode::Playing => {
             if let Some(tx) = &state.game_tx {
-                tx.send(GameMessage::Pause).ok();
+                tx.send(GameMessage2::Pause).ok();
             }
 
             state.mode = EditorMode::Paused;
@@ -83,7 +85,7 @@ pub fn press_pause(state: State<Mutex<EditorState>>) -> Result<(), String> {
 
         EditorMode::Paused => {
             if let Some(tx) = &state.game_tx {
-                tx.send(GameMessage::Resume).ok();
+                tx.send(GameMessage2::Resume).ok();
             }
 
             state.mode = EditorMode::Playing;
@@ -100,11 +102,11 @@ pub fn press_stop(state: State<Mutex<EditorState>>) -> Result<(), String> {
     let mut state = state.lock().unwrap();
 
     if let Some(tx) = &state.game_tx {
-        tx.send(GameMessage::Stop).ok();
+        tx.send(GameMessage2::Stop).ok();
     }
 
-    state.game_tx = None;
-    state.game_thread = None;
+    // state.game_tx = None;
+    // state.game_thread = None;
     state.mode = EditorMode::Stopped;
 
     Ok(())
@@ -173,6 +175,6 @@ pub fn get_tab_group_state(state: State<Mutex<EditorState>>) -> TabGroupState {
 pub fn set_resolution(state: State<Mutex<EditorState>>, app_handle: AppHandle, w: u32, h: u32) {
     let state = state.lock().unwrap();
     if let Some(tx) = &state.game_tx {
-        tx.send(GameMessage::Resize(w, h)).ok();
+        tx.send(GameMessage2::Resize(w, h)).ok();
     }
 }

@@ -5,7 +5,7 @@ use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
 use crate::engine::curio::{CurioNetwork, EditorLedgerState, EditorRecordState};
 use crate::static_data::global_states::{get_global_state_constructor_all, get_global_state_serializer};
-use crate::{log, RecordCommon, Severity, StateNetworkCapabilities, StateOwnerships, StateSyncEvent};
+use crate::{log, ComponentState, ObjectState, RecordCommon, Severity, StateNetworkCapabilities, StateOwnerships, StateSyncEvent, TabState};
 
 // -------------------------------------------------------------------------
 // Internal entry — owns both sides of a single state type
@@ -55,20 +55,24 @@ pub struct Ledger {
 }
 
 impl Ledger {
-    pub fn for_editor(&self) -> EditorLedgerState {
-        EditorLedgerState {
-            owner: self.network.me().guid,
-            mode: self.network.me().mode.to_string(),
-            records: self
-                .entries
-                .iter()
-                .map(|x| EditorRecordState {
-                    typeid: String::from("test name"),
-                    value: serde_json::to_value("test").unwrap(), // value: get_global_state_serializer(x.unwrap().read.id()).unwrap(),
-                })
-                .collect(),
+    pub fn to_state(&self) -> (String, TabState) {
+        let mut objs = vec![];
+        for e in &self.entries {
+            if let Some(e) = e {
+                let obj = ObjectState {
+                    object_name: e.write.name(),
+                    children: vec![],
+                    components: vec![ComponentState {
+                        component_name: e.write.name(),
+                        fields: e.write.get_state(),
+                    }],
+                };
+                objs.push(obj);
+            }
         }
+        return (format!("{}-{}", self.network.me().mode, self.network.me().guid.to_string()), TabState { tab_name: "Ledger".to_string(), objects: objs });
     }
+
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------

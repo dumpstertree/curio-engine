@@ -1,6 +1,12 @@
 mod callbacks;
 mod commands;
-mod game;
+pub mod game {
+    pub mod capture;
+    pub mod encoding;
+    pub mod gpu;
+    pub mod runner;
+    pub mod runner2;
+}
 mod state;
 mod types;
 mod utils;
@@ -13,6 +19,10 @@ use std::sync::Mutex;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // state.game_thread = Some(std::thread::spawn(move || {
+    //     GameRunner::new(rx, app_handle).run();
+    // }));
+
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .manage(Mutex::new(EditorState::default()))

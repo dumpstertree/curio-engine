@@ -8,4 +8,4 @@ edition = "2024"
 curio_core = { workspace = true }
 hecs = "0.10.5"
 serde = { version = "1.0.104", features = ["derive"] }
-animation = { workspace = true }
+# animation = { workspace = true }

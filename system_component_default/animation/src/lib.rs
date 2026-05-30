@@ -1,6 +1,6 @@
-pub mod assets {
-    pub mod model_asset_animated;
-}
+// pub mod assets {
+//     pub mod model_asset_animated;
+// }
 
 use std::ffi::{CStr, c_char, c_int};
 

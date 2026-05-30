@@ -23,12 +23,13 @@ use crate::render_feature_3d::RenderFeature3DHelper;
 use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePostProcessHelper};
 use crate::shadow_system::ShadowSystem;
 use curio_core::Nerve;
-use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
-use curio_core::built_in::record::sys_record_sun::SysRecordSun;
+// use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::engine_services::services;
 use curio_core::{Formation, GraphicsMapping, Matrix4x4};
 use curio_core::{Ledger, SystemComponent};
 use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, Texture, TextureView};
+use ext_rendering::SysRecordRendering;
+use lighting::SysRecordSun;
 use std::iter;
 use winit::event::WindowEvent;
 

@@ -19,6 +19,17 @@ members = [
     "system_component_default/animation",
     "system_component_default/input",
     "curio-editor/src-tauri",
+    "optional_systems/camera",
+    "optional_systems/rendering_static",
+    "optional_systems/rendering_dynamic",
+    "optional_systems/rendering_image",
+    "optional_systems/rendering_text",
+    "optional_systems/rendering_gizmos",
+    "optional_systems/rendering",
+    "optional_systems/collision",
+    "optional_systems/lighting",
+    "optional_systems/skybox",
+
 ]
 
 [workspace.dependencies]
@@ -39,6 +50,17 @@ input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
 animation = { path = "system_component_default/animation" }
 curio_editor = { path = "curio-editor/src-tauri" }
+camera = { path = "optional_systems/camera" }
+ext_rendering = { path = "optional_systems/rendering" }
+rendering_static = { path = "optional_systems/rendering_static" }
+rendering_dynamic = { path = "optional_systems/rendering_dynamic" }
+rendering_image = { path = "optional_systems/rendering_image" }
+rendering_text = { path = "optional_systems/rendering_text" }
+rendering_gizmos = { path = "optional_systems/rendering_gizmos" }
+lighting = { path = "optional_systems/lighting" }
+collision = { path = "optional_systems/collision" }
+skybox = { path = "optional_systems/skybox" }
+
 
 [workspace.package]
 version = "0.1.0"

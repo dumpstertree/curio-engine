@@ -1,6 +1,10 @@
 use std::sync::OnceLock;
 
-use crate::{input::input_mapped::InputMapped, system::record_id::RecordId, InputRaw, RecordCommon};
+use crate::{
+    input::input_mapped::InputMapped,
+    system::{record_common::RecordOverride, record_id::RecordId},
+    FieldState, InputRaw, RecordCommon,
+};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
@@ -16,7 +20,19 @@ impl SysRecordInput {
     }
 }
 impl RecordCommon for SysRecordInput {
+    fn name(&self) -> String {
+        String::from("Input")
+    }
     fn id() -> i32 {
         *SYS_RECORD_ID.get_or_init(|| RecordId::of::<InputRaw>())
+    }
+}
+impl RecordOverride for SysRecordInput {
+    fn apply(&mut self, field: &str, val: &str) {}
+    fn get_state(&self) -> Vec<crate::FieldState> {
+        vec![
+            FieldState::new("mapped", &self.mapped), //
+            FieldState::new("raw", &self.raw),
+        ]
     }
 }

@@ -24,6 +24,42 @@ unsafe impl Sync for Form {}
 
 // Public Methods
 impl Form {
+    /*
+    c.spawn( "my_name" )
+        .position( 0, 0, 0 )
+        .rotation( 0, 0, 0 )
+        .scale( 0, 0, 0 )
+        .facet( RendererStatic::default()
+            .set_opacity( 1.0)
+            .set_asset( my_asset )
+        )
+        .child( c.spawn( "my_name" )
+            .global_position( 0, 0, 0 )
+            .facet( RendererStatic::default()
+                .set_opacity( 1.0)
+                .set_asset( my_asset )
+            )
+        )
+        .child( c.spawn( "my_name" )
+            .global_position_vec( Vector3::new( 0, 0, 0) )
+            .facet( RendererStatic::default()
+                .set_opacity( 1.0)
+                .set_asset( my_asset )
+            )
+        )
+        .child( c.spawn( "my_name" )
+            .global_position( Vector3::new( 0, 0, 0) )
+            .facet( RendererStatic::default()
+                .set_opacity( 1.0)
+                .set_asset( my_asset )
+            )
+        );
+    */
+
+    pub fn position(&self) {}
+    pub fn rotation(&self) {}
+    pub fn scale(&self) {}
+
     /// Get the serialized state
     pub fn get_state(&self) -> ObjectState {
         let x = COMPONENT_REGISTRY.read().expect("msg");

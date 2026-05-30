@@ -11,7 +11,11 @@ edition = "2024"
 
 
 [dependencies]
+ext_rendering = { workspace = true }
 curio_core = { workspace = true }
+camera = { workspace = true }
+lighting = { workspace = true }
+
 egui = "0.31.1"
 egui-winit = "0.31.1"
 bytemuck = { version = "1.16", features = ["derive"] }

@@ -1,0 +1,17 @@
+[package]
+name = "collision"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+ext_rendering = { workspace = true }
+camera = { workspace = true }
+habit = { workspace = true }
+gameplay = { workspace = true }
+curio_core = { workspace = true }
+record_serializable = { workspace = true }
+gltf = "1.4.1"
+serde = { version = "1.0.104", features = ["derive"] }
+bytemuck = { version = "1.16", features = ["derive"] }
+ctor = "0.8.0"

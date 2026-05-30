@@ -70,7 +70,7 @@ where
     fn get_state(&self, ledger: &Vec<Ledger>) -> Vec<(String, TabState)> {
         let mut result = Vec::new();
         for i in 0..self.game_instance.len() {
-            let name = ledger[i].network.me().guid.to_string();
+            let name = format!("{}-{}", ledger[i].network.me().mode, ledger[i].network.me().guid.to_string());
             let state = self.game_instance[i].get_state();
             result.push((name, state));
         }

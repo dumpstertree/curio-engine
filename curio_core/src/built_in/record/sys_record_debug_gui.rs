@@ -1,4 +1,4 @@
-use crate::Nerve;
+use crate::{system::record_common::RecordOverride, Nerve};
 use std::{hash::Hash, sync::OnceLock};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
@@ -57,7 +57,16 @@ impl SysRecordDebugGui {
     }
 }
 impl RecordCommon for SysRecordDebugGui {
+    fn name(&self) -> String {
+        String::from("DebugGUI")
+    }
     fn id() -> i32 {
         *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordDebugGui>())
+    }
+}
+impl RecordOverride for SysRecordDebugGui {
+    fn apply(&mut self, field: &str, val: &str) {}
+    fn get_state(&self) -> Vec<crate::FieldState> {
+        vec![]
     }
 }

@@ -1,9 +1,10 @@
-use crate::{RecordCommonClone, StateOwnerships};
+use crate::{FieldState, RecordCommonClone, StateOwnerships};
 use downcast_rs::{impl_downcast, Downcast};
 
 impl_downcast!(RecordCommon);
 
-pub trait RecordCommon: RecordCommonClone + Downcast {
+pub trait RecordCommon: RecordCommonClone + Downcast + RecordOverride {
+    fn name(&self) -> String;
     fn default_box() -> Box<dyn RecordCommon>
     where
         Self: Sized + Default + 'static,
@@ -20,4 +21,7 @@ pub trait RecordCommon: RecordCommonClone + Downcast {
         StateOwnerships::Instance
     }
 }
-//
+pub trait RecordOverride {
+    fn apply(&mut self, field: &str, val: &str);
+    fn get_state(&self) -> Vec<FieldState>;
+}

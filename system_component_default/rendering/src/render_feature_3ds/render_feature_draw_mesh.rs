@@ -1,11 +1,9 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
-use curio_core::{
-    Ledger, LightSystem, Material, Matrix4x4, Mesh, TextureAsset, Vertex,
-    built_in::record::{sys_record_lights::SysRecordLights, sys_record_rendering::SysRecordRendering, sys_record_sun::SysRecordSun},
-    engine_services::services,
-};
+use curio_core::{Ledger, Matrix4x4, TextureAsset, engine_services::services};
 use egui::ahash::{HashMap, HashMapExt};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
+use ext_rendering::{Material, Mesh, SysRecordRendering, data::mesh::Vertex};
+use lighting::{LightSystem, SysRecordLights, SysRecordSun};
 use std::sync::Arc;
 
 pub struct RenderFeatureDrawMesh {

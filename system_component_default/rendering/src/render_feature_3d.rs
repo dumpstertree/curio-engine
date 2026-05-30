@@ -1,4 +1,5 @@
-use curio_core::{GraphicsMapping, Ledger, TextureAsset, Vector2, built_in::record::sys_record_camera::SysRecordCamera, engine_services::services};
+use camera::SysRecordCamera;
+use curio_core::{GraphicsMapping, Ledger, TextureAsset, Vector2, engine_services::services};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};
@@ -54,10 +55,10 @@ impl RenderFeature3DHelper {
             let cur_graphics_mapping = &graphics_mappings[i];
 
             //
-            if state_camera.resolution_height == 0 || state_camera.resolution_height == 0 {
-                println!("Invalid camera resolution");
-                continue;
-            }
+            // if state_camera.resolution_height == 0 || state_camera.resolution_height == 0 {
+            //     println!("Invalid camera resolution");
+            //     continue;
+            // }
 
             let width = services().gpu.capture_width;
             let height = services().gpu.capture_height;

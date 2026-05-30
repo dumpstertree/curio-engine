@@ -1,0 +1,17 @@
+[package]
+name = "ext_rendering"
+version = "0.1.0"
+edition = "2024"
+
+
+[dependencies]
+
+gameplay = { workspace = true }
+curio_core = { workspace = true }
+facet = { workspace = true }
+record_serializable = { workspace = true }
+serde = { version = "1.0.104", features = ["derive"] }
+serde_json = "1"
+bytemuck = { version = "1.16", features = ["derive"] }
+egui-wgpu = { version = "0.31.1", features = ["winit"] }
+ctor = "0.8.0"

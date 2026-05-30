@@ -27,12 +27,12 @@ pub use crate::random::Random;
 // assets
 pub use crate::assets::asset::AssetCommon;
 pub use crate::assets::asset::AssetCommonFromBits;
-pub use crate::assets::font_asset::FontAsset;
-pub use crate::assets::font_asset::FontDesc;
-pub use crate::assets::model_asset::ModelAsset;
+// pub use crate::assets::font_asset::FontAsset;
+// pub use crate::assets::font_asset::FontDesc;
+// pub use crate::assets::model_asset::ModelAsset;
 pub use crate::assets::prefab_asset::PrefabGameObject;
 pub use crate::assets::texture_asset::TextureAsset;
-pub use crate::graphics::material::ShaderDesc;
+// pub use crate::graphics::material::ShaderDesc;
 
 // input
 pub use crate::input::axis_code::AxisCode;
@@ -44,18 +44,18 @@ pub use crate::input::input_mapped::InputMapped;
 pub use crate::input::input_raw::InputRaw;
 
 // graphics
-pub use crate::graphics::camera_uniform::CameraSnapshot;
-pub use crate::graphics::camera_uniform::CameraUniform;
-pub use crate::graphics::draw_call::DrawCall;
-pub use crate::graphics::gizmo::Gizmo;
+// pub use crate::graphics::camera_uniform::CameraSnapshot;
+// pub use crate::graphics::camera_uniform::CameraUniform;
+// pub use crate::graphics::draw_call::DrawCall;
+// pub use crate::graphics::gizmo::Gizmo;
 pub use crate::graphics::gpu_instance::GPUInstance;
 pub use crate::graphics::graphics_mapping::GraphicsMapping;
-pub use crate::graphics::light_uniform::DrawCallLight;
-pub use crate::graphics::light_uniform::LightSystem;
-pub use crate::graphics::light_uniform::LightType;
-pub use crate::graphics::material::Material;
-pub use crate::graphics::mesh::Mesh;
-pub use crate::graphics::mesh::Vertex;
+// pub use crate::graphics::light_uniform::DrawCallLight;
+// pub use crate::graphics::light_uniform::LightSystem;
+// pub use crate::graphics::light_uniform::LightType;
+// pub use crate::graphics::material::Material;
+// pub use crate::graphics::mesh::Mesh;
+// pub use crate::graphics::mesh::Vertex;
 
 // engine
 pub use crate::engine::curio::load_curio;
@@ -96,20 +96,21 @@ pub use crate::extensions::extensions_i32::ExtensionsI32;
 
 //system
 pub use crate::system::record_common::RecordCommon;
+pub use crate::system::record_common::RecordOverride;
 pub use crate::system::record_common_clone::RecordCommonClone;
 pub use crate::system::record_id::RecordId;
 pub use crate::system::system_component::SystemComponent;
 
 //
 pub mod graphics {
-    pub(crate) mod camera_uniform;
-    pub(crate) mod draw_call;
-    pub(crate) mod gizmo;
+    // pub(crate) mod camera_uniform;
+    // pub(crate) mod draw_call;
+    // pub(crate) mod gizmo;
     pub(crate) mod gpu_instance;
     pub(crate) mod graphics_mapping;
-    pub(crate) mod light_uniform;
-    pub(crate) mod material;
-    pub(crate) mod mesh;
+    // pub(crate) mod light_uniform;
+    // pub(crate) mod material;
+    // pub(crate) mod mesh;
 }
 pub mod input {
     pub(crate) mod axis_code;
@@ -153,12 +154,12 @@ pub mod extensions {
     pub(crate) mod extensions_f32;
     pub(crate) mod extensions_f64;
     pub(crate) mod extensions_i32;
-    pub(crate) mod f32;
+    // pub(crate) mod f32;
 }
 pub mod assets {
     pub(crate) mod asset;
-    pub(crate) mod font_asset;
-    pub(crate) mod model_asset;
+    // pub(crate) mod font_asset;
+    // pub(crate) mod model_asset;
     pub(crate) mod prefab_asset;
     pub(crate) mod texture_asset;
 }
@@ -206,23 +207,22 @@ pub mod built_in {
         pub mod engine_commands;
     }
     pub mod facet {
-        pub mod component_collider;
+        // pub mod component_collider;
     }
     pub mod record {
-        pub mod sys_record_camera;
-        pub mod sys_record_colliders;
-        pub mod sys_record_collision;
+        // pub mod sys_record_camera;
+        // pub mod sys_record_colliders;
+        // pub mod sys_record_collision;
         pub mod sys_record_debug;
         pub mod sys_record_debug_gui;
-        pub mod sys_record_gizmos;
+        // pub mod sys_record_gizmos;
         pub mod sys_record_gui;
         pub mod sys_record_input;
-        pub mod sys_record_lights;
+        // pub mod sys_record_lights;
         pub mod sys_record_network;
-        pub mod sys_record_rendering;
         pub mod sys_record_screen;
-        pub mod sys_record_skybox;
-        pub mod sys_record_sun;
+        // pub mod sys_record_skybox;
+        // pub mod sys_record_sun;
         pub mod sys_record_time;
     }
 }
