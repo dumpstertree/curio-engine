@@ -1,22 +1,13 @@
 use std::sync::{Arc, OnceLock};
 
-use curio_core::{Color, FieldState, RecordCommon, RecordId, RecordOverride, TextureAsset};
+use curio_core::{Color, FieldState, RecordOverride, StateOwnerships, TextureAsset};
+use record_serializable::record_serializable;
 
-static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
-
-#[derive(Default, Hash, PartialEq, Eq, Clone)]
+#[record_serializable(name = "Skybox", ownership = StateOwnerships::Instance)]
 pub struct SysRecordSkybox {
     pub skybox: SkyboxTypes,
 }
 impl SysRecordSkybox {}
-impl RecordCommon for SysRecordSkybox {
-    fn name(&self) -> String {
-        String::from("Skybox")
-    }
-    fn id() -> i32 {
-        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordSkybox>())
-    }
-}
 
 #[derive(Default, Clone, Hash, PartialEq, Eq)]
 pub enum SkyboxTypes {

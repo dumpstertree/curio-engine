@@ -5,6 +5,7 @@ members = [
     "curio_core_tests",
     "curio_engine",
     "system_component_default/gameplay",
+    "system_component_default/gameplay_macros/curio_entry",
     "system_component_default/gameplay_macros/impulse",
     "system_component_default/gameplay_macros/habit",
     "system_component_default/gameplay_macros/stimulant",

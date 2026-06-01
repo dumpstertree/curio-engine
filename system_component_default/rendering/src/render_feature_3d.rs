@@ -1,6 +1,18 @@
+use std::sync::Arc;
+
+use bytemuck::Zeroable;
 use camera::SysRecordCamera;
-use curio_core::{GraphicsMapping, Ledger, TextureAsset, Vector2, engine_services::services};
+use curio_core::{
+    Color, GraphicsMapping, Ledger, Matrix4x4, Quaternion, RecordCommon, TextureAsset, Vector2, Vector3,
+    engine_services::services,
+    io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader},
+};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
+use ext_rendering::{
+    DrawCall, Material, Mesh, SysRecordRendering,
+    data::{material::ShaderDesc, mesh::Vertex},
+};
+use skybox::{SkyboxTypes, SysRecordSkybox};
 
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3ds::render_feature_draw_mesh::RenderFeatureDrawMesh, shadow_system::ShadowSystem};
 
@@ -12,12 +24,14 @@ pub trait RenderFeature3D {
 pub struct RenderFeature3DHelper {
     camera_rendering: CameraRenderingComponents,
     features: Vec<Box<dyn RenderFeature3D>>,
+    skybox_mesh: Arc<Mesh>,
 }
 impl RenderFeature3DHelper {
     pub fn new() -> RenderFeature3DHelper {
         RenderFeature3DHelper {
             camera_rendering: CameraRenderingComponents::new(1),
             features: vec![RenderFeatureDrawMesh::new()],
+            skybox_mesh: Arc::new(skybox_mesh()),
         }
     }
     pub fn set_graphics_mappings(&mut self, graphics_mappings: &[GraphicsMapping]) {
@@ -29,13 +43,45 @@ impl RenderFeature3DHelper {
         let depth = s.gpu.depth();
 
         //
+        let state_skybox = ledger[0].read::<SysRecordSkybox>();
+        let clear_color = match &state_skybox.skybox {
+            SkyboxTypes::CubeMap(m) => {
+                // add draw call
+                ledger[0].write::<SysRecordRendering>(|x| {
+                    // x.draw_calls.push( );
+
+                    let s = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT);
+                    let mut mat = Material::new("skybox", s, false);
+                    mat.set_texture_with_label(Some(m.clone()), "diffuse");
+                    mat.finalize();
+
+                    // println!("{},{}", m.texture.size().width, m.texture.size().height);
+
+                    let material = Arc::new(mat);
+
+                    x.draw_calls
+                        .push(DrawCall::draw_mesh_single(self.skybox_mesh.clone(), material, Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::one()), Color::clear(), false));
+                });
+                egui_wgpu::wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
+            }
+            SkyboxTypes::Color(c) => egui_wgpu::wgpu::Color {
+                r: c.as_r_01() as f64,
+                g: c.as_g_01() as f64,
+                b: c.as_b_01() as f64,
+                a: c.as_a_01() as f64,
+            },
+            _ => egui_wgpu::wgpu::Color { r: 1.0, g: 0.1, b: 0.1, a: 1.0 },
+        };
+
+        // let clear_color =
+        //
         let mut render_pass = encoder.begin_render_pass(&egui_wgpu::wgpu::RenderPassDescriptor {
             label: Some("3D render pass"),
             color_attachments: &[Some(egui_wgpu::wgpu::RenderPassColorAttachment {
                 view: target_view, // <-- use the texture view
                 resolve_target: None,
                 ops: egui_wgpu::wgpu::Operations {
-                    load: egui_wgpu::wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color { r: 0.1, g: 0.1, b: 0.1, a: 1.0 }),
+                    load: egui_wgpu::wgpu::LoadOp::Clear(clear_color),
                     store: egui_wgpu::wgpu::StoreOp::Store,
                 },
             })],
@@ -48,24 +94,17 @@ impl RenderFeature3DHelper {
         for i in 0..graphics_mappings.len() {
             //
             let ledger = ledger.get_mut(i).unwrap();
+
             let state_camera = ledger.read::<SysRecordCamera>();
 
             // get camera data
             let cur_camera_snapshot = &state_camera.cameras;
             let cur_graphics_mapping = &graphics_mappings[i];
 
-            //
-            // if state_camera.resolution_height == 0 || state_camera.resolution_height == 0 {
-            //     println!("Invalid camera resolution");
-            //     continue;
-            // }
-
             let width = services().gpu.capture_width;
             let height = services().gpu.capture_height;
 
             // create viewport bounds
-            // let viewport = Viewport::new(Vector2::new(state_camera.resolution_width as f32, state_camera.resolution_height as f32), cur_graphics_mapping.viewport_min, cur_graphics_mapping.viewport_max);
-
             let viewport = Viewport::new(Vector2::new(width as f32, height as f32), cur_graphics_mapping.viewport_min, cur_graphics_mapping.viewport_max);
 
             // set the viewport based on mapping
@@ -123,4 +162,56 @@ impl Viewport {
             height: ((max.y - min.y) * resolution.y).round(),
         }
     }
+}
+pub fn skybox_mesh() -> Mesh {
+    let s = 100.0;
+
+    let mut vertices = Vec::<Vertex>::new();
+    let mut indices = Vec::<u32>::new();
+
+    let mut add_face = |corners: [[f32; 3]; 4], normal: [f32; 3], uv_min: [f32; 2], uv_max: [f32; 2]| {
+        let start = vertices.len() as u32;
+
+        vertices.push(Vertex::new(corners[0], normal, [1.0, 1.0, 1.0, 1.0], [uv_min[0], uv_max[1]], [0.0, 0.0]));
+        vertices.push(Vertex::new(corners[1], normal, [1.0, 1.0, 1.0, 1.0], [uv_max[0], uv_max[1]], [0.0, 0.0]));
+        vertices.push(Vertex::new(corners[2], normal, [1.0, 1.0, 1.0, 1.0], [uv_max[0], uv_min[1]], [0.0, 0.0]));
+        vertices.push(Vertex::new(corners[3], normal, [1.0, 1.0, 1.0, 1.0], [uv_min[0], uv_min[1]], [0.0, 0.0]));
+
+        // inward-facing winding
+        indices.extend_from_slice(&[start, start + 2, start + 1, start, start + 3, start + 2]);
+    };
+
+    // Atlas cells
+    let (front_min, front_max) = atlas_uv(1.0, 1.0);
+    let (left_min, left_max) = atlas_uv(0.0, 1.0);
+    let (right_min, right_max) = atlas_uv(2.0, 1.0);
+    let (back_min, back_max) = atlas_uv(3.0, 1.0);
+    let (up_min, up_max) = atlas_uv(1.0, 0.0);
+    let (down_min, down_max) = atlas_uv(1.0, 2.0);
+
+    // FRONT (+Z)
+    add_face([[-s, -s, s], [s, -s, s], [s, s, s], [-s, s, s]], [0.0, 0.0, -1.0], front_min, front_max);
+
+    // BACK (-Z)
+    add_face([[s, -s, -s], [-s, -s, -s], [-s, s, -s], [s, s, -s]], [0.0, 0.0, 1.0], back_min, back_max);
+
+    // LEFT (-X)
+    add_face([[-s, -s, -s], [-s, -s, s], [-s, s, s], [-s, s, -s]], [1.0, 0.0, 0.0], left_min, left_max);
+
+    // RIGHT (+X)
+    add_face([[s, -s, s], [s, -s, -s], [s, s, -s], [s, s, s]], [-1.0, 0.0, 0.0], right_min, right_max);
+
+    // TOP (+Y)
+    add_face([[-s, s, s], [s, s, s], [s, s, -s], [-s, s, -s]], [0.0, -1.0, 0.0], up_min, up_max);
+
+    // BOTTOM (-Y)
+    add_face([[-s, -s, -s], [s, -s, -s], [s, -s, s], [-s, -s, s]], [0.0, 1.0, 0.0], down_min, down_max);
+
+    Mesh::new(String::from("Skybox"), vertices, indices, Matrix4x4::default())
+}
+fn atlas_uv(col: f32, row: f32) -> ([f32; 2], [f32; 2]) {
+    let w = 1.0 / 4.0;
+    let h = 1.0 / 3.0;
+
+    ([col * w, row * h], [(col + 1.0) * w, (row + 1.0) * h])
 }

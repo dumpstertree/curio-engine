@@ -1,4 +1,4 @@
-use crate::{io::file::File, Application, Severity};
+use crate::{io::file::File, Application, BuiltInAssets, Severity};
 use chrono::DateTime;
 use egui::ahash::{HashMap, HashMapExt};
 use serde::{Deserialize, Serialize};

@@ -40,6 +40,8 @@ impl ModelAsset {
 
         // --- Materials ---
         if gltf.materials().count() == 0 {
+            println!("no mat: unlit material");
+
             let s = shaders.get("assets/shader/unlit_shader.shader").unwrap();
 
             // let shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
@@ -69,6 +71,7 @@ impl ModelAsset {
 
                 let shader_desc: Arc<ShaderDesc>;
                 if material.name().unwrap().starts_with("lit:") {
+                    println!("lit material");
                     shader_desc = shaders
                         .get("assets/shader/my_shader.shader")
                         .unwrap()
@@ -76,6 +79,7 @@ impl ModelAsset {
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 } else if material.name().unwrap().starts_with("unlit:") {
+                    println!("unlit material");
                     shader_desc = shaders
                         .get("assets/shader/unlit_shader.shader")
                         .unwrap()
@@ -83,6 +87,7 @@ impl ModelAsset {
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
                 } else {
+                    println!("lit material");
                     shader_desc = shaders
                         .get("assets/shader/my_shader.shader")
                         .unwrap()

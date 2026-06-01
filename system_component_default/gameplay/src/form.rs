@@ -1,10 +1,12 @@
 use crate::{
+    built_in::facet::transform::{transform2d::Transform2D, transform3d::Transform3D},
     form_ref::{FormRef, MutQuery},
     static_data::global_components::COMPONENT_REGISTRY,
     traits::facet_common::FacetCommon,
 };
-use curio_core::{FieldState, ObjectState};
+use curio_core::{FieldState, ObjectState, Quaternion, Vector2, Vector3};
 use hecs::{Entity, Query};
+use num::NumCast;
 use std::{cell::RefCell, hash::Hash, rc::Rc};
 
 /// Representation of an object in the world
@@ -56,9 +58,94 @@ impl Form {
         );
     */
 
-    pub fn position(&self) {}
-    pub fn rotation(&self) {}
-    pub fn scale(&self) {}
+    // set local values
+
+    /// Sets local position of required Transform3D.
+    pub fn position<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        self.edit_facet::<Transform3D>(|t| t.position = Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap()));
+        self
+    }
+
+    /// Sets local rotation of required Transform3D. Input is expected to be euler angles
+    pub fn rotation<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        self.edit_facet::<Transform3D>(|t| t.rotation = Quaternion::from_euler(Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap())));
+        self
+    }
+    /// Sets the local scale of the required Transforms3D.
+    pub fn scale<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        self.edit_facet::<Transform3D>(|t| t.scale = Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap()));
+        self
+    }
+
+    /// Not Yet Implemented. Sets the world postion of the required Transforms3D.
+    pub fn position_world<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        todo!()
+    }
+    /// Not Yet Implemented. Sets the world rotation of the required Transforms3D. Input is expected to be euler angles
+    pub fn rotation_world<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        todo!()
+    }
+
+    /// Sets local position of required Transform3D using a pre-built Vector3
+    pub fn position_vec(self, pos: Vector3) -> Self {
+        self.edit_facet::<Transform3D>(|t| t.position = pos);
+        self
+    }
+    /// Sets local rotation of required Transform3D using a pre-built Quaternion
+    pub fn rotation_qat(self, rot: Quaternion) -> Self {
+        self.edit_facet::<Transform3D>(|t| t.rotation = rot);
+        self
+    }
+    /// Sets local scale of required Transform3D using a pre-built Vector3
+    pub fn scale_vec(self, scl: Vector3) -> Self {
+        self.edit_facet::<Transform3D>(|t| t.scale = scl);
+        self
+    }
+
+    // set world values with a vec
+    pub fn position_world_vec(&self) {}
+    pub fn rotation_world_qat(&self) {}
+    pub fn scale_world_vec(&self) {}
+
+    // add a facet
+    pub fn facet<T: FacetCommon>(self, facet: T) -> Self {
+        self.add_facet(facet)
+    }
+    pub fn facet_default<T: FacetCommon + Default>(self) -> Self {
+        // self.add_facet_default<T>()
+        self
+    }
+
+    // add a child
+    pub fn child(self, child: Form) -> Self {
+        child.set_parent(Some(self.clone()));
+        self
+    }
 
     /// Get the serialized state
     pub fn get_state(&self) -> ObjectState {
@@ -173,7 +260,7 @@ impl Form {
         self.form_ref.borrow().has_facet::<T>()
     }
     /// Set the parent
-    pub fn set_parent(&mut self, parent_form: Option<Form>) {
+    pub fn set_parent(&self, parent_form: Option<Form>) {
         FormRef::set_parent(self.clone(), parent_form);
     }
     /// Destroy this Form

@@ -30,7 +30,7 @@ impl Default for CameraSnapshot {
             rotation: Default::default(),
             fovy: 60.0,
             znear: 0.1,
-            zfar: 100.0,
+            zfar: 100000.0,
         }
     }
 }

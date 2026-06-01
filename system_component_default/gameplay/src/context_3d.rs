@@ -21,9 +21,10 @@ impl Context3D {
     pub fn new(world: Rc<RefCell<World>>) -> Self {
         Self { world }
     }
+    // pub fn spawn(&mut self, name: &str, t: Transform3D) -> Form {
 
     /// Spawn a Form inside the Context
-    pub fn spawn(&mut self, name: &str, t: Transform3D) -> Form {
+    pub fn spawn(&mut self, name: &str) -> Form {
         // spawn a new entity inside the hecs_world
         let hecs_world = self.hecs_world();
         let entity = {
@@ -34,7 +35,7 @@ impl Context3D {
         };
 
         // spawn the form
-        let form = FormRef::new(name, hecs_world, entity).add_facet(t);
+        let form = FormRef::new(name, hecs_world, entity).add_facet_default::<Transform3D>();
         // return
         form
     }

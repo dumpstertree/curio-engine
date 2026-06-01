@@ -93,6 +93,7 @@ struct GpuLight {
     position: vec4<f32>,
     color_intensity: vec4<f32>,
     direction_radius: vec4<f32>,
+    _padding: vec4<f32>,
 };
 
 struct LightBuffer {

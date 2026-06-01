@@ -100,6 +100,7 @@ impl Curio {
     }
 
     fn new(builder: CurioBuilder) -> Self {
+        
         // log
         Application::log(Severity::Info, "Imbuing Curio...");
 

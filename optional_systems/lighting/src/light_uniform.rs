@@ -12,6 +12,7 @@ pub enum LightType {
     Directional, // uses direction vector
 }
 
+
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DrawCallLight {
     pub light_type: LightType,
@@ -44,10 +45,10 @@ impl Hash for DrawCallLight {
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct GpuLight {
-    pub position: [f32; 4],         // xyz = position, w = light_type (0=dir,1=point)
-    pub color_intensity: [f32; 4],  // rgb = color, a = intensity
+    pub position: [f32; 4],        // xyz = position, w = light_type (0=dir,1=point)
+    pub color_intensity: [f32; 4], // rgb = color, a = intensity
     pub direction_radius: [f32; 4], // xyz = direction, w = radius (for point)
-    pub _padding: [f32; 4],         // unused (keeps 64 bytes)
+                                   // pub _padding: [f32; 4],         // unused (keeps 64 bytes)
 }
 
 #[repr(C)]
@@ -118,7 +119,7 @@ impl LightSystem {
 
         // Header: first 16 bytes. First u32 = count
         let mut bytes: Vec<u8> = Vec::new(); //Vec::with_capacity(16 + 64 * MAX_LIGHTS);
-        bytes.extend(&(1 as u32).to_le_bytes());
+        bytes.extend(&(3 as u32).to_le_bytes());
         bytes.extend(&[0u8; 12]); // padding to 16 bytes
 
         Self::add_light(sun, &mut bytes);

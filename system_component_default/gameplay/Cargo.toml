@@ -5,6 +5,7 @@ edition = "2024"
 
 
 [dependencies]
+num = "0.4.3"
 curio_core = { workspace = true }
 hecs = "0.10.5"
 serde = { version = "1.0.104", features = ["derive"] }

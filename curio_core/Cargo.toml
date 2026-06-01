@@ -35,6 +35,9 @@ edition = "2018"
 
 
 [dependencies]
+rust-embed = "8.11.0"
+num = "0.4.3"
+
 # window
 winit = { version = "0.30", features = ["android-native-activity"] }
 # gui

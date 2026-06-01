@@ -23,6 +23,7 @@ impl Context2D {
 
     /// Spawn a Form inside the Context
     pub fn spawn(&mut self, name: &str, t: Transform2D) -> Form {
+        panic!("this should spawn a custome form2D");
         // spawn a new entity inside the hecs_world
         let hecs_world = self.hecs_world();
         let entity = {

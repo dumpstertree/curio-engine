@@ -13,4 +13,7 @@ pub(crate) mod facet {
     pub(crate) mod light;
 }
 
+pub(crate) mod habit {
+    pub(crate) mod update_lights;
+}
 pub(crate) mod light_uniform;

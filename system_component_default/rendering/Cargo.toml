@@ -15,6 +15,8 @@ ext_rendering = { workspace = true }
 curio_core = { workspace = true }
 camera = { workspace = true }
 lighting = { workspace = true }
+skybox = { workspace = true }
+
 
 egui = "0.31.1"
 egui-winit = "0.31.1"
