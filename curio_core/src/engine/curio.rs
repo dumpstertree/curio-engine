@@ -1,6 +1,6 @@
 use crate::{ButtonCode, ButtonPressed, Nerve, NetworkModes};
 use core::panic;
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, time::Instant};
 
 use crate::{
     built_in::stimulant::engine_commands::EngineCommands,
@@ -100,7 +100,6 @@ impl Curio {
     }
 
     fn new(builder: CurioBuilder) -> Self {
-        
         // log
         Application::log(Severity::Info, "Imbuing Curio...");
 
@@ -205,8 +204,11 @@ impl CurioCommon for Curio {
                 EngineCommands::Tick => {
                     // iterate over each component
                     for c in &mut self.plugins {
+                        let now = Instant::now();
                         // init the state
                         c.tick(&mut self.ledgers, &mut self.nerves);
+
+                        println!("{}: plugin took: {}", c.name(), now.elapsed().as_nanos() as f32 * 0.000001);
                     }
                 }
                 _ => {}

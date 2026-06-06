@@ -1,4 +1,4 @@
-use crate::{io::file::File, Application, BuiltInAssets, Severity};
+use crate::{io::file::File, Application, Severity};
 use chrono::DateTime;
 use egui::ahash::{HashMap, HashMapExt};
 use serde::{Deserialize, Serialize};
@@ -56,12 +56,15 @@ impl AssetDatabase {
                     _ = listing.1.fetch_asset(force);
                 }
                 AssetDatabaseListing::Local(_) => {}
+                AssetDatabaseListing::Embedded(_) => {}
             }
         }
     }
 }
 
 pub enum AssetDatabaseListing {
+    /// Embed data in application and reuse it later
+    Embedded(Vec<u8>),
     /// Retrieve data from a local path on computer
     Local(String),
     /// Retrieve data from a remote path and then cache it to local path on computer
@@ -72,6 +75,7 @@ impl AssetDatabaseListing {
     /// Will return an empty Vec<u8> if there was a problem
     pub fn fetch_asset(&self, force: bool) -> Vec<u8> {
         match self {
+            AssetDatabaseListing::Embedded(embedded) => embedded.clone(),
             AssetDatabaseListing::Local(local_path) => Self::fetch_asset_local(local_path),
             AssetDatabaseListing::RemoteToCache(local_path, remote_path) => Self::fetch_asset_remote(local_path, remote_path, force),
         }

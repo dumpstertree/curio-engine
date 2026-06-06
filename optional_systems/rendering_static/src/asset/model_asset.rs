@@ -2,12 +2,16 @@ use std::{collections::HashMap, sync::Arc};
 
 use curio_core::{
     AssetCommon, AssetCommonFromBits, Matrix4x4, Random, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, AssetLoader},
+    io::{
+        asset_database::AssetDatabase,
+        asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetLoader},
+    },
 };
 use ext_rendering::{
     Material, Mesh,
     data::{material::ShaderDesc, mesh::Vertex},
 };
+use gltf::json::Asset;
 //data
 
 #[derive(Clone)]
@@ -38,6 +42,7 @@ impl ModelAsset {
         let mut all_meshes = Vec::with_capacity(gltf.meshes().len());
         let mut all_materials = Vec::with_capacity(gltf.materials().len());
 
+        println!("unwrapping gltf");
         // --- Materials ---
         if gltf.materials().count() == 0 {
             println!("no mat: unlit material");
@@ -47,7 +52,11 @@ impl ModelAsset {
             // let shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
             all_materials.push(Arc::new(Material::new("gltf", s.clone(), true)));
         } else {
+            println!("unwrapping materials: {}", gltf.materials().len());
+
             for material in gltf.materials() {
+                println!("unwrapping material");
+
                 let pbr = material.pbr_metallic_roughness();
 
                 let texture_asset = if let Some(tex_info) = pbr.base_color_texture() {
@@ -56,48 +65,63 @@ impl ModelAsset {
 
                     // Convert 3-channel to 4-channel (R8G8B8 → R8G8B8A8)
                     if image.format == gltf::image::Format::R8G8B8 {
+                        println!("format R8G8B8");
                         let mut rgba = Vec::with_capacity((image.width * image.height * 4) as usize);
                         for chunk in pixels.chunks(3) {
                             rgba.extend_from_slice(chunk);
                             rgba.push(255); // default alpha
                         }
                         pixels = rgba;
+                    } else if image.format == gltf::image::Format::R8G8B8A8 {
+                        println!("format R8G8B8A8");
+                    } else {
+                        println!("unknown fomat type");
                     }
 
-                    TextureAsset::new_from_buffer(None, image.width, image.height, &pixels)
+                    Arc::new(TextureAsset::new_from_buffer(None, image.width, image.height, &pixels))
                 } else {
-                    TextureAsset::default()
+                    println!("default texture");
+
+                    AssetLoader::load_asset::<TextureAsset>(&ASSET_UID_TEXTURE_DEFAULT)
+                    // TextureAsset::default()
                 };
 
                 let shader_desc: Arc<ShaderDesc>;
+
                 if material.name().unwrap().starts_with("lit:") {
                     println!("lit material");
-                    shader_desc = shaders
-                        .get("assets/shader/my_shader.shader")
-                        .unwrap()
-                        .clone();
+                    // shader_desc = shaders
+                    //     .get("assets/shader/my_shader.shader")
+                    //     .unwrap()
+                    //     .clone();
+
+                    shader_desc = AssetLoader::load_asset(&ASSET_UID_SHADER_LIT);
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 } else if material.name().unwrap().starts_with("unlit:") {
                     println!("unlit material");
-                    shader_desc = shaders
-                        .get("assets/shader/unlit_shader.shader")
-                        .unwrap()
-                        .clone();
+                    // shader_desc = shaders
+                    //     .get("assets/shader/unlit_shader.shader")
+                    //     .unwrap()
+                    //     .clone();
+
+                    shader_desc = AssetLoader::load_asset(&ASSET_UID_SHADER_UNLIT);
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
                 } else {
-                    println!("lit material");
-                    shader_desc = shaders
-                        .get("assets/shader/my_shader.shader")
-                        .unwrap()
-                        .clone();
+                    println!("lit material 2");
+                    // shader_desc = shaders
+                    //     .get("assets/shader/my_shader.shader")
+                    //     .unwrap()
+                    //     .clone();
+
+                    shader_desc = AssetLoader::load_asset(&ASSET_UID_SHADER_LIT);
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 }
 
                 let mut mat = Material::new("gltf", shader_desc.clone(), false);
-                mat.set_texture_with_label(Some(Arc::new(texture_asset)), "diffuse");
+                mat.set_texture_with_label(Some(texture_asset), "diffuse");
                 mat.finalize();
                 all_materials.push(Arc::new(mat));
             }

@@ -15,15 +15,14 @@ static mut ASSET_CACHE: Option<Mutex<AssetCache>> = None;
 pub static ASSET_UID_SHADER_UNLIT: i16 = -100;
 pub static ASSET_UID_SHADER_LIT: i16 = -101;
 
-// Built in Shaders
-pub static ASSET_UID_SHADER_MODULE_UNLIT: i16 = -200;
-pub static ASSET_UID_SHADER_MODULE_LIT: i16 = -201;
-
 // Built in Textures
 pub static ASSET_UID_TEXTURE_FONT_ATLAS: i16 = -300;
 
 // Font Asset
 pub static ASSET_UID_FONT_ASSET_DEFAULT: i16 = -400;
+
+pub static ASSET_UID_TEXTURE_DEFAULT: i16 = -500;
+
 pub struct AssetLoader {}
 // private
 impl AssetLoader {
@@ -79,6 +78,7 @@ impl AssetLoader {
             }
 
             Application::log(Severity::Info, &format!("Caching new asset for UID: {}", uid));
+            Application::log(Severity::Info, &format!("Completed lookup: {}", uid));
 
             asset
         }
@@ -116,16 +116,19 @@ impl AssetLoader {
         let mut database = database;
         database.append(vec![
             // shaders
-            ("shader_lit".to_string(), ASSET_UID_SHADER_LIT, AssetDatabaseListing::Local("built_in/shader/lit.shader".to_string())),
-            ("shader_unlit".to_string(), ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Local("built_in/shader/unlit.shader".to_string())),
+            ("shader_lit".to_string(), ASSET_UID_SHADER_LIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader/lit.shader").to_vec())),
+            ("shader_unlit".to_string(), ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader/unlit.shader").to_vec())),
             // shader modules
-            ("shader_module_lit".to_string(), ASSET_UID_SHADER_MODULE_LIT, AssetDatabaseListing::Local("built_in/shader_module/lit.wgsl".to_string())),
-            ("shader_module_unlit".to_string(), ASSET_UID_SHADER_MODULE_UNLIT, AssetDatabaseListing::Local("built_in/shader_module/unlit.wgsl".to_string())),
+            // ("shader_module_lit".to_string(), ASSET_UID_SHADER_MODULE_LIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader_module/lit.wgsl").to_vec())),
+            // ("shader_module_unlit".to_string(), ASSET_UID_SHADER_MODULE_UNLIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader_module/unlit.wgsl").to_vec())),
             // textures
-            ("default_texture_font_atlas".to_string(), ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Local("built_in/texture/font_black.png".to_string())),
+            ("default_texture_font_atlas".to_string(), ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/texture/font_black.png").to_vec())),
             // font
-            ("default_font_asset".to_string(), ASSET_UID_FONT_ASSET_DEFAULT, AssetDatabaseListing::Local("built_in/font/default.font".to_string())),
+            ("default_font_asset".to_string(), ASSET_UID_FONT_ASSET_DEFAULT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/font/default.font").to_vec())),
+            // texutre
+            ("default_texture".to_string(), ASSET_UID_TEXTURE_DEFAULT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/texture/default.png").to_vec())),
         ]);
+
         unsafe {
             ASSET_DATABASE = Some(Mutex::new(database));
         }
@@ -143,3 +146,7 @@ impl AssetLoader {
     //     }
     // }
 }
+
+pub struct BuiltInAssets {}
+
+impl BuiltInAssets {}

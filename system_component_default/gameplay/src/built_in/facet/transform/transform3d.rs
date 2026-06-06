@@ -47,7 +47,7 @@ impl Default for Transform3D {
         Transform3D {
             parent: None,
             position: Vector3::zero(),
-            rotation: Quaternion::identity(),
+            rotation: Quaternion::from_look_rotation(Vector3::forward(), Vector3::up()),
             scale: Vector3::one(),
             ws_matrix: Matrix4x4::default(),
             owner: None,

@@ -226,6 +226,4 @@ pub mod built_in {
         pub mod sys_record_time;
     }
 }
-#[derive(rust_embed::Embed)]
-#[folder = "../assets/"]
-struct BuiltInAssets;
+pub mod shaders;

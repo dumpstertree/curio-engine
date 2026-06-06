@@ -1,6 +1,6 @@
 use curio_core::{ComponentState, FieldState, IGameEvent, Ledger, Nerve, ObjectState, TabState};
 use hecs::World;
-use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, vec};
+use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, time::Instant, vec};
 
 use crate::{
     built_in::{facet::transform::transform3d::Transform3D, impulse::ui_events::UIEvents},
@@ -75,6 +75,7 @@ where
         }
     }
     pub fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut Nerve) {
+        let now = Instant::now();
         // if not init -> init
         if !self.has_been_init {
             // flip flag
@@ -213,6 +214,9 @@ where
         for x in self.ui.iter_mut() {
             x.1.tick(ledger, event_queue, &mut self.context_2d);
         }
+
+        println!("gameplay took: {}", now.elapsed().as_nanos() as f32 * 0.000001);
+
         // dequeue events
     }
 }

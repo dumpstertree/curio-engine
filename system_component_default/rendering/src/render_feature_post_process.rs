@@ -33,7 +33,7 @@ impl RenderFeaturePostProcessHelper {
         let features: Vec<Box<dyn RenderFeaturePostProcess>> = vec![
             RenderFeaturePostProcessKuwahara::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
             RenderFeaturePostProcessOutline::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
-            // RenderFeaturePostProcessFog::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
+            RenderFeaturePostProcessFog::new(device.clone(), config.format, &pp_resource, &depth_view, &offscreen_view),
         ];
         // construct -> return
         RenderFeaturePostProcessHelper { pp_resource, features }

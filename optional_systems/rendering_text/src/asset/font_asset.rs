@@ -58,6 +58,7 @@ impl FontAsset {
 
         // let texture = AssetLoader::load_texture_from_path(&ASSET_UID_TEXTURE_FONT_ATLAS);
         let texture = AssetLoader::load_asset::<TextureAsset>(&ASSET_UID_TEXTURE_FONT_ATLAS);
+        println!("{}, {}", texture.texture.width(), texture.texture.height());
 
         let shader = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT);
 

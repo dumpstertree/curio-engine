@@ -20,6 +20,7 @@ pub mod built_in {
         pub mod update_animator_position_sin;
         pub mod update_animator_rotation_sin;
         pub mod update_animator_scale_sin;
+        pub mod update_transform;
     }
     pub mod facet {
         pub mod animator_common;

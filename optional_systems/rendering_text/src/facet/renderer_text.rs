@@ -70,7 +70,8 @@ impl RendererCommon for RendererText {
     }
 
     fn get_enabled(&self) -> bool {
-        self.enabled
+        true
+        // self.enabled
     }
 
     fn set_tint(&mut self, tint: Color) {
@@ -118,14 +119,14 @@ impl RendererText {
     }
 }
 impl RendererText {
-    pub fn set_enabled(&mut self, enabled: bool) -> &mut Self {
+    pub fn set_enabled(mut self, enabled: bool) -> Self {
         if self.enabled == enabled {
             return self;
         }
         self.enabled = enabled;
         self
     }
-    pub fn set_font_asset(&mut self, font_asset: Option<Arc<FontAsset>>) -> &mut Self {
+    pub fn set_font_asset(mut self, font_asset: Option<Arc<FontAsset>>) -> Self {
         // if self.font_asset == font_asset {
         //     return self;
         // }
@@ -134,7 +135,7 @@ impl RendererText {
         self.is_dirty = true;
         self
     }
-    pub fn set_contents(&mut self, contents: &str) -> &mut Self {
+    pub fn set_contents(mut self, contents: &str) -> Self {
         if self.contents == contents {
             return self;
         }
@@ -143,7 +144,7 @@ impl RendererText {
         self.is_dirty = true;
         self
     }
-    pub fn set_horizontal_alignment(&mut self, align: AligmentHorizontal) -> &mut Self {
+    pub fn set_horizontal_alignment(mut self, align: AligmentHorizontal) -> Self {
         if self.align_horizontal == align {
             return self;
         }
@@ -151,7 +152,7 @@ impl RendererText {
         self.is_dirty = true;
         self
     }
-    pub fn set_vertical_alignment(&mut self, align: AligmentVertical) -> &mut Self {
+    pub fn set_vertical_alignment(mut self, align: AligmentVertical) -> Self {
         if self.align_vertical == align {
             return self;
         }
@@ -159,7 +160,7 @@ impl RendererText {
         self.is_dirty = true;
         self
     }
-    pub fn set_font_size(&mut self, font_size: f32) -> &mut Self {
+    pub fn set_font_size(mut self, font_size: f32) -> Self {
         if self.font_size == font_size {
             return self;
         }
@@ -167,7 +168,7 @@ impl RendererText {
         self.is_dirty = true;
         self
     }
-    pub fn set_bounds(&mut self, bounds: Vector2) -> &mut Self {
+    pub fn set_bounds(mut self, bounds: Vector2) -> Self {
         if self.bounds == bounds {
             return self;
         }
@@ -192,6 +193,7 @@ impl RendererText {
             self.font_asset = Some(AssetLoader::load_asset::<FontAsset>(&ASSET_UID_FONT_ASSET_DEFAULT));
         }
         let Some(font_asset) = &self.font_asset else {
+            println!("font asset is none");
             return;
         };
 
@@ -259,6 +261,7 @@ impl RendererText {
 
                 // Create/reuse quad mesh
                 let mesh_arc = font_asset.mesh_for_char(ch);
+
                 let x_offset: f32 = match self.align_horizontal {
                     AligmentHorizontal::Center => -total_line_width * 0.5,
                     AligmentHorizontal::Left => -self.bounds.x * 0.5,

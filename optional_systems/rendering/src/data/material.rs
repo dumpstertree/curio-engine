@@ -1,9 +1,13 @@
 use core::panic;
 use curio_core::{
-    AssetCommon, AssetCommonFromBits, Color, Random, TextureAsset,
+    AssetCommon,
+    AssetCommonFromBits,
+    Color,
+    Random,
+    TextureAsset,
     engine_services::services,
-    io::asset_loader::{ASSET_UID_SHADER_MODULE_LIT, ASSET_UID_SHADER_MODULE_UNLIT},
-    system_adapters::adapter_system_gpu::get_shader_module,
+    shaders::{self, Shaders},
+    // system_adapters::adapter_system_gpu::get_shader_module,
 };
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, Buffer, ShaderModule, util::DeviceExt};
 use serde::{Deserialize, Serialize};
@@ -72,21 +76,13 @@ impl Material {
     }
 
     pub fn shader(&self) -> Arc<ShaderModule> {
-        // let device = &SystemGPU::get_device();
-        // AssetLoader::load_shader_module(device, Builtin &self.shader_desc.shader_module_path)
-
-        // let s = services();
-
         if self.shader_desc.shader_module_path == "shader_module_lit" {
-            return get_shader_module(&ASSET_UID_SHADER_MODULE_LIT);
+            return Shaders::lit();
         }
         if self.shader_desc.shader_module_path == "shader_module_unlit" {
-            return get_shader_module(&ASSET_UID_SHADER_MODULE_UNLIT);
+            return Shaders::unlit();
         }
-        // SystemGPU::get_shader_module(&self.shader_desc.shader_module_path).unwrap()
-
-        // self.shader_desc.shader_module_path
-        panic!("IDK ABOUT THIS");
+        panic!("Unknown shader type");
     }
     pub fn instantiate(&self, name: &str) -> Material {
         Material {
@@ -252,9 +248,9 @@ impl Material {
 //=========================================
 #[derive(Clone, Serialize, Deserialize, PartialEq)]
 pub struct ShaderDesc {
-    shader_module_path: String,
-    textures: Vec<ShaderTextureDesc>,
-    colors: Vec<ShaderColorDesc>,
+    pub shader_module_path: String,
+    pub textures: Vec<ShaderTextureDesc>,
+    pub colors: Vec<ShaderColorDesc>,
 }
 impl AssetCommon for ShaderDesc {}
 impl AssetCommonFromBits<ShaderDesc> for ShaderDesc {

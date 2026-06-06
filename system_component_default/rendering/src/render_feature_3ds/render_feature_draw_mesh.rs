@@ -87,7 +87,6 @@ impl RenderFeatureDrawMesh {
         render_pass.set_vertex_buffer(0, buffers.0.slice(..));
         render_pass.set_vertex_buffer(1, n_buffer.slice(..));
         render_pass.set_index_buffer(buffers.1.slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
-
         // Set bind groups
         // group 0: diffuse texture/sampler (material)
         render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
@@ -99,7 +98,6 @@ impl RenderFeatureDrawMesh {
         render_pass.set_bind_group(3, shadow_system_bind_group, &[]);
         // group 3: shadow system
         // render_pass.set_bind_group(4, &color_bind_group.0, &[]);
-
         // Draw
         render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..matrix.len() as u32);
         // }

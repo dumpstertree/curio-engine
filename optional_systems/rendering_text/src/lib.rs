@@ -9,4 +9,6 @@ pub(crate) mod asset {
 pub(crate) mod facet {
     pub(crate) mod renderer_text;
 }
-pub(crate) mod habit {}
+pub(crate) mod habit {
+    pub(crate) mod habit_update;
+}

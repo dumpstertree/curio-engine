@@ -1,8 +1,11 @@
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::hash::Hash;
 
 use cgmath::Matrix4;
 use serde::Deserialize;
 use serde::Serialize;
+use std::fmt::Result;
 
 use crate::extensions::extensions_f32::ExtensionsF32;
 use crate::Quaternion;
@@ -242,5 +245,11 @@ impl Matrix4x4 {
                 },
             ],
         }
+    }
+}
+// display
+impl Display for Matrix4x4 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{}", format!("pos:{}, rot:{}", self.extract_position(), self.extract_rotation()))
     }
 }

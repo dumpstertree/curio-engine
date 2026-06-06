@@ -97,13 +97,13 @@ impl TextureAsset {
         // return
         TextureAsset { sampler: sampler, texture: texture, view: view }
     }
-    pub fn default() -> TextureAsset {
-        let bytes = include_bytes!("../../../assets/built_in/texture/default.png");
-        let img = image::load_from_memory(bytes).unwrap();
-        let rgba = img.to_rgba8();
+    // pub fn default() -> TextureAsset {
+    //     let bytes = include_bytes!("../../../assets/built_in/texture/default.png");
+    //     let img = image::load_from_memory(bytes).unwrap();
+    //     let rgba = img.to_rgba8();
 
-        TextureAsset::new_from_buffer(None, 1024, 1024, &rgba.to_vec()[..])
-    }
+    //     TextureAsset::new_from_buffer(None, 512, 512, &rgba.to_vec()[..])
+    // }
     pub fn new_from_buffer(label: Option<&str>, width: u32, height: u32, buffer: &[u8]) -> TextureAsset {
         let s = services();
         let queue = s.gpu.queue();
@@ -127,6 +127,13 @@ impl TextureAsset {
             view_formats: &[],
             size,
         });
+
+        // let rgba = texture();
+
+        println!("width: {}", width);
+        println!("height: {}", height);
+        // println!("bytes: {}", rgba.len);
+        println!("expected: {}", width * height * 4);
         queue.write_texture(
             egui_wgpu::wgpu::TexelCopyTextureInfo {
                 aspect: egui_wgpu::wgpu::TextureAspect::All,
