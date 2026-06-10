@@ -6843,6 +6843,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tween"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "ctor",
+ "curio_core",
+ "facet",
+ "gameplay",
+ "gltf",
+ "habit",
+ "record_serializable",
+ "serde",
+]
+
+[[package]]
 name = "type-map"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -1,21 +1,48 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use curio_core::{Ledger, Matrix4x4, TextureAsset, engine_services::services};
-use egui::ahash::{HashMap, HashMapExt};
-use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, ColorTargetState, Device, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
+use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, Buffer, BufferDescriptor, BufferUsages, ColorTargetState, Device, Face, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
 use ext_rendering::{Material, Mesh, SysRecordRendering, data::mesh::Vertex};
 use lighting::{LightSystem, SysRecordLights, SysRecordSun};
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc, time::Instant};
 
 pub struct RenderFeatureDrawMesh {
     light_system: Vec<LightSystem>,
+    pipeline_cache: HashMap<PipelineCacheKey, RenderPipeline>,
+    instance_buffer: Option<Buffer>,
+    instance_buffer_capacity: usize,
+}
+
+#[derive(Hash, PartialEq, Eq)]
+struct PipelineCacheKey {
+    shader_id: usize, // some stable ID for the Arc<ShaderModule>
+    wireframe: bool,
 }
 
 impl RenderFeatureDrawMesh {
     pub fn new() -> Box<RenderFeatureDrawMesh> {
-        Box::new(RenderFeatureDrawMesh { light_system: Vec::new() })
+        let b = Box::new(RenderFeatureDrawMesh {
+            light_system: Vec::new(),
+            pipeline_cache: HashMap::default(),
+            instance_buffer: None,
+            instance_buffer_capacity: 0,
+        });
+
+        b
     }
 
+    pub fn prewarm_pipelines(&mut self, shaders: &[Arc<ShaderModule>], camera_bind: &BindGroupLayout, diffuse_bind_layout: &BindGroupLayout, light_bind_layout: &BindGroupLayout, shadow_bind_layout: &BindGroupLayout, config: &SurfaceConfiguration, device: &Device) {
+        for shader in shaders {
+            for wireframe in [false, true] {
+                let key = PipelineCacheKey { shader_id: Arc::as_ptr(shader) as usize, wireframe };
+                self.pipeline_cache
+                    .entry(key)
+                    .or_insert_with(|| RenderFeatureDrawMesh::get_render_pipeline(camera_bind, diffuse_bind_layout, light_bind_layout, shadow_bind_layout, config, device, shader.clone(), wireframe));
+            }
+        }
+    }
     fn draw_all_mesh(&mut self, ledger: &mut Ledger, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+        // prewarm
+
         let state_draws = ledger.read::<SysRecordRendering>();
         let mut draw_calls = state_draws.draw_calls.clone();
         let mut batching: HashMap<(Arc<Mesh>, Arc<Material>), Vec<Matrix4x4>> = HashMap::new();
@@ -32,10 +59,35 @@ impl RenderFeatureDrawMesh {
             }
         }
 
-        // println!("Saved by batching {} => {}", was, batching.len());
+        let total_instances: usize = batching.values().map(|v| v.len()).sum();
 
-        for ((mesh, material), matrix) in batching {
-            self.draw_draw_call(mesh, material, matrix, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
+        if self.instance_buffer.is_none() || self.instance_buffer_capacity < total_instances {
+            self.instance_buffer = Some(device.create_buffer(&BufferDescriptor {
+                label: Some("Instance Buffer"),
+                size: (total_instances * std::mem::size_of::<Matrix4x4>()) as u64,
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            }));
+            self.instance_buffer_capacity = total_instances;
+        }
+
+        let queue = services().gpu.queue();
+        let mut offset = 0;
+        let mut batches_with_offsets: Vec<(Arc<Mesh>, Arc<Material>, Vec<Matrix4x4>, usize)> = Vec::new();
+
+        for ((mesh, material), matrix) in &batching {
+            queue.write_buffer(self.instance_buffer.as_ref().unwrap(), (offset * std::mem::size_of::<Matrix4x4>()) as u64, bytemuck::cast_slice(matrix));
+            batches_with_offsets.push((mesh.clone(), material.clone(), matrix.clone(), offset));
+            offset += matrix.len();
+        }
+
+        // Sort by shader_id to minimize set_pipeline calls
+        batches_with_offsets.sort_by_key(|(_, material, _, _)| Arc::as_ptr(&material.shader()) as usize);
+
+        let mut last_shader_id: Option<usize> = None;
+
+        for (mesh, material, matrix, instance_offset) in batches_with_offsets {
+            self.draw_draw_call(mesh, material, matrix, instance_offset, &mut last_shader_id, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
         }
     }
 
@@ -44,6 +96,8 @@ impl RenderFeatureDrawMesh {
         mesh: Arc<Mesh>,
         material: Arc<Material>,
         matrix: Vec<Matrix4x4>,
+        instance_offset: usize,
+        last_shader_id: &mut Option<usize>,
         config: &SurfaceConfiguration,
         device: &Device,
         render_pass: &mut RenderPass,
@@ -52,57 +106,44 @@ impl RenderFeatureDrawMesh {
         shadow_system_bind_group_layout: &BindGroupLayout,
         shadow_system_bind_group: &BindGroup,
     ) {
-        // NOTE:
-        // tint is assumed to be part of the camera uniform buffer (group 1 binding 0).
-        // So we do NOT create a separate tint bind group here.
-        // The camera component is expected to contain the tint field in its uniform buffer.
-
-        // Create material bind groups
         let diffuse_bind_group = material.get_combined_binding_group();
+        let shader_id = Arc::as_ptr(&material.shader()) as usize;
 
-        // Use layouts, not bind groups, for pipeline
-        let rp = RenderFeatureDrawMesh::get_render_pipeline(
-            &camera.camera_bind_group_layout,
-            &diffuse_bind_group.1, // diffuse layout
-            // &color_bind_group.1,                                // color layout
-            &self.light_system[camera_index].bind_group_layout, // lights layout
-            &shadow_system_bind_group_layout,
-            config,
-            device,
-            material.shader(),
-            false,
-        );
+        if *last_shader_id != Some(shader_id) {
+            let rp = self
+                .pipeline_cache
+                .entry(PipelineCacheKey { shader_id, wireframe: false })
+                .or_insert_with(|| {
+                    RenderFeatureDrawMesh::get_render_pipeline(
+                        &camera.camera_bind_group_layout,
+                        &diffuse_bind_group.1,
+                        &self.light_system[camera_index].bind_group_layout,
+                        &shadow_system_bind_group_layout,
+                        config,
+                        device,
+                        material.shader(),
+                        false,
+                    )
+                });
+            render_pass.set_pipeline(rp);
+            *last_shader_id = Some(shader_id);
+        }
 
-        render_pass.set_pipeline(&rp);
+        let n_buffer = self.instance_buffer.as_ref().unwrap();
+        let byte_offset = (instance_offset * std::mem::size_of::<Matrix4x4>()) as u64;
 
-        // Instance buffer
-        let n_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
-            label: Some("Instance Buffer"),
-            contents: bytemuck::cast_slice(&matrix),
-            usage: egui_wgpu::wgpu::BufferUsages::VERTEX,
-        });
-
-        // Mesh vertex/index buffers
         let buffers = (mesh.get_vertex_buffer_for_device(), mesh.get_index_buffer_for_device());
         render_pass.set_vertex_buffer(0, buffers.0.slice(..));
-        render_pass.set_vertex_buffer(1, n_buffer.slice(..));
+        render_pass.set_vertex_buffer(1, n_buffer.slice(byte_offset..));
         render_pass.set_index_buffer(buffers.1.slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
-        // Set bind groups
-        // group 0: diffuse texture/sampler (material)
-        render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
-        // group 1: camera uniform bind group (now expected to include tint in the camera UB)
-        render_pass.set_bind_group(1, &camera.camera_bind_group, &[(256 * camera_index).try_into().unwrap()]);
-        // group 2: lights
-        render_pass.set_bind_group(2, &self.light_system[camera_index].bind_group, &[]);
-        // group 3: shadow system
-        render_pass.set_bind_group(3, shadow_system_bind_group, &[]);
-        // group 3: shadow system
-        // render_pass.set_bind_group(4, &color_bind_group.0, &[]);
-        // Draw
-        render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..matrix.len() as u32);
-        // }
-    }
 
+        render_pass.set_bind_group(0, &diffuse_bind_group.0, &[]);
+        render_pass.set_bind_group(1, &camera.camera_bind_group, &[(256 * camera_index).try_into().unwrap()]);
+        render_pass.set_bind_group(2, &self.light_system[camera_index].bind_group, &[]);
+        render_pass.set_bind_group(3, shadow_system_bind_group, &[]);
+
+        render_pass.draw_indexed(0..(mesh.indicies.len() as u32), 0, 0..matrix.len() as u32);
+    }
     fn get_render_pipeline(
         camera_bind: &BindGroupLayout,
         diffuse_bind_layout: &BindGroupLayout,
@@ -149,7 +190,7 @@ impl RenderFeatureDrawMesh {
                 topology: egui_wgpu::wgpu::PrimitiveTopology::TriangleList,
                 strip_index_format: None,
                 front_face: egui_wgpu::wgpu::FrontFace::Ccw,
-                cull_mode: None,
+                cull_mode: Some(Face::Back), // this was NONE, was there a reason?
                 polygon_mode: if wireframe { egui_wgpu::wgpu::PolygonMode::Line } else { egui_wgpu::wgpu::PolygonMode::Fill },
                 unclipped_depth: false,
                 conservative: false,
@@ -173,6 +214,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
         while self.light_system.len() <= camera_index {
             self.light_system.push(LightSystem::new());
         }
+
         self.light_system[camera_index].update(&ledger.read::<SysRecordSun>().get_draw_call(), &ledger.read::<SysRecordLights>().all_lights);
 
         let s = services();

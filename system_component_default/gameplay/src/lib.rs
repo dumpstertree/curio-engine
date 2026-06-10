@@ -17,18 +17,18 @@ pub mod built_in {
         pub mod system_debug_toggle;
         pub mod system_renderer_update_light_state;
         // pub mod system_renderer_update_state;
-        pub mod update_animator_position_sin;
-        pub mod update_animator_rotation_sin;
-        pub mod update_animator_scale_sin;
+        // pub mod update_animator_position_sin;
+        // pub mod update_animator_rotation_sin;
+        // pub mod update_animator_scale_sin;
         pub mod update_transform;
     }
     pub mod facet {
-        pub mod animator_common;
-        pub mod animator {
-            pub mod animator_position_sin;
-            pub mod animator_rotation_sin;
-            pub mod animator_scale_sin;
-        }
+        // pub mod animator_common;
+        // pub mod animator {
+        //     pub mod animator_position_sin;
+        //     pub mod animator_rotation_sin;
+        //     pub mod animator_scale_sin;
+        // }
         // pub mod collider {
         //     pub mod collider_box;
         //     pub mod collider_sphere;
@@ -43,9 +43,9 @@ pub mod built_in {
         //     pub mod renderer_static;
         //     pub mod renderer_text;
         // }
-        pub mod tween {
-            pub mod tween;
-        }
+        // pub mod tween {
+        //     pub mod tween;
+        // }
         // pub mod camera;
         // pub mod collider_common;
         // pub mod light;

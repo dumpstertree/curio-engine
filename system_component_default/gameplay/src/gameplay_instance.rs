@@ -75,7 +75,6 @@ where
         }
     }
     pub fn tick(&mut self, ledger: &mut Ledger, event_queue: &mut Nerve) {
-        let now = Instant::now();
         // if not init -> init
         if !self.has_been_init {
             // flip flag
@@ -214,8 +213,6 @@ where
         for x in self.ui.iter_mut() {
             x.1.tick(ledger, event_queue, &mut self.context_2d);
         }
-
-        println!("gameplay took: {}", now.elapsed().as_nanos() as f32 * 0.000001);
 
         // dequeue events
     }

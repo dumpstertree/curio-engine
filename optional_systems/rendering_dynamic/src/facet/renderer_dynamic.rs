@@ -117,13 +117,13 @@ impl FieldOverride for RendererDynamic {
 }
 impl RendererDynamic {
     /// Set the current playing animation
-    pub fn set_animation(&mut self, name: &str, looping: bool) -> &mut Self {
+    pub fn set_animation(mut self, name: &str, looping: bool) -> Self {
         self.looping = looping;
         self.animation = name.to_string();
         self
     }
     /// Set the asset
-    pub fn set_asset(&mut self, asset: Option<Arc<ModelAssetAnimated>>) -> &mut Self {
+    pub fn set_asset(mut self, asset: Option<Arc<ModelAssetAnimated>>) -> Self {
         // set the asset
         self.asset = asset;
 

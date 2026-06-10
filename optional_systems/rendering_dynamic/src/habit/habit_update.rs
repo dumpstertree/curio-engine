@@ -38,9 +38,9 @@ impl Habit for Instance {
             world.edit::<&mut RendererDynamic>(|query| {
                 for (_, renderer) in query {
                     // update the mesh
-                    if !renderer.get_cached_enabled_in_hierarchy() {
-                        continue;
-                    }
+                    // if !renderer.get_cached_enabled_in_hierarchy() {
+                    //     continue;
+                    // }
                     // update all mesh
                     renderer.update_mesh(state_time.scaled_time);
                 }
@@ -49,9 +49,10 @@ impl Habit for Instance {
             // push renderers for transform3d
             world.edit::<(&RendererDynamic, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
-                    if !renderer.get_cached_enabled_in_hierarchy() {
-                        continue;
-                    }
+                    // if !renderer.get_cached_enabled_in_hierarchy() {
+                    //     continue;
+                    // }
+
                     // guard - no mesh
                     if renderer.asset.is_some() {
                         let Some(_asset) = &renderer.asset else {
@@ -71,9 +72,9 @@ impl Habit for Instance {
             // push renderers for transform2d
             world.edit::<(&mut RendererDynamic, &Transform2D)>(|query| {
                 for (_, (renderer, transform)) in query {
-                    if !renderer.get_cached_enabled_in_hierarchy() {
-                        continue;
-                    }
+                    // if !renderer.get_cached_enabled_in_hierarchy() {
+                    //     continue;
+                    // }
 
                     let frustrum_w = 2.1; // these values are made up because the camera is perspective
                     let frustrum_h = 1.1;

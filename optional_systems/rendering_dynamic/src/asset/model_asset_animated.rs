@@ -55,7 +55,10 @@ impl ModelAssetAnimated {
         self.cached_animation_frames
             .get(name)
             .cloned()
-            .unwrap_or_else(|| Arc::new(AnimationAsset::new(Vec::new())))
+            .unwrap_or_else(|| {
+                panic!("unknown animation: {}", name);
+                // Arc::new(AnimationAsset::new(Vec::new()))
+            })
     }
 
     pub fn finalize(&mut self) {

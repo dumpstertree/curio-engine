@@ -68,30 +68,16 @@ impl SystemComponent for SystemComponentDefaultGraphics {
             }
         }
 
-        let now: Instant = Instant::now();
-
         self.render_feature_3d_helper
             .draw_3d_features(&mut self.graphics_mappings, ledger, &mut encoder, &mut self.offscreen_view, &self.shadow_system);
-
-        println!("rendering 3d took: {}", now.elapsed().as_nanos() as f32 * 0.000001);
-
-        let now: Instant = Instant::now();
 
         // post-process offscreen → swapchain
         self.render_feature_pp_helper
             .draw_post_features(&mut encoder, &self.offscreen_view, &output_view);
 
-        println!("rendering pp took: {}", now.elapsed().as_nanos() as f32 * 0.000001);
-
-        let now: Instant = Instant::now();
-
         // 2D overlay on swapchain
         self.render_feature_2d_helper
             .draw_2d_features(ledger, &mut self.graphics_mappings, &mut encoder, &output, event_queue);
-
-        println!("rendering 2d took: {}", now.elapsed().as_nanos() as f32 * 0.000001);
-
-        let now: Instant = Instant::now();
 
         // ── capture step ────────────────────────────────────────
         // capture AFTER post-processing and 2D — from swapchain, not offscreen
@@ -129,7 +115,6 @@ impl SystemComponent for SystemComponentDefaultGraphics {
 
         // finalize — present swapchain
         Self::finalize_frame(output, encoder);
-        println!("rendering finish took: {}", now.elapsed().as_nanos() as f32 * 0.000001);
     }
     fn raw_event(&mut self, _event: WindowEvent) {
         // let s = services().gpu.window;

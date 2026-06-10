@@ -1,4 +1,4 @@
-use crate::{ButtonCode, ButtonPressed, Nerve, NetworkModes};
+use crate::{plugin_loader, ButtonCode, ButtonPressed, Nerve, NetworkModes};
 use core::panic;
 use std::{collections::HashMap, path::Path, time::Instant};
 
@@ -204,11 +204,11 @@ impl CurioCommon for Curio {
                 EngineCommands::Tick => {
                     // iterate over each component
                     for c in &mut self.plugins {
-                        let now = Instant::now();
+                        // let now = Instant::now();
                         // init the state
                         c.tick(&mut self.ledgers, &mut self.nerves);
 
-                        println!("{}: plugin took: {}", c.name(), now.elapsed().as_nanos() as f32 * 0.000001);
+                        // println!("{}: plugin took: {}",c.name(), now.elapsed().as_nanos() as f32 * 0.000001);
                     }
                 }
                 _ => {}
@@ -398,7 +398,6 @@ pub struct EditorFacetState {
 
 pub struct LoadedCurio {
     pub curio: Box<Curio>,
-    _lib: Library,
 }
 
 pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
@@ -416,20 +415,30 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
             continue;
         }
 
-        let lib = match load_library(&path) {
+        let _ = load_library(&path);
+
+        let l2 = plugin_loader::library_slot().lock();
+        let lib = match l2 {
             Ok(l) => l,
             Err(e) => {
-                eprintln!("failed to load {:?}: {}", path, e);
-                continue;
+                panic!("failed to load {:?}: {}", path, e);
             }
         };
 
+        // let lib = match lib {
+        //     Some(x) => {
+        //         x
+        //     },
+        //     None => {
+        //         panic!("failed to load {:?}: {}", path, e)
+        //     }
+        // };
+
+        let lib = lib.as_ref().unwrap();
+
         let curio = unsafe {
             // look for curio_init — if not found this .so isn't a curio game
-            let init_fn: Symbol<InitCurioFn> = match lib.get(b"curio_init") {
-                Ok(f) => f,
-                Err(_) => continue,
-            };
+            let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
 
             let raw = init_fn(gpu);
 
@@ -443,7 +452,7 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
 
         eprintln!("loaded: {}", curio.meta.name);
 
-        return LoadedCurio { curio, _lib: lib };
+        return LoadedCurio { curio };
     }
 
     panic!("");

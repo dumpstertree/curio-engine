@@ -219,9 +219,12 @@ impl GameRunner2<'_> {
                 }
                 GameMessage2::Stop => {
                     // teardown the app
-                    if let Some(app) = self.loaded_app.as_mut() {
+                    if let Some(app) = self.loaded_app.take() {
                         app.stop();
+                        drop(app);
+                        println!("dropped from stop");
                     }
+
                     // update state
                     self.state = State::Stopped;
                 }
@@ -415,13 +418,13 @@ impl ApplicationHandler for GameRunner2<'_> {
         //
         if let Some(loaded_app) = &self.loaded_app {
             // to reduce overhead we only render every other frame currently
-            if loaded_app.frame_counter % 2 == 0 {
-                // make sure all the needed data is set
-                if let (Some(gpu), Some(texture), Some(buffer)) = (&self.gpu_instance, &self.capture_texture, &self.readback_buffer) {
-                    // recapture the frame
-                    capture_frame(self.app_handle.clone(), &gpu.device, &gpu.queue, texture.clone(), buffer, self.surface_format);
-                }
+            // if loaded_app.frame_counter % 2 == 0 {
+            // make sure all the needed data is set
+            if let (Some(gpu), Some(texture), Some(buffer)) = (&self.gpu_instance, &self.capture_texture, &self.readback_buffer) {
+                // recapture the frame
+                capture_frame(self.app_handle.clone(), &gpu.device, &gpu.queue, texture.clone(), buffer, self.surface_format);
             }
+            // }
         }
 
         //

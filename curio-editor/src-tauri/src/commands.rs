@@ -38,6 +38,7 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
 
             EditorMode::Stopped => {}
         }
+        println!("building");
 
         let mut command = Command::new("cargo");
         command.arg("build");
@@ -45,10 +46,7 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
             command.arg(arg);
         }
 
-        println!("building");
-        // state.game_thread = Some(std::thread::spawn(move || {
         let status = command.current_dir(p.project_path.clone()).status();
-        // }));
 
         println!("built");
 
@@ -70,6 +68,27 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
     }
 }
 
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+fn stage_plugin(src: &Path) -> Result<PathBuf, String> {
+    // copy libgame.so → libgame_1234567890.so
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis();
+
+    let stem = src
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("libgame");
+
+    let ext = src.extension().and_then(|s| s.to_str()).unwrap_or("so");
+
+    let staged = src.with_file_name(format!("{}_{}.{}", stem, ts, ext));
+    std::fs::copy(src, &staged).map_err(|e| e.to_string())?;
+    Ok(staged)
+}
 #[tauri::command]
 pub fn press_pause(state: State<Mutex<EditorState>>) -> Result<(), String> {
     let mut state = state.lock().unwrap();

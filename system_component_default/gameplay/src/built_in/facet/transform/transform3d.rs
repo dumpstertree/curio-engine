@@ -10,7 +10,6 @@ use crate::{
 
 #[derive(Clone)]
 pub struct Transform3D {
-    pub parent: Option<Form>,
     pub position: Vector3,
     pub rotation: Quaternion,
     pub scale: Vector3,
@@ -45,7 +44,6 @@ impl FacetCommon for Transform3D {
 impl Default for Transform3D {
     fn default() -> Transform3D {
         Transform3D {
-            parent: None,
             position: Vector3::zero(),
             rotation: Quaternion::from_look_rotation(Vector3::forward(), Vector3::up()),
             scale: Vector3::one(),
@@ -110,11 +108,6 @@ impl Transform3D {
         self.scale = scale;
         self
     }
-    pub fn set_parent(mut self, parent: Option<Form>) -> Transform3D {
-        self.parent = parent;
-        self
-    }
-
     pub fn get_world_matrix(&self, _world: &Context3D) -> &Matrix4x4 {
         &self.ws_matrix
     }

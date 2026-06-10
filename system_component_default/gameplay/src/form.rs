@@ -1,11 +1,11 @@
 use crate::{
-    built_in::facet::transform::{transform2d::Transform2D, transform3d::Transform3D},
+    built_in::facet::transform::transform3d::Transform3D,
     form_ref::{FormRef, MutQuery},
     static_data::global_components::COMPONENT_REGISTRY,
     traits::facet_common::FacetCommon,
 };
-use curio_core::{FieldState, ObjectState, Quaternion, Vector2, Vector3};
-use hecs::{Entity, Query};
+use curio_core::{ObjectState, Quaternion, Vector3};
+use hecs::{Entity, Query, World};
 use num::NumCast;
 use std::{cell::RefCell, hash::Hash, rc::Rc};
 
@@ -26,127 +26,6 @@ unsafe impl Sync for Form {}
 
 // Public Methods
 impl Form {
-    /*
-    c.spawn( "my_name" )
-        .position( 0, 0, 0 )
-        .rotation( 0, 0, 0 )
-        .scale( 0, 0, 0 )
-        .facet( RendererStatic::default()
-            .set_opacity( 1.0)
-            .set_asset( my_asset )
-        )
-        .child( c.spawn( "my_name" )
-            .global_position( 0, 0, 0 )
-            .facet( RendererStatic::default()
-                .set_opacity( 1.0)
-                .set_asset( my_asset )
-            )
-        )
-        .child( c.spawn( "my_name" )
-            .global_position_vec( Vector3::new( 0, 0, 0) )
-            .facet( RendererStatic::default()
-                .set_opacity( 1.0)
-                .set_asset( my_asset )
-            )
-        )
-        .child( c.spawn( "my_name" )
-            .global_position( Vector3::new( 0, 0, 0) )
-            .facet( RendererStatic::default()
-                .set_opacity( 1.0)
-                .set_asset( my_asset )
-            )
-        );
-    */
-
-    // set local values
-
-    /// Sets local position of required Transform3D.
-    pub fn position<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
-    where
-        X: NumCast,
-        Y: NumCast,
-        Z: NumCast,
-    {
-        self.edit_facet::<Transform3D>(|t| t.position = Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap()));
-        self
-    }
-
-    /// Sets local rotation of required Transform3D. Input is expected to be euler angles
-    pub fn rotation<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
-    where
-        X: NumCast,
-        Y: NumCast,
-        Z: NumCast,
-    {
-        self.edit_facet::<Transform3D>(|t| t.rotation = Quaternion::from_euler(Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap())));
-        self
-    }
-    /// Sets the local scale of the required Transforms3D.
-    pub fn scale<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
-    where
-        X: NumCast,
-        Y: NumCast,
-        Z: NumCast,
-    {
-        self.edit_facet::<Transform3D>(|t| t.scale = Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap()));
-        self
-    }
-
-    /// Not Yet Implemented. Sets the world postion of the required Transforms3D.
-    pub fn position_world<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
-    where
-        X: NumCast,
-        Y: NumCast,
-        Z: NumCast,
-    {
-        todo!()
-    }
-    /// Not Yet Implemented. Sets the world rotation of the required Transforms3D. Input is expected to be euler angles
-    pub fn rotation_world<X, Y, Z>(self, x: X, y: Y, z: Z) -> Self
-    where
-        X: NumCast,
-        Y: NumCast,
-        Z: NumCast,
-    {
-        todo!()
-    }
-
-    /// Sets local position of required Transform3D using a pre-built Vector3
-    pub fn position_vec(self, pos: Vector3) -> Self {
-        self.edit_facet::<Transform3D>(|t| t.position = pos);
-        self
-    }
-    /// Sets local rotation of required Transform3D using a pre-built Quaternion
-    pub fn rotation_qat(self, rot: Quaternion) -> Self {
-        self.edit_facet::<Transform3D>(|t| t.rotation = rot);
-        self
-    }
-    /// Sets local scale of required Transform3D using a pre-built Vector3
-    pub fn scale_vec(self, scl: Vector3) -> Self {
-        self.edit_facet::<Transform3D>(|t| t.scale = scl);
-        self
-    }
-
-    // set world values with a vec
-    pub fn position_world_vec(&self) {}
-    pub fn rotation_world_qat(&self) {}
-    pub fn scale_world_vec(&self) {}
-
-    // add a facet
-    pub fn facet<T: FacetCommon>(self, facet: T) -> Self {
-        self.add_facet(facet)
-    }
-    pub fn facet_default<T: FacetCommon + Default>(self) -> Self {
-        // self.add_facet_default<T>()
-        self
-    }
-
-    // add a child
-    pub fn child(self, child: Form) -> Self {
-        child.set_parent(Some(self.clone()));
-        self
-    }
-
     /// Get the serialized state
     pub fn get_state(&self) -> ObjectState {
         let x = COMPONENT_REGISTRY.read().expect("msg");
@@ -165,9 +44,18 @@ impl Form {
             components: data,
         }
     }
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.form_ref.borrow_mut().set_enabled(enabled);
+    }
+    pub fn enabled(&self) -> bool {
+        self.form_ref.borrow().enabled()
+    }
+    pub fn enabled_in_hierachy(&self) -> bool {
+        self.form_ref.borrow().enabled()
+    }
     /// Get the instance ID of this Form
     pub fn instance_id(&self) -> i32 {
-        self.form_ref.borrow().instance_id()
+        self.form_ref.borrow().id()
     }
     /// Get the backing FormRef for this form
     pub fn form_ref(&self) -> Rc<RefCell<FormRef>> {
@@ -203,11 +91,6 @@ impl Form {
             }
         }
         Some(cur_form)
-    }
-    /// Add a Facet 'T' using its default value.
-    pub fn add_facet_default<T: FacetCommon + Default>(self) -> Self {
-        FormRef::add_facet_default::<T>(&self);
-        self
     }
     /// Add a Facet 'T' using an instance.
     pub fn add_facet<T: FacetCommon>(self, value: T) -> Self {
@@ -276,8 +159,131 @@ impl Hash for Form {
 }
 // To Deprecate
 impl Form {
-    /// Get the HECS Entity. This wille eventually be made deprecated
+    /// Get the HECS Entity. This will eventually be made deprecated
     pub fn entity(&self) -> Entity {
         self.form_ref.borrow().entity()
+    }
+}
+
+type AddFacetFn = Box<dyn FnOnce(&Form)>;
+pub struct FormBuilder3D {
+    pub(crate) name: String,
+    pub(crate) pos: Vector3,
+    pub(crate) rot: Quaternion,
+    pub(crate) scl: Vector3,
+    pub(crate) enabled: bool,
+    pub(crate) children: Vec<Form>,
+    pub(crate) facets: Vec<AddFacetFn>,
+    pub(crate) world: Rc<RefCell<World>>,
+}
+impl FormBuilder3D {
+    // facets
+    pub fn facet<T: FacetCommon>(mut self, value: T) -> Self {
+        self.facets.push(Box::new(|x| {
+            FormRef::add_facet(x, value);
+        }));
+        self
+    }
+
+    /// Sets local position of required Transform3D.
+    pub fn position<X, Y, Z>(mut self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        self.pos = Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap());
+        self
+    }
+
+    /// Sets local rotation of required Transform3D. Input is expected to be euler angles
+    pub fn rotation<X, Y, Z>(mut self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        self.rot = Quaternion::from_euler(Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap()));
+        self
+    }
+    /// Sets the local scale of the required Transforms3D.
+    pub fn scale<X, Y, Z>(mut self, x: X, y: Y, z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        self.scl = Vector3::new(NumCast::from(x).unwrap(), NumCast::from(y).unwrap(), NumCast::from(z).unwrap());
+        self
+    }
+
+    /// Not Yet Implemented. Sets the world postion of the required Transforms3D.
+    pub fn global_position<X, Y, Z>(self, _x: X, _y: Y, _z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        todo!()
+    }
+    /// Not Yet Implemented. Sets the world rotation of the required Transforms3D. Input is expected to be euler angles
+    pub fn global_rotation<X, Y, Z>(self, _x: X, _y: Y, _z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        todo!()
+    }
+    pub fn global_scale<X, Y, Z>(self, _x: X, _y: Y, _z: Z) -> Self
+    where
+        X: NumCast,
+        Y: NumCast,
+        Z: NumCast,
+    {
+        todo!()
+    }
+
+    // hierachy
+    pub fn child(mut self, form: Form) -> Self {
+        self.children.push(form);
+        self
+    }
+
+    // enable
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+
+    // build
+    pub fn spawn(self) -> Form {
+        // generate transform
+        let mut transform = Transform3D::default();
+        transform.position = self.pos;
+        transform.rotation = self.rot;
+        transform.scale = self.scl;
+
+        // generate an entity
+        let entity = {
+            // borrow
+            let mut world = self.world.borrow_mut();
+            // spawn - dont know how to spawn with only a single tranform
+            world.spawn(())
+        };
+
+        // spawn the form
+        let form = FormRef::new(&self.name, self.world, entity);
+
+        // add the tranform - must be added like this in order to properly set the owner
+        FormRef::add_facet(&form, transform);
+
+        // add all facets
+        for add_facet in self.facets {
+            add_facet(&form);
+        }
+
+        // return form
+        form
     }
 }

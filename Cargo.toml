@@ -30,6 +30,8 @@ members = [
     "optional_systems/collision",
     "optional_systems/lighting",
     "optional_systems/skybox",
+    "optional_systems/tween",
+
 
 ]
 
@@ -61,6 +63,7 @@ rendering_gizmos = { path = "optional_systems/rendering_gizmos" }
 lighting = { path = "optional_systems/lighting" }
 collision = { path = "optional_systems/collision" }
 skybox = { path = "optional_systems/skybox" }
+tween = { path = "optional_systems/tween" }
 
 
 [workspace.package]

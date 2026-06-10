@@ -16,6 +16,7 @@ pub struct FormRef {
     children: Vec<Form>,
     parent: Vec<Form>,
     instance_id: i32,
+    enabled: bool,
 }
 impl FormRef {
     /// Createa a new form. This should only be called by a context
@@ -27,14 +28,32 @@ impl FormRef {
             children: vec![],
             parent: vec![],
             instance_id: Random::range_int(-99999, 9999),
+            enabled: true,
         })))
     }
 
-    pub fn instance_id(&self) -> i32 {
+    pub fn id(&self) -> i32 {
         self.instance_id
     }
     pub fn name(&self) -> &str {
         &self.name
+    }
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.enabled = enabled;
+    }
+    pub fn enabled_in_hierachy(&self) -> bool {
+        if let Some(p) = self.parent() {
+            // if turned off drop out early
+            if !self.enabled {
+                return false;
+            }
+            // return parent
+            return p.enabled_in_hierachy();
+        }
+        self.enabled
     }
     pub fn children(&self) -> Vec<Form> {
         self.children.clone()
@@ -99,26 +118,6 @@ impl FormRef {
             .expect("Failed to insert component");
     }
 
-    /// Modify a component in-place.
-    // pub fn edit_facet_group<T: FacetCommon + 'static>(&self, edit_fn: impl FnOnce(&mut T)) {
-    //     let world = self.world.borrow_mut();
-    //     let mut borrow = world
-    //         .get::<&mut T>(self.entity)
-    //         .unwrap_or_else(|_| panic!("Form '{}' does not contain Facet {}", self.name, type_name::<T>(),));
-    //     edit_fn(&mut *borrow);
-    // }
-
-    /// Edit Facets-Form combinations in context
-    // pub fn edit_facet_group<Q>(&self, f: impl FnOnce(<Q as Query>::Item<'_>))
-    // where
-    //     Q: hecs::Query,
-    // {
-    //     let mut world_ref = self.world.borrow_mut();
-    //     let q: <Q as Query>::Item<'_> = world_ref
-    //         .query_one_mut::<Q>(self.entity)
-    //         .unwrap_or_else(|_| panic!("didnt work"));
-    //     f(q);
-    // }
     pub fn try_edit_facet_group<T>(&self, f: impl for<'a> FnOnce(<T::Query<'a> as Query>::Item<'a>))
     where
         T: MutQuery,
