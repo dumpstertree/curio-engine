@@ -3,7 +3,7 @@ pub fn main() {}
 pub use crate::data::draw_call::DrawCall;
 pub use crate::data::material::Material;
 pub use crate::data::mesh::Mesh;
-pub use crate::facet::renderer_common::RendererCommon;
+// pub use crate::facet::renderer_common::RendererCommon;
 pub use crate::record::sys_record_rendering::SysRecordRendering;
 
 pub mod record {

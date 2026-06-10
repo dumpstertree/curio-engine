@@ -1,10 +1,10 @@
 use camera::SysRecordCamera;
 use curio_core::{Ledger, Matrix4x4, Nerve, NetworkModes, Quaternion, Vector3};
-use ext_rendering::{DrawCall, RendererCommon, SysRecordRendering};
+use ext_rendering::{DrawCall, SysRecordRendering};
 use gameplay::{
     built_in::facet::transform::{transform2d::Transform2D, transform3d::Transform3D},
     context_3d::Context3D,
-    traits::{habit::Habit, scope::Scope},
+    traits::{facet_common::FacetCommon, habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
 };
 use habit::habit;
@@ -37,7 +37,7 @@ impl Habit for Instance {
             world.edit::<(&RendererStatic, &Transform2D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // guard - not enabled
-                    if !renderer.get_cached_enabled_in_hierarchy() {
+                    if !renderer.form().enabled_in_hierachy() {
                         continue;
                     }
 
@@ -54,7 +54,7 @@ impl Habit for Instance {
                     // add draw call
                     for _ in &asset.mesh {
                         x.draw_calls
-                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), matrix, renderer.get_tint(), false));
+                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), matrix, renderer.tint, false));
                     }
                 }
             });
@@ -63,7 +63,7 @@ impl Habit for Instance {
             world.edit::<(&RendererStatic, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
                     // guard - not enabled
-                    if !renderer.get_cached_enabled_in_hierarchy() {
+                    if !renderer.form().enabled_in_hierachy() {
                         continue;
                     }
 
@@ -75,7 +75,7 @@ impl Habit for Instance {
                     // add draw call
                     for _ in &asset.mesh {
                         x.draw_calls
-                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix(), renderer.get_tint(), true));
+                            .push(DrawCall::draw_mesh_single(asset.mesh[0].clone(), asset.materials[0].clone(), transform.get_matrix(), renderer.tint, true));
                     }
                 }
             });

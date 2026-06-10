@@ -1,5 +1,5 @@
 use curio_core::{Color, FieldState, io::asset_loader::AssetLoader};
-use ext_rendering::RendererCommon;
+// use ext_rendering::RendererCommon;
 use facet::facet;
 use gameplay::{form::Form, traits::field_override::FieldOverride};
 use rendering_static::ModelAsset;
@@ -16,7 +16,7 @@ pub struct RendererDynamic {
     animation: String,
     parent: Option<Form>,
     enabled: bool,
-    tint: Color,
+    pub tint: Color,
     looping: bool,
     last_anim: String,
     last_frame_index: i32,
@@ -60,40 +60,40 @@ impl RendererDynamic {
     }
 }
 
-impl RendererCommon for RendererDynamic {
-    fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
-        self.cached_enabled_in_hierachy = val;
-    }
+// impl RendererCommon for RendererDynamic {
+//     fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
+//         self.cached_enabled_in_hierachy = val;
+//     }
 
-    fn get_cached_enabled_in_hierarchy(&self) -> bool {
-        self.cached_enabled_in_hierachy
-    }
+//     fn get_cached_enabled_in_hierarchy(&self) -> bool {
+//         self.cached_enabled_in_hierachy
+//     }
 
-    fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
-        self.cached_tint_in_hierachy = val;
-    }
+//     fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
+//         self.cached_tint_in_hierachy = val;
+//     }
 
-    fn get_cached_tint_in_hierarchy(&self) -> Color {
-        self.cached_tint_in_hierachy
-    }
+//     fn get_cached_tint_in_hierarchy(&self) -> Color {
+//         self.cached_tint_in_hierachy
+//     }
 
-    fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
-    }
+//     fn set_enabled(&mut self, enabled: bool) {
+//         self.enabled = enabled;
+//     }
 
-    fn get_enabled(&self) -> bool {
-        self.enabled
-    }
+//     fn get_enabled(&self) -> bool {
+//         self.enabled
+//     }
 
-    fn set_tint(&mut self, tint: Color) {
-        self.asset = Self::get_model_asset(self.asset.clone(), tint);
-        self.tint = tint;
-    }
+//     fn set_tint(&mut self, tint: Color) {
+//         self.asset = Self::get_model_asset(self.asset.clone(), tint);
+//         self.tint = tint;
+//     }
 
-    fn get_tint(&self) -> Color {
-        self.tint
-    }
-}
+//     fn get_tint(&self) -> Color {
+//         self.tint
+//     }
+// }
 impl FieldOverride for RendererDynamic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {

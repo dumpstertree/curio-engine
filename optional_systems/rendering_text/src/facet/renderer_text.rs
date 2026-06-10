@@ -2,7 +2,6 @@ use curio_core::{
     Color, FieldState, Matrix4x4, Quaternion, Vector2, Vector3,
     io::asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader},
 };
-use ext_rendering::RendererCommon;
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
 use rendering_static::ModelAsset;
@@ -39,7 +38,7 @@ pub struct RendererText {
     bounds: Vector2,
     is_dirty: bool,
     enabled: bool,
-    tint: Color,
+    pub tint: Color,
 }
 impl FieldOverride for RendererText {
     fn apply(&mut self, field: &str, value: &str) {
@@ -64,40 +63,40 @@ impl FieldOverride for RendererText {
     }
 }
 
-impl RendererCommon for RendererText {
-    fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
-    }
+// impl RendererCommon for RendererText {
+//     fn set_enabled(&mut self, enabled: bool) {
+//         self.enabled = enabled;
+//     }
 
-    fn get_enabled(&self) -> bool {
-        true
-        // self.enabled
-    }
+//     fn get_enabled(&self) -> bool {
+//         true
+//         // self.enabled
+//     }
 
-    fn set_tint(&mut self, tint: Color) {
-        self.tint = tint;
-    }
+//     fn set_tint(&mut self, tint: Color) {
+//         self.tint = tint;
+//     }
 
-    fn get_tint(&self) -> Color {
-        self.tint
-    }
+//     fn get_tint(&self) -> Color {
+//         self.tint
+//     }
 
-    fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
-        self.cached_enabled_in_hierachy = val;
-    }
+//     fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
+//         self.cached_enabled_in_hierachy = val;
+//     }
 
-    fn get_cached_enabled_in_hierarchy(&self) -> bool {
-        self.cached_enabled_in_hierachy
-    }
+//     fn get_cached_enabled_in_hierarchy(&self) -> bool {
+//         self.cached_enabled_in_hierachy
+//     }
 
-    fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
-        self.cached_tint_in_hierachy = val;
-    }
+//     fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
+//         self.cached_tint_in_hierachy = val;
+//     }
 
-    fn get_cached_tint_in_hierarchy(&self) -> Color {
-        self.cached_tint_in_hierachy
-    }
-}
+//     fn get_cached_tint_in_hierarchy(&self) -> Color {
+//         self.cached_tint_in_hierachy
+//     }
+// }
 
 impl RendererText {
     pub fn default() -> RendererText {

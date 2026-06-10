@@ -1,6 +1,6 @@
 use camera::SysRecordCamera;
 use curio_core::{Ledger, Matrix4x4, Nerve, NetworkModes, Quaternion, Vector3};
-use ext_rendering::{DrawCall, RendererCommon, SysRecordRendering};
+use ext_rendering::{DrawCall, SysRecordRendering};
 use gameplay::{
     built_in::facet::transform::{
         transform2d::{Transform2D, update_transform2d},
@@ -51,7 +51,7 @@ impl Habit for Instance {
                             }
 
                             x.draw_calls
-                                .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.get_tint(), true));
+                                .push(DrawCall::draw_mesh_instanced(arc_mesh.clone(), asset_for_matricies.0.materials[0].clone(), inst_matricies, renderer.tint, true));
                         }
                     }
                 }
