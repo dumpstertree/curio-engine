@@ -3,7 +3,7 @@ use curio_core::{
     io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader},
 };
 use ext_rendering::{
-    Material, Mesh, RendererCommon,
+    Material, Mesh,
     data::{material::ShaderDesc, mesh::Vertex},
 };
 use facet::facet;
@@ -64,39 +64,39 @@ impl RendererImage {
         self.asset = Some(Arc::new(ModelAsset::new(vec![Primitives::quad()], vec![material])));
     }
 }
-impl RendererCommon for RendererImage {
-    fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
-    }
+// impl RendererCommon for RendererImage {
+//     fn set_enabled(&mut self, enabled: bool) {
+//         self.enabled = enabled;
+//     }
 
-    fn get_enabled(&self) -> bool {
-        self.enabled
-    }
+//     fn get_enabled(&self) -> bool {
+//         self.enabled
+//     }
 
-    fn set_tint(&mut self, tint: Color) {
-        self.asset = Self::get_model_asset(self.asset.clone(), tint);
-        self.tint = tint;
-    }
-    fn get_tint(&self) -> Color {
-        self.tint
-    }
+//     fn set_tint(&mut self, tint: Color) {
+//         self.asset = Self::get_model_asset(self.asset.clone(), tint);
+//         self.tint = tint;
+//     }
+//     fn get_tint(&self) -> Color {
+//         self.tint
+//     }
 
-    fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
-        self.cached_enabled_in_hierachy = val;
-    }
+//     fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
+//         self.cached_enabled_in_hierachy = val;
+//     }
 
-    fn get_cached_enabled_in_hierarchy(&self) -> bool {
-        self.cached_enabled_in_hierachy
-    }
+//     fn get_cached_enabled_in_hierarchy(&self) -> bool {
+//         self.cached_enabled_in_hierachy
+//     }
 
-    fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
-        self.cached_tint_in_hierachy = val;
-    }
+//     fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
+//         self.cached_tint_in_hierachy = val;
+//     }
 
-    fn get_cached_tint_in_hierarchy(&self) -> Color {
-        self.cached_tint_in_hierachy
-    }
-}
+//     fn get_cached_tint_in_hierarchy(&self) -> Color {
+//         self.cached_tint_in_hierachy
+//     }
+// }
 impl RendererImage {
     fn get_model_asset(asset: Option<Arc<ModelAsset>>, tint: Color) -> Option<Arc<ModelAsset>> {
         // no asset

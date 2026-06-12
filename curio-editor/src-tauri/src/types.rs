@@ -18,3 +18,10 @@ pub struct EntityData {
 pub struct SceneSnapshot {
     pub entities: Vec<EntityData>,
 }
+
+#[derive(serde::Serialize, Clone)]
+pub struct DirEntry {
+    pub name: String,
+    pub path: String,
+    pub is_dir: bool,
+}

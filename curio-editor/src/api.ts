@@ -13,26 +13,17 @@ const MOCK: TabGroupState = {
           {
             object_name: 'Time',
             children: [],
-            components: [{
-              component_name: 'SysRecordTime',
-              fields: [{ field_name: 'delta', data: 0.016 }, { field_name: 'elapsed', data: 12.4 }],
-            }],
+            components: [{ component_name: 'SysRecordTime', fields: [{ field_name: 'delta', data: 0.016 }, { field_name: 'elapsed', data: 12.4 }] }],
           },
           {
             object_name: 'Camera',
             children: [],
-            components: [{
-              component_name: 'SysRecordCamera',
-              fields: [{ field_name: 'fov', data: 60 }, { field_name: 'near', data: 0.1 }, { field_name: 'far', data: 1000 }],
-            }],
+            components: [{ component_name: 'SysRecordCamera', fields: [{ field_name: 'fov', data: 60 }, { field_name: 'near', data: 0.1 }, { field_name: 'far', data: 1000 }] }],
           },
           {
             object_name: 'Rendering',
             children: [],
-            components: [{
-              component_name: 'SysRecordRendering',
-              fields: [{ field_name: 'draw_calls', data: 12 }],
-            }],
+            components: [{ component_name: 'SysRecordRendering', fields: [{ field_name: 'draw_calls', data: 12 }] }],
           },
         ],
       },
@@ -46,71 +37,12 @@ const MOCK: TabGroupState = {
               {
                 object_name: 'Player',
                 children: [],
-                components: [{
-                  component_name: 'Transform',
-                  fields: [{ field_name: 'x', data: 0 }, { field_name: 'y', data: 1.2 }, { field_name: 'z', data: 0 }],
-                }, {
-                  component_name: 'Health',
-                  fields: [{ field_name: 'max', data: 100 }, { field_name: 'current', data: 87 }],
-                }],
-              },
-              {
-                object_name: 'Camera',
-                children: [],
-                components: [{
-                  component_name: 'Transform',
-                  fields: [{ field_name: 'x', data: 0 }, { field_name: 'y', data: 5 }, { field_name: 'z', data: -10 }],
-                }, {
-                  component_name: 'Camera',
-                  fields: [{ field_name: 'fov', data: 60 }],
-                }],
-              },
-              {
-                object_name: 'Environment',
-                components: [],
-                children: [
-                  {
-                    object_name: 'Ground',
-                    children: [],
-                    components: [{
-                      component_name: 'Mesh',
-                      fields: [{ field_name: 'path', data: 'mesh/court.glb' }, { field_name: 'visible', data: true }],
-                    }],
-                  },
-                  {
-                    object_name: 'Sun',
-                    children: [],
-                    components: [{
-                      component_name: 'Light',
-                      fields: [{ field_name: 'intensity', data: 1.0 }, { field_name: 'shadows', data: true }],
-                    }],
-                  },
+                components: [
+                  { component_name: 'Transform', fields: [{ field_name: 'x', data: 0 }, { field_name: 'y', data: 1.2 }, { field_name: 'z', data: 0 }] },
+                  { component_name: 'Health', fields: [{ field_name: 'max', data: 100 }, { field_name: 'current', data: 87 }] },
                 ],
               },
             ],
-          },
-        ],
-      },
-    ],
-    'Peer 1': [
-      {
-        tab_name: 'Ledger',
-        objects: [
-          {
-            object_name: 'Input',
-            children: [],
-            components: [{
-              component_name: 'SysRecordInput',
-              fields: [{ field_name: 'key', data: 'W' }, { field_name: 'state', data: 'down' }],
-            }],
-          },
-          {
-            object_name: 'Network',
-            children: [],
-            components: [{
-              component_name: 'SysRecordNetwork',
-              fields: [{ field_name: 'latency_ms', data: 14 }],
-            }],
           },
         ],
       },
@@ -131,6 +63,16 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
 }
 
 // ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+export interface DirEntry {
+  name: string;
+  path: string;
+  is_dir: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────
 // API
 // ─────────────────────────────────────────────────────────────
 
@@ -142,6 +84,14 @@ export const api = {
   getTabGroupState: async (): Promise<TabGroupState> => {
     if (!isTauri()) return MOCK;
     return invoke<TabGroupState>('get_tab_group_state');
+  },
+
+  listDir: async (path: string): Promise<DirEntry[]> => {
+    return invoke<DirEntry[]>('list_dir', { path });
+  },
+
+  readFileBytes: async (path: string): Promise<number[]> => {
+    return invoke<number[]>('read_file_bytes', { path });
   },
 
   onViewportFrame: (cb: (dataUrl: string) => void): (() => void) => {

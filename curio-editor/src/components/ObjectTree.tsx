@@ -1,5 +1,6 @@
 import React from 'react';
 import { useEditorStore } from '../store';
+import type { ObjectPath } from '../store';
 import type { ObjectState } from '../types';
 
 // ○ hollow = has children   ● filled = leaf
@@ -19,11 +20,15 @@ interface NodeRowProps {
   obj:   ObjectState;
   path:  string;
   depth: number;
+  // numeric index path for resolving the object after refreshes
+  indexPath: ObjectPath;
 }
 
-function NodeRow({ obj, path, depth }: NodeRowProps) {
-  const { selectedObject, expandedNodes, selectObject, toggleNode } = useEditorStore();
-  const isSelected  = selectedObject === obj;
+function NodeRow({ obj, path, depth, indexPath }: NodeRowProps) {
+  const { selectedObjectPath, expandedNodes, selectObjectByPath, toggleNode } = useEditorStore();
+
+  // Compare by serialized path string so it survives tabGroupState replacement
+  const isSelected  = selectedObjectPath !== null && JSON.stringify(selectedObjectPath) === JSON.stringify(indexPath);
   const isExpanded  = expandedNodes.has(path);
   const hasChildren = obj.children.length > 0;
 
@@ -33,7 +38,7 @@ function NodeRow({ obj, path, depth }: NodeRowProps) {
         {/* indent */}
         <div style={{ width: depth * 16 + 2, flexShrink: 0 }} />
 
-        {/* chevron — only expand/collapse, independent of row click */}
+        {/* chevron */}
         <button
           className={`pf-chevron-btn ${!hasChildren ? 'pf-chevron-hidden' : ''}`}
           onClick={e => { e.stopPropagation(); if (hasChildren) toggleNode(path); }}
@@ -52,10 +57,10 @@ function NodeRow({ obj, path, depth }: NodeRowProps) {
         {/* circle icon */}
         <NodeIcon hasChildren={hasChildren} />
 
-        {/* name — click loads inspector only */}
+        {/* name */}
         <span
           className="pf-name"
-          onClick={() => selectObject(isSelected ? null : obj)}
+          onClick={() => selectObjectByPath(isSelected ? null : indexPath)}
         >
           {obj.object_name}
         </span>
@@ -71,6 +76,7 @@ function NodeRow({ obj, path, depth }: NodeRowProps) {
           obj={child}
           path={`${path}/${child.object_name}${i}`}
           depth={depth + 1}
+          indexPath={[...indexPath, i]}
         />
       ))}
     </>
@@ -88,6 +94,7 @@ export function ObjectTree({ objects }: { objects: ObjectState[] }) {
           obj={obj}
           path={`root/${obj.object_name}${i}`}
           depth={0}
+          indexPath={[i]}
         />
       ))}
     </div>

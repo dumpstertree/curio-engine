@@ -96,18 +96,6 @@ impl Transform3D {
         clamped_euler.magnitude()
     }
 
-    pub fn set_position(mut self, position: Vector3) -> Transform3D {
-        self.position = position;
-        self
-    }
-    pub fn set_rotation(mut self, rotation: Quaternion) -> Transform3D {
-        self.rotation = rotation;
-        self
-    }
-    pub fn set_scale(mut self, scale: Vector3) -> Transform3D {
-        self.scale = scale;
-        self
-    }
     pub fn get_world_matrix(&self, _world: &Context3D) -> &Matrix4x4 {
         &self.ws_matrix
     }

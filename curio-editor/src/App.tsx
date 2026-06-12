@@ -7,33 +7,41 @@ import { CenterPanel }     from './components/CenterPanel';
 import { InspectorView }   from './components/forms/InspectorView';
 import { StatusBar }       from './components/StatusBar';
 import { PlaceholderTab }  from './components/tabs/PlaceholderTab';
+import { AssetTab }        from './components/asset/AssetTab';
 import './App.css';
 
 export default function App() {
-  const { activeTab, mode, refreshTabGroup } = useEditorStore();
+  const { activeTab, mode, refreshTabGroup, startPolling, stopPolling, selectedObject } = useEditorStore();
 
   useEffect(() => {
     refreshTabGroup();
   }, []);
 
   useEffect(() => {
-    if (mode !== 'playing') return;
-    const id = setInterval(refreshTabGroup, 1000);
-    return () => clearInterval(id);
-  }, [mode]);
+    if (selectedObject) {
+      startPolling();
+      return () => stopPolling();
+    }
+    if (mode === 'playing') {
+      const id = setInterval(refreshTabGroup, 1000);
+      return () => clearInterval(id);
+    }
+  }, [selectedObject, mode]);
 
   return (
     <div className="editor">
       <Toolbar />
       <TabBar />
       <div className="main-layout">
-        {activeTab === 'play' ? (
+        {activeTab === 'play' && (
           <>
             <LeftPanel />
             <CenterPanel />
             <InspectorView />
           </>
-        ) : (
+        )}
+        {activeTab === 'asset' && <AssetTab />}
+        {activeTab !== 'play' && activeTab !== 'asset' && (
           <PlaceholderTab tab={activeTab} />
         )}
       </div>

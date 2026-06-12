@@ -4,6 +4,7 @@ use crate::{assets::asset::AssetCommonFromBits, AssetCommon};
 
 #[derive(Serialize, Deserialize)]
 pub struct PrefabGameObject {
+    pub enabled: bool,
     pub name: String,
     pub components: Vec<PrefabComponent>,
     pub children: Vec<PrefabGameObject>,

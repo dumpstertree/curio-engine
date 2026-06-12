@@ -10,10 +10,14 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@esotericsoftware/spine-core": "4.0.1",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "@types/three": "0.126.0",
+    "jszip": "^3.10.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "three": "0.126.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {

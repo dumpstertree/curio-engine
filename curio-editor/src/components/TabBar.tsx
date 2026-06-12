@@ -4,7 +4,7 @@ import type { TopTab } from '../types';
 
 const TABS: { id: TopTab; label: string; tbd?: boolean }[] = [
   { id: 'play',   label: '▶ Play' },
-  { id: 'asset',  label: 'Asset',  tbd: true },
+  { id: 'asset',  label: 'Asset' },
   { id: 'input',  label: 'Input',  tbd: true },
   { id: 'prefab', label: 'Prefab', tbd: true },
 ];

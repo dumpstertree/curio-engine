@@ -1,7 +1,7 @@
 use crate::{
     game::runner2::{GameMessage2, GameRunner2},
     state::{EditorMode, EditorState},
-    types::{ComponentData, EntityData, SceneSnapshot},
+    types::{ComponentData, DirEntry, EntityData, SceneSnapshot},
     PROJECT, SHARED_DATA,
 };
 
@@ -196,4 +196,27 @@ pub fn set_resolution(state: State<Mutex<EditorState>>, app_handle: AppHandle, w
     if let Some(tx) = &state.game_tx {
         tx.send(GameMessage2::Resize(w, h)).ok();
     }
+}
+#[tauri::command]
+pub fn list_dir(path: String) -> Result<Vec<DirEntry>, String> {
+    use std::fs;
+
+    let mut entries = Vec::new();
+    let read = fs::read_dir(&path).map_err(|e| e.to_string())?;
+
+    for entry in read.flatten() {
+        let metadata = entry.metadata().map_err(|e| e.to_string())?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        let full_path = entry.path().to_string_lossy().to_string();
+        entries.push(DirEntry { name, path: full_path, is_dir: metadata.is_dir() });
+    }
+
+    entries.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then(a.name.cmp(&b.name)));
+
+    Ok(entries)
+}
+
+#[tauri::command]
+pub fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
+    std::fs::read(&path).map_err(|e| e.to_string())
 }
