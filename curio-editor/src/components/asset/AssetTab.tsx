@@ -4,6 +4,7 @@ import { PngViewport }        from './PngViewport';
 import { GlbViewport }        from './GlbViewport';
 import { AnimViewport }       from './AnimViewport';
 import { AssetInspectorView } from './AssetInspectorView';
+import { PrefabLoader }       from './prefab/PrefabLoader';
 import type { DirEntry }      from '../../api';
 import type { PngInfo }       from './PngViewport';
 import type { GlbInfo }       from './GlbViewport';
@@ -36,6 +37,7 @@ export function AssetTab() {
   const isPng  = ext === '.png';
   const isGlb  = ext === '.glb';
   const isAnim = ext === '.anim';
+  const isComp = ext === '.comp';
 
   return (
     <>
@@ -52,59 +54,66 @@ export function AssetTab() {
         </div>
       </div>
 
-      {/* Center: viewport */}
-      <div className="center-panel">
-        <div className="center-viewport">
-          {!selectedEntry && (
-            <div className="viewport-idle">
-              <div className="viewport-idle-icon">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  <rect x="4" y="8" width="32" height="24" rx="2" />
-                  <circle cx="14" cy="18" r="3" />
-                  <polyline points="4,28 12,20 18,26 26,16 36,28" />
-                </svg>
-              </div>
-              <div className="viewport-idle-label">Select an asset to preview</div>
+      {/* Center + Inspector: prefab gets its own combined component */}
+      {selectedEntry && isComp ? (
+        <PrefabLoader key={selectedEntry.path} path={selectedEntry.path} name={selectedEntry.name} />
+      ) : (
+        <>
+          {/* Center: viewport */}
+          <div className="center-panel">
+            <div className="center-viewport">
+              {!selectedEntry && (
+                <div className="viewport-idle">
+                  <div className="viewport-idle-icon">
+                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" strokeWidth="1.2">
+                      <rect x="4" y="8" width="32" height="24" rx="2" />
+                      <circle cx="14" cy="18" r="3" />
+                      <polyline points="4,28 12,20 18,26 26,16 36,28" />
+                    </svg>
+                  </div>
+                  <div className="viewport-idle-label">Select an asset to preview</div>
+                </div>
+              )}
+
+              {selectedEntry && isPng && (
+                <PngViewport
+                  key={selectedEntry.path}
+                  path={selectedEntry.path}
+                  onInfo={setPngInfo}
+                />
+              )}
+
+              {selectedEntry && isGlb && (
+                <GlbViewport
+                  key={selectedEntry.path}
+                  path={selectedEntry.path}
+                  onInfo={setGlbInfo}
+                />
+              )}
+
+              {selectedEntry && isAnim && (
+                <AnimViewport
+                  key={selectedEntry.path}
+                  path={selectedEntry.path}
+                  onInfo={setAnimInfo}
+                  onPlayback={setAnimPlayback}
+                  playAnim={requestedAnim}
+                />
+              )}
             </div>
-          )}
+          </div>
 
-          {selectedEntry && isPng && (
-            <PngViewport
-              key={selectedEntry.path}
-              path={selectedEntry.path}
-              onInfo={setPngInfo}
-            />
-          )}
-
-          {selectedEntry && isGlb && (
-            <GlbViewport
-              key={selectedEntry.path}
-              path={selectedEntry.path}
-              onInfo={setGlbInfo}
-            />
-          )}
-
-          {selectedEntry && isAnim && (
-            <AnimViewport
-              key={selectedEntry.path}
-              path={selectedEntry.path}
-              onInfo={setAnimInfo}
-              onPlayback={setAnimPlayback}
-              playAnim={requestedAnim}
-            />
-          )}
-        </div>
-      </div>
-
-      {/* Right: inspector */}
-      <AssetInspectorView
-        fileName={selectedEntry?.name ?? null}
-        pngInfo={pngInfo}
-        glbInfo={glbInfo}
-        animInfo={animInfo}
-        animPlayback={animPlayback}
-        onPlayAnim={name => setRequestedAnim(name)}
-      />
+          {/* Right: inspector */}
+          <AssetInspectorView
+            fileName={selectedEntry?.name ?? null}
+            pngInfo={pngInfo}
+            glbInfo={glbInfo}
+            animInfo={animInfo}
+            animPlayback={animPlayback}
+            onPlayAnim={name => setRequestedAnim(name)}
+          />
+        </>
+      )}
     </>
   );
 }

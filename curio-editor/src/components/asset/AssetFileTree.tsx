@@ -4,7 +4,7 @@ import type { DirEntry } from '../../api';
 
 const ASSET_ROOT = '/home/dumpstertree/Git/Rust/system_test/assets';
 
-const SUPPORTED_EXTS = new Set(['.png', '.glb', '.anim']);
+const SUPPORTED_EXTS = new Set(['.png', '.glb', '.anim', '.comp']);
 
 function fileExt(name: string): string {
   const dot = name.lastIndexOf('.');
@@ -17,6 +17,7 @@ function fileIcon(entry: DirEntry): string {
   if (ext === '.png')  return '🖼';
   if (ext === '.glb')  return '📦';
   if (ext === '.anim') return '🎬';
+  if (ext === '.comp') return '🧩';
   return '📄';
 }
 

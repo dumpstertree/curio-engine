@@ -220,3 +220,7 @@ pub fn list_dir(path: String) -> Result<Vec<DirEntry>, String> {
 pub fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
     std::fs::read(&path).map_err(|e| e.to_string())
 }
+#[tauri::command]
+pub fn write_file_text(path: String, contents: String) -> Result<(), String> {
+    std::fs::write(&path, contents).map_err(|e| e.to_string())
+}

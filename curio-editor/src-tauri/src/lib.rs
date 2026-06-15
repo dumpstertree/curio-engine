@@ -36,6 +36,7 @@ pub fn run() {
             commands::get_tab_group_state,
             commands::list_dir,
             commands::read_file_bytes,
+            commands::write_file_text,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri app");

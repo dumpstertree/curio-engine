@@ -94,6 +94,10 @@ export const api = {
     return invoke<number[]>('read_file_bytes', { path });
   },
 
+  writeFileText: async (path: string, contents: string): Promise<void> => {
+    return invoke<void>('write_file_text', { path, contents });
+  },
+
   onViewportFrame: (cb: (dataUrl: string) => void): (() => void) => {
     if (!isTauri()) return () => {};
     let unlisten: Promise<() => void>;

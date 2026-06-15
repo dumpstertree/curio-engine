@@ -703,3 +703,208 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
   white-space: nowrap;
 }
 .anim-list-row.active .anim-list-name { color: #7ec8e3; }
+
+/* ── Prefab inspector ───────────────────────────────────────── */
+
+.prefab-inspector-content {
+  padding: 6px 0 16px;
+}
+
+/* GameObject node */
+.gobj-node {
+  border-left: 1px solid var(--border);
+  padding-left: 4px;
+}
+.gobj-node:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+
+.gobj-header {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  gap: 6px;
+  padding: 0 8px;
+  background: #232323;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.gobj-chevron-btn {
+  width: 14px; height: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--text-secondary);
+  cursor: pointer; padding: 0; flex-shrink: 0;
+}
+.gobj-chevron-btn:hover { color: var(--text-primary); }
+
+.gobj-enabled-check {
+  flex-shrink: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.gobj-name-input {
+  flex: 1;
+  background: transparent;
+  border: 0.5px solid transparent;
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  padding: 2px 5px;
+  min-width: 0;
+}
+.gobj-name-input:hover   { border-color: var(--border-light); }
+.gobj-name-input:focus   { border-color: var(--accent); outline: none; background: #1a1a1a; }
+
+.gobj-body {
+  padding: 4px 0 8px 6px;
+}
+
+.gobj-children-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 10px 10px 4px;
+}
+
+/* Remove buttons (component / gameobject) */
+.comp-remove-btn {
+  width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 0; border-radius: 3px; flex-shrink: 0;
+  margin-left: auto;
+}
+.comp-remove-btn:hover { color: #f87171; background: var(--bg-hover); }
+
+/* Vector group (position/rotation/scale) */
+.vec-group {
+  padding: 6px 10px 6px 22px;
+  border-bottom: 0.5px solid #2a2a2a;
+}
+.vec-group:last-child { border-bottom: none; }
+
+.vec-group-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.vec3-input {
+  display: flex;
+  gap: 6px;
+}
+
+.vec-axis {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  background: #2a2a2a;
+  border: 0.5px solid #3d3d3d;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.vec-axis:focus-within { border-color: var(--accent); }
+
+.vec-axis-label {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text-muted);
+  padding: 0 5px;
+  flex-shrink: 0;
+  border-right: 0.5px solid #3d3d3d;
+  line-height: 22px;
+}
+
+.vec-axis-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--orange);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 3px 5px;
+  outline: none;
+}
+
+/* Generic editable field value */
+.field-val-input {
+  flex: 1;
+  background: #2a2a2a;
+  border: 0.5px solid #3d3d3d;
+  border-radius: 3px;
+  color: var(--orange);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 1px 5px;
+  min-width: 0;
+}
+.field-val-input:focus { border-color: var(--accent); outline: none; }
+
+.field-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Add component / child buttons */
+.add-component-wrap {
+  position: relative;
+  margin: 6px 10px;
+}
+
+.add-component-btn,
+.add-child-btn {
+  width: 100%;
+  background: #2a2a2a;
+  border: 0.5px dashed #454545;
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 5px 0;
+  cursor: pointer;
+  text-align: center;
+}
+.add-component-btn:hover,
+.add-child-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.add-child-btn {
+  margin: 4px 10px 2px;
+  width: calc(100% - 20px);
+}
+
+.add-component-menu {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: #252526;
+  border: 0.5px solid var(--border-light);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  z-index: 20;
+  overflow: hidden;
+}
+
+.add-component-item {
+  font-size: 12px;
+  font-family: var(--mono);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.add-component-item:hover { background: var(--bg-selected); }
