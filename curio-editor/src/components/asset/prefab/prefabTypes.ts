@@ -10,6 +10,7 @@ export interface PrefabComponentRaw {
 export interface PrefabGameObjectRaw {
   enabled:    boolean;
   name:       string;
+  base?:      string;   // optional path (relative to assets/) to another .comp file
   components: PrefabComponentRaw[];
   children:   PrefabGameObjectRaw[];
 }
@@ -191,17 +192,18 @@ export function writeRendererAsset(comp: PrefabComponentRaw, assetPath: string):
 // Default factories — used when adding new components/children
 // ─────────────────────────────────────────────────────────────────────────
 
+/** All known field keys for each component type — always shown in inspector,
+ *  even when not yet set in the .comp file. */
+export const COMPONENT_FIELDS: Record<KnownComponentType, string[]> = {
+  'transform2d':    ['position', 'rotation', 'scale'],
+  'transform3d':    ['position', 'rotation', 'scale'],
+  'RendererStatic':  ['asset'],
+  'RendererDynamic': ['asset'],
+};
+
+/** A freshly-added component starts with NO fields set — user must explicitly override each. */
 export function defaultComponent(type: KnownComponentType): PrefabComponentRaw {
-  switch (type) {
-    case 'transform2d':
-      return { type, fields: ['position: (0.0,0.0)', 'rotation: (0.0,0.0,0.0)', 'scale: (1.0,1.0)'] };
-    case 'transform3d':
-      return { type, fields: ['position: (0.0,0.0,0.0)', 'rotation: (0.0,0.0,0.0)', 'scale: (1.0,1.0,1.0)'] };
-    case 'RendererStatic':
-      return { type, fields: ['asset: '] };
-    case 'RendererDynamic':
-      return { type, fields: ['asset: '] };
-  }
+  return { type, fields: [] };
 }
 
 export function defaultGameObject(name = 'New GameObject'): PrefabGameObjectRaw {

@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import type { PrefabGameObjectRaw } from './prefabTypes';
+import type { ResolvedGameObject } from './prefabResolver';
+import { resolvedToRawFull } from './prefabResolver';
 import { collectRenderEntries } from './prefabTransforms';
 import { loadGlbObject, loadAnimMesh } from './assetLoaders';
 
 const ASSET_ROOT = '/home/dumpstertree/Git/Rust/system_test/assets';
 
 interface Props {
-  /** The current (possibly edited) prefab tree. Re-render triggers a reload of changed assets. */
-  root: PrefabGameObjectRaw;
+  root: ResolvedGameObject;
 }
 
 export function PrefabViewport({ root }: Props) {
@@ -33,7 +33,7 @@ export function PrefabViewport({ root }: Props) {
 
     async function init() {
       try {
-        const entries = collectRenderEntries(root);
+        const entries = collectRenderEntries(resolvedToRawFull(root));
 
         const W = mount.clientWidth  || 600;
         const H = mount.clientHeight || 400;
