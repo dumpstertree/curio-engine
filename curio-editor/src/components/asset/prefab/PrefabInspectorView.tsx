@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { PrefabGameObjectRaw, PrefabComponentRaw, KnownComponentType } from './prefabTypes';
 import {
   COMPONENT_TYPES,
@@ -249,16 +249,29 @@ function AddComponentButton({ onAdd }: { onAdd: (type: KnownComponentType) => vo
 // ─── GameObject node (recursive, raw only) ────────────────────────────────────
 
 interface GameObjectNodeProps {
-  node:      PrefabGameObjectRaw;
-  onChange:  (next: PrefabGameObjectRaw) => void;
-  onRemove?: () => void;
-  depth:     number;
+  node:         PrefabGameObjectRaw;
+  onChange:     (next: PrefabGameObjectRaw) => void;
+  onRemove?:    () => void;
+  depth:        number;
+  path:         number[];        // this node's path in the raw tree
+  selectedPath: number[] | null; // currently selected path
 }
 
-function GameObjectNode({ node, onChange, onRemove, depth }: GameObjectNodeProps) {
+function GameObjectNode({ node, onChange, onRemove, depth, path, selectedPath }: GameObjectNodeProps) {
   const [open, setOpen] = useState(true);
   const [name, setName] = useState(node.name);
   const [base, setBase] = useState(node.base ?? '');
+
+  const isSelected = selectedPath !== null && JSON.stringify(path) === JSON.stringify(selectedPath);
+
+  // Auto-open and scroll into view when selected
+  const nodeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isSelected) {
+      setOpen(true);
+      nodeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [isSelected]);
 
   function updateComp(i: number, next: PrefabComponentRaw) {
     const components = [...node.components];
@@ -284,8 +297,8 @@ function GameObjectNode({ node, onChange, onRemove, depth }: GameObjectNodeProps
   }
 
   return (
-    <div className="gobj-node" style={{ marginLeft: depth > 0 ? 12 : 0 }}>
-      <div className="gobj-header">
+    <div ref={nodeRef} className="gobj-node" style={{ marginLeft: depth > 0 ? 12 : 0 }}>
+      <div className={`gobj-header ${isSelected ? 'gobj-header-selected' : ''}`}>
         <button className="gobj-chevron-btn" onClick={() => setOpen(o => !o)}>
           <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor"
             style={{ transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .12s' }}>
@@ -333,6 +346,8 @@ function GameObjectNode({ node, onChange, onRemove, depth }: GameObjectNodeProps
           )}
           {node.children.map((child, i) => (
             <GameObjectNode key={child.name + i} node={child} depth={depth + 1}
+              path={[...path, i]}
+              selectedPath={selectedPath}
               onChange={next => updateChild(i, next)}
               onRemove={() => removeChild(i)} />
           ))}
@@ -346,13 +361,14 @@ function GameObjectNode({ node, onChange, onRemove, depth }: GameObjectNodeProps
 // ─── Top-level inspector ──────────────────────────────────────────────────────
 
 interface Props {
-  fileName:  string | null;
-  raw:       PrefabGameObjectRaw | null;
-  onChange:  (next: PrefabGameObjectRaw) => void;
-  onRefresh: () => void;
+  fileName:     string | null;
+  raw:          PrefabGameObjectRaw | null;
+  selectedPath: number[] | null;
+  onChange:     (next: PrefabGameObjectRaw) => void;
+  onRefresh:    () => void;
 }
 
-export function PrefabInspectorView({ fileName, raw, onChange, onRefresh }: Props) {
+export function PrefabInspectorView({ fileName, raw, selectedPath, onChange, onRefresh }: Props) {
   return (
     <div className="inspector-view">
       <div className="panel-header">
@@ -379,7 +395,7 @@ export function PrefabInspectorView({ fileName, raw, onChange, onRefresh }: Prop
             </div>
           </div>
           <div className="inspector-content prefab-inspector-content">
-            <GameObjectNode node={raw} depth={0} onChange={onChange} />
+            <GameObjectNode node={raw} depth={0} path={[]} selectedPath={selectedPath} onChange={onChange} />
           </div>
         </>
       )}

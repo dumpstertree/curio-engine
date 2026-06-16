@@ -209,3 +209,41 @@ export function defaultComponent(type: KnownComponentType): PrefabComponentRaw {
 export function defaultGameObject(name = 'New GameObject'): PrefabGameObjectRaw {
   return { enabled: true, name, components: [], children: [] };
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Raw tree navigation helpers
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Walk a path of child indices down the raw tree. Returns null if path is invalid. */
+export function getNodeAtPath(root: PrefabGameObjectRaw, path: number[]): PrefabGameObjectRaw | null {
+  let node: PrefabGameObjectRaw = root;
+  for (const idx of path) {
+    if (!node.children[idx]) return null;
+    node = node.children[idx];
+  }
+  return node;
+}
+
+/** Return a new root with the node at `path` replaced by `next`. */
+export function setNodeAtPath(
+  root: PrefabGameObjectRaw,
+  path: number[],
+  next: PrefabGameObjectRaw,
+): PrefabGameObjectRaw {
+  if (path.length === 0) return next;
+  const [head, ...tail] = path;
+  const children = [...root.children];
+  children[head] = setNodeAtPath(children[head], tail, next);
+  return { ...root, children };
+}
+
+/** Add or replace a field on a component by key, returning a new component. */
+export function setComponentField(
+  comp: PrefabComponentRaw,
+  key: string,
+  value: string,
+): PrefabComponentRaw {
+  const fields = comp.fields.filter(f => splitField(f)[0] !== key);
+  fields.push(joinField(key, value));
+  return { ...comp, fields };
+}

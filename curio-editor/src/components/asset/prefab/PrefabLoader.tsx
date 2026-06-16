@@ -33,11 +33,12 @@ interface Props {
 }
 
 export function PrefabLoader({ path, name }: Props) {
-  const [raw,        setRaw]        = useState<PrefabGameObjectRaw | null>(null);
-  const [resolved,   setResolved]   = useState<ResolvedGameObject | null>(null);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [raw,          setRaw]          = useState<PrefabGameObjectRaw | null>(null);
+  const [resolved,     setResolved]     = useState<ResolvedGameObject | null>(null);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState<string | null>(null);
+  const [refreshKey,   setRefreshKey]   = useState(0);
+  const [selectedPath, setSelectedPath] = useState<number[] | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selfPath  = toAssetRel(path);
 
@@ -46,13 +47,13 @@ export function PrefabLoader({ path, name }: Props) {
     setError(null);
     setRaw(null);
     setResolved(null);
+    setSelectedPath(null);
 
     api.readFileBytes(path)
       .then(async bytes => {
         const text    = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
         const rawNode = normalize(yamlLoad(text));
         setRaw(rawNode);
-        // Resolve for viewport only
         const res = await resolveNode(rawNode, selfPath);
         setResolved(res);
         setLoading(false);
@@ -64,18 +65,14 @@ export function PrefabLoader({ path, name }: Props) {
 
   const handleRefresh = useCallback(() => setRefreshKey(k => k + 1), []);
 
-  // Inspector edits the raw node directly
   const handleRawChange = useCallback(async (next: PrefabGameObjectRaw) => {
     setRaw(next);
-
-    // Re-resolve for viewport whenever raw changes
     try {
       const res = await resolveNode(next, selfPath);
       setResolved(res);
     } catch (e) {
       console.error('[PrefabLoader] resolve failed:', e);
     }
-
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       const text = yamlDump(next, { lineWidth: -1 });
@@ -91,13 +88,22 @@ export function PrefabLoader({ path, name }: Props) {
         <div className="center-viewport">
           {loading && <div className="asset-viewport-overlay">Loading…</div>}
           {error   && <div className="asset-viewport-overlay asset-error">{error}</div>}
-          {!loading && !error && resolved && <PrefabViewport root={resolved} />}
+          {!loading && !error && resolved && raw && (
+            <PrefabViewport
+              root={resolved}
+              raw={raw}
+              selectedPath={selectedPath}
+              onSelect={setSelectedPath}
+              onRawChange={handleRawChange}
+            />
+          )}
         </div>
       </div>
 
       <PrefabInspectorView
         fileName={name}
         raw={raw}
+        selectedPath={selectedPath}
         onChange={handleRawChange}
         onRefresh={handleRefresh}
       />

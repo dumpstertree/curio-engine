@@ -1099,3 +1099,40 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .pf-transform-edit-row .field-discard-btn {
   flex-shrink: 0;
 }
+
+/* ── Prefab selection highlight ─────────────────────────────── */
+
+.gobj-header-selected {
+  background: #0d2f47 !important;
+  border-left: 2px solid var(--accent);
+}
+.gobj-header-selected .gobj-name-input {
+  color: #7ec8e3;
+}
+
+/* ── Prefab gizmo HUD ───────────────────────────────────────── */
+
+.prefab-gizmo-hud {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.6);
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+}
+.prefab-gizmo-hud span.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+.prefab-gizmo-sep {
+  opacity: 0.4;
+}
