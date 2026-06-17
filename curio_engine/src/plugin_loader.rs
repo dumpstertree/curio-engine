@@ -71,11 +71,3 @@ pub fn load_library(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
-pub fn unload_library() {
-    let mut slot = library_slot().lock().unwrap();
-
-    if let Some(lib) = slot.take() {
-        drop(lib);
-    }
-}

@@ -3,7 +3,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use curio_core::{Application, Severity, log};
+use curio_core::{Severity, log};
 
 use crate::traits::habit::Habit;
 
@@ -22,7 +22,7 @@ pub fn register_global_ecs<T>()
 where
     T: Habit + Default + 'static,
 {
-    // Application::log(Severity::Info, &format!("Registered Global Record: {}", type_name::<T>()));
+    // Curio::log(Severity::Info, &format!("Registered Global Record: {}", type_name::<T>()));
     let mut reg = RECEIVER_REGISTRY.write().expect("Registry poisoned");
 
     reg.constructors.push(|| Box::new(T::default()));

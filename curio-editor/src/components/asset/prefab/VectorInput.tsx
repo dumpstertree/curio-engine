@@ -10,16 +10,12 @@ interface NumberFieldProps {
 function NumberField({ label, value, onCommit }: NumberFieldProps) {
   const [text, setText] = useState(String(value));
 
-  // Keep local text in sync when the underlying value changes externally
   useEffect(() => { setText(String(value)); }, [value]);
 
   function commit() {
     const n = parseFloat(text);
-    if (Number.isFinite(n)) {
-      onCommit(n);
-    } else {
-      setText(String(value)); // revert invalid input
-    }
+    if (Number.isFinite(n)) onCommit(n);
+    else setText(String(value));
   }
 
   return (
@@ -27,8 +23,8 @@ function NumberField({ label, value, onCommit }: NumberFieldProps) {
       <span className="vec-axis-label">{label}</span>
       <input
         className="vec-axis-input"
-        type="number"
-        step="0.1"
+        type="text"
+        inputMode="decimal"
         value={text}
         onChange={e => setText(e.target.value)}
         onBlur={commit}

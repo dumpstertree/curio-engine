@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, LazyLock, RwLock},
 };
 
-use crate::{Application, RecordCommon};
+use crate::{Curio, RecordCommon};
 
 // `CreateFn` returns a boxed concrete type.
 // The closure captures `T` so Box<dyn RecordCommon> retains the correct TypeId
@@ -97,7 +97,7 @@ pub fn get_global_state_deserializer(id: &i32) -> Option<DeserializerFn> {
         .get(id)
         .copied();
 
-    Application::log(crate::Severity::Warning, &format!("Failed: {}", id));
+    Curio::log(crate::Severity::Warning, &format!("Failed: {}", id));
     x
 }
 

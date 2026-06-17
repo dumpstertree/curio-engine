@@ -1,12 +1,11 @@
 use curio_core::ButtonPressed;
-use curio_core::ButtonState;
 use curio_core::Formation;
 use curio_core::InputMapped;
 use curio_core::Ledger;
 use curio_core::Nerve;
 use curio_core::SystemComponent;
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
-use curio_core::{Application, AxisCode, ButtonCode, InputMapping, Severity, Vector2, Vector3};
+use curio_core::{AxisCode, ButtonCode, InputMapping, Severity, Vector2, Vector3};
 use std::collections::HashMap;
 
 pub struct SystemComponentDefaultInput {

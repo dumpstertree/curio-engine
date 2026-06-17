@@ -14,7 +14,6 @@ import {
   setComponentField,
   isTransform,
 } from './prefabTypes';
-
 const ASSET_ROOT = '/home/dumpstertree/Git/Rust/system_test/assets';
 
 // ── Structure key: only asset paths + hierarchy, NOT transform values ─────────
@@ -69,7 +68,9 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
   const onRawChangeRef = useRef(onRawChange);
   onRawChangeRef.current = onRawChange;
 
-  const selectObjectRef = useRef<((path: number[] | null) => void) | null>(null);
+  const selectObjectRef      = useRef<((path: number[] | null) => void) | null>(null);
+  // Called whenever raw changes non-structurally — updates Three.js object transforms in place
+  const applyTransformsRef   = useRef<((raw: PrefabGameObjectRaw) => void) | null>(null);
 
   // Only rebuild the scene when asset paths or hierarchy change — NOT on transform edits
   const sceneKey = structureKey(root);
@@ -207,6 +208,43 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
 
         if (!alive) return;
 
+        // Apply live transform updates from inspector edits without rebuilding the scene
+        applyTransformsRef.current = (updatedRaw: PrefabGameObjectRaw) => {
+          const resolvedFull = resolvedToRawFull(root);
+          // Merge updated raw transforms into the resolved full to get new world matrices
+          function mergeTransforms(resolved: any, updated: any): any {
+            return {
+              ...resolved,
+              components: resolved.components.map((rc: any) => {
+                if (!isTransform(rc.type)) return rc;
+                const uc = (updated.components ?? []).find((c: any) => c.type === rc.type);
+                if (!uc) return rc;
+                // Merge fields: updated fields win
+                const fieldMap = new Map(rc.fields.map((f: string) => [f.split(':')[0].trim(), f]));
+                for (const f of uc.fields) fieldMap.set(f.split(':')[0].trim(), f);
+                return { ...rc, fields: [...fieldMap.values()] };
+              }),
+              children: resolved.children.map((rc: any, i: number) =>
+                mergeTransforms(rc, updated.children?.[i] ?? rc)
+              ),
+            };
+          }
+          const merged  = mergeTransforms(resolvedFull, updatedRaw);
+          const entries2 = collectRenderEntries(merged);
+          for (const entry of entries2) {
+            const key = entry.path.join(',');
+            const obj = pathObjMap.get(key);
+            if (!obj) continue;
+            const pos = new THREE.Vector3();
+            const rot = new THREE.Quaternion();
+            const scl = new THREE.Vector3();
+            entry.worldMatrix.decompose(pos, rot, scl);
+            obj.position.copy(pos);
+            obj.quaternion.copy(rot);
+            obj.scale.copy(scl);
+          }
+        };
+
         const box = new THREE.Box3().setFromObject(group);
         if (!box.isEmpty()) {
           const center = box.getCenter(new THREE.Vector3());
@@ -262,11 +300,19 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
         renderer.domElement.addEventListener('pointerup',   onPointerUp);
 
         function onKey(e: KeyboardEvent) {
-          if (e.target !== document.body && e.target !== renderer.domElement) return;
-          if (e.code === 'Space') { e.preventDefault(); tc.setSpace(tc.space === 'world' ? 'local' : 'world'); }
-          if (e.code === 'KeyW') { tc.setMode('translate'); setMode('translate'); }
-          if (e.code === 'KeyE') { tc.setMode('rotate');    setMode('rotate'); }
-          if (e.code === 'KeyR') { tc.setMode('scale');     setMode('scale'); }
+          if (e.code === 'Space') {
+            // Space only when canvas/body focused
+            if (e.target !== document.body && e.target !== renderer.domElement) return;
+            e.preventDefault();
+            tc.setSpace(tc.space === 'world' ? 'local' : 'world');
+          }
+          if (e.code === 'KeyW' || e.code === 'KeyE' || e.code === 'KeyR') {
+            // Blur any focused input so the mode switch registers
+            (document.activeElement as HTMLElement)?.blur?.();
+            if (e.code === 'KeyW') { tc.setMode('translate'); setMode('translate'); }
+            if (e.code === 'KeyE') { tc.setMode('rotate');    setMode('rotate'); }
+            if (e.code === 'KeyR') { tc.setMode('scale');     setMode('scale'); }
+          }
         }
         window.addEventListener('keydown', onKey);
 
@@ -305,7 +351,8 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
           renderer.domElement.removeEventListener('pointerup',   onPointerUp);
           for (const m of animMeshes) m.dispose?.();
           if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
-          selectObjectRef.current = null;
+          selectObjectRef.current      = null;
+          applyTransformsRef.current   = null;
         };
 
       } catch (e) {
@@ -321,6 +368,11 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
   useEffect(() => {
     selectObjectRef.current?.(selectedPath);
   }, [selectedPath]);
+
+  // When raw changes non-structurally (transform edits), update Three.js objects in place
+  useEffect(() => {
+    applyTransformsRef.current?.(raw);
+  }, [raw]);
 
   return (
     <div className="asset-viewport-glb" ref={mountRef}

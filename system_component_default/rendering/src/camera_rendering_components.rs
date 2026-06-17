@@ -1,5 +1,5 @@
 use camera::camera_uniform::CameraUniform;
-use curio_core::engine_services::services;
+use curio_core::services;
 use egui_wgpu::wgpu::{self, BindGroup, BindGroupLayout, Buffer};
 use std::num::NonZeroU64;
 

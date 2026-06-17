@@ -1136,3 +1136,138 @@ button:disabled { opacity: 0.35; cursor: not-allowed; }
 .prefab-gizmo-sep {
   opacity: 0.4;
 }
+
+/* ── Asset tree toolbar + file operations ───────────────────── */
+
+.asset-tree-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.asset-tree-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 5px 8px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+
+.asset-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  border: 0.5px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 3px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.asset-toolbar-btn:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.asset-tree {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 8px;
+}
+
+/* Row actions (rename pencil + delete X) */
+.asset-row-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.asset-tree-row:hover .asset-row-actions { display: flex; }
+
+.asset-action-btn {
+  width: 16px; height: 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: none;
+  border: 0.5px solid transparent;
+  border-radius: 2px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+}
+.asset-action-btn:hover          { border-color: var(--accent); color: var(--accent); }
+.asset-action-delete:hover       { border-color: #f87171; color: #f87171; }
+
+/* Inline rename input */
+.asset-rename-input {
+  flex: 1;
+  background: #1a1a1a;
+  border: 0.5px solid var(--accent);
+  border-radius: 2px;
+  color: var(--text-primary);
+  font-size: 12px;
+  padding: 1px 4px;
+  outline: none;
+  min-width: 0;
+}
+
+/* Drag and drop */
+.asset-tree-row.dragging       { opacity: 0.4; }
+.asset-tree-row.drop-target    { background: #0d2f47; border: 0.5px dashed var(--accent); }
+
+.asset-drop-line {
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  margin: 1px 0;
+  pointer-events: none;
+}
+
+/* ── Asset inline delete confirmation ───────────────────────── */
+
+.asset-confirm-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: #2a1010;
+  border-top: 0.5px solid #5a2020;
+  border-bottom: 0.5px solid #5a2020;
+}
+
+.asset-confirm-msg {
+  flex: 1;
+  font-size: 11px;
+  color: #f87171;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.asset-confirm-yes,
+.asset-confirm-no {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 0.5px solid;
+  flex-shrink: 0;
+}
+
+.asset-confirm-yes {
+  background: #5a1010;
+  border-color: #f87171;
+  color: #f87171;
+}
+.asset-confirm-yes:hover { background: #7a1010; }
+
+.asset-confirm-no {
+  background: var(--bg-tertiary);
+  border-color: var(--border-light);
+  color: var(--text-secondary);
+}
+.asset-confirm-no:hover { background: var(--bg-active); color: var(--text-primary); }

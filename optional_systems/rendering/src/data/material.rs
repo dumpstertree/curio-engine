@@ -1,14 +1,5 @@
 use core::panic;
-use curio_core::{
-    AssetCommon,
-    AssetCommonFromBits,
-    Color,
-    Random,
-    TextureAsset,
-    engine_services::services,
-    shaders::{self, Shaders},
-    // system_adapters::adapter_system_gpu::get_shader_module,
-};
+use curio_core::{AssetCommon, AssetCommonFromBits, Color, Random, Shaders, TextureAsset, services};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, Buffer, ShaderModule, util::DeviceExt};
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, sync::Arc};

@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use curio_core::{ExtensionsF32, engine_services::services};
+use curio_core::{ExtensionsF32, services};
 use egui_wgpu::wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferDescriptor, BufferUsages, ShaderStages};
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, num::NonZeroU64};
@@ -11,7 +11,6 @@ pub enum LightType {
     Point, // uses position + radius/falloff in params
     Directional, // uses direction vector
 }
-
 
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DrawCallLight {

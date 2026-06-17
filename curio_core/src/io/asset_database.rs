@@ -1,4 +1,4 @@
-use crate::{io::file::File, Application, Severity};
+use crate::{io::file::File, Curio, Severity};
 use chrono::DateTime;
 use egui::ahash::{HashMap, HashMapExt};
 use serde::{Deserialize, Serialize};
@@ -81,12 +81,12 @@ impl AssetDatabaseListing {
         }
     }
     fn fetch_asset_local(local_path: &str) -> Vec<u8> {
-        Application::log(Severity::Info, &format!("Performed LOCAL fetch at : {}", (&File::join_path(&File::get_built_in_asset_path(), &local_path))));
+        Curio::log(Severity::Info, &format!("Performed LOCAL fetch at : {}", (&File::join_path(&File::get_built_in_asset_path(), &local_path))));
         // pull asset from local path
         return File::read(&File::join_path(&File::get_built_in_asset_path(), &local_path));
     }
     fn fetch_asset_remote(local_path: &str, remote_path: &String, force: bool) -> Vec<u8> {
-        Application::log(Severity::Info, &format!("Performed REMOTE fetch at : {}", (&File::join_path(&File::get_built_in_asset_path(), &remote_path))));
+        Curio::log(Severity::Info, &format!("Performed REMOTE fetch at : {}", (&File::join_path(&File::get_built_in_asset_path(), &remote_path))));
 
         // let active_instance: Vec<i32> = CurioCabinet::on_display()
         //     .iter()

@@ -98,6 +98,33 @@ export const api = {
     return invoke<void>('write_file_text', { path, contents });
   },
 
+  copyFile: async (src: string, dst: string): Promise<void> => {
+    return invoke<void>('copy_file', { src, dst });
+  },
+
+  createCompFile: async (path: string): Promise<void> => {
+    return invoke<void>('create_comp_file', { path });
+  },
+
+  deletePath: async (path: string): Promise<void> => {
+    return invoke<void>('delete_path', { path });
+  },
+
+  renamePath: async (oldPath: string, newPath: string): Promise<void> => {
+    return invoke<void>('rename_path', { oldPath, newPath });
+  },
+
+  movePath: async (src: string, dst: string): Promise<void> => {
+    return invoke<void>('move_path', { src, dst });
+  },
+
+  pickFile: async (): Promise<string | null> => {
+    if (!isTauri()) return null;
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const result = await open({ multiple: false, directory: false });
+    return typeof result === 'string' ? result : null;
+  },
+
   onViewportFrame: (cb: (dataUrl: string) => void): (() => void) => {
     if (!isTauri()) return () => {};
     let unlisten: Promise<() => void>;

@@ -10,7 +10,7 @@ use std::{
     sync::{mpsc, Mutex},
 };
 
-use curio_core::{engine_services::services, FormsSnapshot, LedgerSnapshot, LoadedCurio, TabGroupState};
+use curio_core::{FormsSnapshot, LedgerSnapshot, TabGroupState};
 use tauri::{AppHandle, State};
 
 #[tauri::command]
@@ -223,4 +223,61 @@ pub fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
 #[tauri::command]
 pub fn write_file_text(path: String, contents: String) -> Result<(), String> {
     std::fs::write(&path, contents).map_err(|e| e.to_string())
+}
+#[tauri::command]
+pub fn copy_file(src: String, dst: String) -> Result<(), String> {
+    std::fs::copy(&src, &dst)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn create_comp_file(path: String) -> Result<(), String> {
+    let contents = "enabled: true\nname: \"New GameObject\"\ncomponents: []\nchildren: []\n";
+    std::fs::write(&path, contents).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn delete_path(path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&path);
+    if p.is_dir() {
+        std::fs::remove_dir_all(p).map_err(|e| e.to_string())
+    } else {
+        std::fs::remove_file(p).map_err(|e| e.to_string())
+    }
+}
+
+#[tauri::command]
+pub fn rename_path(old_path: String, new_path: String) -> Result<(), String> {
+    std::fs::rename(&old_path, &new_path).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn move_path(src: String, dst: String) -> Result<(), String> {
+    // Try rename first (same filesystem), fall back to copy+delete
+    if std::fs::rename(&src, &dst).is_ok() {
+        return Ok(());
+    }
+    let sp = std::path::Path::new(&src);
+    if sp.is_dir() {
+        copy_dir_all(sp, std::path::Path::new(&dst))?;
+        std::fs::remove_dir_all(sp).map_err(|e| e.to_string())
+    } else {
+        std::fs::copy(&src, &dst).map_err(|e| e.to_string())?;
+        std::fs::remove_file(&src).map_err(|e| e.to_string())
+    }
+}
+
+fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+    std::fs::create_dir_all(dst).map_err(|e| e.to_string())?;
+    for entry in std::fs::read_dir(src).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let ty = entry.file_type().map_err(|e| e.to_string())?;
+        if ty.is_dir() {
+            copy_dir_all(&entry.path(), &dst.join(entry.file_name()))?;
+        } else {
+            std::fs::copy(entry.path(), dst.join(entry.file_name())).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
 }

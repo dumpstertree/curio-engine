@@ -1,4 +1,4 @@
-use crate::{random::Random, Version};
+use crate::{Random, Version};
 
 #[derive(Clone)]
 pub struct CurioMetadata {

@@ -11,6 +11,8 @@ import {
   formatTuple,
   defaultComponent,
   defaultGameObject,
+  getNodeAtPath,
+  setNodeAtPath,
 } from './prefabTypes';
 
 // ─── Edit / Discard buttons ───────────────────────────────────────────────────
@@ -92,6 +94,34 @@ interface TransformRowProps {
   onRemove:  () => void;
 }
 
+function AxisInput({ axis, value, onChange }: { axis: string; value: number; onChange: (n: number) => void }) {
+  const [draft, setDraft] = useState(String(value));
+
+  // Sync when value changes externally (e.g. gizmo update)
+  useEffect(() => { setDraft(String(value)); }, [value]);
+
+  function commit() {
+    const n = parseFloat(draft);
+    if (Number.isFinite(n)) onChange(n);
+    else setDraft(String(value)); // revert
+  }
+
+  return (
+    <label className="vec-axis">
+      <span className="vec-axis-label">{axis.toUpperCase()}</span>
+      <input
+        className="vec-axis-input"
+        type="text"
+        inputMode="decimal"
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+      />
+    </label>
+  );
+}
+
 function TransformRow({ fieldKey, value, is2d, onSet, onRemove }: TransformRowProps) {
   const isSet = value !== null;
 
@@ -112,21 +142,17 @@ function TransformRow({ fieldKey, value, is2d, onSet, onRemove }: TransformRowPr
       {isSet ? (
         <div className="pf-transform-edit-row">
           <div className="vec3-input-wrap">
-            {(['x','y','z'] as const).filter((_, i) => !(is2d && fieldKey !== 'rotation' && i === 2)).map(axis => (
-              <label key={axis} className="vec-axis">
-                <span className="vec-axis-label">{axis.toUpperCase()}</span>
-                <input
-                  className="vec-axis-input"
-                  type="number"
-                  step="0.1"
-                  value={parsed[axis]}
-                  onChange={e => {
-                    const n = parseFloat(e.target.value);
-                    commitVec({ ...parsed, [axis]: Number.isFinite(n) ? n : 0 });
-                  }}
+            {(['x','y','z'] as const)
+              .filter((_, i) => !(is2d && fieldKey !== 'rotation' && i === 2))
+              .map(axis => (
+                <AxisInput
+                  key={axis}
+                  axis={axis}
+                  value={parsed[axis as 'x'|'y'|'z']}
+                  onChange={n => commitVec({ ...parsed, [axis]: n })}
                 />
-              </label>
-            ))}
+              ))
+            }
           </div>
           <DiscardBtn onClick={onRemove} />
         </div>
@@ -369,8 +395,48 @@ interface Props {
 }
 
 export function PrefabInspectorView({ fileName, raw, selectedPath, onChange, onRefresh }: Props) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Ctrl+D: duplicate selected node; Delete: remove selected node
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      // Only fire when focus is inside our panel
+      if (!panelRef.current?.contains(document.activeElement)) return;
+      if (!raw || !selectedPath || selectedPath.length === 0) return;
+
+      if (e.key === 'Delete') {
+        e.preventDefault();
+        const parentPath = selectedPath.slice(0, -1);
+        const idx = selectedPath[selectedPath.length - 1];
+        const parent = getNodeAtPath(raw, parentPath);
+        if (!parent) return;
+        const children = parent.children.filter((_, i) => i !== idx);
+        onChange(setNodeAtPath(raw, parentPath, { ...parent, children }));
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        const parentPath = selectedPath.slice(0, -1);
+        const idx = selectedPath[selectedPath.length - 1];
+        const parent = getNodeAtPath(raw, parentPath);
+        if (!parent) return;
+        const node = parent.children[idx];
+        if (!node) return;
+        const duplicate = { ...node, name: `${node.name}_1` };
+        const children  = [
+          ...parent.children.slice(0, idx + 1),
+          duplicate,
+          ...parent.children.slice(idx + 1),
+        ];
+        onChange(setNodeAtPath(raw, parentPath, { ...parent, children }));
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [raw, selectedPath, onChange]);
+
   return (
-    <div className="inspector-view">
+    <div className="inspector-view" ref={panelRef} tabIndex={-1}>
       <div className="panel-header">
         <span className="panel-title">Inspector</span>
         {fileName && (

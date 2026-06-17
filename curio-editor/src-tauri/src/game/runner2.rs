@@ -2,14 +2,14 @@
 
 use crate::{
     callbacks::{set_cursor_visible, set_fullscreen, set_resolution},
-    game::capture::{capture_frame, CAPTURE_HEIGHT, CAPTURE_WIDTH},
+    game::{
+        capture::{capture_frame, CAPTURE_HEIGHT, CAPTURE_WIDTH},
+        plugin_loader::{self, load_library},
+    },
     PROJECT, SHARED_DATA,
 };
 
-use curio_core::{
-    engine_services::{EngineServices, GpuHandle},
-    load_curio, AxisCode, ButtonCode, ButtonPressed, CurioCommon, FieldState, FormsSnapshot, GPUInstance, LedgerSnapshot, LoadedCurio, ObjectState, TabGroupState, TextureAsset, Vector3,
-};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, EngineServices, FieldState, FormsSnapshot, GPUInstance, GpuHandle, LedgerSnapshot, ObjectState, TabGroupState, TextureAsset, Vector3};
 
 use egui_wgpu::wgpu::{
     Adapter, Buffer, BufferDescriptor, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceCapabilities, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -479,3 +479,68 @@ fn create_depth_texture(device: &Device, width: u32, height: u32) -> TextureAsse
 
     TextureAsset { texture, view, sampler }
 }
+
+pub struct LoadedCurio {
+    pub curio: Box<Curio>,
+}
+
+pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
+    let entries = std::fs::read_dir(folder).expect("plugins folder not found");
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+
+        let is_plugin = match path.extension().and_then(|e| e.to_str()) {
+            Some("so") | Some("dll") | Some("dylib") => true,
+            _ => false,
+        };
+
+        if !is_plugin {
+            continue;
+        }
+
+        let _ = load_library(&path);
+
+        let l2 = plugin_loader::library_slot().lock();
+        let lib = match l2 {
+            Ok(l) => l,
+            Err(e) => {
+                panic!("failed to load {:?}: {}", path, e);
+            }
+        };
+
+        // let lib = match lib {
+        //     Some(x) => {
+        //         x
+        //     },
+        //     None => {
+        //         panic!("failed to load {:?}: {}", path, e)
+        //     }
+        // };
+
+        let lib = lib.as_ref().unwrap();
+
+        let curio = unsafe {
+            // look for curio_init — if not found this .so isn't a curio game
+            let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
+
+            let raw = init_fn(gpu);
+
+            if raw.is_null() {
+                eprintln!("curio_init returned null for {:?}", path);
+                continue;
+            }
+
+            Box::from_raw(raw)
+        };
+
+        eprintln!("loaded: {}", curio.meta.name);
+
+        return LoadedCurio { curio };
+    }
+
+    panic!("");
+}
+use libloading::{Library, Symbol};
+
+type InitCurioFn = unsafe extern "C" fn(gpu: *const EngineServices) -> *mut Curio;

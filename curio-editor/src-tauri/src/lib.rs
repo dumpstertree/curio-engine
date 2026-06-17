@@ -4,6 +4,7 @@ pub mod game {
     pub mod capture;
     pub mod encoding;
     pub mod gpu;
+    pub mod plugin_loader;
     pub mod runner;
     pub mod runner2;
 }
@@ -25,6 +26,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(Mutex::new(EditorState::default()))
         .invoke_handler(tauri::generate_handler![
             commands::press_play,
@@ -37,6 +39,11 @@ pub fn run() {
             commands::list_dir,
             commands::read_file_bytes,
             commands::write_file_text,
+            commands::move_path,
+            commands::rename_path,
+            commands::create_comp_file,
+            commands::delete_path,
+            commands::copy_file,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri app");

@@ -1,17 +1,15 @@
-use crate::{plugin_loader, ButtonCode, ButtonPressed, Nerve, NetworkModes};
+use serde::Serialize;
+
+use crate::{engine::engine_services::EngineServices, log, ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
 use core::panic;
 use std::{collections::HashMap, path::Path, time::Instant};
 
 use crate::{
-    built_in::stimulant::engine_commands::EngineCommands,
     engine::{curio_common::CurioCommon, curio_metadata::CurioMetadata},
-    engine_services::EngineServices,
     input::axis_code::AxisCode,
-    plugin_loader::load_library,
-    random::Random,
     static_data::{global_events::get_global_event_constructor_all, global_states::get_global_state_constructor_all},
     system::system_component::SystemComponent,
-    Application, Formation, GPUInstance, Ledger, Severity, Vector3, Version,
+    Formation, GPUInstance, Ledger, Severity, Vector3, Version,
 };
 
 pub struct CurioBuilder {
@@ -56,6 +54,11 @@ pub struct Curio {
 
 // impl - Public fns
 impl Curio {
+    /// Log a system wide message
+    pub fn log(severity: Severity, contents: &str) {
+        log(0, severity, &format!("[SYS]: {}", contents));
+    }
+    // Get all tab snapshots
     pub fn tab_snapshot(&self) -> TabGroupState {
         let mut id_for_tabs = HashMap::new();
 
@@ -101,7 +104,7 @@ impl Curio {
 
     fn new(builder: CurioBuilder) -> Self {
         // log
-        Application::log(Severity::Info, "Imbuing Curio...");
+        Curio::log(Severity::Info, "Imbuing Curio...");
 
         // create empty vecs with capacities based on number of game modes
         let mut all_ledgers = Vec::with_capacity(builder.gamemode.seats.len());
@@ -137,7 +140,7 @@ impl Curio {
         sorted.sort_by(|a, b| a.order().cmp(&b.order()));
 
         //
-        Application::log(Severity::Info, "Sorting Plugins...");
+        Curio::log(Severity::Info, "Sorting Plugins...");
 
         // create and return the instance
         Curio {
@@ -166,7 +169,7 @@ impl Curio {
         ledger_record_log += &format!("'Ledger(s)' built with {} 'Record(s)'", all.len());
 
         //log
-        Application::log(Severity::Info, &ledger_record_log);
+        Curio::log(Severity::Info, &ledger_record_log);
     }
     fn log_nerve() {
         // get all being added
@@ -183,7 +186,7 @@ impl Curio {
         nerve_impulse_log += &format!("'Nerve(s)' built with {} 'Impulse(s)'", all.len());
 
         // log
-        Application::log(Severity::Info, &nerve_impulse_log);
+        Curio::log(Severity::Info, &nerve_impulse_log);
     }
 }
 // impl - CurioCommon fns
@@ -217,7 +220,7 @@ impl CurioCommon for Curio {
     }
     fn input_axis(&mut self, axis: AxisCode, state: Vector3) {
         // log
-        Application::log(Severity::Info, "Input: Axis");
+        Curio::log(Severity::Info, "Input: Axis");
 
         for c in &mut self.plugins {
             c.input_axis(&mut self.ledgers, axis, state);
@@ -225,7 +228,7 @@ impl CurioCommon for Curio {
     }
     fn input_button(&mut self, button: ButtonCode, state: ButtonPressed) {
         // log
-        Application::log(Severity::Info, "Input: Button");
+        Curio::log(Severity::Info, "Input: Button");
 
         for c in &mut self.plugins {
             c.input_button(&mut self.ledgers, button, state);
@@ -233,12 +236,12 @@ impl CurioCommon for Curio {
     }
     fn window_opened(&mut self) {
         // log
-        Application::log(Severity::Info, "Window: Opened");
+        Curio::log(Severity::Info, "Window: Opened");
 
         // init all plugins
         for plugin in &mut self.plugins {
             // log
-            Application::log(Severity::Info, &format!("Init Plugin: {}", &plugin.name()));
+            Curio::log(Severity::Info, &format!("Init Plugin: {}", &plugin.name()));
 
             // init the state
             plugin.init(&mut self.ledgers);
@@ -247,7 +250,7 @@ impl CurioCommon for Curio {
         // set all plugins
         for plugin in &mut self.plugins {
             // log
-            Application::log(Severity::Info, &format!("Set Gamemode Plugin: {}", &plugin.name()));
+            Curio::log(Severity::Info, &format!("Set Gamemode Plugin: {}", &plugin.name()));
 
             //set the gamemode the state will start with
             plugin.set_game_mode(&mut self.ledgers, &self.game_mode);
@@ -255,7 +258,7 @@ impl CurioCommon for Curio {
     }
     fn window_closed(&mut self) {
         // log
-        Application::log(Severity::Info, "Window: Closed");
+        Curio::log(Severity::Info, "Window: Closed");
 
         // alert plugins
         for plugin in &mut self.plugins {
@@ -264,7 +267,7 @@ impl CurioCommon for Curio {
     }
     fn window_resized(&mut self) {
         // log
-        Application::log(Severity::Info, "Window: Resized");
+        Curio::log(Severity::Info, "Window: Resized");
 
         // alert plugins
         for plugin in &mut self.plugins {
@@ -273,7 +276,7 @@ impl CurioCommon for Curio {
     }
     fn window_moved(&mut self) {
         // log
-        Application::log(Severity::Warning, "Window: Moved - Not yet implemented");
+        Curio::log(Severity::Warning, "Window: Moved - Not yet implemented");
     }
 }
 
@@ -396,66 +399,66 @@ pub struct EditorFacetState {
     pub value: serde_json::Value,
 }
 
-pub struct LoadedCurio {
-    pub curio: Box<Curio>,
-}
+// pub struct LoadedCurio {
+//     pub curio: Box<Curio>,
+// }
 
-pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
-    let entries = std::fs::read_dir(folder).expect("plugins folder not found");
+// pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
+//     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
 
-    for entry in entries.flatten() {
-        let path = entry.path();
+//     for entry in entries.flatten() {
+//         let path = entry.path();
 
-        let is_plugin = match path.extension().and_then(|e| e.to_str()) {
-            Some("so") | Some("dll") | Some("dylib") => true,
-            _ => false,
-        };
+//         let is_plugin = match path.extension().and_then(|e| e.to_str()) {
+//             Some("so") | Some("dll") | Some("dylib") => true,
+//             _ => false,
+//         };
 
-        if !is_plugin {
-            continue;
-        }
+//         if !is_plugin {
+//             continue;
+//         }
 
-        let _ = load_library(&path);
+//         let _ = load_library(&path);
 
-        let l2 = plugin_loader::library_slot().lock();
-        let lib = match l2 {
-            Ok(l) => l,
-            Err(e) => {
-                panic!("failed to load {:?}: {}", path, e);
-            }
-        };
+//         let l2 = plugin_loader::library_slot().lock();
+//         let lib = match l2 {
+//             Ok(l) => l,
+//             Err(e) => {
+//                 panic!("failed to load {:?}: {}", path, e);
+//             }
+//         };
 
-        // let lib = match lib {
-        //     Some(x) => {
-        //         x
-        //     },
-        //     None => {
-        //         panic!("failed to load {:?}: {}", path, e)
-        //     }
-        // };
+//         // let lib = match lib {
+//         //     Some(x) => {
+//         //         x
+//         //     },
+//         //     None => {
+//         //         panic!("failed to load {:?}: {}", path, e)
+//         //     }
+//         // };
 
-        let lib = lib.as_ref().unwrap();
+//         let lib = lib.as_ref().unwrap();
 
-        let curio = unsafe {
-            // look for curio_init — if not found this .so isn't a curio game
-            let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
+//         let curio = unsafe {
+//             // look for curio_init — if not found this .so isn't a curio game
+//             let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
 
-            let raw = init_fn(gpu);
+//             let raw = init_fn(gpu);
 
-            if raw.is_null() {
-                eprintln!("curio_init returned null for {:?}", path);
-                continue;
-            }
+//             if raw.is_null() {
+//                 eprintln!("curio_init returned null for {:?}", path);
+//                 continue;
+//             }
 
-            Box::from_raw(raw)
-        };
+//             Box::from_raw(raw)
+//         };
 
-        eprintln!("loaded: {}", curio.meta.name);
+//         eprintln!("loaded: {}", curio.meta.name);
 
-        return LoadedCurio { curio };
-    }
+//         return LoadedCurio { curio };
+//     }
 
-    panic!("");
-}
-use libloading::{Library, Symbol};
-use serde::Serialize;
+//     panic!("");
+// }
+// use libloading::{Library, Symbol};
+// use serde::Serialize;

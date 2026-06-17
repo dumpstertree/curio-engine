@@ -23,7 +23,7 @@ where
     T: IGameEvent + Clone + 'static,
     R: Impulse<T> + Default + Any + 'static,
 {
-    // Application::log(Severity::Info, &format!("Registered Global Impulse: {}", type_name::<T>()));
+    // Curio::log(Severity::Info, &format!("Registered Global Impulse: {}", type_name::<T>()));
 
     let mut reg = RECEIVER_REGISTRY.write().expect("Registry poisoned");
 

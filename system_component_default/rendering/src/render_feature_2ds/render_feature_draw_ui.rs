@@ -7,7 +7,7 @@ use curio_core::{
         sys_record_debug_gui::SysRecordDebugGui,
         sys_record_gui::{GuiElementTypes, SysRecordGui},
     },
-    engine_services::services,
+    services,
 };
 use egui::{Color32, Frame, Pos2, Ui};
 use egui_wgpu::{

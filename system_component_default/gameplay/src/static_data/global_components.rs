@@ -4,7 +4,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use curio_core::{Application, ComponentState, FieldState, Severity};
+use curio_core::{ComponentState, FieldState, Severity};
 
 use crate::{
     form::Form,
@@ -39,7 +39,7 @@ where
         .to_lowercase();
     let mut reg: std::sync::RwLockWriteGuard<'_, ReceiverRegistry> = COMPONENT_REGISTRY.write().expect("Registry poisoned");
 
-    // Application::log(Severity::Info, &format!("Registered Global Habit: {}", type_name::<T>()));
+    // Curio::log(Severity::Info, &format!("Registered Global Habit: {}", type_name::<T>()));
 
     reg.get_state.insert(key.clone(), |x| {
         let key = type_name::<T>()

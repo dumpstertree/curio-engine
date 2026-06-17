@@ -36,7 +36,8 @@ winit = { version = "0.30", features = [
     "x11",
     "wayland",
 ] }
-
+tauri-plugin-dialog = "2"
+libloading = "0.8"
 
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"
