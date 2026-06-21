@@ -14,7 +14,7 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, CurioMetadata, EngineServices, GPUInstance, GpuHandle, Portal, Severity, TextureAsset, Vector3, Version};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, CurioMetadata, EngineServices, GpuHandle, Portal, Severity, TextureAsset, Vector3, Version};
 
 static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
 
@@ -69,7 +69,7 @@ impl CurioCabinet {
 // curio_core
 pub struct CabinetWindowOwner {
     did_run: bool,
-    gpu_instance: Option<Arc<GPUInstance>>,
+    // gpu_instance: Option<Arc<GPUInstance>>,
     // gpu: Option<Arc<SystemGPU>>,           // ← new, keeps Arc alive
     services: Option<Box<EngineServices>>, // ← new, Box gives stable address
     // loaded_curio: Option<LoadedCurio>,     // ← new, keeps .so alive
@@ -81,7 +81,7 @@ impl CabinetWindowOwner {
     pub fn new(portal: Portal) -> CabinetWindowOwner {
         CabinetWindowOwner {
             did_run: false,
-            gpu_instance: None,
+            // gpu_instance: None,
             // gpu: None,
             services: None,
             // loaded_curio: None,
@@ -129,9 +129,9 @@ impl CabinetWindowOwner {
             app_instance.curio.window_opened();
         }
     }
-    pub fn get_gpu_settings(&self) -> Arc<GPUInstance> {
-        if let Some(gpu_settings) = &self.gpu_instance {
-            gpu_settings.clone()
+    pub fn get_gpu_settings(&self) -> Arc<GpuHandle> {
+        if let Some(gpu_settings) = &self.services {
+            self.get_gpu_settings() // gpu_settings.clone()
         } else {
             panic!("Failed to retrieve GPU");
         }
@@ -235,33 +235,33 @@ impl ApplicationHandler for CabinetWindowOwner {
         let config = Self::get_config(&surface, &adapter, &self.portal);
         let depth_texture = Arc::new(create_depth_texture(&device, "DEPTH"));
 
-        self.gpu_instance = Some(Arc::new(GPUInstance {
-            device,
-            queue,
-            surface,
-            adapter,
-            window,
-            config,
-            depth_texture: depth_texture.clone(),
-        }));
+        // self.gpu_instance = Some(Arc::new(GPUInstance {
+        //     device,
+        //     queue,
+        //     surface,
+        //     adapter,
+        //     window,
+        //     config,
+        //     depth_texture: depth_texture.clone(),
+        // }));
 
         // gpu lives on self — Arc won't drop until CabinetWindowOwner drops
         // let gpu = Arc::new(SystemGPU::new(
         //     self.gpu_instance.as_ref().unwrap().clone(), // clone the Arc, don't move
         // ));
-        let Some(ref gpu) = self.gpu_instance else {
-            panic!();
-        };
+        // let Some(ref gpu) = self.gpu_instance else {
+        //     panic!();
+        // };
 
         // services is Boxed so it has a stable heap address
         // the Box lives on self — won't drop until CabinetWindowOwner drops
         self.services = Some(Box::new(EngineServices {
             gpu: GpuHandle {
-                device: Arc::as_ptr(&gpu.device) as *const (),
-                queue: Arc::as_ptr(&gpu.queue) as *const (),
-                config: Arc::as_ptr(&gpu.config) as *const (),
-                window: Arc::as_ptr(&gpu.window) as *const (),
-                surface: Arc::as_ptr(&gpu.surface) as *const (),
+                device: Arc::as_ptr(&device) as *const (),
+                queue: Arc::as_ptr(&queue) as *const (),
+                config: Arc::as_ptr(&config) as *const (),
+                window: Arc::as_ptr(&window) as *const (),
+                surface: Arc::as_ptr(&surface) as *const (),
                 depth: Arc::as_ptr(&depth_texture) as *const (),
                 capture_texture: todo!(),
                 capture_width: todo!(),
@@ -292,8 +292,8 @@ impl ApplicationHandler for CabinetWindowOwner {
                     app_instance.curio.application_refresh();
                 }
 
-                if let Some(x) = &self.gpu_instance {
-                    x.window.request_redraw()
+                if let Some(x) = &self.services {
+                    x.gpu.window().request_redraw()
                 };
             }
             WindowEvent::Resized(_physical_size) => {

@@ -72,6 +72,41 @@ export interface DirEntry {
   is_dir: boolean;
 }
 
+export interface MetaFile {
+  id:       number;
+  included: boolean;
+}
+
+export interface ManifestEntry {
+  id:   number;
+  name: string;
+  type: string;
+  uri:  string;
+}
+
+export type EntryType =
+  | { Asset: string }  // string is the file suffix e.g. ".glb"
+  | 'Float'
+  | 'Int'
+  | 'Bool'
+  | 'Vector2'
+  | 'Vector3'
+  | 'Vector4';
+
+export interface FacetField {
+  name: string;
+  data: EntryType;
+}
+
+export interface FacetComponent {
+  name:  string;
+  data:  FacetField[];
+}
+
+export interface FacetManifest {
+  manifest: FacetComponent[];
+}
+
 // ─────────────────────────────────────────────────────────────
 // API
 // ─────────────────────────────────────────────────────────────
@@ -84,6 +119,11 @@ export const api = {
   getTabGroupState: async (): Promise<TabGroupState> => {
     if (!isTauri()) return MOCK;
     return invoke<TabGroupState>('get_tab_group_state');
+  },
+
+  getFacets: async (): Promise<FacetManifest> => {
+    if (!isTauri()) return { manifest: [] };
+    return invoke<FacetManifest>('get_facets');
   },
 
   listDir: async (path: string): Promise<DirEntry[]> => {
@@ -106,6 +146,10 @@ export const api = {
     return invoke<void>('create_comp_file', { path });
   },
 
+  createFolder: async (path: string): Promise<void> => {
+    return invoke<void>('create_folder', { path });
+  },
+
   deletePath: async (path: string): Promise<void> => {
     return invoke<void>('delete_path', { path });
   },
@@ -116,6 +160,40 @@ export const api = {
 
   movePath: async (src: string, dst: string): Promise<void> => {
     return invoke<void>('move_path', { src, dst });
+  },
+
+  readMeta: async (assetPath: string): Promise<MetaFile | null> => {
+    try {
+      const bytes = await invoke<number[]>('read_file_bytes', { path: assetPath + '.meta' });
+      const text  = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+      const { load } = await import('js-yaml');
+      return load(text) as MetaFile;
+    } catch {
+      return null;
+    }
+  },
+
+  writeMeta: async (assetPath: string, meta: MetaFile): Promise<void> => {
+    const { dump } = await import('js-yaml');
+    return invoke<void>('write_file_text', { path: assetPath + '.meta', contents: dump(meta) });
+  },
+
+  rebuildManifest: async (): Promise<void> => {
+    return invoke<void>('rebuild_manifest');
+  },
+
+  readManifest: async (): Promise<ManifestEntry[]> => {
+    try {
+      const bytes = await invoke<number[]>('read_file_bytes', {
+        path: '/home/dumpstertree/Git/Rust/system_test/asset.manifest'
+      });
+      const text = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+      const { load } = await import('js-yaml');
+      const parsed = load(text) as any;
+      return Array.isArray(parsed?.manifest) ? parsed.manifest : [];
+    } catch {
+      return [];
+    }
   },
 
   pickFile: async (): Promise<string | null> => {

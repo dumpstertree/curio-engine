@@ -1,9 +1,12 @@
 use crate::{
+    form::Form,
+    form_ref::FormRef,
     gameplay_instance::GameplayInstance,
+    static_data::global_components::COMPONENT_REGISTRY,
     static_fns::{register_built_in_facets::register_built_in_component, register_built_in_habits::register_built_in_ecs},
     traits::ui_events::IUIEvent,
 };
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Formation, IGameEvent, Ledger, Nerve, ObjectState, SystemComponent, TabGroupState, TabState, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, ComponentState, Formation, IGameEvent, Ledger, Nerve, ObjectState, SystemComponent, TabGroupState, TabState, Vector3};
 use std::{fmt::Display, vec};
 
 pub struct SystemComponentDefaultGameplay<T, U>
@@ -66,6 +69,10 @@ where
             // tick the instance
             self.game_instance[i].tick(ledger, event_queue);
         }
+    }
+    fn get_facets(&self) -> Vec<curio_core::ComponentState> {
+        let reg = COMPONENT_REGISTRY.read().expect("Registry poisoned");
+        reg.get_def_state.iter().map(|x| x.1.clone()).collect()
     }
     fn get_state(&self, ledger: &Vec<Ledger>) -> Vec<(String, TabState)> {
         let mut result = Vec::new();

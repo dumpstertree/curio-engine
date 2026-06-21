@@ -5,6 +5,7 @@ pub trait ExtensionsF64 {
 }
 
 impl ExtensionsF64 for f64 {
+    /// impl for  Hash for f64
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.to_bits().hash(state)
     }

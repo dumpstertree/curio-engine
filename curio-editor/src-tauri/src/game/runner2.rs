@@ -6,10 +6,10 @@ use crate::{
         capture::{capture_frame, CAPTURE_HEIGHT, CAPTURE_WIDTH},
         plugin_loader::{self, load_library},
     },
-    PROJECT, SHARED_DATA,
+    SharedGameData, PROJECT, SHARED_DATA,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, EngineServices, FieldState, FormsSnapshot, GPUInstance, GpuHandle, LedgerSnapshot, ObjectState, TabGroupState, TextureAsset, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, ComponentState, Curio, CurioCommon, EngineServices, FieldState, FormsSnapshot, GpuHandle, Ledger, LedgerSnapshot, ObjectState, TabGroupState, TextureAsset, Vector3};
 
 use egui_wgpu::wgpu::{
     Adapter, Buffer, BufferDescriptor, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceCapabilities, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -77,7 +77,11 @@ impl ApplicationHandler for AppInstance {
                     shared_data.forms = self.app_instance.curio.context_snapshot();
                     // shared_data.ledger = self.app_instance.curio.ledger_snapshot();
                     shared_data.plugin = self.app_instance.curio.tab_snapshot();
+                    // shared_data.facets = self.app_instance.curio.facet_snapshot();
+                    println!("update gamestate");
                 }
+
+                println!("redraw");
             }
 
             WindowEvent::CloseRequested => {}
@@ -133,11 +137,17 @@ pub enum GameMessage2 {
 }
 
 pub struct GameRunner2<'a> {
+    pub device: Option<Arc<Device>>,
+    pub queue: Option<Arc<Queue>>,
+    pub adapter: Option<Arc<Adapter>>,
+    pub window: Option<Arc<Window>>,
+    pub config: Option<Arc<SurfaceConfiguration>>,
+    pub depth_texture: Option<Arc<TextureAsset>>,
     state: State,
     app_handle: AppHandle,
     rx: Receiver<GameMessage2>,
 
-    gpu_instance: Option<Arc<GPUInstance>>,
+    // gpu_instance: Option<Arc<GPUInstance>>,
     services: Option<Box<EngineServices>>,
 
     capture_texture: Option<Arc<Texture>>,
@@ -152,7 +162,7 @@ impl GameRunner2<'_> {
         Self {
             app_handle,
             rx,
-            gpu_instance: None,
+            // gpu_instance: None,
             services: None,
             loaded_app: None,
             capture_texture: None,
@@ -160,6 +170,12 @@ impl GameRunner2<'_> {
             state: State::Stopped,
             surface_format: TextureFormat::Rgba8UnormSrgb,
             surface: None,
+            device: None,
+            queue: None,
+            adapter: None,
+            window: None,
+            config: None,
+            depth_texture: None,
         }
     }
 
@@ -311,6 +327,21 @@ impl GameRunner2<'_> {
 }
 impl ApplicationHandler for GameRunner2<'_> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
+        // unsafe {
+        //     let Some(ref project) = PROJECT else {
+        //         panic!("No Loaded Project");
+        //     };
+        //     let Ok(guard) = project.lock() else {
+        //         panic!("No Loaded Project");
+        //     };
+        //     // get build path from project
+        //     let path = format!("{}{}", guard.project_path, "/target/release/");
+
+        //     if let Ok(mut shared_data) = SHARED_DATA.lock() {
+        //         shared_data.facets = peek_curio(Path::new(&path));
+        //     }
+        // }
+
         // create const values
         let width = 1920;
         let height = 720;
@@ -332,6 +363,14 @@ impl ApplicationHandler for GameRunner2<'_> {
         let format = self.get_format(&capabilities);
         let config = self.get_config(format, width, height, &capabilities);
         let depth_texture = Arc::new(create_depth_texture(&device, width, height));
+
+        self.window = Some(window.clone());
+        self.surface = Some(surface.clone());
+        self.adapter = Some(adapter.clone());
+        self.queue = Some(queue.clone());
+        self.device = Some(device.clone());
+        self.depth_texture = Some(depth_texture.clone());
+        self.config = Some(config.clone());
 
         // configure the sureface for rendering - make sure to call this again when changing resolution
         surface.configure(&device, &config);
@@ -371,29 +410,29 @@ impl ApplicationHandler for GameRunner2<'_> {
         self.surface_format = format;
 
         // save gpu
-        self.gpu_instance = Some(Arc::new(GPUInstance {
-            device: device.clone(),
-            queue: queue.clone(),
-            surface: surface.clone(),
-            adapter: adapter.clone(),
-            window: window.clone(),
-            config: config.clone(),
-            depth_texture: depth_texture.clone(),
-        }));
+        // self.gpu_instance = Some(Arc::new(GPUInstance {
+        //     device: device.clone(),
+        //     queue: queue.clone(),
+        //     surface: surface.clone(),
+        //     adapter: adapter.clone(),
+        //     window: window.clone(),
+        //     config: config.clone(),
+        //     depth_texture: depth_texture.clone(),
+        // }));
 
         // get the gpu or panic
-        let Some(ref gpu) = self.gpu_instance else {
-            panic!();
-        };
+        // let Some(ref gpu) = self.gpu_instance else {
+        //     panic!();
+        // };
 
         // save services
         self.services = Some(Box::new(EngineServices {
             gpu: GpuHandle {
-                device: Arc::as_ptr(&gpu.device) as *const (),
-                queue: Arc::as_ptr(&gpu.queue) as *const (),
-                config: Arc::as_ptr(&gpu.config) as *const (),
-                window: Arc::as_ptr(&gpu.window) as *const (),
-                surface: Arc::as_ptr(&gpu.surface) as *const (),
+                device: Arc::as_ptr(&device) as *const (),
+                queue: Arc::as_ptr(&queue) as *const (),
+                config: Arc::as_ptr(&config) as *const (),
+                window: Arc::as_ptr(&window) as *const (),
+                surface: Arc::as_ptr(&surface) as *const (),
                 depth: Arc::as_ptr(&depth_texture) as *const (),
                 capture_texture: Arc::as_ptr(&capture_texture) as *const (),
                 capture_width: CAPTURE_WIDTH,
@@ -406,9 +445,11 @@ impl ApplicationHandler for GameRunner2<'_> {
         }));
 
         // draw first frame
-        if let Some(gpu) = &self.gpu_instance {
-            gpu.window.request_redraw();
-        }
+        // if let Some(gpu) = &self.gpu_instance {
+        //     gpu.window.request_redraw();
+        // }
+
+        window.request_redraw();
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, window_id: winit::window::WindowId, event: WindowEvent) {
@@ -420,16 +461,16 @@ impl ApplicationHandler for GameRunner2<'_> {
             // to reduce overhead we only render every other frame currently
             // if loaded_app.frame_counter % 2 == 0 {
             // make sure all the needed data is set
-            if let (Some(gpu), Some(texture), Some(buffer)) = (&self.gpu_instance, &self.capture_texture, &self.readback_buffer) {
+            if let (Some(gpu), Some(texture), Some(buffer)) = (&self.services, &self.capture_texture, &self.readback_buffer) {
                 // recapture the frame
-                capture_frame(self.app_handle.clone(), &gpu.device, &gpu.queue, texture.clone(), buffer, self.surface_format);
+                capture_frame(self.app_handle.clone(), &gpu.gpu.device(), &gpu.gpu.queue(), texture.clone(), buffer, self.surface_format);
             }
             // }
         }
 
         //
-        if let Some(gpu) = &self.gpu_instance {
-            gpu.window.request_redraw();
+        if let Some(gpu) = &self.services {
+            gpu.gpu.window().request_redraw();
         }
 
         // pass on events
@@ -484,6 +525,41 @@ pub struct LoadedCurio {
     pub curio: Box<Curio>,
 }
 
+pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
+    let entries = std::fs::read_dir(folder).expect("plugins folder not found");
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let _ = load_library(&path);
+
+        let l2 = plugin_loader::library_slot().lock();
+        let lib = match l2 {
+            Ok(l) => l,
+            Err(e) => {
+                panic!("failed to load {:?}: {}", path, e);
+            }
+        };
+
+        let lib = lib.as_ref().unwrap();
+
+        let curio = unsafe {
+            // look for curio_init — if not found this .so isn't a curio game
+            let init_fn: Symbol<PeekCurioFn> = if let Ok(f) = lib.get(b"curio_peek") { f } else { continue };
+
+            let raw = init_fn();
+
+            if raw.is_null() {
+                eprintln!("curio_init returned null for {:?}", path);
+                continue;
+            }
+
+            Box::from_raw(raw)
+        };
+
+        return curio;
+    }
+    panic!("");
+}
 pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
 
@@ -544,3 +620,5 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
 use libloading::{Library, Symbol};
 
 type InitCurioFn = unsafe extern "C" fn(gpu: *const EngineServices) -> *mut Curio;
+
+type PeekCurioFn = unsafe extern "C" fn() -> *mut Vec<ComponentState>;

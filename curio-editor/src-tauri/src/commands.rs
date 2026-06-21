@@ -1,5 +1,5 @@
 use crate::{
-    game::runner2::{GameMessage2, GameRunner2},
+    game::runner2::{peek_curio, GameMessage2, GameRunner2},
     state::{EditorMode, EditorState},
     types::{ComponentData, DirEntry, EntityData, SceneSnapshot},
     PROJECT, SHARED_DATA,
@@ -10,7 +10,8 @@ use std::{
     sync::{mpsc, Mutex},
 };
 
-use curio_core::{FormsSnapshot, LedgerSnapshot, TabGroupState};
+use curio_core::{io::file::File, ComponentState, FormsSnapshot, LedgerSnapshot, TabGroupState};
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
 #[tauri::command]
@@ -191,6 +192,20 @@ pub fn get_tab_group_state(state: State<Mutex<EditorState>>) -> TabGroupState {
 }
 
 #[tauri::command]
+pub fn get_facets(state: State<Mutex<EditorState>>) -> FacetManifest {
+    const PATH: &str = "/home/dumpstertree/Git/Rust/system_test/facet.manifest";
+
+    let x = serde_yaml::from_slice::<FacetManifest>(&File::read(PATH))
+        .ok()
+        .unwrap();
+    x
+}
+
+#[tauri::command]
+pub fn create_folder(path: String) -> Result<(), String> {
+    std::fs::create_dir_all(&path).map_err(|e| e.to_string())
+}
+#[tauri::command]
 pub fn set_resolution(state: State<Mutex<EditorState>>, app_handle: AppHandle, w: u32, h: u32) {
     let state = state.lock().unwrap();
     if let Some(tx) = &state.game_tx {
@@ -280,4 +295,116 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<(), Stri
         }
     }
     Ok(())
+}
+#[tauri::command]
+pub fn rebuild_manifest() -> Result<(), String> {
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    const PROJECT_ROOT: &str = "/home/dumpstertree/Git/Rust/system_test";
+    const ASSETS_ROOT: &str = "/home/dumpstertree/Git/Rust/system_test/assets";
+    #[derive(serde::Serialize)]
+    struct ManifestEntry {
+        id: i16, // ← was u64
+        name: String,
+        r#type: String,
+        uri: String,
+    }
+    fn collect(dir: &Path, root: &Path, entries: &mut Vec<ManifestEntry>) -> Result<(), String> {
+        for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let path = entry.path();
+            let name = entry.file_name().to_string_lossy().to_string();
+
+            // Skip .meta files and directories (folders don't get manifest entries)
+            if name.ends_with(".meta") {
+                continue;
+            }
+            if path.is_dir() {
+                collect(&path, root, entries)?;
+                continue;
+            }
+
+            // Read .meta file for id and included flag
+            let meta_path = PathBuf::from(format!("{}.meta", path.to_string_lossy()));
+            let meta_text = match fs::read_to_string(&meta_path) {
+                Ok(t) => t,
+                Err(_) => continue, // no meta = not registered, skip
+            };
+
+            // Parse included and id from YAML (simple line scan to avoid serde_yaml dep)
+            let mut id: Option<i16> = None;
+            let mut included: bool = true;
+            for line in meta_text.lines() {
+                if let Some(v) = line.strip_prefix("id:") {
+                    id = v.trim().parse::<i16>().ok();
+                }
+                if let Some(v) = line.strip_prefix("included:") {
+                    included = v.trim() != "false";
+                }
+            }
+            let Some(id): Option<i16> = id else { continue };
+            if !included {
+                continue;
+            }
+
+            // name = filename without extension(s)
+            let stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or(&name)
+                .to_string();
+
+            // uri = path relative to project root
+            let uri = path
+                .strip_prefix(root)
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| name.clone());
+
+            entries.push(ManifestEntry { id, name: stem, r#type: "Embedded".to_string(), uri });
+        }
+        Ok(())
+    }
+
+    let mut entries = Vec::new();
+    collect(Path::new(ASSETS_ROOT), Path::new(PROJECT_ROOT), &mut entries)?;
+
+    // Build YAML manually for clean formatting
+    let mut yaml = String::from("manifest:\n");
+    for e in &entries {
+        yaml.push_str(&format!("  - id: {}\n    name: \"{}\"\n    type: {}\n    uri: \"{}\"\n", e.id, e.name, e.r#type, e.uri));
+    }
+
+    let manifest_path = format!("{}/asset.manifest", PROJECT_ROOT);
+    fs::write(&manifest_path, yaml).map_err(|e| e.to_string())
+}
+#[tauri::command]
+pub fn read_manifest() -> Result<String, String> {
+    let path = "/home/dumpstertree/Git/Rust/system_test/asset.manifest";
+    std::fs::read_to_string(path).map_err(|e| e.to_string())
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct FacetManifest {
+    manifest: Vec<FacetManifestEntry>,
+}
+#[derive(Serialize, Deserialize)]
+pub struct FacetManifestEntry {
+    name: String,
+    data: Vec<FacetManifestEntryField>,
+}
+#[derive(Serialize, Deserialize)]
+pub struct FacetManifestEntryField {
+    name: String,
+    data: EntryTypes,
+}
+#[derive(Serialize, Deserialize)]
+pub enum EntryTypes {
+    Asset(String), // where string is suffix
+    Float,
+    Int,
+    Bool,
+    Vector2,
+    Vector3,
+    Vector4,
 }

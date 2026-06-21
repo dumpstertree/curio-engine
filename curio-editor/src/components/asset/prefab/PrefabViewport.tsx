@@ -14,7 +14,7 @@ import {
   setComponentField,
   isTransform,
 } from './prefabTypes';
-const ASSET_ROOT = '/home/dumpstertree/Git/Rust/system_test/assets';
+const PROJECT_ROOT = '/home/dumpstertree/Git/Rust/system_test';
 
 // ── Structure key: only asset paths + hierarchy, NOT transform values ─────────
 // This prevents camera resets when you move/rotate/scale an object.
@@ -70,7 +70,7 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
 
   const selectObjectRef      = useRef<((path: number[] | null) => void) | null>(null);
   // Called whenever raw changes non-structurally — updates Three.js object transforms in place
-  const applyTransformsRef   = useRef<((raw: PrefabGameObjectRaw) => void) | null>(null);
+  const applyTransformsRef   = useRef<((raw: PrefabGameObjectRaw) => Promise<void>) | null>(null);
 
   // Only rebuild the scene when asset paths or hierarchy change — NOT on transform edits
   const sceneKey = structureKey(root);
@@ -91,7 +91,7 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
     async function init() {
       try {
         const fullRaw = resolvedToRawFull(root);
-        const entries = collectRenderEntries(fullRaw);
+        const entries = await collectRenderEntries(fullRaw);
 
         const W = mount.clientWidth  || 600;
         const H = mount.clientHeight || 400;
@@ -143,7 +143,7 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
           if (!node) return;
 
           let transformComp = node.components.find(c => isTransform(c.type));
-          let updatedComp   = transformComp ?? { type: 'transform3d', fields: [] };
+          let updatedComp   = transformComp ?? { type: 'Transform3D', fields: [] };
 
           const m = modeRef.current;
 
@@ -185,9 +185,9 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
           try {
             let obj: THREE.Object3D;
             if (entry.rendererType === 'RendererStatic') {
-              obj = await loadGlbObject(`${ASSET_ROOT}/${entry.assetPath}`);
+              obj = await loadGlbObject(entry.assetAbsPath);
             } else {
-              const sm = await loadAnimMesh(`${ASSET_ROOT}/${entry.assetPath}`);
+              const sm = await loadAnimMesh(entry.assetAbsPath);
               animMeshes.push(sm);
               obj = sm;
             }
@@ -209,9 +209,8 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
         if (!alive) return;
 
         // Apply live transform updates from inspector edits without rebuilding the scene
-        applyTransformsRef.current = (updatedRaw: PrefabGameObjectRaw) => {
+        applyTransformsRef.current = async (updatedRaw: PrefabGameObjectRaw) => {
           const resolvedFull = resolvedToRawFull(root);
-          // Merge updated raw transforms into the resolved full to get new world matrices
           function mergeTransforms(resolved: any, updated: any): any {
             return {
               ...resolved,
@@ -219,7 +218,6 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
                 if (!isTransform(rc.type)) return rc;
                 const uc = (updated.components ?? []).find((c: any) => c.type === rc.type);
                 if (!uc) return rc;
-                // Merge fields: updated fields win
                 const fieldMap = new Map(rc.fields.map((f: string) => [f.split(':')[0].trim(), f]));
                 for (const f of uc.fields) fieldMap.set(f.split(':')[0].trim(), f);
                 return { ...rc, fields: [...fieldMap.values()] };
@@ -229,8 +227,8 @@ export function PrefabViewport({ root, raw, selectedPath, onSelect, onRawChange 
               ),
             };
           }
-          const merged  = mergeTransforms(resolvedFull, updatedRaw);
-          const entries2 = collectRenderEntries(merged);
+          const merged   = mergeTransforms(resolvedFull, updatedRaw);
+          const entries2 = await collectRenderEntries(merged);
           for (const entry of entries2) {
             const key = entry.path.join(',');
             const obj = pathObjMap.get(key);

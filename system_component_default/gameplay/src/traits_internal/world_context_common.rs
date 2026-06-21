@@ -1,7 +1,7 @@
 use crate::form::Form;
 use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
-use curio_core::PrefabGameObject;
+use curio_core::Composition;
 use curio_core::io::asset_loader::AssetLoader;
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
@@ -40,12 +40,12 @@ pub trait ContextCommon {
         f(q);
     }
 
-    fn spawn_prefab_recursive(&mut self, prefab: &PrefabGameObject) -> Form {
+    fn spawn_prefab_recursive(&mut self, prefab: &Composition) -> Form {
         self.spawn_prefab_recursive_internal(prefab, prefab.name.clone())
     }
 
     /// instantiate a prefab into the context
-    fn spawn_prefab_recursive_internal(&mut self, prefab: &PrefabGameObject, name: String) -> Form {
+    fn spawn_prefab_recursive_internal(&mut self, prefab: &Composition, name: String) -> Form {
         if name.starts_with("!") {
             let name = prefab.name.clone();
             let split: Vec<&str> = name.split("::").into_iter().collect();
@@ -62,7 +62,7 @@ pub trait ContextCommon {
                 .map(|x| self.spawn_prefab_recursive_internal(x, x.name.clone()))
                 .collect();
 
-            let asset = AssetLoader::load_asset::<PrefabGameObject>(&key);
+            let asset = AssetLoader::load_asset::<Composition>(&key);
             let mut parent_form = self.spawn_prefab_recursive_internal(&asset, split[1].to_owned());
 
             // create parent child relationship

@@ -1,5 +1,5 @@
 use crate::input::axis_code::AxisCode;
-use crate::{ButtonCode, ButtonPressed, Nerve, TabState};
+use crate::{ButtonCode, ButtonPressed, ComponentState, Nerve, TabState};
 use crate::{EngineCommands, Ledger};
 use crate::{Formation, Vector3};
 use winit::event::WindowEvent;
@@ -33,6 +33,9 @@ pub trait SystemComponent {
 
     // state
     fn get_state(&self, _ledger: &Vec<Ledger>) -> Vec<(String, TabState)> {
+        vec![]
+    }
+    fn get_facets(&self) -> Vec<ComponentState> {
         vec![]
     }
 }

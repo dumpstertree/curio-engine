@@ -102,11 +102,51 @@ export function eulerDegToQuat(euler: Vec3): Quat {
 // Component-specific typed views
 // ─────────────────────────────────────────────────────────────────────────
 
-export const COMPONENT_TYPES = ['transform2d', 'transform3d', 'RendererStatic', 'RendererDynamic'] as const;
-export type KnownComponentType = typeof COMPONENT_TYPES[number];
+// ─────────────────────────────────────────────────────────────────────────
+// Component type registry — populated dynamically from getFacets()
+// ─────────────────────────────────────────────────────────────────────────
+
+/** All component type names known to the engine. Populated by loadFacets(). */
+export let COMPONENT_TYPES: string[] = [];
+
+export type EntryType =
+  | { Asset: string }
+  | 'Float' | 'Int' | 'Bool'
+  | 'Vector2' | 'Vector3' | 'Vector4';
+
+export interface FieldDescriptor { name: string; type: EntryType; }
+
+/** Maps component_name → ordered FieldDescriptors. Populated by loadFacets(). */
+export const FACET_FIELDS = new Map<string, FieldDescriptor[]>();
+
+/** Load facets from the facet.manifest via Tauri and populate COMPONENT_TYPES + FACET_FIELDS. */
+export async function loadFacets(): Promise<void> {
+  const { api } = await import('../../../api');
+  const result = await api.getFacets();
+  COMPONENT_TYPES.length = 0;
+  FACET_FIELDS.clear();
+  for (const comp of result.manifest) {
+    COMPONENT_TYPES.push(comp.name);
+    FACET_FIELDS.set(comp.name, comp.data.map(f => ({ name: f.name, type: f.data as EntryType })));
+  }
+}
+
+/** Returns ordered FieldDescriptors for a component type. */
+export function getComponentFields(type: string): FieldDescriptor[] {
+  if (FACET_FIELDS.has(type)) return FACET_FIELDS.get(type)!;
+  return (BUILTIN_COMPONENT_FIELDS[type] ?? []).map(name => ({ name, type: 'Float' as EntryType }));
+}
+
+/** Hardcoded fallback field lists before facets load. */
+export const BUILTIN_COMPONENT_FIELDS: Record<string, string[]> = {
+  'Transform2D':    ['position', 'rotation', 'scale'],
+  'Transform3D':    ['position', 'rotation', 'scale'],
+  'RendererStatic':  ['asset'],
+  'RendererDynamic': ['asset'],
+};
 
 export function isTransform(type: string): boolean {
-  return type === 'transform2d' || type === 'transform3d';
+  return type === 'Transform2D' || type === 'Transform3D';
 }
 export function isRenderer(type: string): boolean {
   return type === 'RendererStatic' || type === 'RendererDynamic';
@@ -114,15 +154,15 @@ export function isRenderer(type: string): boolean {
 
 export interface TransformFields {
   position: Vec3;
-  rotation: Vec3; // euler degrees, always 3 components even for transform2d
+  rotation: Vec3; // euler degrees, always 3 components even for Transform2D
   scale:    Vec3;
 }
 
-/** Reads position/rotation/scale out of a transform2d/transform3d component's
+/** Reads position/rotation/scale out of a Transform2D/Transform3D component's
  *  fields array, applying the defaults specified by the engine when absent:
  *  position (0,0,0), rotation (0,0,0) (= identity quat), scale (1,1,1). */
 export function readTransformFields(comp: PrefabComponentRaw): TransformFields {
-  const is2d = comp.type === 'transform2d';
+  const is2d = comp.type === 'Transform2D';
   let position: Vec3 = { x: 0, y: 0, z: 0 };
   let rotation: Vec3 = { x: 0, y: 0, z: 0 };
   let scale:    Vec3 = { x: 1, y: 1, z: 1 };
@@ -132,7 +172,7 @@ export function readTransformFields(comp: PrefabComponentRaw): TransformFields {
     if (key === 'position') {
       position = is2d ? { ...parseVec2(val), z: 0 } : parseVec3(val);
     } else if (key === 'rotation') {
-      // rotation is always stored as a vec3 of euler degrees, even for transform2d
+      // rotation is always stored as a vec3 of euler degrees, even for Transform2D
       rotation = parseVec3(val);
     } else if (key === 'scale') {
       if (is2d) {
@@ -149,7 +189,7 @@ export function readTransformFields(comp: PrefabComponentRaw): TransformFields {
 /** Writes position/rotation/scale back into the component's fields array,
  *  preserving 2d vs 3d tuple arity and any other fields untouched. */
 export function writeTransformFields(comp: PrefabComponentRaw, t: TransformFields): PrefabComponentRaw {
-  const is2d = comp.type === 'transform2d';
+  const is2d = comp.type === 'Transform2D';
   const fields = [...comp.fields];
 
   const posStr = is2d ? formatTuple([t.position.x, t.position.y]) : formatVec3(t.position);
@@ -192,17 +232,8 @@ export function writeRendererAsset(comp: PrefabComponentRaw, assetPath: string):
 // Default factories — used when adding new components/children
 // ─────────────────────────────────────────────────────────────────────────
 
-/** All known field keys for each component type — always shown in inspector,
- *  even when not yet set in the .comp file. */
-export const COMPONENT_FIELDS: Record<KnownComponentType, string[]> = {
-  'transform2d':    ['position', 'rotation', 'scale'],
-  'transform3d':    ['position', 'rotation', 'scale'],
-  'RendererStatic':  ['asset'],
-  'RendererDynamic': ['asset'],
-};
-
-/** A freshly-added component starts with NO fields set — user must explicitly override each. */
-export function defaultComponent(type: KnownComponentType): PrefabComponentRaw {
+/** A freshly-added component starts with NO fields set. */
+export function defaultComponent(type: string): PrefabComponentRaw {
   return { type, fields: [] };
 }
 

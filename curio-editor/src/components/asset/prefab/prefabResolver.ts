@@ -51,8 +51,24 @@ function normalize(raw: any): PrefabGameObjectRaw {
   };
 }
 
-async function loadRaw(assetRelPath: string): Promise<PrefabGameObjectRaw> {
-  const fullPath = `${ASSET_ROOT}/${assetRelPath}`;
+const PROJECT_ROOT = '/home/dumpstertree/Git/Rust/system_test';
+
+async function resolveIdToUri(id: string): Promise<string | null> {
+  const entries = await api.readManifest();
+  const entry   = entries.find(e => String(e.id) === id.trim());
+  return entry?.uri ?? null;
+}
+
+async function loadRaw(idOrPath: string): Promise<PrefabGameObjectRaw> {
+  // idOrPath is either a numeric ID (new format) or a relative path (legacy)
+  let relPath = idOrPath;
+  if (/^\d+$/.test(idOrPath.trim())) {
+    const uri = await resolveIdToUri(idOrPath);
+    if (!uri) throw new Error(`No manifest entry for ID ${idOrPath}`);
+    relPath = uri;
+  }
+  // relPath is relative to project root (e.g. "assets/compositions/test.comp")
+  const fullPath = `${PROJECT_ROOT}/${relPath}`;
   const bytes    = await api.readFileBytes(fullPath);
   const text     = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
   return normalize(yamlLoad(text));

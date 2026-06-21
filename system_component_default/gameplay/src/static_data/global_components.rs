@@ -14,16 +14,19 @@ use crate::{
 /// Function that creates a boxed untyped value (what register stores)
 type AddComponentFn = fn(&mut Form, &Vec<String>) -> bool;
 type GetStateFn = fn(&Form) -> Option<ComponentState>;
+type GetDefStateFn = fn() -> ComponentState;
 
 pub struct ReceiverRegistry {
     pub add_component: HashMap<String, AddComponentFn>,
     pub get_state: HashMap<String, GetStateFn>,
+    pub get_def_state: HashMap<String, ComponentState>,
 }
 
 pub static COMPONENT_REGISTRY: LazyLock<RwLock<ReceiverRegistry>> = LazyLock::new(|| {
     RwLock::new(ReceiverRegistry {
         add_component: HashMap::new(),
         get_state: HashMap::new(),
+        get_def_state: HashMap::new(),
     })
 });
 
@@ -41,7 +44,12 @@ where
 
     // Curio::log(Severity::Info, &format!("Registered Global Habit: {}", type_name::<T>()));
 
-    reg.get_state.insert(key.clone(), |x| {
+    let x = ComponentState {
+        component_name: key.clone(),
+        fields: T::default().get_state(),
+    };
+    reg.get_def_state.insert(key.clone(), x);
+    reg.get_state.insert(key.clone(), |x: &Form| {
         let key = type_name::<T>()
             .split("::")
             .last()

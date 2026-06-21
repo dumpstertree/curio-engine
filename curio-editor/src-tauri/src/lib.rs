@@ -12,6 +12,7 @@ mod state;
 mod types;
 mod utils;
 
+use curio_core::ComponentState;
 use curio_core::{FormsSnapshot, LedgerSnapshot, TabGroupState};
 use serde::Deserialize;
 use serde::Serialize;
@@ -36,6 +37,7 @@ pub fn run() {
             commands::get_ledger_snapshot,
             commands::get_forms,
             commands::get_tab_group_state,
+            commands::get_facets,
             commands::list_dir,
             commands::read_file_bytes,
             commands::write_file_text,
@@ -44,6 +46,9 @@ pub fn run() {
             commands::create_comp_file,
             commands::delete_path,
             commands::copy_file,
+            commands::rebuild_manifest,
+            commands::read_manifest,
+            commands::create_folder
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri app");
@@ -54,6 +59,7 @@ pub struct SharedGameData {
     pub forms: FormsSnapshot,
     pub ledger: LedgerSnapshot,
     pub plugin: TabGroupState,
+    pub facets: Box<Vec<ComponentState>>,
 }
 
 use std::sync::LazyLock;

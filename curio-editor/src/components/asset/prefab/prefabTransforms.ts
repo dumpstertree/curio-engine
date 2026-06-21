@@ -1,25 +1,30 @@
 import * as THREE from 'three';
 import type { PrefabGameObjectRaw } from './prefabTypes';
 import { isTransform, isRenderer, readTransformFields, readRendererAsset, eulerDegToQuat } from './prefabTypes';
+import { api } from '../../../api';
+
+const PROJECT_ROOT = '/home/dumpstertree/Git/Rust/system_test';
 
 export interface RenderEntry {
-  /** Path through the hierarchy by child index, e.g. [0, 2] = root.children[0].children[2] */
-  path:        number[];
-  name:        string;
-  worldMatrix: THREE.Matrix4;
+  path:         number[];
+  name:         string;
+  worldMatrix:  THREE.Matrix4;
   rendererType: 'RendererStatic' | 'RendererDynamic';
-  assetPath:   string; // relative to assets/ root
+  /** Absolute filesystem path to the asset file */
+  assetAbsPath: string;
 }
 
-/** Walks the prefab hierarchy, composing local transforms (transform2d/transform3d)
- *  into world matrices, and collects every RendererStatic/RendererDynamic with a
- *  non-empty asset path along with its world matrix. */
-export function collectRenderEntries(root: PrefabGameObjectRaw): RenderEntry[] {
+/** Walks the hierarchy collecting renderer entries, resolving asset IDs to
+ *  absolute paths via the manifest. */
+export async function collectRenderEntries(root: PrefabGameObjectRaw): Promise<RenderEntry[]> {
+  // Load manifest once for all ID lookups
+  const manifest = await api.readManifest();
+  const idToUri  = new Map(manifest.map(e => [String(e.id), e.uri]));
+
   const out: RenderEntry[] = [];
 
   function walk(node: PrefabGameObjectRaw, parentMatrix: THREE.Matrix4, path: number[]) {
-    // Find this node's transform component (transform2d or transform3d), if any
-    let localMatrix = new THREE.Matrix4(); // identity
+    let localMatrix = new THREE.Matrix4();
     const transformComp = node.components.find(c => isTransform(c.type));
     if (transformComp) {
       const t = readTransformFields(transformComp);
@@ -36,19 +41,30 @@ export function collectRenderEntries(root: PrefabGameObjectRaw): RenderEntry[] {
     if (node.enabled) {
       for (const comp of node.components) {
         if (isRenderer(comp.type)) {
-          const assetPath = readRendererAsset(comp);
-          if (assetPath && assetPath.trim() !== '') {
-            out.push({
-              path,
-              name: node.name,
-              worldMatrix: worldMatrix.clone(),
-              rendererType: comp.type as 'RendererStatic' | 'RendererDynamic',
-              assetPath: assetPath.trim(),
-            });
+          const rawVal = readRendererAsset(comp);
+          if (!rawVal || !rawVal.trim()) continue;
+
+          const trimmed = rawVal.trim();
+          // Resolve: numeric ID → URI → abs path; otherwise treat as legacy relative path
+          let absPath: string;
+          if (/^\d+$/.test(trimmed)) {
+            const uri = idToUri.get(trimmed);
+            if (!uri) continue; // unknown ID, skip
+            absPath = `${PROJECT_ROOT}/${uri}`;
+          } else {
+            // Legacy path format — relative to assets/
+            absPath = `${PROJECT_ROOT}/assets/${trimmed}`;
           }
+
+          out.push({
+            path,
+            name:         node.name,
+            worldMatrix:  worldMatrix.clone(),
+            rendererType: comp.type as 'RendererStatic' | 'RendererDynamic',
+            assetAbsPath: absPath,
+          });
         }
       }
-
       node.children.forEach((child, i) => walk(child, worldMatrix, [...path, i]));
     }
   }

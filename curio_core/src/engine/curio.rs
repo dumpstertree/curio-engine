@@ -9,7 +9,7 @@ use crate::{
     input::axis_code::AxisCode,
     static_data::{global_events::get_global_event_constructor_all, global_states::get_global_state_constructor_all},
     system::system_component::SystemComponent,
-    Formation, GPUInstance, Ledger, Severity, Vector3, Version,
+    Formation, Ledger, Severity, Vector3, Version,
 };
 
 pub struct CurioBuilder {
@@ -57,6 +57,19 @@ impl Curio {
     /// Log a system wide message
     pub fn log(severity: Severity, contents: &str) {
         log(0, severity, &format!("[SYS]: {}", contents));
+    }
+    pub fn facet_snapshot(&self) -> Vec<ComponentState> {
+        let mut f = Vec::new();
+        for x in &self.plugins {
+            f.append(&mut x.get_facets());
+        }
+
+        println!("get facets {}", f.len());
+
+        for x in &f {
+            println!("{}", x.component_name);
+        }
+        f
     }
     // Get all tab snapshots
     pub fn tab_snapshot(&self) -> TabGroupState {
@@ -462,3 +475,20 @@ pub struct EditorFacetState {
 // }
 // use libloading::{Library, Symbol};
 // use serde::Serialize;
+
+#[unsafe(no_mangle)]
+pub extern "C" fn peek_curio() -> Box<Vec<ComponentState>> {
+    Box::new(vec![ComponentState::default(), ComponentState::default(), ComponentState::default()])
+
+    // let mut f = Vec::new();
+    // for x in &self.plugins {
+    //     f.append(&mut x.get_facets());
+    // }
+
+    // println!("get facets {}", f.len());
+
+    // for x in &f {
+    //     println!("{}", x.component_name);
+    // }
+    // f
+}

@@ -24,7 +24,7 @@ pub use crate::io::log::Severity;
 // assets
 pub use crate::assets::asset::AssetCommon;
 pub use crate::assets::asset::AssetCommonFromBits;
-pub use crate::assets::prefab_asset::PrefabGameObject;
+pub use crate::assets::prefab_asset::Composition;
 pub use crate::assets::texture_asset::TextureAsset;
 
 // input
@@ -37,7 +37,7 @@ pub use crate::input::input_mapped::InputMapped;
 pub use crate::input::input_raw::InputRaw;
 
 // graphics
-pub use crate::graphics::gpu_instance::GPUInstance;
+// pub use crate::graphics::gpu_instance::GPUInstance;
 pub use crate::graphics::graphics_mapping::GraphicsMapping;
 pub use crate::graphics::shaders::Shaders;
 

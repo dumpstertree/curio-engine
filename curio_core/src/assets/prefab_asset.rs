@@ -3,18 +3,18 @@ use serde::{Deserialize, Serialize};
 use crate::{assets::asset::AssetCommonFromBits, AssetCommon};
 
 #[derive(Serialize, Deserialize)]
-pub struct PrefabGameObject {
+pub struct Composition {
     pub enabled: bool,
     pub base: String,
     pub name: String,
     pub components: Vec<PrefabComponent>,
-    pub children: Vec<PrefabGameObject>,
+    pub children: Vec<Composition>,
 }
-impl AssetCommon for PrefabGameObject {}
-impl AssetCommonFromBits<PrefabGameObject> for PrefabGameObject {
-    fn from_bits(bits: &Vec<u8>) -> PrefabGameObject {
+impl AssetCommon for Composition {}
+impl AssetCommonFromBits<Composition> for Composition {
+    fn from_bits(bits: &Vec<u8>) -> Composition {
         let string = String::from_utf8(bits.to_vec()).unwrap();
-        return serde_yaml::from_str::<PrefabGameObject>(&string).unwrap();
+        return serde_yaml::from_str::<Composition>(&string).unwrap();
     }
 }
 #[derive(Serialize, Deserialize)]

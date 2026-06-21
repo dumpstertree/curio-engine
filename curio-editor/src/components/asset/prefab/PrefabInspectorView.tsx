@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import type { PrefabGameObjectRaw, PrefabComponentRaw, KnownComponentType } from './prefabTypes';
+import type { PrefabGameObjectRaw, PrefabComponentRaw } from './prefabTypes';
 import {
+  BUILTIN_COMPONENT_FIELDS,
   COMPONENT_TYPES,
-  COMPONENT_FIELDS,
+  FACET_FIELDS,
+  loadFacets,
+  getComponentFields,
   isTransform,
   isRenderer,
   splitField,
@@ -13,7 +16,10 @@ import {
   defaultGameObject,
   getNodeAtPath,
   setNodeAtPath,
+  type FieldDescriptor,
+  type EntryType,
 } from './prefabTypes';
+import { AssetDropdown } from './AssetDropdown';
 
 // ─── Edit / Discard buttons ───────────────────────────────────────────────────
 
@@ -54,6 +60,15 @@ function FieldRow({ fieldKey, value, onSet, onRemove }: FieldRowProps) {
   // Sync draft if value changes externally
   useEffect(() => { setDraft(value ?? ''); }, [value]);
 
+  // Non-primitive JSON values (objects/arrays) are readonly
+  const isNonPrimitive = (() => {
+    if (!value) return false;
+    try {
+      const parsed = JSON.parse(value);
+      return typeof parsed === 'object' && parsed !== null;
+    } catch { return false; }
+  })();
+
   function commit() {
     if (draft.trim() !== '') onSet(joinField(fieldKey, draft));
   }
@@ -63,17 +78,24 @@ function FieldRow({ fieldKey, value, onSet, onRemove }: FieldRowProps) {
       <span className="field-key">{fieldKey}</span>
 
       {isSet ? (
-        <>
-          <input
-            className="field-val-input"
-            type="text"
-            value={draft}
-            onChange={e => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-          />
-          <DiscardBtn onClick={onRemove} />
-        </>
+        isNonPrimitive ? (
+          <>
+            <span className="field-val-readonly field-val-complex">{value}</span>
+            <DiscardBtn onClick={onRemove} />
+          </>
+        ) : (
+          <>
+            <input
+              className="field-val-input"
+              type="text"
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+            />
+            <DiscardBtn onClick={onRemove} />
+          </>
+        )
       ) : (
         <>
           <span className="field-val-readonly"><em className="field-val-empty">—</em></span>
@@ -166,17 +188,61 @@ function TransformRow({ fieldKey, value, is2d, onSet, onRemove }: TransformRowPr
   );
 }
 
+// ─── Renderer asset row ───────────────────────────────────────────────────────
+
+function RendererAssetRow({ val, isSet, accepts, onSet, onRemove }: {
+  val:      string | null;
+  isSet:    boolean;
+  accepts:  string[];
+  onSet:    (id: string) => void;
+  onRemove: () => void;
+}) {
+  const [editing, setEditing] = useState(isSet);
+
+  // If a value gets set from outside (e.g. initial load), show as editing
+  useEffect(() => { if (isSet) setEditing(true); }, [isSet]);
+
+  return (
+    <div className={`pf-field-row ${!isSet ? 'field-inherited' : ''}`}>
+      <span className="field-key">asset</span>
+      {editing ? (
+        <>
+          <AssetDropdown
+            value={val}
+            accepts={accepts}
+            onChange={id => {
+              if (id === null) { onRemove(); setEditing(false); }
+              else onSet(id);
+            }}
+          />
+          <DiscardBtn onClick={() => { onRemove(); setEditing(false); }} />
+        </>
+      ) : (
+        <>
+          <span className="field-val-readonly"><em className="field-val-empty">—</em></span>
+          <EditBtn onClick={() => setEditing(true)} />
+        </>
+      )}
+    </div>
+  );
+}
+
 // ─── Component block ──────────────────────────────────────────────────────────
 
 interface ComponentBlockProps {
-  comp:     PrefabComponentRaw;
-  onChange: (next: PrefabComponentRaw) => void;
-  onRemove: () => void;
+  comp:          PrefabComponentRaw;
+  index:         number;
+  onChange:      (next: PrefabComponentRaw) => void;
+  onRemove:      () => void;
+  onPointerDown: (e: React.PointerEvent, i: number) => void;
+  onPointerMove: (e: React.PointerEvent) => void;
+  onPointerUp:   (e: React.PointerEvent) => void;
+  isDragOver:    boolean;
 }
 
-function ComponentBlock({ comp, onChange, onRemove }: ComponentBlockProps) {
+function ComponentBlock({ comp, index, onChange, onRemove, onPointerDown, onPointerMove, onPointerUp, isDragOver }: ComponentBlockProps) {
   const [open, setOpen] = useState(true);
-  const is2d = comp.type === 'transform2d';
+  const is2d = comp.type === 'Transform2D';
 
   // Get current value for a field key (null if not set)
   function getValue(key: string): string | null {
@@ -194,47 +260,118 @@ function ComponentBlock({ comp, onChange, onRemove }: ComponentBlockProps) {
     onChange({ ...comp, fields: comp.fields.filter(f => splitField(f)[0] !== key) });
   }
 
-  // Known field keys for this component type
-  const knownKeys: string[] = COMPONENT_FIELDS[comp.type as KnownComponentType] ?? [];
-  // Any extra fields in the .comp that aren't in the known list
+  // Known field descriptors from facets (or builtins)
+  const knownFields: FieldDescriptor[] = getComponentFields(comp.type);
+  const knownKeys = knownFields.map(f => f.name);
+  // Extra fields in .comp not in known list — treat as generic Float
   const extraKeys = comp.fields
     .map(f => splitField(f)[0])
     .filter(k => !knownKeys.includes(k));
-  const allKeys = [...knownKeys, ...extraKeys];
+  const allFields: FieldDescriptor[] = [
+    ...knownFields,
+    ...extraKeys.map(k => ({ name: k, type: 'Float' as EntryType })),
+  ];
 
   return (
-    <div className="comp-block">
-      <div className="comp-header" onClick={() => setOpen(o => !o)}>
-        <span className={`comp-chevron ${open ? 'expanded' : ''}`}>
-          <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
-            <polygon points="2,1 7,4 2,7"/>
-          </svg>
-        </span>
-        <span className="comp-name">{comp.type}</span>
-        <button className="comp-remove-btn"
-          onClick={e => { e.stopPropagation(); onRemove(); }}>
-          <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.4">
-            <line x1="1" y1="1" x2="8" y2="8"/><line x1="8" y1="1" x2="1" y2="8"/>
-          </svg>
-        </button>
-      </div>
+    <>
+      {isDragOver && <div className="comp-drop-line" />}
+      <div className="comp-block" data-comp-index={index}>
+        <div className="comp-header" onClick={() => setOpen(o => !o)}>
+          {/* Drag handle — all pointer events here since capture routes to this element */}
+          <span
+            className="comp-drag-handle"
+            onPointerDown={e => { e.stopPropagation(); onPointerDown(e, index); }}
+            onPointerMove={e => { e.stopPropagation(); onPointerMove(e); }}
+            onPointerUp={e => { e.stopPropagation(); onPointerUp(e); }}
+          >
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="currentColor" opacity="0.4">
+              <circle cx="2" cy="2"  r="1.2"/><circle cx="6" cy="2"  r="1.2"/>
+              <circle cx="2" cy="6"  r="1.2"/><circle cx="6" cy="6"  r="1.2"/>
+              <circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/>
+            </svg>
+          </span>
+          <span className={`comp-chevron ${open ? 'expanded' : ''}`}>
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor">
+              <polygon points="2,1 7,4 2,7"/>
+            </svg>
+          </span>
+          <span className="comp-name">{comp.type}</span>
+          <button className="comp-remove-btn"
+            onClick={e => { e.stopPropagation(); onRemove(); }}>
+            <svg width="9" height="9" viewBox="0 0 9 9" fill="none" stroke="currentColor" strokeWidth="1.4">
+              <line x1="1" y1="1" x2="8" y2="8"/><line x1="8" y1="1" x2="1" y2="8"/>
+            </svg>
+          </button>
+        </div>
 
-      {open && (
-        <div className="comp-fields-list">
-          {allKeys.map(key => {
-            const val = getValue(key);
-            if (isTransform(comp.type) && (key === 'position' || key === 'rotation' || key === 'scale')) {
+        {open && (
+          <div className="comp-fields-list">
+            {allFields.map(({ name: key, type: fieldType }) => {
+              const val = getValue(key);
+
+            // Vector types (including transform fields)
+            const vecAxes = fieldType === 'Vector2' ? ['X','Y']
+                          : fieldType === 'Vector3' ? ['X','Y','Z']
+                          : fieldType === 'Vector4' ? ['X','Y','Z','W']
+                          : null;
+            if (vecAxes) {
+              const is2dField = fieldType === 'Vector2';
               return (
                 <TransformRow
                   key={key}
                   fieldKey={key}
                   value={val}
-                  is2d={is2d}
+                  is2d={is2dField}
                   onSet={raw => setField(key, raw)}
                   onRemove={() => removeField(key)}
                 />
               );
             }
+
+            // Asset dropdown
+            if (typeof fieldType === 'object' && 'Asset' in fieldType) {
+              const suffix = fieldType.Asset;
+              const isSet  = val !== null && val.trim() !== '';
+              return (
+                <RendererAssetRow
+                  key={key}
+                  val={val}
+                  isSet={isSet}
+                  accepts={[suffix]}
+                  onSet={id => setField(key, joinField(key, id))}
+                  onRemove={() => removeField(key)}
+                />
+              );
+            }
+
+            // Bool → checkbox
+            if (fieldType === 'Bool') {
+              const isSet   = val !== null;
+              const checked = val === 'true';
+              return (
+                <div key={key} className={`pf-field-row ${!isSet ? 'field-inherited' : ''}`}>
+                  <span className="field-key">{key}</span>
+                  {isSet ? (
+                    <>
+                      <input
+                        type="checkbox"
+                        className="field-bool-check"
+                        checked={checked}
+                        onChange={e => setField(key, joinField(key, String(e.target.checked)))}
+                      />
+                      <DiscardBtn onClick={() => removeField(key)} />
+                    </>
+                  ) : (
+                    <>
+                      <span className="field-val-readonly"><em className="field-val-empty">—</em></span>
+                      <EditBtn onClick={() => setField(key, joinField(key, 'false'))} />
+                    </>
+                  )}
+                </div>
+              );
+            }
+
+            // Float / Int / generic → text field
             return (
               <FieldRow
                 key={key}
@@ -245,22 +382,79 @@ function ComponentBlock({ comp, onChange, onRemove }: ComponentBlockProps) {
               />
             );
           })}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
-// ─── Add component dropdown ───────────────────────────────────────────────────
+// ─── Component drag reorder (pointer-based, not HTML5 drag) ──────────────────
 
-function AddComponentButton({ onAdd }: { onAdd: (type: KnownComponentType) => void }) {
-  const [open, setOpen] = useState(false);
+function useDragReorder(
+  onReorder: (from: number, to: number) => void,
+) {
+  const fromIdx = useRef<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
+
+  function startDrag(e: React.PointerEvent, idx: number) {
+    e.preventDefault();
+    fromIdx.current = idx;
+    setOverIdx(idx);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function moveDrag(e: React.PointerEvent) {
+    if (fromIdx.current === null) return;
+    // Find which comp-block is under the cursor
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const block = el?.closest('[data-comp-index]') as HTMLElement | null;
+    if (block) {
+      const idx = parseInt(block.dataset.compIndex ?? '-1', 10);
+      if (idx >= 0) setOverIdx(idx);
+    }
+  }
+
+  function endDrag(e: React.PointerEvent) {
+    const from = fromIdx.current;
+    fromIdx.current = null;
+    // Final position from elementFromPoint
+    const el    = document.elementFromPoint(e.clientX, e.clientY);
+    const block = el?.closest('[data-comp-index]') as HTMLElement | null;
+    const to    = block ? parseInt(block.dataset.compIndex ?? '-1', 10) : -1;
+    setOverIdx(null);
+    if (from !== null && to >= 0 && from !== to) onReorder(from, to);
+  }
+
+  return { overIdx, startDrag, moveDrag, endDrag };
+}
+
+function AddComponentButton({ onAdd, existingTypes }: { onAdd: (type: string) => void; existingTypes: string[] }) {
+  const [open,    setOpen]    = useState(false);
+  const [types,   setTypes]   = useState<string[]>(COMPONENT_TYPES);
+  const [loading, setLoading] = useState(false);
+
+  async function handleOpen() {
+    setOpen(o => !o);
+    if (COMPONENT_TYPES.length === 0) {
+      setLoading(true);
+      await loadFacets();
+    }
+    // Filter out types already on this GameObject
+    setTypes(COMPONENT_TYPES.filter(t => !existingTypes.includes(t)));
+    setLoading(false);
+  }
+
   return (
     <div className="add-component-wrap">
-      <button className="add-component-btn" onClick={() => setOpen(o => !o)}>+ Add Component</button>
+      <button className="add-component-btn" onClick={handleOpen}>+ Add Facet</button>
       {open && (
         <div className="add-component-menu">
-          {COMPONENT_TYPES.map(type => (
+          {loading && <div className="add-component-item" style={{ color: 'var(--text-muted)' }}>Loading…</div>}
+          {!loading && types.length === 0 && (
+            <div className="add-component-item" style={{ color: 'var(--text-muted)' }}>All facets present</div>
+          )}
+          {!loading && types.map(type => (
             <div key={type} className="add-component-item"
               onClick={() => { onAdd(type); setOpen(false); }}>
               {type}
@@ -286,7 +480,6 @@ interface GameObjectNodeProps {
 function GameObjectNode({ node, onChange, onRemove, depth, path, selectedPath }: GameObjectNodeProps) {
   const [open, setOpen] = useState(true);
   const [name, setName] = useState(node.name);
-  const [base, setBase] = useState(node.base ?? '');
 
   const isSelected = selectedPath !== null && JSON.stringify(path) === JSON.stringify(selectedPath);
 
@@ -299,6 +492,15 @@ function GameObjectNode({ node, onChange, onRemove, depth, path, selectedPath }:
     }
   }, [isSelected]);
 
+  const { overIdx: dragOver, startDrag, moveDrag, endDrag } = useDragReorder(
+    (from, to) => {
+      const comps = [...node.components];
+      const [moved] = comps.splice(from, 1);
+      comps.splice(to, 0, moved);
+      onChange({ ...node, components: comps });
+    }
+  );
+
   function updateComp(i: number, next: PrefabComponentRaw) {
     const components = [...node.components];
     components[i] = next;
@@ -307,7 +509,7 @@ function GameObjectNode({ node, onChange, onRemove, depth, path, selectedPath }:
   function removeComp(i: number) {
     onChange({ ...node, components: node.components.filter((_, idx) => idx !== i) });
   }
-  function addComp(type: KnownComponentType) {
+  function addComp(type: string) {
     onChange({ ...node, components: [...node.components, defaultComponent(type)] });
   }
   function updateChild(i: number, next: PrefabGameObjectRaw) {
@@ -348,24 +550,32 @@ function GameObjectNode({ node, onChange, onRemove, depth, path, selectedPath }:
 
       {open && (
         <div className="gobj-body">
-          {/* base path */}
+          {/* base — dropdown of .comp assets */}
           <div className="gobj-base-row">
             <span className="gobj-base-label">base</span>
-            <input className="field-val-input gobj-base-input" type="text"
-              placeholder="path/to/base.comp (optional)"
-              value={base}
-              onChange={e => setBase(e.target.value)}
-              onBlur={() => onChange({ ...node, base: base.trim() || undefined })}
-              onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }} />
+            <AssetDropdown
+              value={node.base ?? null}
+              accepts={['.comp']}
+              onChange={id => onChange({ ...node, base: id ?? undefined })}
+              placeholder="— no base —"
+            />
           </div>
 
           {node.components.map((comp, i) => (
-            <ComponentBlock key={comp.type + i} comp={comp}
+            <ComponentBlock key={comp.type + i} comp={comp} index={i}
               onChange={next => updateComp(i, next)}
-              onRemove={() => removeComp(i)} />
+              onRemove={() => removeComp(i)}
+              onPointerDown={startDrag}
+              onPointerMove={moveDrag}
+              onPointerUp={endDrag}
+              isDragOver={dragOver === i}
+            />
           ))}
 
-          <AddComponentButton onAdd={addComp} />
+          <AddComponentButton
+            onAdd={addComp}
+            existingTypes={node.components.map(c => c.type)}
+          />
 
           {node.children.length > 0 && (
             <div className="gobj-children-label">Children ({node.children.length})</div>
@@ -396,6 +606,11 @@ interface Props {
 
 export function PrefabInspectorView({ fileName, raw, selectedPath, onChange, onRefresh }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Load facets eagerly so field types are known before user opens any dropdown
+  useEffect(() => {
+    if (COMPONENT_TYPES.length === 0) loadFacets();
+  }, []);
 
   // Ctrl+D: duplicate selected node; Delete: remove selected node
   useEffect(() => {

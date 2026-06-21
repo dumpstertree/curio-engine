@@ -1,5 +1,7 @@
 pub fn main() {}
 
+use std::rc::Rc;
+
 pub use crate::data::draw_call::DrawCall;
 pub use crate::data::material::Material;
 pub use crate::data::mesh::Mesh;
@@ -16,4 +18,13 @@ pub mod data {
 }
 pub mod facet {
     pub mod renderer_common;
+}
+
+pub trait RenderingAccesor {
+    fn rendering(&self) -> Rc<SysRecordRendering>;
+}
+impl RenderingAccesor for curio_core::Ledger {
+    fn rendering(&self) -> Rc<SysRecordRendering> {
+        self.read::<SysRecordRendering>()
+    }
 }
