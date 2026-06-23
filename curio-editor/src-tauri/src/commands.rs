@@ -193,7 +193,7 @@ pub fn get_tab_group_state(state: State<Mutex<EditorState>>) -> TabGroupState {
 
 #[tauri::command]
 pub fn get_facets(state: State<Mutex<EditorState>>) -> FacetManifest {
-    const PATH: &str = "/home/dumpstertree/Git/Rust/system_test/facet.manifest";
+    const PATH: &str = "/home/dumpstertree/git/rust/curio-engine-demo/facet.manifest";
 
     let x = serde_yaml::from_slice::<FacetManifest>(&File::read(PATH))
         .ok()
@@ -301,8 +301,8 @@ pub fn rebuild_manifest() -> Result<(), String> {
     use std::fs;
     use std::path::{Path, PathBuf};
 
-    const PROJECT_ROOT: &str = "/home/dumpstertree/Git/Rust/system_test";
-    const ASSETS_ROOT: &str = "/home/dumpstertree/Git/Rust/system_test/assets";
+    const PROJECT_ROOT: &str = "/home/dumpstertree/git/rust/curio-engine-demo";
+    const ASSETS_ROOT: &str = "/home/dumpstertree/git/rust/curio-engine-demo/assets";
     #[derive(serde::Serialize)]
     struct ManifestEntry {
         id: i16, // ← was u64
@@ -380,7 +380,7 @@ pub fn rebuild_manifest() -> Result<(), String> {
 }
 #[tauri::command]
 pub fn read_manifest() -> Result<String, String> {
-    let path = "/home/dumpstertree/Git/Rust/system_test/asset.manifest";
+    let path = "/home/dumpstertree/git/rust/curio-engine-demo/asset.manifest";
     std::fs::read_to_string(path).map_err(|e| e.to_string())
 }
 
