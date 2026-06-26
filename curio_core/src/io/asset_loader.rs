@@ -6,10 +6,11 @@ use crate::Curio;
 use crate::Severity;
 use core::panic;
 use std::sync::Arc;
+use std::sync::LazyLock;
 use std::sync::Mutex;
 
-static mut ASSET_DATABASE: Option<Mutex<AssetDatabase>> = None;
-static mut ASSET_CACHE: Option<Mutex<AssetCache>> = None;
+static ASSET_DATABASE: LazyLock<Mutex<AssetDatabase>> = LazyLock::new(|| Mutex::new(AssetDatabase::new_from_explicit(vec![])));
+static ASSET_CACHE: LazyLock<Mutex<AssetCache>> = LazyLock::new(|| Mutex::new(AssetCache::new(100)));
 
 // Built in Shaders
 pub static ASSET_UID_SHADER_UNLIT: i16 = -100;
@@ -31,96 +32,76 @@ impl AssetLoader {
     where
         T: AssetCommonFromBits<T>,
     {
-        unsafe {
-            let Some(asset_cache_mutex) = &ASSET_CACHE else {
-                panic!("ASSET_CACHE not initialized");
-            };
-            let Some(asset_database_mutex) = &ASSET_DATABASE else {
-                panic!("ASSET_DATABASE not initialized");
-            };
-            {
-                let mut asset_cache = asset_cache_mutex
-                    .lock()
-                    .expect("Failed to lock asset cache");
+        let Ok(mut cache) = ASSET_CACHE.lock() else {
+            panic!();
+        };
 
-                if let Some(cached_asset) = asset_cache.try_get_asset::<T>(uid) {
-                    return cached_asset;
-                }
+        {
+            if let Some(cached_asset) = cache.try_get_asset::<T>(uid) {
+                return cached_asset;
             }
-
-            let data = {
-                let asset_database = asset_database_mutex
-                    .lock()
-                    .expect("Failed to lock asset database");
-
-                let bytes = asset_database.fetch_asset(uid);
-
-                if bytes.is_empty() {
-                    panic!("No data for {}!", uid);
-                }
-
-                bytes
-            };
-
-            let asset = Arc::new(T::from_bits(&data));
-
-            {
-                let mut asset_cache = asset_cache_mutex
-                    .lock()
-                    .expect("Failed to lock asset cache");
-
-                // Double-check in case another thread loaded it
-                if let Some(existing) = asset_cache.try_get_asset::<T>(uid) {
-                    return existing;
-                }
-
-                asset_cache.try_set_asset(uid, asset.clone());
-            }
-
-            Curio::log(Severity::Info, &format!("Caching new asset for UID: {}", uid));
-            Curio::log(Severity::Info, &format!("Completed lookup: {}", uid));
-
-            asset
         }
+
+        let data = {
+            let Ok(asset_database_mutex) = ASSET_DATABASE.lock() else {
+                panic!();
+            };
+
+            let bytes = asset_database_mutex.fetch_asset(uid);
+
+            if bytes.is_empty() {
+                panic!("No data for {}!", uid);
+            }
+
+            bytes
+        };
+
+        let asset = Arc::new(T::from_bits(&data));
+
+        {
+            // Double-check in case another thread loaded it
+            if let Some(existing) = cache.try_get_asset::<T>(uid) {
+                return existing;
+            }
+
+            cache.try_set_asset(uid, asset.clone());
+        }
+
+        Curio::log(Severity::Info, &format!("Caching new asset for UID: {}", uid));
+        Curio::log(Severity::Info, &format!("Completed lookup: {}", uid));
+
+        asset
     }
 
     /// Try to find the key based on the name.
     pub fn try_lookup_key_for_name(name: &str) -> Option<i16> {
-        unsafe {
-            let Some(asset_database) = &ASSET_DATABASE else {
-                panic!();
-            };
-            let Ok(asset_database) = asset_database.lock() else {
-                panic!();
-            };
+        let Ok(asset_database) = ASSET_DATABASE.lock() else {
+            panic!();
+        };
 
-            asset_database.try_lookup_key_for_name(name)
-        }
+        asset_database.try_lookup_key_for_name(name)
     }
     pub fn preload_remote_assets(force: bool) {
-        unsafe {
-            let Some(asset_database) = &ASSET_DATABASE else {
-                panic!();
-            };
-            let Ok(mut asset_database) = asset_database.lock() else {
-                panic!();
-            };
-
-            // preload
-            asset_database.preload_remote_assets(force);
-        }
+        let Ok(asset_database) = ASSET_DATABASE.lock() else {
+            panic!();
+        };
+        // preload
+        asset_database.preload_remote_assets(force);
     }
 
     // set database
     pub fn set_database(database: AssetDatabase) {
-        let mut database = database;
-        database.append(vec![
+        let Ok(mut global_database) = ASSET_DATABASE.lock() else {
+            panic!();
+        };
+
+        global_database.listings = database.listings;
+        global_database.lookup = database.lookup;
+
+        global_database.append(vec![
             // shaders
             ("shader_lit".to_string(), ASSET_UID_SHADER_LIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader/lit.shader").to_vec())),
             ("shader_unlit".to_string(), ASSET_UID_SHADER_UNLIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader/unlit.shader").to_vec())),
-            // shader modules
-            // ("shader_module_lit".to_string(), ASSET_UID_SHADER_MODULE_LIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader_module/lit.wgsl").to_vec())),
-            // ("shader_module_unlit".to_string(), ASSET_UID_SHADER_MODULE_UNLIT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/shader_module/unlit.wgsl").to_vec())),
             // textures
             ("default_texture_font_atlas".to_string(), ASSET_UID_TEXTURE_FONT_ATLAS, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/texture/font_black.png").to_vec())),
             // font
@@ -128,23 +109,14 @@ impl AssetLoader {
             // texutre
             ("default_texture".to_string(), ASSET_UID_TEXTURE_DEFAULT, AssetDatabaseListing::Embedded(include_bytes!("../../../assets/built_in/texture/default.png").to_vec())),
         ]);
-
-        unsafe {
-            ASSET_DATABASE = Some(Mutex::new(database));
-        }
     }
     pub fn set_cache(cache: AssetCache) {
-        unsafe {
-            ASSET_CACHE = Some(Mutex::new(cache));
-        }
-    }
+        let Ok(mut global_cache) = ASSET_CACHE.lock() else {
+            panic!();
+        };
 
-    // // load
-    // pub fn load_shader_module(device: &Device, path: &i16) -> Arc<ShaderModule> {
-    //     unsafe {
-    //         return SystemGPU::get_shader_module(path);
-    //     }
-    // }
+        global_cache.max_cache_len = cache.max_cache_len;
+    }
 }
 
 pub struct BuiltInAssets {}

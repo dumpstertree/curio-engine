@@ -13,11 +13,6 @@ use crate::RendererStatic;
 
 #[habit]
 pub struct Instance {}
-impl Instance {
-    pub fn new() -> Box<Instance> {
-        Box::new(Instance {})
-    }
-}
 impl Scope for Instance {
     fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true

@@ -6,16 +6,16 @@ use crate::PostProcessResources;
 use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostProcess};
 
 // NOTE: update include_str! path to your shader file
-const FOG_WGSL_PATH: &str = "../postprocess_fog.wgsl";
+// const FOG_WGSL_PATH: &str = "../postprocess_fog.wgsl";
 
 pub struct RenderFeaturePostProcessFog {
     pipeline: wgpu::RenderPipeline,
     bind_group_input: wgpu::BindGroup, // samples the original offscreen_view
     bind_group_a: wgpu::BindGroup,     // samples view_a
     bind_group_b: wgpu::BindGroup,     // samples view_b
-    bind_group_input_tex_id: usize,
-    bind_group_a_tex_id: usize,
-    bind_group_b_tex_id: usize,
+                                       // bind_group_input_tex_id: usize,
+                                       // bind_group_a_tex_id: usize,
+                                       // bind_group_b_tex_id: usize,
 }
 
 impl RenderFeaturePostProcessFog {
@@ -175,18 +175,18 @@ impl RenderFeaturePostProcessFog {
         });
 
         // store raw pointer ids for quick comparison later
-        let bind_group_input_tex_id = (offscreen_view as *const _) as usize;
-        let bind_group_a_tex_id = (&post_resources.view_a as *const _) as usize;
-        let bind_group_b_tex_id = (&post_resources.view_b as *const _) as usize;
+        // let bind_group_input_tex_id = (offscreen_view as *const _) as usize;
+        // let bind_group_a_tex_id = (&post_resources.view_a as *const _) as usize;
+        // let bind_group_b_tex_id = (&post_resources.view_b as *const _) as usize;
 
         Box::new(Self {
             pipeline,
             bind_group_input,
             bind_group_a,
             bind_group_b,
-            bind_group_input_tex_id,
-            bind_group_a_tex_id,
-            bind_group_b_tex_id,
+            // bind_group_input_tex_id,
+            // bind_group_a_tex_id,
+            // bind_group_b_tex_id,
         })
     }
 }
@@ -216,6 +216,4 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessFog {
         pass.set_bind_group(0, bind_group, &[]);
         pass.draw(0..3, 0..1);
     }
-
-    fn clear(&mut self, _ledger: &mut crate::Ledger) {}
 }

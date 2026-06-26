@@ -1,4 +1,4 @@
-use curio_core::{Ledger, services};
+use curio_core::services;
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::TextureView;
@@ -7,8 +7,6 @@ use crate::render_feature_post_processes::{render_feature_post_process_fog::Rend
 
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &egui_wgpu::wgpu::TextureView, output_view: &egui_wgpu::wgpu::TextureView, source: PostProcessSource);
-
-    fn clear(&mut self, ledger: &mut Ledger);
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -87,9 +85,9 @@ impl RenderFeaturePostProcessHelper {
 }
 
 pub struct PostProcessResources {
-    pub texture_a: egui_wgpu::wgpu::Texture,
+    // pub texture_a: egui_wgpu::wgpu::Texture,
     pub view_a: egui_wgpu::wgpu::TextureView,
-    pub texture_b: egui_wgpu::wgpu::Texture,
+    // pub texture_b: egui_wgpu::wgpu::Texture,
     pub view_b: egui_wgpu::wgpu::TextureView,
 }
 
@@ -113,6 +111,7 @@ impl PostProcessResources {
         let texture_b = device.create_texture(&desc("post B"));
         let view_b = texture_b.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
 
-        Self { texture_a, view_a, texture_b, view_b }
+        // Self { texture_a, view_a, texture_b, view_b }
+        Self { view_a, view_b }
     }
 }

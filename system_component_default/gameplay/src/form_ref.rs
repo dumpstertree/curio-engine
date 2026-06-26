@@ -1,12 +1,7 @@
-use curio_core::{FieldState, ObjectState, Random};
+use crate::{form::Form, traits::facet_common::FacetCommon};
+use curio_core::Random;
 use hecs::{Entity, Query, World};
 use std::{any::type_name, cell::RefCell, hash::Hash, rc::Rc};
-
-use crate::{
-    form::Form,
-    static_data::{global_components::COMPONENT_REGISTRY, global_ecs::register_global_ecs},
-    traits::facet_common::FacetCommon,
-};
 
 /// Representation of an object in the world
 pub struct FormRef {

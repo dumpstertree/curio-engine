@@ -7,8 +7,8 @@ const STALE_HOURS: f32 = 1.0;
 const STALE_MIN: f32 = 0.0;
 const STALE_SEC: f32 = 0.0;
 pub struct AssetDatabase {
-    lookup: HashMap<String, i16>,
-    listings: HashMap<i16, AssetDatabaseListing>,
+    pub lookup: HashMap<String, i16>,
+    pub listings: HashMap<i16, AssetDatabaseListing>,
 }
 impl AssetDatabase {
     pub fn append(&mut self, listings: Vec<(String, i16, AssetDatabaseListing)>) {
@@ -49,7 +49,7 @@ impl AssetDatabase {
         return vec![];
     }
     //
-    pub fn preload_remote_assets(&mut self, force: bool) {
+    pub fn preload_remote_assets(&self, force: bool) {
         for listing in &self.listings {
             match listing.1 {
                 AssetDatabaseListing::RemoteToCache(_, _) => {

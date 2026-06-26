@@ -38,4 +38,10 @@ impl Shaders {
     pub fn unlit() -> Arc<ShaderModule> {
         UNLIT.clone()
     }
+    pub fn vegetation() -> Arc<ShaderModule> {
+        VEGETATION.clone()
+    }
+    pub fn particle() -> Arc<ShaderModule> {
+        PARTICLE.clone()
+    }
 }

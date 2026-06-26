@@ -41,7 +41,7 @@ impl Hash for SysRecordTime {
 impl Eq for SysRecordTime {}
 
 impl RecordOverride for SysRecordTime {
-    fn apply(&mut self, field: &str, val: &str) {}
+    fn apply(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
         vec![
             FieldState::new("scaled_time", self.scaled_time),

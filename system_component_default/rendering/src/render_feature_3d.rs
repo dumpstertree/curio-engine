@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
-use bytemuck::Zeroable;
 use camera::SysRecordCamera;
 use curio_core::{
-    Color, GraphicsMapping, Ledger, Matrix4x4, Quaternion, RecordCommon, TextureAsset, Vector2, Vector3,
+    Color, GraphicsMapping, Ledger, Matrix4x4, Quaternion, TextureAsset, Vector2, Vector3,
     io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader},
     services,
 };
@@ -148,14 +147,10 @@ pub struct Viewport {
     pub y: f32,
     pub width: f32,
     pub height: f32,
-    pub resolution_x: i32,
-    pub resolution_y: i32,
 }
 impl Viewport {
     pub fn new(resolution: Vector2, min: Vector2, max: Vector2) -> Viewport {
         Viewport {
-            resolution_x: f32::round(resolution.x) as i32,
-            resolution_y: f32::round(resolution.y) as i32,
             x: min.x * resolution.x,
             y: min.y * resolution.y,
             width: ((max.x - min.x) * resolution.x).round(),

@@ -1,8 +1,7 @@
 use serde::Serialize;
 
-use crate::{engine::engine_services::EngineServices, log, ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
-use core::panic;
-use std::{collections::HashMap, path::Path, time::Instant};
+use crate::{log, ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
+use std::collections::HashMap;
 
 use crate::{
     engine::{curio_common::CurioCommon, curio_metadata::CurioMetadata},
@@ -320,9 +319,6 @@ impl CurioNetworkInstance {
         CurioNetworkInstance { guid, mode }
     }
 }
-
-// matches your curio_init signature exactly
-type InitCurioFn = unsafe extern "C" fn(gpu: *const EngineServices) -> *mut Curio;
 
 #[derive(Default, Clone, Serialize)]
 pub struct LedgerSnapshot {

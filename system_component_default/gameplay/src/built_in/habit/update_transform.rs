@@ -14,7 +14,7 @@ impl Instance {
     }
 }
 impl Scope for Instance {
-    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+    fn is_enabled(&mut self, _: &mut Ledger) -> bool {
         true
     }
     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
@@ -22,7 +22,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
+    fn tick(&mut self, _: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
         update_transform2d(world);
         update_transform3d(world);
     }

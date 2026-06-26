@@ -79,10 +79,10 @@ impl CameraRenderingComponents {
         queue.write_buffer(&self.camera_buffer, offset, bytemuck::cast_slice(&[*camera_uniform]));
     }
 
-    /// Bind this camera’s data for a render pass
-    pub fn bind(&self, pass: &mut wgpu::RenderPass, i: usize) {
-        let aligned_size: u32 = 256;
-        let offset = (i as u32) * aligned_size;
-        pass.set_bind_group(1, &self.camera_bind_group, &[offset]);
-    }
+    // Bind this camera’s data for a render pass
+    // pub fn bind(&self, pass: &mut wgpu::RenderPass, i: usize) {
+    //     let aligned_size: u32 = 256;
+    //     let offset = (i as u32) * aligned_size;
+    //     pass.set_bind_group(1, &self.camera_bind_group, &[offset]);
+    // }
 }

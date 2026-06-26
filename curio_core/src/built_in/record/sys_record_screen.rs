@@ -32,7 +32,7 @@ impl RecordCommon for SysRecordScreen {
     }
 }
 impl RecordOverride for SysRecordScreen {
-    fn apply(&mut self, field: &str, val: &str) {}
+    fn apply(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
         vec![
             FieldState::new("width", self.width), //

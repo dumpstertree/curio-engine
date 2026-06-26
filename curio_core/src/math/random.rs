@@ -4,7 +4,7 @@ use crate::Vector3;
 
 pub struct Random {}
 impl Random {
-    pub fn guid(len: usize) -> i32 {
+    pub fn guid(_len: usize) -> i32 {
         // rand::rng()
         //     .sample_iter(&rand::distr::Alphanumeric)
         //     .take(len)

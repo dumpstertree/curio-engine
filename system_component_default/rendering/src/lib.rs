@@ -26,16 +26,15 @@ use curio_core::{Nerve, services};
 // use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::{Formation, GraphicsMapping, Matrix4x4};
 use curio_core::{Ledger, SystemComponent};
-use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, Texture, TextureView};
+use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, TextureView};
 use ext_rendering::SysRecordRendering;
 use lighting::SysRecordSun;
 use std::iter;
-use std::time::Instant;
 use winit::event::WindowEvent;
 
 pub struct SystemComponentDefaultGraphics {
     shadow_system: ShadowSystem,
-    offscreen_texture: Texture,
+    // offscreen_texture: Texture,
     offscreen_view: TextureView,
     render_feature_2d_helper: RenderFeature2DHelper,
     render_feature_3d_helper: RenderFeature3DHelper,
@@ -141,7 +140,8 @@ impl SystemComponentDefaultGraphics {
     // construction
     pub fn new() -> Box<SystemComponentDefaultGraphics> {
         // generate a texture to pass between RenderDrivers that can be written to
-        let (offscreen_texture, offscreen_view) = Self::generate_render_texture();
+        // let (offscreen_texture, offscreen_view) = Self::generate_render_texture();
+        let (_, offscreen_view) = Self::generate_render_texture();
 
         Box::new(SystemComponentDefaultGraphics {
             is_dirty: true,
@@ -150,7 +150,7 @@ impl SystemComponentDefaultGraphics {
             render_feature_2d_helper: RenderFeature2DHelper::new(),
             render_feature_3d_helper: RenderFeature3DHelper::new(),
             render_feature_pp_helper: RenderFeaturePostProcessHelper::new(&offscreen_view),
-            offscreen_texture, // ← store texture too
+            // offscreen_texture, // ← store texture too
             offscreen_view,
         })
     }

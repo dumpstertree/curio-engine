@@ -1,11 +1,5 @@
-use std::{
-    any::type_name,
-    sync::{LazyLock, RwLock},
-};
-
-use curio_core::{Severity, log};
-
 use crate::traits::habit::Habit;
+use std::sync::{LazyLock, RwLock};
 
 /// Function that creates a boxed untyped value (what register stores)
 type ReceiverCreateFn = fn() -> Box<dyn Habit>;

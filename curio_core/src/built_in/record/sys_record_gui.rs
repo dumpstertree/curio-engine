@@ -39,11 +39,20 @@ impl Hash for LabelDesc {
         self.color.hash(state);
     }
 }
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Clone, Hash)]
 pub struct ButtonDesc {
     pub contents: String,
-    pub on_click: fn(ledger: &mut Ledger, &mut Nerve),
+    pub on_click: OnClickFn,
 }
+impl PartialEq for ButtonDesc {
+    fn eq(&self, other: &Self) -> bool {
+        println!("You are comparing two buttons. Note: OnClick will not be compared.");
+        self.contents == other.contents
+    }
+}
+impl Eq for ButtonDesc {}
+
+type OnClickFn = fn(ledger: &mut Ledger, &mut Nerve);
 
 #[derive(Clone, Hash, PartialEq, Eq)]
 pub enum GuiElementTypes {
@@ -101,7 +110,7 @@ impl GuiWindow {
     }
 }
 impl RecordOverride for SysRecordGui {
-    fn apply(&mut self, field: &str, val: &str) {}
+    fn apply(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
         vec![]
     }

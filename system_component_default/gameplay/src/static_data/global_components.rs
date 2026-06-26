@@ -4,7 +4,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use curio_core::{ComponentState, FieldState, Severity};
+use curio_core::ComponentState;
 
 use crate::{
     form::Form,
@@ -14,7 +14,6 @@ use crate::{
 /// Function that creates a boxed untyped value (what register stores)
 type AddComponentFn = fn(&mut Form, &Vec<String>) -> bool;
 type GetStateFn = fn(&Form) -> Option<ComponentState>;
-type GetDefStateFn = fn() -> ComponentState;
 
 pub struct ReceiverRegistry {
     pub add_component: HashMap<String, AddComponentFn>,

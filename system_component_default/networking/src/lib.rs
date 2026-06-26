@@ -1,12 +1,13 @@
 use curio_core::{EventScope, Formation, Ledger, Nerve, Severity, StateOwnerships, StateSyncEvent, built_in::record::sys_record_network::SysRecordNetwork};
 use curio_core::{NetworkModes, SystemComponent};
-use message_io::node::NodeEvent;
+use message_io::node;
+// use message_io::node::NodeEvent;
 use message_io::{
     network::Endpoint,
-    node::{self, NodeListener},
+    // node::{self, NodeListener},
 };
 use message_io::{
-    network::{NetEvent, Transport},
+    // network::{NetEvent, Transport},
     node::NodeHandler,
 };
 use std::{
@@ -16,10 +17,10 @@ use std::{
 };
 
 pub struct SystemComponentDefaultNetworking {
-    network_mode: NetworkModes,
-    node_handler: NodeHandler<Signal>,
-    endpoints: Arc<Mutex<Vec<Endpoint>>>,
-    incoming_events: Arc<Mutex<Vec<StateSyncEvent>>>,
+    pub network_mode: NetworkModes,
+    pub node_handler: NodeHandler<Signal>,
+    pub endpoints: Arc<Mutex<Vec<Endpoint>>>,
+    pub incoming_events: Arc<Mutex<Vec<StateSyncEvent>>>,
 }
 
 // impl SystemComponentNetworking for SystemComponentDefaultNetworking {}
@@ -34,134 +35,134 @@ impl SystemComponentDefaultNetworking {
             incoming_events: Arc::new(Mutex::new(Vec::new())),
         })
     }
-    fn init_offline(&mut self) {
-        println!("init offline");
-    }
-    fn init_online_host(&mut self, handler: &NodeHandler<Signal>, listener: NodeListener<Signal>) {
-        println!("init host");
-        // Listen for TCP, UDP and WebSocket messages at the same time.
-        handler
-            .network()
-            .listen(Transport::FramedTcp, "0.0.0.0:3042")
-            .unwrap();
-        handler
-            .network()
-            .listen(Transport::Udp, "0.0.0.0:3043")
-            .unwrap();
-        handler
-            .network()
-            .listen(Transport::Ws, "0.0.0.0:3044")
-            .unwrap();
+    // fn init_offline(&mut self) {
+    //     println!("init offline");
+    // }
+    // fn init_online_host(&mut self, handler: &NodeHandler<Signal>, listener: NodeListener<Signal>) {
+    //     println!("init host");
+    //     // Listen for TCP, UDP and WebSocket messages at the same time.
+    //     handler
+    //         .network()
+    //         .listen(Transport::FramedTcp, "0.0.0.0:3042")
+    //         .unwrap();
+    //     handler
+    //         .network()
+    //         .listen(Transport::Udp, "0.0.0.0:3043")
+    //         .unwrap();
+    //     handler
+    //         .network()
+    //         .listen(Transport::Ws, "0.0.0.0:3044")
+    //         .unwrap();
 
-        let endpoints = self.endpoints.clone();
-        thread::spawn(move || {
-            listener.for_each(move |event| match event {
-                NodeEvent::Network(net_event) => match net_event {
-                    NetEvent::Accepted(endpoint, _) => {
-                        let Ok(mut guard) = endpoints.lock() else {
-                            panic!("Failed to lock");
-                        };
-                        guard.push(endpoint);
-                        println!("Client Connected");
-                    }
-                    NetEvent::Message(_, _) => {
-                        println!("Received A Message");
-                    }
-                    NetEvent::Connected(endpoint, _) => {
-                        let Ok(mut guard) = endpoints.lock() else {
-                            panic!("Failed to lock");
-                        };
-                        guard.push(endpoint);
-                        println!("Client Connected");
-                    }
-                    NetEvent::Disconnected(endpoint) => {
-                        let Ok(mut guard) = endpoints.lock() else {
-                            panic!("Failed to lock");
-                        };
-                        guard.retain(|&e| e != endpoint);
-                        println!("Client disconnected");
-                    }
-                },
-                NodeEvent::Signal(signal) => match signal {},
-            });
-        });
-    }
-    fn init_online_peer(&mut self, handler: &NodeHandler<Signal>, listener: NodeListener<Signal>) {
-        println!("init peer");
+    //     let endpoints = self.endpoints.clone();
+    //     thread::spawn(move || {
+    //         listener.for_each(move |event| match event {
+    //             NodeEvent::Network(net_event) => match net_event {
+    //                 NetEvent::Accepted(endpoint, _) => {
+    //                     let Ok(mut guard) = endpoints.lock() else {
+    //                         panic!("Failed to lock");
+    //                     };
+    //                     guard.push(endpoint);
+    //                     println!("Client Connected");
+    //                 }
+    //                 NetEvent::Message(_, _) => {
+    //                     println!("Received A Message");
+    //                 }
+    //                 NetEvent::Connected(endpoint, _) => {
+    //                     let Ok(mut guard) = endpoints.lock() else {
+    //                         panic!("Failed to lock");
+    //                     };
+    //                     guard.push(endpoint);
+    //                     println!("Client Connected");
+    //                 }
+    //                 NetEvent::Disconnected(endpoint) => {
+    //                     let Ok(mut guard) = endpoints.lock() else {
+    //                         panic!("Failed to lock");
+    //                     };
+    //                     guard.retain(|&e| e != endpoint);
+    //                     println!("Client disconnected");
+    //                 }
+    //             },
+    //             NodeEvent::Signal(signal) => match signal {},
+    //         });
+    //     });
+    // }
+    // fn init_online_peer(&mut self, handler: &NodeHandler<Signal>, listener: NodeListener<Signal>) {
+    //     println!("init peer");
 
-        // You can change the transport to Udp or Ws (WebSocket).
-        let (_server, _) = handler
-            .network()
-            .connect(Transport::FramedTcp, "127.0.0.1:3042")
-            .unwrap();
+    //     // You can change the transport to Udp or Ws (WebSocket).
+    //     let (_server, _) = handler
+    //         .network()
+    //         .connect(Transport::FramedTcp, "127.0.0.1:3042")
+    //         .unwrap();
 
-        let endpoints = self.endpoints.clone();
-        let incoming_events = self.incoming_events.clone();
-        thread::spawn(move || {
-            listener.for_each(move |event| match event {
-                NodeEvent::Network(net_event) => match net_event {
-                    NetEvent::Accepted(_, _) => {
-                        println!("Client connected")
-                    }
-                    NetEvent::Message(_, data) => {
-                        let event = from_bytes::<StateSyncEvent>(data);
-                        let Ok(mut guard) = incoming_events.lock() else {
-                            panic!("Failed to lock");
-                        };
+    //     let endpoints = self.endpoints.clone();
+    //     let incoming_events = self.incoming_events.clone();
+    //     thread::spawn(move || {
+    //         listener.for_each(move |event| match event {
+    //             NodeEvent::Network(net_event) => match net_event {
+    //                 NetEvent::Accepted(_, _) => {
+    //                     println!("Client connected")
+    //                 }
+    //                 NetEvent::Message(_, data) => {
+    //                     let event = from_bytes::<StateSyncEvent>(data);
+    //                     let Ok(mut guard) = incoming_events.lock() else {
+    //                         panic!("Failed to lock");
+    //                     };
 
-                        guard.push(event);
-                        // println!("Received A Message with id {} ", event.id);
-                    }
-                    NetEvent::Connected(endpoint, _) => {
-                        let Ok(mut guard) = endpoints.lock() else {
-                            panic!("Failed to lock");
-                        };
-                        guard.push(endpoint);
-                        println!("Client Connected");
-                    }
-                    NetEvent::Disconnected(endpoint) => {
-                        let Ok(mut guard) = endpoints.lock() else {
-                            panic!("Failed to lock");
-                        };
-                        guard.retain(|&e| e != endpoint);
-                        println!("Client disconnected");
-                    }
-                },
-                NodeEvent::Signal(signal) => match signal {},
-            });
-        });
-    }
-    fn tick_offline(&mut self, _ledger: &mut Ledger, _: &mut Nerve) {}
-    fn tick_online_host(&mut self, ledger: &mut Ledger, _: &mut Nerve) {
-        let Ok(guard) = self.endpoints.lock() else {
-            println!("couldnot lock");
-            return;
-        };
+    //                     guard.push(event);
+    //                     // println!("Received A Message with id {} ", event.id);
+    //                 }
+    //                 NetEvent::Connected(endpoint, _) => {
+    //                     let Ok(mut guard) = endpoints.lock() else {
+    //                         panic!("Failed to lock");
+    //                     };
+    //                     guard.push(endpoint);
+    //                     println!("Client Connected");
+    //                 }
+    //                 NetEvent::Disconnected(endpoint) => {
+    //                     let Ok(mut guard) = endpoints.lock() else {
+    //                         panic!("Failed to lock");
+    //                     };
+    //                     guard.retain(|&e| e != endpoint);
+    //                     println!("Client disconnected");
+    //                 }
+    //             },
+    //             NodeEvent::Signal(signal) => match signal {},
+    //         });
+    //     });
+    // }
+    // fn tick_offline(&mut self, _ledger: &mut Ledger, _: &mut Nerve) {}
+    // fn tick_online_host(&mut self, ledger: &mut Ledger, _: &mut Nerve) {
+    //     let Ok(guard) = self.endpoints.lock() else {
+    //         println!("couldnot lock");
+    //         return;
+    //     };
 
-        let endpoints = guard.as_slice();
-        let events = ledger.try_drain_network_sync_events();
-        // println!("sending {} messages to {} peers", events.len(), endpoints.len());
+    //     let endpoints = guard.as_slice();
+    //     let events = ledger.try_drain_network_sync_events();
+    //     // println!("sending {} messages to {} peers", events.len(), endpoints.len());
 
-        for event in &events {
-            for endpoint in endpoints {
-                println!("sent to endpoint!");
+    //     for event in &events {
+    //         for endpoint in endpoints {
+    //             println!("sent to endpoint!");
 
-                self.node_handler
-                    .network()
-                    .send(endpoint.clone(), to_bytes::<StateSyncEvent>(&event).as_slice());
-            }
-        }
-    }
-    fn tick_online_peer(&mut self, ledger: &mut Ledger, _: &mut Nerve) {
-        let Ok(mut guard) = self.incoming_events.lock() else {
-            println!("couldnot lock");
-            return;
-        };
+    //             self.node_handler
+    //                 .network()
+    //                 .send(endpoint.clone(), to_bytes::<StateSyncEvent>(&event).as_slice());
+    //         }
+    //     }
+    // }
+    // fn tick_online_peer(&mut self, ledger: &mut Ledger, _: &mut Nerve) {
+    //     let Ok(mut guard) = self.incoming_events.lock() else {
+    //         println!("couldnot lock");
+    //         return;
+    //     };
 
-        ledger.try_apply_network_sync_events(&guard.to_vec());
+    //     ledger.try_apply_network_sync_events(&guard.to_vec());
 
-        guard.clear();
-    }
+    //     guard.clear();
+    // }
 }
 impl SystemComponent for SystemComponentDefaultNetworking {
     fn order(&self) -> i32 {
@@ -337,8 +338,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     }
 }
 
-enum Signal {}
-use std::thread;
+pub enum Signal {}
 
 // #[derive(Clone, seri)]
 // pub struct Payload {

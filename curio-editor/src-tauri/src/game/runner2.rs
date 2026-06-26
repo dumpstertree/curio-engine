@@ -5,24 +5,20 @@ use crate::{
     game::{
         capture::{capture_frame, CAPTURE_HEIGHT, CAPTURE_WIDTH},
         plugin_loader::{self, load_library},
-    },
-    SharedGameData, PROJECT, SHARED_DATA,
+    }, PROJECT, SHARED_DATA,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, ComponentState, Curio, CurioCommon, EngineServices, FieldState, FormsSnapshot, GpuHandle, Ledger, LedgerSnapshot, ObjectState, TabGroupState, TextureAsset, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, ComponentState, Curio, CurioCommon, EngineServices, GpuHandle, TextureAsset, Vector3};
 
 use egui_wgpu::wgpu::{
     Adapter, Buffer, BufferDescriptor, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceCapabilities, SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 
 use pollster::FutureExt;
-use serde::Serialize;
 
 use std::{
-    cell::RefCell,
-    default,
     path::Path,
-    sync::{mpsc::Receiver, Arc, Mutex},
+    sync::{mpsc::Receiver, Arc},
     vec,
 };
 
@@ -59,11 +55,11 @@ impl AppInstance {
     pub fn resize(&self) {}
 }
 impl ApplicationHandler for AppInstance {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {}
+    fn resumed(&mut self, _event_loop: &ActiveEventLoop) {}
 
-    fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {}
+    fn about_to_wait(&mut self, _event_loop: &ActiveEventLoop) {}
 
-    fn window_event(&mut self, event_loop: &ActiveEventLoop, _: winit::window::WindowId, event: WindowEvent) {
+    fn window_event(&mut self, _event_loop: &ActiveEventLoop, _: winit::window::WindowId, event: WindowEvent) {
         match event {
             WindowEvent::RedrawRequested => {
                 // refresh the curio
@@ -244,7 +240,7 @@ impl GameRunner2<'_> {
                     // update state
                     self.state = State::Stopped;
                 }
-                GameMessage2::Resize(w, h) => {}
+                GameMessage2::Resize(_w, _h) => {}
             }
         }
     }
@@ -457,7 +453,7 @@ impl ApplicationHandler for GameRunner2<'_> {
         self.process_messages();
 
         //
-        if let Some(loaded_app) = &self.loaded_app {
+        if let Some(_loaded_app) = &self.loaded_app {
             // to reduce overhead we only render every other frame currently
             // if loaded_app.frame_counter % 2 == 0 {
             // make sure all the needed data is set
@@ -617,7 +613,7 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
 
     panic!("");
 }
-use libloading::{Library, Symbol};
+use libloading::Symbol;
 
 type InitCurioFn = unsafe extern "C" fn(gpu: *const EngineServices) -> *mut Curio;
 

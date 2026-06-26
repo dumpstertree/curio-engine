@@ -1,6 +1,6 @@
 use curio_core::IGameEvent;
 use std::{
-    any::{Any, type_name},
+    any::Any,
     collections::HashMap,
     sync::{LazyLock, RwLock},
 };

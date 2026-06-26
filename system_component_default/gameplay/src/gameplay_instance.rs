@@ -1,13 +1,13 @@
-use curio_core::{ComponentState, FieldState, IGameEvent, Ledger, Nerve, ObjectState, TabState};
+use curio_core::{IGameEvent, Ledger, Nerve, TabState};
 use hecs::World;
-use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, time::Instant, vec};
+use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, vec};
 
 use crate::{
     built_in::{facet::transform::transform3d::Transform3D, impulse::ui_events::UIEvents},
     context_2d::Context2D,
     context_3d::Context3D,
     static_data::{global_ecs::get_global_ecs_instances, global_event_recievers::get_global_event_receivers},
-    traits::{facet_common::FacetCommon, field_override::FieldOverride, habit::Habit, impulse::Impulse, ui_events::IUIEvent, ui_panel::UIPanel},
+    traits::{facet_common::FacetCommon, habit::Habit, impulse::Impulse, ui_events::IUIEvent, ui_panel::UIPanel},
     traits_internal::world_context_common::ContextCommon,
 };
 

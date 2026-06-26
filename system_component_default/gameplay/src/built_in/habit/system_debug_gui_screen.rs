@@ -1,4 +1,4 @@
-use curio_core::{Nerve, NetworkModes, built_in::record::sys_record_debug::SysRecordDebug, Ledger};
+use curio_core::{Ledger, Nerve, NetworkModes, built_in::record::sys_record_debug::SysRecordDebug};
 
 use crate::{
     context_3d::Context3D,
@@ -21,7 +21,7 @@ impl Scope for Instance {
     }
 }
 impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
+    fn tick(&mut self, _: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
         // // get gpu data
         // let sys_config = SystemGPU::get_config();
         // let sys_window = SystemGPU::get_window();

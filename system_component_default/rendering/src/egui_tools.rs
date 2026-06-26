@@ -2,7 +2,6 @@ use egui::Context;
 use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, StoreOp, TextureFormat, TextureView};
 use egui_wgpu::{Renderer, ScreenDescriptor, wgpu};
 use egui_winit::State;
-use winit::event::WindowEvent;
 use winit::window::Window;
 
 pub struct EguiRenderer {
@@ -36,9 +35,9 @@ impl EguiRenderer {
         }
     }
 
-    pub fn handle_input(&mut self, window: &Window, event: &WindowEvent) {
-        let _ = self.state.on_window_event(window, event);
-    }
+    // pub fn handle_input(&mut self, window: &Window, event: &WindowEvent) {
+    //     let _ = self.state.on_window_event(window, event);
+    // }
 
     pub fn ppp(&mut self, v: f32) {
         self.context().set_pixels_per_point(v);

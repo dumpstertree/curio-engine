@@ -4,7 +4,6 @@ use std::{any::Any, collections::HashMap, fmt::Display, time::Instant};
 use crate::{
     collections::any_queue::AnyQueue,
     engine::{curio::CurioNetwork, igame_event::IGameEvent},
-    static_data::global_events::{get_global_event_deserializer, get_global_event_serializer},
     EventNetworkCapabilities, EventSyncEvent,
 };
 
@@ -21,7 +20,7 @@ pub struct Nerve {
     cache: HashMap<i32, AnyQueue>,
     network_capabilities: Option<EventNetworkCapabilities>,
     delayed: Vec<(Instant, i32, Box<dyn Any>, Option<EventSyncEvent>)>,
-    network: CurioNetwork,
+    pub network: CurioNetwork,
 }
 impl Nerve {
     pub fn new(network: CurioNetwork) -> Self {

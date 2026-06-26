@@ -2,16 +2,12 @@ use std::{collections::HashMap, sync::Arc};
 
 use curio_core::{
     AssetCommon, AssetCommonFromBits, Matrix4x4, Random, TextureAsset,
-    io::{
-        asset_database::AssetDatabase,
-        asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetLoader},
-    },
+    io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetLoader},
 };
 use ext_rendering::{
     Material, Mesh,
     data::{material::ShaderDesc, mesh::Vertex},
 };
-use gltf::json::Asset;
 //data
 
 #[derive(Clone)]

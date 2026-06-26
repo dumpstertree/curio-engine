@@ -1,12 +1,13 @@
 use crate::{collections::any_map::AnyMap, AssetCommon};
 use std::{collections::HashMap, sync::Arc, time::Instant, usize};
 
-pub struct AssetCache2 {}
-impl AssetCache2 {}
+unsafe impl Send for AssetCache {}
+unsafe impl Sync for AssetCache {}
+
 pub struct AssetCache {
     cache: AnyMap<i16>,
     access: HashMap<i16, Instant>,
-    max_cache_len: usize,
+    pub max_cache_len: usize,
 }
 impl AssetCache {
     /// set to get an asset from the cache

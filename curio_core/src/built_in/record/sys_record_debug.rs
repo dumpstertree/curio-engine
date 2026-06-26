@@ -26,7 +26,7 @@ impl RecordCommon for SysRecordDebug {
     }
 }
 impl RecordOverride for SysRecordDebug {
-    fn apply(&mut self, field: &str, val: &str) {}
+    fn apply(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
         vec![]
     }

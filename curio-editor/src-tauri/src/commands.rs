@@ -1,5 +1,5 @@
 use crate::{
-    game::runner2::{peek_curio, GameMessage2, GameRunner2},
+    game::runner2::{GameMessage2, GameRunner2},
     state::{EditorMode, EditorState},
     types::{ComponentData, DirEntry, EntityData, SceneSnapshot},
     PROJECT, SHARED_DATA,
@@ -10,7 +10,7 @@ use std::{
     sync::{mpsc, Mutex},
 };
 
-use curio_core::{io::file::File, ComponentState, FormsSnapshot, LedgerSnapshot, TabGroupState};
+use curio_core::{io::file::File, FormsSnapshot, LedgerSnapshot, TabGroupState};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, State};
 
@@ -47,7 +47,7 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
             command.arg(arg);
         }
 
-        let status = command.current_dir(p.project_path.clone()).status();
+        let _status = command.current_dir(p.project_path.clone()).status();
 
         println!("built");
 
@@ -69,27 +69,6 @@ pub fn press_play(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
     }
 }
 
-use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
-
-fn stage_plugin(src: &Path) -> Result<PathBuf, String> {
-    // copy libgame.so → libgame_1234567890.so
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_millis();
-
-    let stem = src
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("libgame");
-
-    let ext = src.extension().and_then(|s| s.to_str()).unwrap_or("so");
-
-    let staged = src.with_file_name(format!("{}_{}.{}", stem, ts, ext));
-    std::fs::copy(src, &staged).map_err(|e| e.to_string())?;
-    Ok(staged)
-}
 #[tauri::command]
 pub fn press_pause(state: State<Mutex<EditorState>>) -> Result<(), String> {
     let mut state = state.lock().unwrap();
@@ -165,7 +144,7 @@ pub fn get_scene_snapshot() -> SceneSnapshot {
 }
 
 #[tauri::command]
-pub fn get_ledger_snapshot(state: State<Mutex<EditorState>>) -> LedgerSnapshot {
+pub fn get_ledger_snapshot(_state: State<Mutex<EditorState>>) -> LedgerSnapshot {
     let Ok(data) = SHARED_DATA.lock() else {
         panic!("Failed to get data");
     };
@@ -174,7 +153,7 @@ pub fn get_ledger_snapshot(state: State<Mutex<EditorState>>) -> LedgerSnapshot {
 }
 
 #[tauri::command]
-pub fn get_forms(state: State<Mutex<EditorState>>) -> FormsSnapshot {
+pub fn get_forms(_state: State<Mutex<EditorState>>) -> FormsSnapshot {
     let Ok(data) = SHARED_DATA.lock() else {
         panic!("Failed to get data");
     };
@@ -183,7 +162,7 @@ pub fn get_forms(state: State<Mutex<EditorState>>) -> FormsSnapshot {
 }
 
 #[tauri::command]
-pub fn get_tab_group_state(state: State<Mutex<EditorState>>) -> TabGroupState {
+pub fn get_tab_group_state(_state: State<Mutex<EditorState>>) -> TabGroupState {
     let Ok(data) = SHARED_DATA.lock() else {
         panic!("Failed to get data");
     };
@@ -192,7 +171,7 @@ pub fn get_tab_group_state(state: State<Mutex<EditorState>>) -> TabGroupState {
 }
 
 #[tauri::command]
-pub fn get_facets(state: State<Mutex<EditorState>>) -> FacetManifest {
+pub fn get_facets(_state: State<Mutex<EditorState>>) -> FacetManifest {
     const PATH: &str = "/home/dumpstertree/git/rust/curio-engine-demo/facet.manifest";
 
     let x = serde_yaml::from_slice::<FacetManifest>(&File::read(PATH))
@@ -205,13 +184,7 @@ pub fn get_facets(state: State<Mutex<EditorState>>) -> FacetManifest {
 pub fn create_folder(path: String) -> Result<(), String> {
     std::fs::create_dir_all(&path).map_err(|e| e.to_string())
 }
-#[tauri::command]
-pub fn set_resolution(state: State<Mutex<EditorState>>, app_handle: AppHandle, w: u32, h: u32) {
-    let state = state.lock().unwrap();
-    if let Some(tx) = &state.game_tx {
-        tx.send(GameMessage2::Resize(w, h)).ok();
-    }
-}
+
 #[tauri::command]
 pub fn list_dir(path: String) -> Result<Vec<DirEntry>, String> {
     use std::fs;

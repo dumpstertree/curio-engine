@@ -21,7 +21,7 @@ pub struct RendererImage {
     cached_tint_in_hierachy: Color,
 }
 impl RendererImage {
-    fn default() -> RendererImage {
+    pub fn default() -> RendererImage {
         RendererImage {
             asset: None,
             enabled: true,
@@ -64,41 +64,9 @@ impl RendererImage {
         self.asset = Some(Arc::new(ModelAsset::new(vec![Primitives::quad()], vec![material])));
     }
 }
-// impl RendererCommon for RendererImage {
-//     fn set_enabled(&mut self, enabled: bool) {
-//         self.enabled = enabled;
-//     }
-
-//     fn get_enabled(&self) -> bool {
-//         self.enabled
-//     }
-
-//     fn set_tint(&mut self, tint: Color) {
-//         self.asset = Self::get_model_asset(self.asset.clone(), tint);
-//         self.tint = tint;
-//     }
-//     fn get_tint(&self) -> Color {
-//         self.tint
-//     }
-
-//     fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
-//         self.cached_enabled_in_hierachy = val;
-//     }
-
-//     fn get_cached_enabled_in_hierarchy(&self) -> bool {
-//         self.cached_enabled_in_hierachy
-//     }
-
-//     fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
-//         self.cached_tint_in_hierachy = val;
-//     }
-
-//     fn get_cached_tint_in_hierarchy(&self) -> Color {
-//         self.cached_tint_in_hierachy
-//     }
-// }
 impl RendererImage {
-    fn get_model_asset(asset: Option<Arc<ModelAsset>>, tint: Color) -> Option<Arc<ModelAsset>> {
+    /// gets a model asset taking into account tint
+    pub fn get_model_asset(asset: Option<Arc<ModelAsset>>, tint: Color) -> Option<Arc<ModelAsset>> {
         // no asset
         let Some(asset) = asset else {
             return None;

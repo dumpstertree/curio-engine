@@ -1,6 +1,5 @@
 use crate::built_in::facet::transform::transform2d::Transform2D;
 use crate::form::Form;
-use crate::form_ref::FormRef;
 use crate::traits_internal::world_context_common::ContextCommon;
 use hecs::World;
 use std::cell::RefCell;
@@ -22,20 +21,7 @@ impl Context2D {
     }
 
     /// Spawn a Form inside the Context
-    pub fn spawn(&mut self, name: &str, t: Transform2D) -> Form {
-        panic!("this should spawn a custome form2D");
-        // spawn a new entity inside the hecs_world
-        let hecs_world = self.hecs_world();
-        let entity = {
-            // borrow
-            let mut world = hecs_world.borrow_mut();
-            // spawn - dont know how to spawn with only a single tranform
-            world.spawn(())
-        };
-
-        // create the form
-        let form = FormRef::new(name, hecs_world, entity).add_facet(t);
-        // return the form
-        form
+    pub fn spawn(&mut self, _name: &str, _t: Transform2D) -> Form {
+        panic!("this should spawn a custom form2D");
     }
 }

@@ -66,7 +66,7 @@ pub trait ContextCommon {
             let mut parent_form = self.spawn_prefab_recursive_internal(&asset, split[1].to_owned());
 
             // create parent child relationship
-            for mut child in child_forms {
+            for child in child_forms {
                 child.set_parent(Some(parent_form.clone()));
             }
 
@@ -99,7 +99,7 @@ pub trait ContextCommon {
         let mut parent_form = FormRef::new(&name, hecs_world, entity);
 
         // create parent child relationship
-        for mut child in child_forms {
+        for child in child_forms {
             child.set_parent(Some(parent_form.clone()));
         }
 

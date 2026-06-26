@@ -59,41 +59,6 @@ impl RendererDynamic {
         }
     }
 }
-
-// impl RendererCommon for RendererDynamic {
-//     fn set_cached_enabled_in_hierarchy(&mut self, val: bool) {
-//         self.cached_enabled_in_hierachy = val;
-//     }
-
-//     fn get_cached_enabled_in_hierarchy(&self) -> bool {
-//         self.cached_enabled_in_hierachy
-//     }
-
-//     fn set_cached_tint_in_hierarchy(&mut self, val: Color) {
-//         self.cached_tint_in_hierachy = val;
-//     }
-
-//     fn get_cached_tint_in_hierarchy(&self) -> Color {
-//         self.cached_tint_in_hierachy
-//     }
-
-//     fn set_enabled(&mut self, enabled: bool) {
-//         self.enabled = enabled;
-//     }
-
-//     fn get_enabled(&self) -> bool {
-//         self.enabled
-//     }
-
-//     fn set_tint(&mut self, tint: Color) {
-//         self.asset = Self::get_model_asset(self.asset.clone(), tint);
-//         self.tint = tint;
-//     }
-
-//     fn get_tint(&self) -> Color {
-//         self.tint
-//     }
-// }
 impl FieldOverride for RendererDynamic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
@@ -157,7 +122,8 @@ impl RendererDynamic {
         // assign anim
         self.mesh = frame_asset.mesh().to_vec();
     }
-    fn get_model_asset(asset: Option<Arc<ModelAssetAnimated>>, tint: Color) -> Option<Arc<ModelAssetAnimated>> {
+    /// creates a model_asset taking into account tint
+    pub fn get_model_asset(asset: Option<Arc<ModelAssetAnimated>>, tint: Color) -> Option<Arc<ModelAssetAnimated>> {
         // no asset
         let Some(asset) = asset else {
             return None;

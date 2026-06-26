@@ -1,11 +1,7 @@
-use camera::SysRecordCamera;
-use curio_core::{Ledger, Matrix4x4, Nerve, NetworkModes, Quaternion, Vector3};
+use curio_core::{Ledger, Matrix4x4, Nerve, NetworkModes};
 use ext_rendering::{DrawCall, SysRecordRendering};
 use gameplay::{
-    built_in::facet::transform::{
-        transform2d::{Transform2D, update_transform2d},
-        transform3d::{Transform3D, update_transform3d},
-    },
+    built_in::facet::transform::transform3d::Transform3D,
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
@@ -16,11 +12,6 @@ use crate::RendererText;
 
 #[habit]
 pub struct Instance {}
-impl Instance {
-    pub fn new() -> Box<Instance> {
-        Box::new(Instance {})
-    }
-}
 impl Scope for Instance {
     fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true

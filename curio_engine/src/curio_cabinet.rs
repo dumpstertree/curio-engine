@@ -1,7 +1,7 @@
 use std::{
     cell::RefCell,
     path::Path,
-    sync::{Arc, Mutex},
+    sync::{Arc, LazyLock, Mutex},
 };
 
 use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages};
@@ -14,9 +14,10 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, CurioMetadata, EngineServices, GpuHandle, Portal, Severity, TextureAsset, Vector3, Version};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, CurioMetadata, EngineServices, GpuHandle, Portal, Severity, TextureAsset, Vector3};
 
-static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
+// static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
+static OPEN_DISPLAY_WINDOWS: LazyLock<Mutex<Vec<CabinetWindow>>> = LazyLock::new(|| Mutex::new(Vec::new()));
 
 pub struct CurioCabinet {}
 impl CurioCabinet {
@@ -42,7 +43,7 @@ impl CurioCabinet {
         let mut window = CabinetWindow::new(window_owner);
 
         // store
-        if let Ok(mut open_windows) = unsafe { OPEN_DISPLAY_WINDOWS.lock() } {
+        if let Ok(mut open_windows) = OPEN_DISPLAY_WINDOWS.lock() {
             open_windows.push(window.clone());
         }
 
@@ -74,7 +75,7 @@ pub struct CabinetWindowOwner {
     services: Option<Box<EngineServices>>, // ← new, Box gives stable address
     // loaded_curio: Option<LoadedCurio>,     // ← new, keeps .so alive
     app_instance: Option<LoadedCurio>,
-    portal: Portal,
+    _portal: Portal,
 }
 
 impl CabinetWindowOwner {
@@ -86,7 +87,7 @@ impl CabinetWindowOwner {
             services: None,
             // loaded_curio: None,
             app_instance: None,
-            portal,
+            _portal: portal,
         }
     }
 }
@@ -130,14 +131,14 @@ impl CabinetWindowOwner {
         }
     }
     pub fn get_gpu_settings(&self) -> Arc<GpuHandle> {
-        if let Some(gpu_settings) = &self.services {
+        if let Some(_gpu_settings) = &self.services {
             self.get_gpu_settings() // gpu_settings.clone()
         } else {
             panic!("Failed to retrieve GPU");
         }
     }
 
-    fn get_instance() -> Instance {
+    fn _get_instance() -> Instance {
         let instance = egui_wgpu::wgpu::Instance::new(&egui_wgpu::wgpu::InstanceDescriptor {
             backends: egui_wgpu::wgpu::Backends::all(),
             ..Default::default()
@@ -145,7 +146,7 @@ impl CabinetWindowOwner {
 
         instance
     }
-    fn get_window(event_loop: &ActiveEventLoop, meta: &CurioMetadata, portal: &Portal) -> Arc<Window> {
+    fn _get_window(event_loop: &ActiveEventLoop, meta: &CurioMetadata, portal: &Portal) -> Arc<Window> {
         // populate all the attributes to spawn the window
         let atts = Window::default_attributes()
             .with_title(format!(" {} - {}.{}.{}", meta.name, meta.version.major, meta.version.minor, meta.version.patch))
@@ -159,11 +160,11 @@ impl CabinetWindowOwner {
 
         Arc::new(window)
     }
-    fn get_surface(instance: &Instance, window: &Arc<Window>) -> Arc<Surface<'static>> {
+    fn _get_surface(instance: &Instance, window: &Arc<Window>) -> Arc<Surface<'static>> {
         let surface = instance.create_surface(window.clone()).unwrap();
         Arc::new(surface)
     }
-    fn get_adapter(instance: &Instance, surface: &Arc<Surface>) -> Arc<Adapter> {
+    fn _get_adapter(instance: &Instance, surface: &Arc<Surface>) -> Arc<Adapter> {
         let Some(adapter) = instance
             .request_adapter(&RequestAdapterOptions {
                 power_preference: PowerPreference::default(),
@@ -177,7 +178,7 @@ impl CabinetWindowOwner {
 
         Arc::new(adapter)
     }
-    fn get_device_queue(adapter: &Arc<Adapter>) -> (Arc<Device>, Arc<Queue>) {
+    fn _get_device_queue(adapter: &Arc<Adapter>) -> (Arc<Device>, Arc<Queue>) {
         let Ok(device_queue) = adapter
             .request_device(
                 &DeviceDescriptor {
@@ -194,7 +195,7 @@ impl CabinetWindowOwner {
         };
         (Arc::new(device_queue.0), Arc::new(device_queue.1))
     }
-    fn get_config(surface: &Surface, adapter: &Adapter, portal: &Portal) -> Arc<SurfaceConfiguration> {
+    fn _get_config(surface: &Surface, adapter: &Adapter, portal: &Portal) -> Arc<SurfaceConfiguration> {
         let surface_capabilities = surface.get_capabilities(&adapter);
 
         let surface_format: TextureFormat = surface_capabilities
@@ -226,14 +227,16 @@ pub extern "C" fn set_fullscreen(_x: bool) {}
 #[unsafe(no_mangle)]
 pub extern "C" fn set_cursor_visible(_x: bool) {}
 impl ApplicationHandler for CabinetWindowOwner {
-    fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let instance = Self::get_instance();
-        let window = Self::get_window(event_loop, &CurioMetadata::new("", "", Version::new(0, 0, 0)), &self.portal);
-        let surface = Self::get_surface(&instance, &window);
-        let adapter = Self::get_adapter(&instance, &surface);
-        let (device, queue) = Self::get_device_queue(&adapter);
-        let config = Self::get_config(&surface, &adapter, &self.portal);
-        let depth_texture = Arc::new(create_depth_texture(&device, "DEPTH"));
+    fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
+        println!("SERVICES NOT BUILT");
+
+        // let instance = Self::get_instance();
+        // let window = Self::get_window(event_loop, &CurioMetadata::new("", "", Version::new(0, 0, 0)), &self.portal);
+        // let surface = Self::get_surface(&instance, &window);
+        // let adapter = Self::get_adapter(&instance, &surface);
+        // let (device, queue) = Self::get_device_queue(&adapter);
+        // let config = Self::get_config(&surface, &adapter, &self.portal);
+        // let depth_texture = Arc::new(create_depth_texture(&device, "DEPTH"));
 
         // self.gpu_instance = Some(Arc::new(GPUInstance {
         //     device,
@@ -255,22 +258,23 @@ impl ApplicationHandler for CabinetWindowOwner {
 
         // services is Boxed so it has a stable heap address
         // the Box lives on self — won't drop until CabinetWindowOwner drops
-        self.services = Some(Box::new(EngineServices {
-            gpu: GpuHandle {
-                device: Arc::as_ptr(&device) as *const (),
-                queue: Arc::as_ptr(&queue) as *const (),
-                config: Arc::as_ptr(&config) as *const (),
-                window: Arc::as_ptr(&window) as *const (),
-                surface: Arc::as_ptr(&surface) as *const (),
-                depth: Arc::as_ptr(&depth_texture) as *const (),
-                capture_texture: todo!(),
-                capture_width: todo!(),
-                capture_height: todo!(),
-            },
-            set_fullscreen: set_fullscreen,
-            set_resolution: set_resolution,
-            set_cursor_visible: set_cursor_visible,
-        }));
+
+        // self.services = Some(Box::new(EngineServices {
+        //     gpu: GpuHandle {
+        //         device: Arc::as_ptr(&device) as *const (),
+        //         queue: Arc::as_ptr(&queue) as *const (),
+        //         config: Arc::as_ptr(&config) as *const (),
+        //         window: Arc::as_ptr(&window) as *const (),
+        //         surface: Arc::as_ptr(&surface) as *const (),
+        //         depth: Arc::as_ptr(&depth_texture) as *const (),
+        //         capture_texture: todo!(),
+        //         capture_width: todo!(),
+        //         capture_height: todo!(),
+        //     },
+        //     set_fullscreen: set_fullscreen,
+        //     set_resolution: set_resolution,
+        //     set_cursor_visible: set_cursor_visible,
+        // }));
 
         // self.gpu = Some(gpu);
 
@@ -357,6 +361,9 @@ impl ApplicationHandler for CabinetWindowOwner {
 pub struct CabinetWindow {
     owner: Arc<RefCell<CabinetWindowOwner>>,
 }
+
+unsafe impl Send for CabinetWindow {}
+unsafe impl Sync for CabinetWindow {}
 impl CabinetWindow {
     pub fn new(window: CabinetWindowOwner) -> CabinetWindow {
         CabinetWindow { owner: Arc::new(RefCell::new(window)) }
@@ -484,7 +491,7 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
 
     panic!("");
 }
-use libloading::{Library, Symbol};
+use libloading::Symbol;
 
 use crate::plugin_loader::{self, load_library};
 
