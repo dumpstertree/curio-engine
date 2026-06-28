@@ -1,41 +1,41 @@
-use crate::{egui_tools::EguiRenderer, render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI};
-use curio_core::{GraphicsMapping, Ledger, Nerve, services};
-use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture};
+// use crate::{egui_tools::EguiRenderer, render_feature_2ds::render_feature_draw_ui::RenderFeatureDrawUI};
+// use curio_core::{GraphicsMapping, Ledger, Nerve, services};
+// use egui_wgpu::wgpu::{CommandEncoder, SurfaceTexture, TextureFormat};
 
-pub trait RenderFeature2D {
-    fn render(&mut self, ledger: &mut Ledger, system_event_queue: &mut Nerve, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer);
-    fn clear(&mut self, ledger: &mut Ledger);
-}
+// pub trait RenderFeature2D {
+//     fn render(&mut self, ledger: &mut Ledger, system_event_queue: &mut Nerve, output: &SurfaceTexture, encoder: &mut CommandEncoder, egui_renderer: &mut EguiRenderer);
+//     fn clear(&mut self, ledger: &mut Ledger);
+// }
 
-pub struct RenderFeature2DHelper {
-    egui_renderer: EguiRenderer,
-    features: Vec<Box<dyn RenderFeature2D>>,
-}
-impl RenderFeature2DHelper {
-    pub fn new() -> RenderFeature2DHelper {
-        let s = services();
-        let c = s.gpu.config();
-        let w = s.gpu.window();
-        let d = s.gpu.device();
-        RenderFeature2DHelper {
-            egui_renderer: EguiRenderer::new(&d, c.format, None, 1, w),
-            features: vec![RenderFeatureDrawUI::new()],
-        }
-    }
-    pub fn draw_2d_features(&mut self, ledger: &mut Vec<Ledger>, graphics_mappings: &mut Vec<GraphicsMapping>, encoder: &mut CommandEncoder, output: &SurfaceTexture, event_queue: &mut Vec<Nerve>) {
-        // THIS IS HACKED BECAUSE WE CANT ALL WRITE TO THE MAIN SCREEN
+// pub struct RenderFeature2DHelper {
+//     egui_renderer: EguiRenderer,
+//     features: Vec<Box<dyn RenderFeature2D>>,
+// }
+// impl RenderFeature2DHelper {
+//     pub fn new() -> RenderFeature2DHelper {
+//         let s = services();
+//         // let c = s.gpu.config();
+//         // let w = s.gpu.window();
+//         let d = s.gpu.device();
+//         RenderFeature2DHelper {
+//             egui_renderer: EguiRenderer::new(&d, TextureFormat::Rgba8UnormSrgb, None, 1, w),
+//             features: vec![RenderFeatureDrawUI::new()],
+//         }
+//     }
+//     pub fn draw_2d_features(&mut self, ledger: &mut Vec<Ledger>, graphics_mappings: &mut Vec<GraphicsMapping>, encoder: &mut CommandEncoder, output: &SurfaceTexture, event_queue: &mut Vec<Nerve>) {
+//         // THIS IS HACKED BECAUSE WE CANT ALL WRITE TO THE MAIN SCREEN
 
-        // for i in 0..(self.graphics_mappings.len() as usize) {
-        let i = graphics_mappings.len() - 1;
-        let ledger = ledger.get_mut(i).unwrap();
-        let event_queue = event_queue.get_mut(i).unwrap();
-        for feature in self.features.iter_mut() {
-            feature.render(ledger, event_queue, &output, encoder, &mut self.egui_renderer);
-        }
+//         // for i in 0..(self.graphics_mappings.len() as usize) {
+//         let i = graphics_mappings.len() - 1;
+//         let ledger = ledger.get_mut(i).unwrap();
+//         let event_queue = event_queue.get_mut(i).unwrap();
+//         for feature in self.features.iter_mut() {
+//             feature.render(ledger, event_queue, &output, encoder, &mut self.egui_renderer);
+//         }
 
-        for feature in self.features.iter_mut() {
-            feature.clear(ledger);
-        }
-        // }
-    }
-}
+//         for feature in self.features.iter_mut() {
+//             feature.clear(ledger);
+//         }
+//         // }
+//     }
+// }

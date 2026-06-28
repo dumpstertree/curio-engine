@@ -34,6 +34,7 @@ pub struct ShadowSystem {
 impl ShadowSystem {
     /// Create a shadow system for `num_screens` screens. Each screen will get its own shadow map and uniform buffer.
     pub fn new(initial_light_view_proj: Matrix4x4, num_screens: usize) -> Self {
+        println!("shadow");
         let s = services();
         let device = s.gpu.device();
 

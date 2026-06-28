@@ -1,3 +1,4 @@
+use egui_wgpu::wgpu::{Texture, TextureView};
 use serde::Serialize;
 
 use crate::{engine::engine_services::EngineServices, log, ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
@@ -56,7 +57,7 @@ pub struct Curio {
 impl Curio {
     /// Log a system wide message
     pub fn log(severity: Severity, contents: &str) {
-        log(0, severity, &format!("[SYS]: {}", contents));
+        // log(0, severity, &format!("[SYS]: {}", contents));
     }
     pub fn facet_snapshot(&self) -> Vec<ComponentState> {
         let mut f = Vec::new();
@@ -115,6 +116,11 @@ impl Curio {
         }
     }
 
+    pub fn render(&mut self, output_texture: &Texture, output_view: &TextureView, mut encoder: &mut egui_wgpu::wgpu::CommandEncoder) {
+        for x in self.plugins.iter_mut() {
+            x.render(output_texture, output_view, &mut encoder, &mut self.ledgers, &mut self.nerves);
+        }
+    }
     fn new(builder: CurioBuilder) -> Self {
         // log
         Curio::log(Severity::Info, "Imbuing Curio...");

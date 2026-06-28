@@ -14,7 +14,8 @@ import {
   setComponentField,
   isTransform,
 } from './prefabTypes';
-const PROJECT_ROOT = '/home/dumpstertree/Git/Rust/system_test';
+import { getProjectRoot } from '../../../paths';
+const PROJECT_ROOT = getProjectRoot();
 
 // ── Structure key: only asset paths + hierarchy, NOT transform values ─────────
 // This prevents camera resets when you move/rotate/scale an object.

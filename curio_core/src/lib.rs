@@ -18,7 +18,9 @@ pub use crate::collections::event_runner::EventRunner;
 pub use crate::collections::ledger::Ledger;
 
 // io
+pub use crate::io::log::get_and_clear_logs;
 pub use crate::io::log::log;
+pub use crate::io::log::Logger;
 pub use crate::io::log::Severity;
 
 // assets

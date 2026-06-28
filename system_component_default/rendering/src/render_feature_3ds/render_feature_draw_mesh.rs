@@ -1,6 +1,6 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use curio_core::{Ledger, Matrix4x4, TextureAsset, services};
-use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, Buffer, BufferDescriptor, BufferUsages, ColorTargetState, Device, Face, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, util::DeviceExt};
+use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, Buffer, BufferDescriptor, BufferUsages, ColorTargetState, Device, Face, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, TextureFormat, util::DeviceExt};
 use ext_rendering::{Material, Mesh, SysRecordRendering, data::mesh::Vertex};
 use lighting::{LightSystem, SysRecordLights, SysRecordSun};
 use std::{collections::HashMap, sync::Arc, time::Instant};
@@ -36,11 +36,11 @@ impl RenderFeatureDrawMesh {
                 let key = PipelineCacheKey { shader_id: Arc::as_ptr(shader) as usize, wireframe };
                 self.pipeline_cache
                     .entry(key)
-                    .or_insert_with(|| RenderFeatureDrawMesh::get_render_pipeline(camera_bind, diffuse_bind_layout, light_bind_layout, shadow_bind_layout, config, device, shader.clone(), wireframe));
+                    .or_insert_with(|| RenderFeatureDrawMesh::get_render_pipeline(camera_bind, diffuse_bind_layout, light_bind_layout, shadow_bind_layout, device, shader.clone(), wireframe));
             }
         }
     }
-    fn draw_all_mesh(&mut self, ledger: &mut Ledger, config: &SurfaceConfiguration, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
+    fn draw_all_mesh(&mut self, ledger: &mut Ledger, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         // prewarm
 
         let state_draws = ledger.read::<SysRecordRendering>();
@@ -87,7 +87,7 @@ impl RenderFeatureDrawMesh {
         let mut last_shader_id: Option<usize> = None;
 
         for (mesh, material, matrix, instance_offset) in batches_with_offsets {
-            self.draw_draw_call(mesh, material, matrix, instance_offset, &mut last_shader_id, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
+            self.draw_draw_call(mesh, material, matrix, instance_offset, &mut last_shader_id, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
         }
     }
 
@@ -98,7 +98,6 @@ impl RenderFeatureDrawMesh {
         matrix: Vec<Matrix4x4>,
         instance_offset: usize,
         last_shader_id: &mut Option<usize>,
-        config: &SurfaceConfiguration,
         device: &Device,
         render_pass: &mut RenderPass,
         camera: &CameraRenderingComponents,
@@ -119,7 +118,7 @@ impl RenderFeatureDrawMesh {
                         &diffuse_bind_group.1,
                         &self.light_system[camera_index].bind_group_layout,
                         &shadow_system_bind_group_layout,
-                        config,
+                        // config,
                         device,
                         material.shader(),
                         false,
@@ -150,7 +149,7 @@ impl RenderFeatureDrawMesh {
         // color_bind_layout: &BindGroupLayout,
         light_bind_layout: &BindGroupLayout,
         shadow_bind_layout: &BindGroupLayout,
-        config: &SurfaceConfiguration,
+        // config: &SurfaceConfiguration,
         device: &Device,
         shader: Arc<ShaderModule>,
         wireframe: bool,
@@ -180,7 +179,7 @@ impl RenderFeatureDrawMesh {
                 module: &shader,
                 entry_point: Some("fs_main"),
                 targets: &[Some(ColorTargetState {
-                    format: config.format,
+                    format: TextureFormat::Rgba8UnormSrgb,
                     blend: Some(BlendState::REPLACE),
                     write_mask: egui_wgpu::wgpu::ColorWrites::ALL,
                 })],
@@ -218,10 +217,10 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
         self.light_system[camera_index].update(&ledger.read::<SysRecordSun>().get_draw_call(), &ledger.read::<SysRecordLights>().all_lights);
 
         let s = services();
-        let config = s.gpu.config();
+        // let config = s.gpu.config();
         let device = s.gpu.device();
 
-        self.draw_all_mesh(ledger, config, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
+        self.draw_all_mesh(ledger, device, render_pass, camera, camera_index, shadow_system_bind_group_layout, shadow_system_bind_group);
     }
 
     fn clear(&mut self, ledger: &mut Ledger) {

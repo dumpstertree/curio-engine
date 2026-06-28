@@ -14,7 +14,7 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, CurioMetadata, EngineServices, GpuHandle, Portal, Severity, TextureAsset, Vector3, Version};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, CurioMetadata, EngineServices, GpuHandle, Logger, Portal, Severity, TextureAsset, Vector3, Version};
 
 static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
 
@@ -256,6 +256,7 @@ impl ApplicationHandler for CabinetWindowOwner {
         // services is Boxed so it has a stable heap address
         // the Box lives on self — won't drop until CabinetWindowOwner drops
         self.services = Some(Box::new(EngineServices {
+            logger: Logger::new(),
             gpu: GpuHandle {
                 device: Arc::as_ptr(&device) as *const (),
                 queue: Arc::as_ptr(&queue) as *const (),

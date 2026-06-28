@@ -2,12 +2,13 @@ use crate::{
     built_in::facet::transform::transform3d::Transform3D,
     form_ref::{FormRef, MutQuery},
     static_data::global_components::COMPONENT_REGISTRY,
-    traits::facet_common::FacetCommon,
+    traits::{facet_common::FacetCommon, field_override::FieldOverride},
+    traits_internal::world_context_common::{self, ContextCommon, spawn_prefab_recursive_internal},
 };
-use curio_core::{ObjectState, Quaternion, Vector3};
+use curio_core::{Composition, ObjectState, Quaternion, Vector3};
 use hecs::{Entity, Query, World};
 use num::NumCast;
-use std::{cell::RefCell, hash::Hash, rc::Rc};
+use std::{cell::RefCell, hash::Hash, rc::Rc, sync::Arc};
 
 /// Representation of an object in the world
 #[derive(Clone, PartialEq, Eq)]
@@ -167,6 +168,7 @@ impl Form {
 
 type AddFacetFn = Box<dyn FnOnce(&Form)>;
 pub struct FormBuilder3D {
+    pub(crate) comp: Option<Arc<Composition>>,
     pub(crate) name: String,
     pub(crate) pos: Vector3,
     pub(crate) rot: Quaternion,
@@ -177,11 +179,25 @@ pub struct FormBuilder3D {
     pub(crate) world: Rc<RefCell<World>>,
 }
 impl FormBuilder3D {
-    // facets
-    pub fn facet<T: FacetCommon>(mut self, value: T) -> Self {
+    // Add a Facet to the spawned Form
+    pub fn facet<T: FacetCommon + FieldOverride>(mut self, value: T) -> Self {
         self.facets.push(Box::new(|x| {
-            FormRef::add_facet(x, value);
+            if x.has_facet::<T>() {
+                x.edit_facet::<T>(|t| {
+                    for s in value.get_state() {
+                        t.apply(&s.field_name, &s.data.to_string());
+                    }
+                });
+            } else {
+                FormRef::add_facet(x, value);
+            }
         }));
+        self
+    }
+
+    /// Spawn an entire Composition as the base Form
+    pub fn composition(mut self, composition: Option<Arc<Composition>>) -> Self {
+        self.comp = composition;
         self
     }
 
@@ -258,32 +274,52 @@ impl FormBuilder3D {
 
     // build
     pub fn spawn(self) -> Form {
-        // generate transform
-        let mut transform = Transform3D::default();
-        transform.position = self.pos;
-        transform.rotation = self.rot;
-        transform.scale = self.scl;
+        // create the form depending on the composition state
+        let form = {
+            // spawn using the passed in composition
+            if let Some(comp) = self.comp {
+                spawn_prefab_recursive_internal(self.world, &comp, self.name)
+            }
+            // spawn using a newly creaty form
+            else {
+                // generate an entity
+                let entity = {
+                    // borrow
+                    let mut world = self.world.borrow_mut();
+                    // spawn - dont know how to spawn with only a single tranform
+                    world.spawn(())
+                };
 
-        // generate an entity
-        let entity = {
-            // borrow
-            let mut world = self.world.borrow_mut();
-            // spawn - dont know how to spawn with only a single tranform
-            world.spawn(())
+                // spawn the form
+                FormRef::new(&self.name, self.world, entity)
+            }
         };
 
-        // spawn the form
-        let form = FormRef::new(&self.name, self.world, entity);
+        // if we dont already have a transform lets add one
+        if !form.has_facet::<Transform3D>() {
+            // generate transform
+            let mut transform = Transform3D::default();
+            transform.position = self.pos;
+            transform.rotation = self.rot;
+            transform.scale = self.scl;
 
-        // add the tranform - must be added like this in order to properly set the owner
-        FormRef::add_facet(&form, transform);
+            // add the tranform - must be added like this in order to properly set the owner
+            FormRef::add_facet(&form, transform);
+        } else {
+            // edit the existing transform
+            form.edit_facet::<Transform3D>(|transform| {
+                transform.position = self.pos;
+                transform.rotation = self.rot;
+                transform.scale = self.scl;
+            });
+        }
 
-        // add all facets
+        // add all facets - this does not check if it already exists. It probably should
         for add_facet in self.facets {
             add_facet(&form);
         }
 
-        // return form
+        // return our new form
         form
     }
 }

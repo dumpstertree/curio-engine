@@ -127,7 +127,7 @@ impl File {
 
         fs::write(path_ref, data).is_ok()
     }
-   
+
     /// Deletes the file at `path`.
     /// Returns true if successful, false otherwise.
     pub fn delete(path: &str) -> bool {

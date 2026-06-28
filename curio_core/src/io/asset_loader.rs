@@ -48,6 +48,8 @@ impl AssetLoader {
                 }
             }
 
+            println!("getting for id '{}'", uid);
+
             let data = {
                 let asset_database = asset_database_mutex
                     .lock()

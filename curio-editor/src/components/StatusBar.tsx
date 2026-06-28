@@ -7,10 +7,9 @@ function countObjects(objects: ObjectState[]): number {
 }
 
 export function StatusBar() {
-  const { mode, tabGroupState, selectedInstance } = useEditorStore();
+  const { mode, tabGroupState, compileStatus } = useEditorStore();
 
   const instanceCount = Object.keys(tabGroupState?.id_for_tabs ?? {}).length;
-
   const nodeCount = tabGroupState
     ? Object.values(tabGroupState.id_for_tabs)
         .flat()
@@ -24,6 +23,16 @@ export function StatusBar() {
         {mode === 'paused'  && '⏸ Paused'}
         {mode === 'stopped' && '■ Stopped'}
       </div>
+
+      {compileStatus === 'compiling' && (
+        <div className="status-item status-compiling">
+          <span className="compile-spinner-sm" /> Compiling…
+        </div>
+      )}
+      {compileStatus === 'error' && (
+        <div className="status-item status-error">✕ Compile error</div>
+      )}
+
       {nodeCount > 0 && (
         <div className="status-item">{nodeCount} objects</div>
       )}
@@ -32,6 +41,7 @@ export function StatusBar() {
           {instanceCount} instance{instanceCount !== 1 ? 's' : ''}
         </div>
       )}
+
       <div className="status-item" style={{ marginLeft: 'auto' }}>curio engine</div>
     </div>
   );

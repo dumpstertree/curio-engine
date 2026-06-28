@@ -7,7 +7,8 @@ import { resolveNode } from './prefabResolver';
 import { PrefabViewport } from './PrefabViewport';
 import { PrefabInspectorView } from './PrefabInspectorView';
 
-const ASSET_ROOT = '/home/dumpstertree/Git/Rust/system_test/assets';
+import { getProjectRoot, getAssetsRoot } from '../../../paths';
+const ASSET_ROOT = getAssetsRoot();
 function toAssetRel(absPath: string): string {
   return absPath.startsWith(ASSET_ROOT + '/')
     ? absPath.slice(ASSET_ROOT.length + 1)

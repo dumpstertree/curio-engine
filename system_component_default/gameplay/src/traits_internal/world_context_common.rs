@@ -40,63 +40,30 @@ pub trait ContextCommon {
         f(q);
     }
 
-    fn spawn_prefab_recursive(&mut self, prefab: &Composition) -> Form {
-        self.spawn_prefab_recursive_internal(prefab, prefab.name.clone())
-    }
-
     /// instantiate a prefab into the context
-    fn spawn_prefab_recursive_internal(&mut self, prefab: &Composition, name: String) -> Form {
-        if name.starts_with("!") {
-            let name = prefab.name.clone();
-            let split: Vec<&str> = name.split("::").into_iter().collect();
-            let name = split[0].replace("!", "");
 
-            let Some(key) = AssetLoader::try_lookup_key_for_name(&name) else {
-                panic!();
-            };
+    fn hecs_world(&self) -> Rc<RefCell<World>>;
+}
 
-            // create children forms
-            let child_forms: Vec<Form> = prefab
-                .children
-                .iter()
-                .map(|x| self.spawn_prefab_recursive_internal(x, x.name.clone()))
-                .collect();
+pub(crate) fn spawn_prefab_recursive_internal(world: Rc<RefCell<World>>, prefab: &Composition, name: String) -> Form {
+    if name.starts_with("!") {
+        let name = prefab.name.clone();
+        let split: Vec<&str> = name.split("::").into_iter().collect();
+        let name = split[0].replace("!", "");
 
-            let asset = AssetLoader::load_asset::<Composition>(&key);
-            let mut parent_form = self.spawn_prefab_recursive_internal(&asset, split[1].to_owned());
-
-            // create parent child relationship
-            for mut child in child_forms {
-                child.set_parent(Some(parent_form.clone()));
-            }
-
-            // add all facets
-            for facet in &prefab.components {
-                // get fn from global
-                let facet_fn = get_global_ecs_instances(&facet.r#type);
-                // create facet
-                facet_fn(&mut parent_form, &facet.fields);
-            }
-
-            return parent_form;
-        }
-        let hecs_world = self.hecs_world();
-        // create entity
-        let entity = {
-            // spawn the entity
-            let mut world = hecs_world.borrow_mut();
-            // spawn
-            world.spawn(())
+        let Some(key) = AssetLoader::try_lookup_key_for_name(&name) else {
+            panic!();
         };
 
         // create children forms
         let child_forms: Vec<Form> = prefab
             .children
             .iter()
-            .map(|x| self.spawn_prefab_recursive_internal(x, x.name.clone()))
+            .map(|x| spawn_prefab_recursive_internal(world.clone(), x, x.name.clone()))
             .collect();
-        //
-        let mut parent_form = FormRef::new(&name, hecs_world, entity);
+
+        let asset = AssetLoader::load_asset::<Composition>(&key);
+        let mut parent_form = spawn_prefab_recursive_internal(world.clone(), &asset, split[1].to_owned());
 
         // create parent child relationship
         for mut child in child_forms {
@@ -107,13 +74,48 @@ pub trait ContextCommon {
         for facet in &prefab.components {
             // get fn from global
             let facet_fn = get_global_ecs_instances(&facet.r#type);
-            // create facet
-            facet_fn(&mut parent_form, &facet.fields);
+
+            if let Some(f) = facet_fn {
+                // create facet
+                f(&mut parent_form, &facet.fields);
+            }
         }
 
-        // return the parent form
-        parent_form
+        return parent_form;
+    }
+    // create entity
+    let entity = {
+        // spawn the entity
+        let mut world = world.borrow_mut();
+        // spawn
+        world.spawn(())
+    };
+
+    // create children forms
+    let child_forms: Vec<Form> = prefab
+        .children
+        .iter()
+        .map(|x| spawn_prefab_recursive_internal(world.clone(), x, x.name.clone()))
+        .collect();
+    //
+    let mut parent_form = FormRef::new(&name, world, entity);
+
+    // create parent child relationship
+    for mut child in child_forms {
+        child.set_parent(Some(parent_form.clone()));
     }
 
-    fn hecs_world(&self) -> Rc<RefCell<World>>;
+    // add all facets
+    for facet in &prefab.components {
+        // get fn from global
+        let facet_fn = get_global_ecs_instances(&facet.r#type);
+
+        if let Some(f) = facet_fn {
+            // create facet
+            f(&mut parent_form, &facet.fields);
+        }
+    }
+
+    // return the parent form
+    parent_form
 }

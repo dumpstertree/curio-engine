@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useEditorStore }  from './store';
+import { api }             from './api';
 import { Toolbar }         from './components/Toolbar';
 import { TabBar }          from './components/TabBar';
 import { LeftPanel }       from './components/LeftPanel';
@@ -11,12 +12,22 @@ import { AssetTab }        from './components/asset/AssetTab';
 import './App.css';
 
 export default function App() {
-  const { activeTab, mode, refreshTabGroup, startPolling, stopPolling, selectedObject } = useEditorStore();
+  const {
+    activeTab, mode, refreshTabGroup, startPolling, stopPolling,
+    selectedObject, loadProjectPath,
+  } = useEditorStore();
 
-  useEffect(() => {
-    refreshTabGroup();
-  }, []);
+  // Spin up the GameRunner2 thread immediately on app start so it's ready
+  // before any compile or play commands are issued.
+  useEffect(() => { api.initialize().catch(console.error); }, []);
 
+  // Load project path once
+  useEffect(() => { loadProjectPath(); }, []);
+
+  // Initial tab group load
+  useEffect(() => { refreshTabGroup(); }, []);
+
+  // Poll when object selected or playing
   useEffect(() => {
     if (selectedObject) {
       startPolling();

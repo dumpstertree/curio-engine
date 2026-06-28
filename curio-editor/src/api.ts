@@ -1,4 +1,5 @@
 import type { TabGroupState } from './types';
+import { useEditorStore } from './store';
 
 // ─────────────────────────────────────────────────────────────
 // Mock data — matches Rust serialization exactly
@@ -112,13 +113,29 @@ export interface FacetManifest {
 // ─────────────────────────────────────────────────────────────
 
 export const api = {
+  initialize: (): Promise<void> => isTauri() ? invoke('initialize') : Promise.resolve(),
+
   pressPlay:  (): Promise<void> => isTauri() ? invoke('press_play')  : Promise.resolve(),
   pressStop:  (): Promise<void> => isTauri() ? invoke('press_stop')  : Promise.resolve(),
   pressPause: (): Promise<void> => isTauri() ? invoke('press_pause') : Promise.resolve(),
 
+  compile:          (): Promise<void>   => isTauri() ? invoke('compile')            : Promise.resolve(),
+  getCompileStatus: (): Promise<string> => isTauri() ? invoke('get_compile_status') : Promise.resolve('idle'),
+  cancelCompile:    (): Promise<void>   => isTauri() ? invoke('cancel_compile')     : Promise.resolve(),
+  pressPlayStart:   (): Promise<void>   => isTauri() ? invoke('press_play_start')   : Promise.resolve(),
+
   getTabGroupState: async (): Promise<TabGroupState> => {
     if (!isTauri()) return MOCK;
     return invoke<TabGroupState>('get_tab_group_state');
+  },
+
+  getProjectPath: async (): Promise<string> => {
+    return invoke<string>('get_project_path');
+  },
+
+  getLogs: async (): Promise<[string, string][]> => {
+    if (!isTauri()) return [];
+    return invoke<[string, string][]>('get_logs');
   },
 
   getFacets: async (): Promise<FacetManifest> => {
@@ -185,7 +202,7 @@ export const api = {
   readManifest: async (): Promise<ManifestEntry[]> => {
     try {
       const bytes = await invoke<number[]>('read_file_bytes', {
-        path: '/home/dumpstertree/Git/Rust/system_test/asset.manifest'
+        path: `${useEditorStore.getState().projectPath || '/home/dumpstertree/Git/Rust/system_test'}/asset.manifest`
       });
       const text = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
       const { load } = await import('js-yaml');

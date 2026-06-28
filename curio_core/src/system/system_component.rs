@@ -2,6 +2,7 @@ use crate::input::axis_code::AxisCode;
 use crate::{ButtonCode, ButtonPressed, ComponentState, Nerve, TabState};
 use crate::{EngineCommands, Ledger};
 use crate::{Formation, Vector3};
+use egui_wgpu::wgpu::{CommandEncoder, Texture, TextureView};
 use winit::event::WindowEvent;
 
 pub trait SystemComponent {
@@ -38,4 +39,6 @@ pub trait SystemComponent {
     fn get_facets(&self) -> Vec<ComponentState> {
         vec![]
     }
+
+    fn render(&mut self, output_texture: &Texture, output_view: &TextureView, command_encoder: &mut CommandEncoder, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {}
 }
