@@ -32,6 +32,40 @@ pub fn align_to(value: u32, alignment: u32) -> u32 {
     (value + alignment - 1) & !(alignment - 1)
 }
 
+// In capture.rs, after allocating FRAME_BUFFERS
+// Call once at startup
+pub fn lock_frame_buffers() {
+    use std::os::raw::c_void;
+    extern "C" {
+        fn mlock(addr: *const c_void, len: usize) -> i32;
+    }
+    for buf in FRAME_BUFFERS.iter() {
+        let buf = buf.read();
+        unsafe {
+            mlock(buf.as_ptr() as *const c_void, buf.len());
+        }
+    }
+}
+
+pub fn lock_process_memory() {
+    extern "C" {
+        fn mlockall(flags: libc::c_int) -> libc::c_int;
+    }
+
+    // MCL_CURRENT locks all pages mapped right now
+    // MCL_FUTURE locks any pages mapped after this call (e.g. when the .so loads)
+    let result = unsafe { mlockall(libc::MCL_CURRENT | libc::MCL_FUTURE) };
+
+    if result != 0 {
+        eprintln!(
+            "mlockall failed (errno {}): process memory may be swapped. \
+             Try: sudo setcap cap_ipc_lock+ep <path_to_binary>",
+            std::io::Error::last_os_error()
+        );
+    } else {
+        println!("mlockall: all process memory locked into RAM");
+    }
+}
 // ── Write path (game thread) ──────────────────────────────────────────────────
 
 /// Copies `capture_texture` into `readback_buffer` using the provided encoder.

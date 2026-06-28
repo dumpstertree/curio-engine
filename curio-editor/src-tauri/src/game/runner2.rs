@@ -215,6 +215,7 @@ impl GameRunner2 {
     // ── Main loop ────────────────────────────────────────────────────────────
 
     pub fn run(mut self) {
+        crate::game::capture::lock_process_memory();
         self.setup_gpu();
 
         // Target ~60fps — gives ~16.67ms per frame

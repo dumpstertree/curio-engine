@@ -1091,6 +1091,7 @@ dependencies = [
  "curio_core",
  "egui-wgpu",
  "image 0.24.9",
+ "libc",
  "libloading 0.8.9",
  "once_cell",
  "parking_lot",
