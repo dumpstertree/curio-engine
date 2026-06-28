@@ -1,7 +1,7 @@
 use crate::{
     callbacks::{set_cursor_visible, set_fullscreen, set_resolution},
     game::{
-        capture::{map_and_store, record_readback, CAPTURE_HEIGHT, CAPTURE_WIDTH},
+        capture::{lock_process_memory, record_readback, ReadbackBuffers, CAPTURE_HEIGHT, CAPTURE_WIDTH},
         plugin_loader::{self, load_library},
     },
     PROJECT, SHARED_DATA,
@@ -9,9 +9,7 @@ use crate::{
 
 use curio_core::{set_services, AxisCode, ButtonCode, ButtonPressed, ComponentState, Curio, CurioCommon, EngineServices, GpuHandle, Logger, Vector3};
 
-use egui_wgpu::wgpu::{
-    Adapter, Buffer, BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
-};
+use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
 
 use libloading::Symbol;
 use pollster::FutureExt;
@@ -108,7 +106,7 @@ pub struct GameRunner2 {
 
     services: Option<Box<EngineServices>>,
     capture_texture: Option<Arc<Texture>>,
-    readback_buffer: Option<Buffer>,
+    readback: Option<ReadbackBuffers>,
     surface_format: TextureFormat,
     loaded_app: Option<AppInstance>,
 }
@@ -121,7 +119,7 @@ impl GameRunner2 {
             services: None,
             loaded_app: None,
             capture_texture: None,
-            readback_buffer: None,
+            readback: None,
             state: RunnerState::Stopped,
             surface_format: TextureFormat::Rgba8UnormSrgb,
             device: None,
@@ -179,13 +177,8 @@ impl GameRunner2 {
             view_formats: &[],
         }));
 
-        let bytes_per_row = crate::utils::align_to(CAPTURE_WIDTH * 4, 256);
-        let readback_buffer = device.create_buffer(&BufferDescriptor {
-            label: Some("readback_buffer"),
-            size: (bytes_per_row * CAPTURE_HEIGHT) as u64,
-            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        // Two readback buffers — one for GPU writes, one for CPU reads
+        let readback = ReadbackBuffers::new(&device, CAPTURE_WIDTH, CAPTURE_HEIGHT);
 
         self.services = Some(Box::new(EngineServices {
             logger: self.logger.as_mut() as *mut Logger,
@@ -209,17 +202,16 @@ impl GameRunner2 {
         self.queue = Some(queue);
         self.adapter = Some(adapter);
         self.capture_texture = Some(capture_texture);
-        self.readback_buffer = Some(readback_buffer);
+        self.readback = Some(readback);
     }
 
     // ── Main loop ────────────────────────────────────────────────────────────
 
     pub fn run(mut self) {
-        crate::game::capture::lock_process_memory();
+        lock_process_memory();
         self.setup_gpu();
 
-        // Target ~60fps — gives ~16.67ms per frame
-        let frame_duration = Duration::from_micros(16_667);
+        let frame_duration = Duration::from_micros(16_667); // ~60fps
 
         loop {
             let frame_start = Instant::now();
@@ -228,11 +220,9 @@ impl GameRunner2 {
 
             match self.state {
                 RunnerState::Playing => {
-                    // Run game tick
                     if let Some(x) = self.loaded_app.as_mut() {
                         x.app_instance.curio.application_refresh();
                     }
-                    // Render and readback
                     self.render_frame();
                 }
                 RunnerState::Paused | RunnerState::Stopped => {
@@ -241,8 +231,6 @@ impl GameRunner2 {
                 }
             }
 
-            // Sleep off any remaining frame budget so we don't
-            // hammer the CPU/GPU at uncapped rate
             let elapsed = frame_start.elapsed();
             if elapsed < frame_duration {
                 std::thread::sleep(frame_duration - elapsed);
@@ -253,39 +241,57 @@ impl GameRunner2 {
     // ── Per-frame render ─────────────────────────────────────────────────────
 
     fn render_frame(&mut self) {
-        let (Some(loaded_app), Some(services), Some(capture_texture), Some(readback_buffer)) = (self.loaded_app.as_mut(), &self.services, &self.capture_texture, &self.readback_buffer) else {
+        let (Some(loaded_app), Some(services), Some(capture_texture), Some(readback)) = (self.loaded_app.as_mut(), &self.services, &self.capture_texture, self.readback.as_mut()) else {
             return;
         };
 
         let device = services.gpu.device();
         let queue = services.gpu.queue();
 
+        // ── Collect previous frame if ready ──────────────────────────────
+        // poll(Poll) fires any pending wgpu callbacks (including map_async)
+        // without blocking. try_collect then checks if the map completed
+        // and copies pixels if so — also without blocking.
+        device.poll(egui_wgpu::wgpu::MaintainBase::Poll);
+        readback.try_collect(capture_texture.width(), capture_texture.height());
+
+        // ── Render this frame ─────────────────────────────────────────────
         let output_view = capture_texture.create_view(&TextureViewDescriptor::default());
 
-        // Single encoder for both render and readback copy —
-        // one submit means no pipeline stall between the two
-        let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor { label: Some("curio_frame_encoder") });
+        let mut encoder = device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor { label: Some("curio_frame_encoder") });
 
-        // Curio renders into capture_texture
         loaded_app
             .app_instance
             .curio
             .render(capture_texture, &output_view, &mut encoder);
 
-        // Record the GPU → CPU copy into the same encoder
-        record_readback(&mut encoder, capture_texture, readback_buffer);
+        // let t0 = Instant::now();
+        // Copy render result into write_buf — this buffer is guaranteed
+        // unmapped because try_collect swaps write/read after unmap,
+        // and we only ever submit into write_buf.
+        record_readback(&mut encoder, capture_texture, &readback.write_buf);
 
-        // Single submit — render + copy in one batch
+        // println!("t0: {}", t0.elapsed().as_millis());
+        // let t0 = Instant::now();
+
         queue.submit(std::iter::once(encoder.finish()));
+        // println!("t1: {}", t0.elapsed().as_millis());
 
-        // Map the readback buffer and write into the double-buffer store
-        map_and_store(device, readback_buffer, capture_texture.width(), capture_texture.height());
+        // After submit, swap write→read and kick the async map on read_buf.
+        // write_buf and read_buf swap inside kick_map via try_collect's swap,
+        // so the next submit will again go into the unmapped buffer.
+        // let t0 = Instant::now();
 
-        // Update shared state for inspector / tab group polling
+        readback.kick_map();
+        // println!("t2: {}", t0.elapsed().as_millis());
+
+        // let t0 = Instant::now();
+
         if let Ok(mut shared_data) = SHARED_DATA.lock() {
             shared_data.forms = loaded_app.app_instance.curio.context_snapshot();
             shared_data.plugin = loaded_app.app_instance.curio.tab_snapshot();
         }
+        // println!("t3: {}", t0.elapsed().as_millis());
     }
 
     // ── Message dispatch ─────────────────────────────────────────────────────
@@ -301,12 +307,6 @@ impl GameRunner2 {
                         let guard = project.lock().expect("Failed to lock project");
                         let services_ptr = self.services.as_deref().unwrap() as *const EngineServices;
                         let path = format!("{}/target/release/", guard.project_path);
-
-                        if let Err(e) = std::panic::catch_unwind(|| load_curio(Path::new(&path), services_ptr)) {
-                            eprintln!("load_curio panicked: {:?}", e);
-                            return;
-                        }
-
                         let loaded_curio = load_curio(Path::new(&path), services_ptr);
                         let mut app_instance = AppInstance::new(loaded_curio);
                         app_instance.app_instance.curio.window_opened();
@@ -327,6 +327,9 @@ impl GameRunner2 {
                     if let Some(app) = self.loaded_app.take() {
                         drop(app);
                         println!("dropped from stop");
+                    }
+                    if let Some(rb) = self.readback.as_mut() {
+                        rb.reset();
                     }
                     self.state = RunnerState::Stopped;
                 }
@@ -360,13 +363,8 @@ impl GameRunner2 {
             view_formats: &[],
         }));
 
-        let bytes_per_row = crate::utils::align_to(w * 4, 256);
-        let readback_buffer = device.create_buffer(&BufferDescriptor {
-            label: Some("readback_buffer"),
-            size: (bytes_per_row * h) as u64,
-            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        // Replace readback buffers with new size — old ones dropped here
+        let readback = ReadbackBuffers::new(device, w, h);
 
         if let Some(services) = &mut self.services {
             services.gpu.capture_texture = Arc::as_ptr(&capture_texture) as *const ();
@@ -375,7 +373,7 @@ impl GameRunner2 {
         }
 
         self.capture_texture = Some(capture_texture);
-        self.readback_buffer = Some(readback_buffer);
+        self.readback = Some(readback);
     }
 }
 
