@@ -1,5 +1,8 @@
 use crate::{
-    game::runner2::{peek_curio, GameMessage2, GameRunner2, InputEvent},
+    game::{
+        capture::take_frame,
+        runner2::{peek_curio, GameMessage2, GameRunner2, InputEvent},
+    },
     state::{EditorMode, EditorState},
     types::{ComponentData, DirEntry, EntityData, SceneSnapshot},
     PROJECT, SHARED_DATA,
@@ -10,7 +13,6 @@ use std::{
     path::{Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{mpsc, Mutex},
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use curio_core::{get_and_clear_logs, io::file::File, ComponentState, Curio, FormsSnapshot, LedgerSnapshot, Severity, TabGroupState};
@@ -31,14 +33,14 @@ static COMPILE_CHILD: Mutex<Option<Child>> = Mutex::new(None);
 /// Called once when the React app mounts. Spins up the GameRunner2 thread so
 /// it is ready before any compile or play commands arrive.
 #[tauri::command]
-pub fn initialize(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Result<(), String> {
+pub fn initialize(state: State<Mutex<EditorState>>) -> Result<(), String> {
     let mut state = state.lock().unwrap();
 
     if state.game_thread.is_none() {
         let (tx, rx) = mpsc::channel();
         state.game_tx = Some(tx);
         state.game_thread = Some(std::thread::spawn(move || {
-            GameRunner2::new(rx, app_handle).run();
+            GameRunner2::new(rx).run();
         }));
     }
 
@@ -46,7 +48,7 @@ pub fn initialize(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Re
 }
 
 #[tauri::command]
-pub fn press_play_start(state: State<Mutex<EditorState>>, app_handle: AppHandle) -> Result<(), String> {
+pub fn press_play_start(state: State<Mutex<EditorState>>) -> Result<(), String> {
     unsafe {
         let Some(ref project) = PROJECT else {
             return Err("No project".into());
@@ -98,7 +100,18 @@ pub fn press_stop(state: State<Mutex<EditorState>>) -> Result<(), String> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Input forwarding — React viewport sends pointer/keyboard events here
+// Viewport frame — React polls this instead of listening to a Tauri event
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Returns raw RGBA bytes for the latest rendered frame, or null if no new
+/// frame is available since the last call.
+#[tauri::command]
+pub fn get_frame() -> Option<Vec<u8>> {
+    take_frame()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Input forwarding
 // ─────────────────────────────────────────────────────────────────────────────
 
 #[tauri::command]
@@ -108,6 +121,18 @@ pub fn send_input(state: State<Mutex<EditorState>>, event: InputEvent) -> Result
         tx.send(GameMessage2::Input(event)).ok();
     }
     Ok(())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Resolution
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn set_resolution(state: State<Mutex<EditorState>>, _app_handle: AppHandle, w: u32, h: u32) {
+    let state = state.lock().unwrap();
+    if let Some(tx) = &state.game_tx {
+        tx.send(GameMessage2::Resize(w, h)).ok();
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -148,25 +173,19 @@ pub fn get_scene_snapshot() -> SceneSnapshot {
 
 #[tauri::command]
 pub fn get_ledger_snapshot(state: State<Mutex<EditorState>>) -> LedgerSnapshot {
-    let Ok(data) = SHARED_DATA.lock() else {
-        panic!("Failed to get data");
-    };
+    let Ok(data) = SHARED_DATA.lock() else { panic!("Failed to get data") };
     data.ledger.clone()
 }
 
 #[tauri::command]
 pub fn get_forms(state: State<Mutex<EditorState>>) -> FormsSnapshot {
-    let Ok(data) = SHARED_DATA.lock() else {
-        panic!("Failed to get data");
-    };
+    let Ok(data) = SHARED_DATA.lock() else { panic!("Failed to get data") };
     data.forms.clone()
 }
 
 #[tauri::command]
 pub fn get_tab_group_state(state: State<Mutex<EditorState>>) -> TabGroupState {
-    let Ok(data) = SHARED_DATA.lock() else {
-        panic!("Failed to get data");
-    };
+    let Ok(data) = SHARED_DATA.lock() else { panic!("Failed to get data") };
     data.plugin.clone()
 }
 
@@ -208,18 +227,6 @@ pub fn get_facets(state: State<Mutex<EditorState>>) -> FacetManifest {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Resolution
-// ─────────────────────────────────────────────────────────────────────────────
-
-#[tauri::command]
-pub fn set_resolution(state: State<Mutex<EditorState>>, app_handle: AppHandle, w: u32, h: u32) {
-    let state = state.lock().unwrap();
-    if let Some(tx) = &state.game_tx {
-        tx.send(GameMessage2::Resize(w, h)).ok();
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // File system
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -231,15 +238,15 @@ pub fn create_folder(path: String) -> Result<(), String> {
 #[tauri::command]
 pub fn list_dir(path: String) -> Result<Vec<DirEntry>, String> {
     let mut entries = Vec::new();
-    let read = std::fs::read_dir(&path).map_err(|e| e.to_string())?;
-
-    for entry in read.flatten() {
+    for entry in std::fs::read_dir(&path)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
         let metadata = entry.metadata().map_err(|e| e.to_string())?;
         let name = entry.file_name().to_string_lossy().to_string();
         let full_path = entry.path().to_string_lossy().to_string();
         entries.push(DirEntry { name, path: full_path, is_dir: metadata.is_dir() });
     }
-
     entries.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then(a.name.cmp(&b.name)));
     Ok(entries)
 }
@@ -368,7 +375,6 @@ pub fn rebuild_manifest() -> Result<(), String> {
                 .and_then(|s| s.to_str())
                 .unwrap_or(&name)
                 .to_string();
-
             let uri = path
                 .strip_prefix(root)
                 .map(|p| p.to_string_lossy().to_string())
@@ -392,8 +398,7 @@ pub fn rebuild_manifest() -> Result<(), String> {
 
 #[tauri::command]
 pub fn read_manifest() -> Result<String, String> {
-    let path = "/home/dumpstertree/Git/Rust/system_test/asset.manifest";
-    std::fs::read_to_string(path).map_err(|e| e.to_string())
+    std::fs::read_to_string("/home/dumpstertree/Git/Rust/system_test/asset.manifest").map_err(|e| e.to_string())
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

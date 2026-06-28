@@ -10,12 +10,12 @@ use crate::TextureAsset;
 
 #[repr(C)]
 pub struct GpuHandle {
-    pub surface: *const (),
+    // pub surface: *const (),
     pub device: *const (),
     pub queue: *const (),
-    pub config: *const (),
-    pub window: *const (),
-    pub depth: *const (),
+    // pub config: *const (),
+    // pub window: *const (),
+    // pub depth: *const (),
     pub capture_texture: *const (),
     pub capture_width: u32,
     pub capture_height: u32,
