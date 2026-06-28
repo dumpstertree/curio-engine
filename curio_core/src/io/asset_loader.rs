@@ -1,7 +1,7 @@
-use crate::assets::asset::AssetCommonFromBits;
 use crate::io::asset_cache::AssetCache;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::asset_database::AssetDatabaseListing;
+use crate::AssetCommon;
 use crate::Curio;
 use crate::Severity;
 use core::panic;
@@ -29,7 +29,7 @@ impl AssetLoader {
     /// Load an asset. Will first check AssetCache for prexisting instance. If none are found will create one by pulling bits from AssetDatabase and loading into T.
     pub fn load_asset<T>(uid: &i16) -> Arc<T>
     where
-        T: AssetCommonFromBits<T>,
+        T: AssetCommon<T>,
     {
         unsafe {
             let Some(asset_cache_mutex) = &ASSET_CACHE else {

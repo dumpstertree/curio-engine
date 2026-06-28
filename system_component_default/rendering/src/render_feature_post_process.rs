@@ -7,7 +7,6 @@ use crate::render_feature_post_processes::{render_feature_post_process_fog::Rend
 
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &TextureView, output_view: &TextureView, source: PostProcessSource);
-    fn clear(&mut self, ledger: &mut Ledger);
 }
 
 #[derive(Clone, Copy, Debug)]

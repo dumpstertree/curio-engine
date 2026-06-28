@@ -296,9 +296,9 @@ impl ApplicationHandler for CabinetWindowOwner {
                     app_instance.curio.application_refresh();
                 }
 
-                if let Some(x) = &self.services {
-                    x.gpu.window().request_redraw()
-                };
+                // if let Some(x) = &self.services {
+                //     x.gpu.window().request_redraw()
+                // };
             }
             WindowEvent::Resized(_physical_size) => {
                 if let Some(app_instance) = &mut self.app_instance {

@@ -4,7 +4,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use curio_core::ComponentState;
+use curio_core::{ComponentState, Curio, Severity};
 
 use crate::{
     form::Form,

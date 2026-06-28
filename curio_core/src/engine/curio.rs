@@ -1,7 +1,7 @@
 use egui_wgpu::wgpu::{Texture, TextureView};
 use serde::Serialize;
 
-use crate::{log, ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
+use crate::{ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
 use std::collections::HashMap;
 
 use crate::{
