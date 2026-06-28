@@ -5,6 +5,8 @@ use curio_core::io::file::File;
 use curio_editor_lib::{Project, PROJECT};
 use std::sync::Mutex;
 
+pub struct Services {}
+
 fn main() {
     //load project
     let local_project = serde_yaml::from_slice::<Project>(&File::read("./test.proj"));

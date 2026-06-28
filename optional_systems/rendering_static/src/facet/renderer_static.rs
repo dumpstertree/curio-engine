@@ -12,8 +12,10 @@ pub struct RendererStatic {
 
 impl FieldOverride for RendererStatic {
     fn apply(&mut self, field: &str, value: &str) {
+        println!("value :{}", value);
+        let value = value.trim();
         match field {
-            "asset" => self.asset = Some(AssetLoader::load_asset::<ModelAsset>(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
+            "asset" => self.asset = Some(AssetLoader::load_asset::<ModelAsset>(&value.parse().unwrap_or_default())),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}
         }

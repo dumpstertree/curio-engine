@@ -3,8 +3,6 @@ import { api } from '../../../api';
 import type { PrefabGameObjectRaw, PrefabComponentRaw } from './prefabTypes';
 import { splitField } from './prefabTypes';
 
-const ASSET_ROOT = '/home/dumpstertree/Git/Rust/system_test/assets';
-
 // ─────────────────────────────────────────────────────────────────────────
 // Resolved types — carry override metadata alongside merged data
 // ─────────────────────────────────────────────────────────────────────────
@@ -51,7 +49,8 @@ function normalize(raw: any): PrefabGameObjectRaw {
   };
 }
 
-const PROJECT_ROOT = '/home/dumpstertree/Git/Rust/system_test';
+import { getProjectRoot } from '../../../paths';
+const PROJECT_ROOT = getProjectRoot();
 
 async function resolveIdToUri(id: string): Promise<string | null> {
   const entries = await api.readManifest();

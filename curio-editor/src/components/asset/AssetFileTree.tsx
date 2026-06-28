@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { api } from '../../api';
 import type { DirEntry, MetaFile } from '../../api';
 
-const ASSET_ROOT  = '/home/dumpstertree/Git/Rust/system_test/assets';
+import { getAssetsRoot } from '../../paths';
+const ASSET_ROOT = getAssetsRoot();
 const SUPPORTED_EXTS = new Set(['.png', '.glb', '.anim', '.comp']);
 
 function fileExt(name: string): string {

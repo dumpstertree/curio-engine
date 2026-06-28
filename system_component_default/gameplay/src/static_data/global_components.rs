@@ -85,14 +85,15 @@ where
         return true;
     });
 }
-pub fn get_global_ecs_instances(name: &str) -> AddComponentFn
+pub fn get_global_ecs_instances(name: &str) -> Option<AddComponentFn>
 where {
     let reg = COMPONENT_REGISTRY.read().expect("Registry poisoned");
     let val = reg.add_component.get(&name.to_lowercase());
 
     let Some(val) = val else {
-        panic!("Unknown Habit with name '{}'", name);
+        Curio::log(Severity::Error, &format!("Unknown Habit with name '{}'", name));
+        return None;
     };
     // take any for testing
-    return *val;
+    return Some(*val);
 }

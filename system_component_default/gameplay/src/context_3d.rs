@@ -1,6 +1,6 @@
 use crate::form::FormBuilder3D;
 use crate::traits_internal::world_context_common::ContextCommon;
-use curio_core::{Quaternion, Vector3};
+use curio_core::{Composition, Quaternion, Vector3};
 use hecs::World;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -22,6 +22,7 @@ impl Context3D {
     /// Spawn a Form inside the Context
     pub fn spawner(&mut self, name: &str) -> FormBuilder3D {
         FormBuilder3D {
+            comp: None,
             name: name.to_owned(),
             pos: Vector3::zero(),
             rot: Quaternion::identity(),

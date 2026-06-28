@@ -3,7 +3,8 @@ import type { PrefabGameObjectRaw } from './prefabTypes';
 import { isTransform, isRenderer, readTransformFields, readRendererAsset, eulerDegToQuat } from './prefabTypes';
 import { api } from '../../../api';
 
-const PROJECT_ROOT = '/home/dumpstertree/Git/Rust/system_test';
+import { getProjectRoot } from '../../../paths';
+const PROJECT_ROOT = getProjectRoot();
 
 export interface RenderEntry {
   path:         number[];
