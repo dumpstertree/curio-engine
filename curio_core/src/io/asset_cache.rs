@@ -11,7 +11,7 @@ pub struct AssetCache {
 }
 impl AssetCache {
     /// set to get an asset from the cache
-    pub fn try_get_asset<T: AssetCommon>(&mut self, id: &i16) -> Option<Arc<T>> {
+    pub fn try_get_asset<T: AssetCommon<T>>(&mut self, id: &i16) -> Option<Arc<T>> {
         if let Some(edited_val) = self.cache.get::<Arc<T>, i16>(id) {
             // update access to now
             self.access.insert(*id, Instant::now());
@@ -23,7 +23,7 @@ impl AssetCache {
     }
 
     /// try to set an asset to the cache
-    pub fn try_set_asset<T: AssetCommon>(&mut self, id: &i16, asset: Arc<T>) {
+    pub fn try_set_asset<T: AssetCommon<T>>(&mut self, id: &i16, asset: Arc<T>) {
         // get now to reususe
         let now: Instant = Instant::now();
 

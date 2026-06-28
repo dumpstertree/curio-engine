@@ -1,5 +1,5 @@
 use curio_core::{
-    AssetCommon, AssetCommonFromBits, ExtensionsF32, Matrix4x4, TextureAsset,
+    AssetCommon, ExtensionsF32, Matrix4x4, TextureAsset,
     io::asset_loader::{ASSET_UID_SHADER_LIT, AssetLoader},
 };
 
@@ -237,8 +237,7 @@ impl ModelAssetAnimated {
         Ok((atlas, skeleton_data, texture))
     }
 }
-impl AssetCommon for ModelAssetAnimated {}
-impl AssetCommonFromBits<ModelAssetAnimated> for ModelAssetAnimated {
+impl AssetCommon<ModelAssetAnimated> for ModelAssetAnimated {
     fn from_bits(bits: &Vec<u8>) -> ModelAssetAnimated {
         //create a material
         let shader_desc = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_LIT);

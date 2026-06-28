@@ -1,5 +1,5 @@
 use curio_core::{
-    AssetCommon, AssetCommonFromBits, Matrix4x4, TextureAsset,
+    AssetCommon, Matrix4x4, TextureAsset,
     io::asset_loader::{ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_FONT_ATLAS, AssetLoader},
 };
 use ext_rendering::{
@@ -28,7 +28,6 @@ pub struct FontDesc {
     pub char_order: String,
 }
 // asset
-impl AssetCommon for FontDesc {}
 
 pub struct FontAsset {
     // desc: Arc<FontDesc>,
@@ -37,8 +36,7 @@ pub struct FontAsset {
     glyph_width: f32,
     glyph_height: f32,
 }
-impl AssetCommon for FontAsset {}
-impl AssetCommonFromBits<FontAsset> for FontAsset {
+impl AssetCommon<FontAsset> for FontAsset {
     fn from_bits(bits: &Vec<u8>) -> FontAsset {
         // let file = File::read(uid);
         let file = String::from_utf8(bits.to_vec()).unwrap();

@@ -1,7 +1,7 @@
 use std::{collections::HashMap, sync::Arc};
 
 use curio_core::{
-    AssetCommon, AssetCommonFromBits, Matrix4x4, Random, TextureAsset,
+    AssetCommon, Matrix4x4, Random, TextureAsset,
     io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetLoader},
 };
 use ext_rendering::{
@@ -180,8 +180,7 @@ impl ModelAsset {
     }
 }
 // asset
-impl AssetCommon for ModelAsset {}
-impl AssetCommonFromBits<ModelAsset> for ModelAsset {
+impl AssetCommon<ModelAsset> for ModelAsset {
     fn from_bits(bits: &Vec<u8>) -> ModelAsset {
         let mut all_shaders = HashMap::new();
         all_shaders.insert("assets/shader/my_shader.shader".to_string(), AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_LIT));

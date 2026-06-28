@@ -1,5 +1,5 @@
 use core::panic;
-use curio_core::{AssetCommon, AssetCommonFromBits, Color, Random, Shaders, TextureAsset, services};
+use curio_core::{AssetCommon, Color, Random, Shaders, TextureAsset, services};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, Buffer, ShaderModule, util::DeviceExt};
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, sync::Arc};
@@ -243,8 +243,7 @@ pub struct ShaderDesc {
     pub textures: Vec<ShaderTextureDesc>,
     pub colors: Vec<ShaderColorDesc>,
 }
-impl AssetCommon for ShaderDesc {}
-impl AssetCommonFromBits<ShaderDesc> for ShaderDesc {
+impl AssetCommon<ShaderDesc> for ShaderDesc {
     fn from_bits(bits: &Vec<u8>) -> ShaderDesc {
         let json: serde_json::Value = serde_json::from_slice(bits).expect("file should be proper JSON");
         let my_struct: ShaderDesc = serde_json::from_str(&json.to_string()).unwrap();

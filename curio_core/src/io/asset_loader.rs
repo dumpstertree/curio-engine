@@ -1,7 +1,7 @@
-use crate::assets::asset::AssetCommonFromBits;
 use crate::io::asset_cache::AssetCache;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::asset_database::AssetDatabaseListing;
+use crate::AssetCommon;
 use crate::Curio;
 use crate::Severity;
 use core::panic;
@@ -30,13 +30,14 @@ impl AssetLoader {
     /// Load an asset. Will first check AssetCache for prexisting instance. If none are found will create one by pulling bits from AssetDatabase and loading into T.
     pub fn load_asset<T>(uid: &i16) -> Arc<T>
     where
-        T: AssetCommonFromBits<T>,
+        T: AssetCommon<T>,
     {
-        let Ok(mut cache) = ASSET_CACHE.lock() else {
-            panic!();
-        };
 
         {
+            let Ok(mut cache) = ASSET_CACHE.lock() else {
+                panic!( "cache locked");
+            };
+
             if let Some(cached_asset) = cache.try_get_asset::<T>(uid) {
                 return cached_asset;
             }
@@ -59,6 +60,9 @@ impl AssetLoader {
         let asset = Arc::new(T::from_bits(&data));
 
         {
+            let Ok(mut cache) = ASSET_CACHE.lock() else {
+                panic!( "cache locked");
+            };
             // Double-check in case another thread loaded it
             if let Some(existing) = cache.try_get_asset::<T>(uid) {
                 return existing;

@@ -5,7 +5,8 @@ use crate::{
     game::{
         capture::{capture_frame, CAPTURE_HEIGHT, CAPTURE_WIDTH},
         plugin_loader::{self, load_library},
-    }, PROJECT, SHARED_DATA,
+    },
+    PROJECT, SHARED_DATA,
 };
 
 use curio_core::{AxisCode, ButtonCode, ButtonPressed, ComponentState, Curio, CurioCommon, EngineServices, GpuHandle, TextureAsset, Vector3};
@@ -74,10 +75,7 @@ impl ApplicationHandler for AppInstance {
                     // shared_data.ledger = self.app_instance.curio.ledger_snapshot();
                     shared_data.plugin = self.app_instance.curio.tab_snapshot();
                     // shared_data.facets = self.app_instance.curio.facet_snapshot();
-                    println!("update gamestate");
                 }
-
-                println!("redraw");
             }
 
             WindowEvent::CloseRequested => {}
@@ -359,6 +357,12 @@ impl ApplicationHandler for GameRunner2<'_> {
         let format = self.get_format(&capabilities);
         let config = self.get_config(format, width, height, &capabilities);
         let depth_texture = Arc::new(create_depth_texture(&device, width, height));
+        println!("{:#?}", window);
+        println!("{:#?}", surface);
+        println!("{:#?}", adapter);
+        println!("{:#?}", adapter.get_info());
+        println!("{:#?}", device);
+        println!("{:#?}", capabilities);
 
         self.window = Some(window.clone());
         self.surface = Some(surface.clone());

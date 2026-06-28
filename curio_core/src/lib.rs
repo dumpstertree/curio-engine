@@ -22,9 +22,9 @@ pub use crate::io::log::log;
 pub use crate::io::log::Severity;
 
 // assets
-pub use crate::assets::asset::AssetCommon;
-pub use crate::assets::asset::AssetCommonFromBits;
-pub use crate::assets::prefab_asset::Composition;
+pub use crate::assets::asset_common::AssetCommon;
+pub use crate::assets::composition::Composition;
+pub use crate::assets::composition_facet::CompositionFacet;
 pub use crate::assets::texture_asset::TextureAsset;
 
 // input
@@ -139,8 +139,9 @@ pub mod extensions {
     pub(crate) mod extensions_i32;
 }
 pub mod assets {
-    pub(crate) mod asset;
-    pub(crate) mod prefab_asset;
+    pub(crate) mod asset_common;
+    pub(crate) mod composition;
+    pub(crate) mod composition_facet;
     pub(crate) mod texture_asset;
 }
 pub mod io {
