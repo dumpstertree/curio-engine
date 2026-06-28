@@ -16,14 +16,13 @@ use egui_wgpu::wgpu::{
 use libloading::Symbol;
 use pollster::FutureExt;
 use serde::{Deserialize, Serialize};
+use tauri::webview::cookie::time::{Date, Time};
 
 use std::{
     path::Path,
     sync::{mpsc::Receiver, Arc, Mutex},
     time::Duration,
 };
-
-use tauri::AppHandle;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Input event — sent from React via Tauri command, forwarded into the game
@@ -96,7 +95,7 @@ impl AppInstance {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GameRunner2 — no winit, no surface, plain render loop
+// GameRunner2 — headless wgpu, no winit, plain render loop
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub struct GameRunner2 {
@@ -106,22 +105,18 @@ pub struct GameRunner2 {
     pub adapter: Option<Arc<Adapter>>,
 
     state: RunnerState,
-    app_handle: AppHandle,
     rx: Receiver<GameMessage2>,
 
     services: Option<Box<EngineServices>>,
-
     capture_texture: Option<Arc<Texture>>,
     readback_buffer: Option<Buffer>,
     surface_format: TextureFormat,
-
     loaded_app: Option<AppInstance>,
 }
 
 impl GameRunner2 {
-    pub fn new(rx: Receiver<GameMessage2>, app_handle: AppHandle) -> Self {
+    pub fn new(rx: Receiver<GameMessage2>) -> Self {
         Self {
-            app_handle,
             rx,
             logger: Box::new(Logger::new()),
             services: None,
@@ -129,8 +124,6 @@ impl GameRunner2 {
             capture_texture: None,
             readback_buffer: None,
             state: RunnerState::Stopped,
-            // Rgba8UnormSrgb is a safe default for headless capture; confirmed
-            // after adapter selection in setup_gpu().
             surface_format: TextureFormat::Rgba8UnormSrgb,
             device: None,
             queue: None,
@@ -146,7 +139,6 @@ impl GameRunner2 {
             ..Default::default()
         });
 
-        // Headless adapter — no surface required
         let adapter = instance
             .request_adapter(&RequestAdapterOptions {
                 power_preference: PowerPreference::HighPerformance,
@@ -154,7 +146,7 @@ impl GameRunner2 {
                 force_fallback_adapter: false,
             })
             .block_on()
-            .expect("No Vulkan adapter found. Ensure a GPU with Vulkan support is present.");
+            .expect("No Vulkan adapter found.");
 
         let (device, queue) = adapter
             .request_device(
@@ -173,7 +165,6 @@ impl GameRunner2 {
         let queue = Arc::new(queue);
         let adapter = Arc::new(adapter);
 
-        // Capture texture — this is what Curio renders into each frame
         let capture_texture = Arc::new(device.create_texture(&TextureDescriptor {
             label: Some("capture_texture"),
             size: Extent3d {
@@ -189,7 +180,6 @@ impl GameRunner2 {
             view_formats: &[],
         }));
 
-        // CPU-side readback buffer
         let bytes_per_row = crate::utils::align_to(CAPTURE_WIDTH * 4, 256);
         let readback_buffer = device.create_buffer(&BufferDescriptor {
             label: Some("readback_buffer"),
@@ -198,21 +188,15 @@ impl GameRunner2 {
             mapped_at_creation: false,
         });
 
-        // Build EngineServices pointing at our headless device/queue.
-        // Window, surface, config, and depth are all null — Curio's render()
-        // receives the output texture directly so it must not use these.
         self.services = Some(Box::new(EngineServices {
             logger: self.logger.as_mut() as *mut Logger,
             gpu: GpuHandle {
                 device: Arc::as_ptr(&device) as *const (),
                 queue: Arc::as_ptr(&queue) as *const (),
-                config: std::ptr::null(),
-                window: std::ptr::null(),
-                surface: std::ptr::null(),
-                depth: std::ptr::null(),
                 capture_texture: Arc::as_ptr(&capture_texture) as *const (),
                 capture_width: CAPTURE_WIDTH,
                 capture_height: CAPTURE_HEIGHT,
+                // surface_format: self.surface_format,
             },
             set_fullscreen,
             set_resolution,
@@ -239,10 +223,12 @@ impl GameRunner2 {
 
             match self.state {
                 RunnerState::Playing => {
+                    if let Some(x) = self.loaded_app.as_mut() {
+                        x.app_instance.curio.application_refresh();
+                    }
                     self.render_frame();
                 }
                 RunnerState::Paused | RunnerState::Stopped => {
-                    // Avoid busy-spinning while idle
                     std::thread::sleep(Duration::from_millis(16));
                 }
             }
@@ -256,9 +242,6 @@ impl GameRunner2 {
             return;
         };
 
-        // tick
-        loaded_app.app_instance.curio.application_refresh();
-
         let device = services.gpu.device();
         let queue = services.gpu.queue();
 
@@ -266,7 +249,6 @@ impl GameRunner2 {
 
         let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor { label: Some("curio_render_encoder") });
 
-        // Curio renders directly into the capture texture
         loaded_app
             .app_instance
             .curio
@@ -274,10 +256,10 @@ impl GameRunner2 {
 
         queue.submit(std::iter::once(encoder.finish()));
 
-        // Readback → PNG → Tauri event → React
-        capture_frame(self.app_handle.clone(), &device, &queue, capture_texture.clone(), readback_buffer, self.surface_format);
+        // Readback — writes raw RGBA into FRAME_BUFFER, sets FRAME_READY flag.
+        // React polls get_frame() which reads and clears it.
+        capture_frame(device, queue, capture_texture.clone(), readback_buffer, self.surface_format);
 
-        // Update shared state for inspector / tab group polling
         if let Ok(mut shared_data) = SHARED_DATA.lock() {
             shared_data.forms = loaded_app.app_instance.curio.context_snapshot();
             shared_data.plugin = loaded_app.app_instance.curio.tab_snapshot();
@@ -360,8 +342,6 @@ impl GameRunner2 {
             mapped_at_creation: false,
         });
 
-        // Update the capture_texture pointer in services so the game
-        // plugin sees the new size on its next render() call.
         if let Some(services) = &mut self.services {
             services.gpu.capture_texture = Arc::as_ptr(&capture_texture) as *const ();
             services.gpu.capture_width = w;
@@ -408,9 +388,7 @@ pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
     }
     panic!("No curio plugin found in {:?}", folder);
 }
-
 pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
-    println!("start load curio");
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
 
     for entry in entries.flatten() {
@@ -418,18 +396,30 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
 
         let is_plugin = matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"));
         if !is_plugin {
+            println!("doesnt match: {:#?}", path.as_path());
             continue;
         }
 
-        let _ = load_library(&path);
-        let l2 = plugin_loader::library_slot().lock();
+        // Surface the actual error instead of silently discarding it
+        if let Err(e) = load_library(&path) {
+            eprintln!("load_library failed for {:?}: {}", path, e);
+            continue;
+        }
 
+        let l2 = plugin_loader::library_slot().lock();
         let lib = match l2 {
             Ok(l) => l,
-            Err(e) => panic!("failed to load {:?}: {}", path, e),
+            Err(e) => panic!("library slot mutex poisoned for {:?}: {}", path, e),
         };
 
-        let lib = lib.as_ref().unwrap();
+        // Distinguish between mutex poison and empty slot
+        let lib = match lib.as_ref() {
+            Some(l) => l,
+            None => {
+                eprintln!("library slot is None after load_library for {:?}", path);
+                continue;
+            }
+        };
 
         let curio = unsafe {
             let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
@@ -441,9 +431,8 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
             Box::from_raw(raw)
         };
 
-        println!("finish loaded: {}", curio.meta.name);
+        println!("Loaded: {}", curio.meta.name);
         return LoadedCurio { curio };
     }
-
     panic!("No curio plugin found in {:?}", folder);
 }

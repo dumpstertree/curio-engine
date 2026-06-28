@@ -1092,6 +1092,8 @@ dependencies = [
  "egui-wgpu",
  "image 0.24.9",
  "libloading 0.8.9",
+ "once_cell",
+ "parking_lot",
  "pollster",
  "serde",
  "serde_json",
@@ -5241,6 +5243,7 @@ checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
 name = "rusty_spine"
 version = "0.3.1"
 dependencies = [
+ "image 0.25.10",
  "mint",
 ]
 

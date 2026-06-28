@@ -1,9 +1,9 @@
 import type { TabGroupState } from './types';
 import { useEditorStore } from './store';
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Mock data — matches Rust serialization exactly
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const MOCK: TabGroupState = {
   id_for_tabs: {
@@ -51,9 +51,9 @@ const MOCK: TabGroupState = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Tauri detection
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 const isTauri = (): boolean => '__TAURI_INTERNALS__' in window;
 
@@ -63,9 +63,9 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
   return tauriInvoke<T>(cmd, args);
 }
 
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // Types
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface DirEntry {
   name: string;
@@ -74,19 +74,19 @@ export interface DirEntry {
 }
 
 export interface MetaFile {
-  id:       number;
+  id: number;
   included: boolean;
 }
 
 export interface ManifestEntry {
-  id:   number;
+  id: number;
   name: string;
   type: string;
-  uri:  string;
+  uri: string;
 }
 
 export type EntryType =
-  | { Asset: string }  // string is the file suffix e.g. ".glb"
+  | { Asset: string }
   | 'Float'
   | 'Int'
   | 'Bool'
@@ -100,89 +100,101 @@ export interface FacetField {
 }
 
 export interface FacetComponent {
-  name:  string;
-  data:  FacetField[];
+  name: string;
+  data: FacetField[];
 }
 
 export interface FacetManifest {
   manifest: FacetComponent[];
 }
 
-// ─────────────────────────────────────────────────────────────
+export type InputEvent =
+  | { type: 'Button'; code: number; pressed: boolean }
+  | { type: 'Axis'; code: number; x: number; y: number };
+
+// ─────────────────────────────────────────────────────────────────────────────
 // API
-// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const api = {
-  initialize: (): Promise<void> => isTauri() ? invoke('initialize') : Promise.resolve(),
+  // Lifecycle
+  initialize: (): Promise<void> =>
+    isTauri() ? invoke('initialize') : Promise.resolve(),
 
-  pressPlay:  (): Promise<void> => isTauri() ? invoke('press_play')  : Promise.resolve(),
-  pressStop:  (): Promise<void> => isTauri() ? invoke('press_stop')  : Promise.resolve(),
+  // Playback
+  pressPlay: (): Promise<void> => isTauri() ? invoke('press_play') : Promise.resolve(),
+  pressStop: (): Promise<void> => isTauri() ? invoke('press_stop') : Promise.resolve(),
   pressPause: (): Promise<void> => isTauri() ? invoke('press_pause') : Promise.resolve(),
+  pressPlayStart: (): Promise<void> => isTauri() ? invoke('press_play_start') : Promise.resolve(),
 
-  compile:          (): Promise<void>   => isTauri() ? invoke('compile')            : Promise.resolve(),
+  // Compile
+  compile: (): Promise<void> => isTauri() ? invoke('compile') : Promise.resolve(),
   getCompileStatus: (): Promise<string> => isTauri() ? invoke('get_compile_status') : Promise.resolve('idle'),
-  cancelCompile:    (): Promise<void>   => isTauri() ? invoke('cancel_compile')     : Promise.resolve(),
-  pressPlayStart:   (): Promise<void>   => isTauri() ? invoke('press_play_start')   : Promise.resolve(),
+  cancelCompile: (): Promise<void> => isTauri() ? invoke('cancel_compile') : Promise.resolve(),
 
+  // Viewport — poll for raw RGBA frame bytes, null if no new frame
+  getFrame: (): Promise<number[] | null> =>
+    isTauri() ? invoke<number[] | null>('get_frame') : Promise.resolve(null),
+
+  // Input
+  sendInput: (event: InputEvent): Promise<void> =>
+    isTauri() ? invoke('send_input', { event }) : Promise.resolve(),
+
+  // Inspector / tab group
   getTabGroupState: async (): Promise<TabGroupState> => {
     if (!isTauri()) return MOCK;
     return invoke<TabGroupState>('get_tab_group_state');
   },
 
-  getProjectPath: async (): Promise<string> => {
-    return invoke<string>('get_project_path');
-  },
+  // Project
+  getProjectPath: (): Promise<string> =>
+    invoke<string>('get_project_path'),
 
+  // Logs
   getLogs: async (): Promise<[string, string][]> => {
     if (!isTauri()) return [];
     return invoke<[string, string][]>('get_logs');
   },
 
+  // Facets
   getFacets: async (): Promise<FacetManifest> => {
     if (!isTauri()) return { manifest: [] };
     return invoke<FacetManifest>('get_facets');
   },
 
-  listDir: async (path: string): Promise<DirEntry[]> => {
-    return invoke<DirEntry[]>('list_dir', { path });
-  },
+  // File system
+  listDir: (path: string): Promise<DirEntry[]> =>
+    invoke<DirEntry[]>('list_dir', { path }),
 
-  readFileBytes: async (path: string): Promise<number[]> => {
-    return invoke<number[]>('read_file_bytes', { path });
-  },
+  readFileBytes: (path: string): Promise<number[]> =>
+    invoke<number[]>('read_file_bytes', { path }),
 
-  writeFileText: async (path: string, contents: string): Promise<void> => {
-    return invoke<void>('write_file_text', { path, contents });
-  },
+  writeFileText: (path: string, contents: string): Promise<void> =>
+    invoke<void>('write_file_text', { path, contents }),
 
-  copyFile: async (src: string, dst: string): Promise<void> => {
-    return invoke<void>('copy_file', { src, dst });
-  },
+  copyFile: (src: string, dst: string): Promise<void> =>
+    invoke<void>('copy_file', { src, dst }),
 
-  createCompFile: async (path: string): Promise<void> => {
-    return invoke<void>('create_comp_file', { path });
-  },
+  createCompFile: (path: string): Promise<void> =>
+    invoke<void>('create_comp_file', { path }),
 
-  createFolder: async (path: string): Promise<void> => {
-    return invoke<void>('create_folder', { path });
-  },
+  createFolder: (path: string): Promise<void> =>
+    invoke<void>('create_folder', { path }),
 
-  deletePath: async (path: string): Promise<void> => {
-    return invoke<void>('delete_path', { path });
-  },
+  deletePath: (path: string): Promise<void> =>
+    invoke<void>('delete_path', { path }),
 
-  renamePath: async (oldPath: string, newPath: string): Promise<void> => {
-    return invoke<void>('rename_path', { oldPath, newPath });
-  },
+  renamePath: (oldPath: string, newPath: string): Promise<void> =>
+    invoke<void>('rename_path', { oldPath, newPath }),
 
-  movePath: async (src: string, dst: string): Promise<void> => {
-    return invoke<void>('move_path', { src, dst });
-  },
+  movePath: (src: string, dst: string): Promise<void> =>
+    invoke<void>('move_path', { src, dst }),
 
+  // Meta files
   readMeta: async (assetPath: string): Promise<MetaFile | null> => {
     try {
       const bytes = await invoke<number[]>('read_file_bytes', { path: assetPath + '.meta' });
-      const text  = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
+      const text = new TextDecoder('utf-8').decode(new Uint8Array(bytes));
       const { load } = await import('js-yaml');
       return load(text) as MetaFile;
     } catch {
@@ -195,9 +207,9 @@ export const api = {
     return invoke<void>('write_file_text', { path: assetPath + '.meta', contents: dump(meta) });
   },
 
-  rebuildManifest: async (): Promise<void> => {
-    return invoke<void>('rebuild_manifest');
-  },
+  // Manifest
+  rebuildManifest: (): Promise<void> =>
+    invoke<void>('rebuild_manifest'),
 
   readManifest: async (): Promise<ManifestEntry[]> => {
     try {
@@ -213,21 +225,11 @@ export const api = {
     }
   },
 
+  // File picker
   pickFile: async (): Promise<string | null> => {
     if (!isTauri()) return null;
     const { open } = await import('@tauri-apps/plugin-dialog');
     const result = await open({ multiple: false, directory: false });
     return typeof result === 'string' ? result : null;
-  },
-
-  onViewportFrame: (cb: (dataUrl: string) => void): (() => void) => {
-    if (!isTauri()) return () => {};
-    let unlisten: Promise<() => void>;
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      unlisten = listen<string>('viewport_frame', (e) => {
-        cb(`data:image/png;base64,${e.payload}`);
-      });
-    });
-    return () => { unlisten?.then(f => f()); };
   },
 };
