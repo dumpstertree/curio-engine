@@ -2,7 +2,7 @@ import type { TabGroupState } from './types';
 import { useEditorStore } from './store';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mock data — matches Rust serialization exactly
+// Mock data
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MOCK: TabGroupState = {
@@ -132,9 +132,20 @@ export const api = {
   getCompileStatus: (): Promise<string> => isTauri() ? invoke('get_compile_status') : Promise.resolve('idle'),
   cancelCompile: (): Promise<void> => isTauri() ? invoke('cancel_compile') : Promise.resolve(),
 
-  // Viewport — poll for raw RGBA frame bytes, null if no new frame
-  getFrame: (): Promise<number[] | null> =>
-    isTauri() ? invoke<number[] | null>('get_frame') : Promise.resolve(null),
+  // Viewport — binary IPC, no JSON serialization.
+  // Returns a Uint8ClampedArray<ArrayBuffer> backed by a plain ArrayBuffer
+  // so it is accepted directly by new ImageData(). Empty = no new frame.
+  getFrame: async (): Promise<Uint8ClampedArray<ArrayBuffer> | null> => {
+    if (!isTauri()) return null;
+    const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
+    const raw = await tauriInvoke<ArrayBuffer>('get_frame');
+    if (!raw || raw.byteLength === 0) return null;
+    // Always copy into a fresh plain ArrayBuffer — Tauri may hand back a
+    // SharedArrayBuffer which ImageData rejects at the type and runtime level.
+    const plain = new ArrayBuffer(raw.byteLength);
+    new Uint8Array(plain).set(new Uint8Array(raw));
+    return new Uint8ClampedArray(plain);
+  },
 
   // Input
   sendInput: (event: InputEvent): Promise<void> =>

@@ -17,7 +17,7 @@ use std::{
 
 use curio_core::{get_and_clear_logs, io::file::File, ComponentState, Curio, FormsSnapshot, LedgerSnapshot, Severity, TabGroupState};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, State};
+use tauri::{ipc::Response, AppHandle, State};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Compile state
@@ -30,8 +30,6 @@ static COMPILE_CHILD: Mutex<Option<Child>> = Mutex::new(None);
 // Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Called once when the React app mounts. Spins up the GameRunner2 thread so
-/// it is ready before any compile or play commands arrive.
 #[tauri::command]
 pub fn initialize(state: State<Mutex<EditorState>>) -> Result<(), String> {
     let mut state = state.lock().unwrap();
@@ -100,14 +98,19 @@ pub fn press_stop(state: State<Mutex<EditorState>>) -> Result<(), String> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Viewport frame — React polls this instead of listening to a Tauri event
+// Viewport frame — binary IPC, no JSON serialization
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Returns raw RGBA bytes for the latest rendered frame, or null if no new
-/// frame is available since the last call.
+/// Returns the latest rendered frame as raw binary RGBA bytes.
+/// Returns an empty response (0 bytes) when no new frame is available.
+/// Using tauri::ipc::Response bypasses JSON serialization entirely —
+/// 3.5MB of pixel data stays as binary across the IPC boundary.
 #[tauri::command]
-pub fn get_frame() -> Option<Vec<u8>> {
-    take_frame()
+pub fn get_frame() -> Response {
+    match take_frame() {
+        Some(bytes) => Response::new(bytes),
+        None => Response::new(vec![]),
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
