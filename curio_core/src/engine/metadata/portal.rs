@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+/// Representation of a view into a Curio
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Portal {
     pub width: i32,

@@ -3,9 +3,8 @@ use std::rc::Rc;
 
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
-use crate::engine::curio::CurioNetwork;
 use crate::static_data::global_states::get_global_state_constructor_all;
-use crate::{log, ComponentState, ObjectState, RecordCommon, Severity, StateNetworkCapabilities, StateOwnerships, StateSyncEvent, TabState};
+use crate::{log, ComponentState, CurioNetwork, ObjectState, PluginState, RecordCommon, Severity, StateNetworkCapabilities, StateOwnerships, StateSyncEvent};
 
 // -------------------------------------------------------------------------
 // Internal entry — owns both sides of a single state type
@@ -55,7 +54,7 @@ pub struct Ledger {
 }
 
 impl Ledger {
-    pub fn to_state(&self) -> (String, TabState) {
+    pub fn to_state(&self) -> (String, PluginState) {
         let mut objs = vec![];
         for e in &self.entries {
             if let Some(e) = e {
@@ -70,7 +69,7 @@ impl Ledger {
                 objs.push(obj);
             }
         }
-        return (format!("{}-{}", self.network.me().mode, self.network.me().guid.to_string()), TabState { tab_name: "Ledger".to_string(), objects: objs });
+        return (format!("{}-{}", self.network.me().mode, self.network.me().guid.to_string()), PluginState { tab_name: "Ledger".to_string(), objects: objs });
     }
 
     // -------------------------------------------------------------------------

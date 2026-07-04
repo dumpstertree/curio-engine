@@ -1,4 +1,4 @@
-use curio_core::{IGameEvent, Ledger, Nerve, TabState};
+use curio_core::{ImpulseCommon, Ledger, Nerve, PluginState};
 use hecs::World;
 use std::{cell::RefCell, collections::HashMap, marker::PhantomData, rc::Rc, vec};
 
@@ -13,7 +13,7 @@ use crate::{
 
 pub struct GameplayInstance<T, U>
 where
-    T: IGameEvent + Clone + 'static,
+    T: ImpulseCommon + Clone + 'static,
     U: IUIEvent + Clone + 'static,
 {
     phantom_u: PhantomData<U>,
@@ -28,11 +28,11 @@ where
 
 impl<T, U> GameplayInstance<T, U>
 where
-    T: IGameEvent + Clone + 'static,
+    T: ImpulseCommon + Clone + 'static,
     U: IUIEvent + Clone + 'static,
 {
-    pub fn get_state(&self) -> TabState {
-        TabState {
+    pub fn get_state(&self) -> PluginState {
+        PluginState {
             tab_name: String::from("Context"),
             objects: self
                 .context_32

@@ -40,36 +40,37 @@ pub use crate::input::input_raw::InputRaw;
 
 // graphics
 // pub use crate::graphics::gpu_instance::GPUInstance;
-pub use crate::graphics::graphics_mapping::GraphicsMapping;
 pub use crate::graphics::shaders::Shaders;
 
 // engine
-pub use crate::engine::curio::ComponentState;
+pub use crate::engine::as_any::AsAny;
 pub use crate::engine::curio::Curio;
-pub use crate::engine::curio::FieldState;
-pub use crate::engine::curio::FormsSnapshot;
-pub use crate::engine::curio::LedgerSnapshot;
-pub use crate::engine::curio::ObjectState;
-pub use crate::engine::curio::TabGroupState;
-pub use crate::engine::curio::TabState;
+pub use crate::engine::curio_builder::CurioBuilder;
 pub use crate::engine::curio_common::CurioCommon;
-pub use crate::engine::curio_metadata::CurioMetadata;
-pub use crate::engine::engine_commands::EngineCommands;
+pub use crate::engine::curio_network::CurioNetwork;
+pub use crate::engine::curio_network_participant::CurioNetworkParticipant;
+pub use crate::engine::engine_commands::CurioCommands;
 pub use crate::engine::engine_services::services;
 pub use crate::engine::engine_services::set_services;
 pub use crate::engine::engine_services::EngineServices;
 pub use crate::engine::engine_services::GpuHandle;
-pub use crate::engine::event_sync_event::EventSyncEvent;
-pub use crate::engine::formation::Formation;
-pub use crate::engine::ievent_clone::IEventClone;
-pub use crate::engine::igame_event::IGameEvent;
-pub use crate::engine::input_mapping::InputMapping;
-pub use crate::engine::nerve::AsAny;
-pub use crate::engine::nerve::EventScope;
+pub use crate::engine::impulse_clone::ImpulseClone;
+pub use crate::engine::impulse_common::ImpulseCommon;
+pub use crate::engine::impulse_scope::ImpulseScope;
+pub use crate::engine::impulse_synchronizer::ImpulseSynchronizer;
+pub use crate::engine::metadata::formation::Formation;
+pub use crate::engine::metadata::graphics_mapping::GraphicsMapping;
+pub use crate::engine::metadata::identity::Identity;
+pub use crate::engine::metadata::input_mapping::InputMapping;
+pub use crate::engine::metadata::portal::Portal;
+pub use crate::engine::metadata::seat::Seat;
+pub use crate::engine::metadata::version::Version;
 pub use crate::engine::nerve::Nerve;
-pub use crate::engine::portal::Portal;
-pub use crate::engine::seat::Seat;
-pub use crate::engine::version::Version;
+pub use crate::engine::serialization::plugin_group_state::ComponentState;
+pub use crate::engine::serialization::plugin_group_state::FieldState;
+pub use crate::engine::serialization::plugin_group_state::ObjectState;
+pub use crate::engine::serialization::plugin_group_state::PluginGroupState;
+pub use crate::engine::serialization::plugin_group_state::PluginState;
 
 // network
 pub use crate::network::event_network_capabilities::EventNetworkCapabilities;
@@ -93,7 +94,6 @@ pub use crate::system::system_component::SystemComponent;
 //
 pub mod graphics {
     pub(crate) mod gpu_instance;
-    pub(crate) mod graphics_mapping;
     pub(crate) mod shaders;
 }
 pub mod input {
@@ -119,21 +119,34 @@ pub mod math {
     pub(crate) mod vector4_int;
 }
 pub mod engine {
+    pub mod c_bindings {
+        mod peek_curio;
+    }
+    pub mod metadata {
+        pub(crate) mod formation;
+        pub(crate) mod graphics_mapping;
+        pub(crate) mod identity;
+        pub(crate) mod input_mapping;
+        pub(crate) mod portal;
+        pub(crate) mod seat;
+        pub(crate) mod version;
+    }
+    pub mod serialization {
+        pub(crate) mod plugin_group_state;
+    }
+    pub(crate) mod as_any;
     pub(crate) mod curio;
+    pub(crate) mod curio_builder;
     pub(crate) mod curio_common;
-    pub(crate) mod curio_metadata;
+    pub(crate) mod curio_network;
+    pub(crate) mod curio_network_participant;
     pub(crate) mod engine_commands;
     pub(crate) mod engine_services;
-    pub(crate) mod event_sync_event;
-    pub(crate) mod formation;
-    pub(crate) mod ievent_clone;
-    pub(crate) mod igame_event;
-    pub(crate) mod input_mapping;
-    pub(crate) mod iui_event;
+    pub(crate) mod impulse_clone;
+    pub(crate) mod impulse_common;
+    pub(crate) mod impulse_scope;
+    pub(crate) mod impulse_synchronizer;
     pub(crate) mod nerve;
-    pub(crate) mod portal;
-    pub(crate) mod seat;
-    pub(crate) mod version;
 }
 pub mod extensions {
     pub(crate) mod extensions_f32;

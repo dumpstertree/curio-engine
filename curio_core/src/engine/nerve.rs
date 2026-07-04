@@ -1,37 +1,26 @@
 use serde::{de::DeserializeOwned, Serialize};
 use std::{any::Any, collections::HashMap, fmt::Display, time::Instant};
 
-use crate::{
-    collections::any_queue::AnyQueue,
-    engine::{curio::CurioNetwork, igame_event::IGameEvent},
-    EventNetworkCapabilities, EventSyncEvent,
-};
-
-#[derive(Clone, PartialEq)]
-pub enum EventScope {
-    All,
-    Instance,
-    ConnectedHost,
-    ConnectedPeers,
-}
-
+use crate::{engine::curio_network::CurioNetwork, AnyQueue, EventNetworkCapabilities, ImpulseCommon, ImpulseSynchronizer};
+/// A Nerve is used to transmit Impulses. Impulses can be passed between different nerves by using the Sync event functions.
 pub struct Nerve {
-    // pub name: String,
     cache: HashMap<i32, AnyQueue>,
-    network_capabilities: Option<EventNetworkCapabilities>,
-    delayed: Vec<(Instant, i32, Box<dyn Any>, Option<EventSyncEvent>)>,
+    network_capabilities: EventNetworkCapabilities,
+    delayed: Vec<(Instant, i32, Box<dyn Any>, Option<ImpulseSynchronizer>)>,
     pub network: CurioNetwork,
 }
 impl Nerve {
+    /// Create a new nerve to transmit impulses based on a Curio Network identity
     pub fn new(network: CurioNetwork) -> Self {
         Nerve {
-            // name: String::from(name),
             cache: HashMap::new(),
-            network_capabilities: Some(EventNetworkCapabilities::new(network.me().mode)),
+            network_capabilities: EventNetworkCapabilities::new(network.me().mode),
             delayed: Vec::new(),
             network,
         }
     }
+
+    /// Update any timed events that are ongoing in this Nerve
     pub fn update_timed_events(&mut self) {
         // Take ownership of all delayed events temporarily
         let mut remaining = Vec::with_capacity(self.delayed.len());
@@ -45,10 +34,8 @@ impl Nerve {
                     .push_boxed(event);
 
                 // Network Sync Logic
-                if let Some(network_capabilities) = &mut self.network_capabilities {
-                    if let Some(sync_event) = ownership {
-                        network_capabilities.enqueue_sync_events(sync_event);
-                    }
+                if let Some(sync_event) = ownership {
+                    self.network_capabilities.enqueue_sync_events(sync_event);
                 }
             } else {
                 // Keep events that haven't fired yet
@@ -59,19 +46,18 @@ impl Nerve {
         self.delayed = remaining;
     }
 
+    /// Add an event that should be invoked after a delay
     pub fn enqueue_event_delayed<T>(&mut self, event: T, _delay: f32)
     where
-        T: Clone + IGameEvent + Serialize + DeserializeOwned + Display + 'static,
+        T: Clone + ImpulseCommon + Serialize + DeserializeOwned + Display + 'static,
     {
         // Network Sync Logic
-        let Some(network_capabilities) = &mut self.network_capabilities else {
-            println!("no network");
-            return;
-        };
-
         let mut sync_event = None;
-        if network_capabilities.has_write_privilege(event.ownership()) {
-            if let Some(ser) = EventSyncEvent::serialize::<T>(&event) {
+        if self
+            .network_capabilities
+            .has_write_privilege(event.ownership())
+        {
+            if let Some(ser) = ImpulseSynchronizer::serialize::<T>(&event) {
                 sync_event = Some(ser);
             }
         }
@@ -80,9 +66,10 @@ impl Nerve {
             .push((Instant::now(), T::id(), Box::new(event), sync_event));
     }
 
+    /// Add an event that will be run at the end of this frame
     pub fn enqueue_event<T>(&mut self, event: T)
     where
-        T: Clone + IGameEvent + Serialize + DeserializeOwned + Display + 'static,
+        T: Clone + ImpulseCommon + Serialize + DeserializeOwned + Display + 'static,
     {
         // Insert or push into Queue
         self.cache
@@ -90,24 +77,22 @@ impl Nerve {
             .or_insert_with(AnyQueue::new)
             .push(event.clone());
 
-        // Network Sync Logic
-        let Some(network_capabilities) = &mut self.network_capabilities else {
-            println!("no network");
-            return;
-        };
-
-        if !network_capabilities.has_write_privilege(event.ownership()) {
+        if !self
+            .network_capabilities
+            .has_write_privilege(event.ownership())
+        {
             return;
         }
 
-        if let Some(ser) = EventSyncEvent::serialize::<T>(&event) {
-            network_capabilities.enqueue_sync_events(ser);
+        if let Some(ser) = ImpulseSynchronizer::serialize::<T>(&event) {
+            self.network_capabilities.enqueue_sync_events(ser);
         }
     }
 
+    /// Drain all events that have been enqueued since last drain
     pub fn drain_queued_events<T: 'static>(&mut self) -> Vec<T>
     where
-        T: IGameEvent + Display + Clone + 'static,
+        T: ImpulseCommon  + Clone + 'static,
     {
         let key = T::id();
         match self.cache.get_mut(&key) {
@@ -115,14 +100,12 @@ impl Nerve {
                 let drained = queue.drain::<T>();
                 drained
             }
-            None => {
-                // println!("no queue found for id {}", key);
-                Vec::new()
-            }
+            None => Vec::new(),
         }
     }
 
-    pub fn try_apply_network_sync_events(&mut self, sync_events: Vec<EventSyncEvent>) {
+    /// Try to apply any synchronize event that was pushed from another nerve
+    pub fn try_apply_network_sync_events(&mut self, sync_events: Vec<ImpulseSynchronizer>) {
         for sync in sync_events {
             let Some(payload) = sync.deserialize() else {
                 println!("failed deserialize");
@@ -130,26 +113,14 @@ impl Nerve {
             };
 
             self.cache
-                .entry(sync.id)
+                .entry(sync.impulse_id)
                 .or_insert_with(AnyQueue::new)
                 .push_boxed(payload);
         }
     }
 
-    pub fn try_drain_network_sync_events(&mut self) -> Vec<EventSyncEvent> {
-        let Some(network_capabilities) = &mut self.network_capabilities else {
-            return Vec::new();
-        };
-
-        network_capabilities.drain_sync_events()
-    }
-}
-
-pub trait AsAny {
-    fn as_any(&self) -> Option<&dyn std::any::Any> {
-        None
-    }
-    fn as_mut_any(&mut self) -> Option<&mut dyn std::any::Any> {
-        None
+    /// Try to get any synchronize event that should be pushed to another nerve
+    pub fn try_drain_network_sync_events(&mut self) -> Vec<ImpulseSynchronizer> {
+        self.network_capabilities.drain_sync_events()
     }
 }

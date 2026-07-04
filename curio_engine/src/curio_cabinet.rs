@@ -14,7 +14,7 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, CurioMetadata, EngineServices, GpuHandle, Portal, Severity, TextureAsset, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, EngineServices, GpuHandle, Identity, Portal, Severity, TextureAsset, Vector3};
 
 // static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
 static OPEN_DISPLAY_WINDOWS: LazyLock<Mutex<Vec<CabinetWindow>>> = LazyLock::new(|| Mutex::new(Vec::new()));
@@ -146,7 +146,7 @@ impl CabinetWindowOwner {
 
         instance
     }
-    fn _get_window(event_loop: &ActiveEventLoop, meta: &CurioMetadata, portal: &Portal) -> Arc<Window> {
+    fn _get_window(event_loop: &ActiveEventLoop, meta: &Identity, portal: &Portal) -> Arc<Window> {
         // populate all the attributes to spawn the window
         let atts = Window::default_attributes()
             .with_title(format!(" {} - {}.{}.{}", meta.name, meta.version.major, meta.version.minor, meta.version.patch))
@@ -293,7 +293,7 @@ impl ApplicationHandler for CabinetWindowOwner {
         match event {
             WindowEvent::RedrawRequested => {
                 if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.curio.application_refresh();
+                    app_instance.curio.update();
                 }
 
                 // if let Some(x) = &self.services {

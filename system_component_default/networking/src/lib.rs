@@ -1,4 +1,4 @@
-use curio_core::{EventScope, Formation, Ledger, Nerve, Severity, StateOwnerships, StateSyncEvent, built_in::record::sys_record_network::SysRecordNetwork};
+use curio_core::{Formation, ImpulseScope, Ledger, Nerve, Severity, StateOwnerships, StateSyncEvent, built_in::record::sys_record_network::SysRecordNetwork};
 use curio_core::{NetworkModes, SystemComponent};
 use message_io::node;
 // use message_io::node::NodeEvent;
@@ -254,8 +254,8 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             let events = event_queue_a.try_drain_network_sync_events();
 
             for event in events {
-                match event.ownership {
-                    EventScope::All => {
+                match event.impulse_scope {
+                    ImpulseScope::All => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             if i == j {
@@ -269,7 +269,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
-                    EventScope::ConnectedHost => {
+                    ImpulseScope::ConnectedHost => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             if i == j {
@@ -293,7 +293,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
                         }
                     }
-                    EventScope::ConnectedPeers => {
+                    ImpulseScope::ConnectedPeers => {
                         for j in 0..event_queue.len() {
                             // if equal this means that the two queues are the same and we should skipp
                             // if i == j {

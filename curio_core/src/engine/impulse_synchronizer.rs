@@ -1,20 +1,22 @@
-use std::any::Any;
-
 use crate::{
-    engine::igame_event::IGameEvent,
+    engine::impulse_common::ImpulseCommon,
     static_data::global_events::{get_global_event_deserializer, get_global_event_serializer},
-    EventScope,
+    ImpulseScope,
 };
+use std::any::Any;
 #[derive(Clone)]
-pub struct EventSyncEvent {
-    pub id: i32,
-    pub payload: Vec<u8>,
-    pub ownership: EventScope,
+
+/// An representation of an Impulse that is serialized for rebuild by a Nerve
+pub struct ImpulseSynchronizer {
+    pub impulse_id: i32,
+    pub impulse_scope: ImpulseScope,
+    payload: Vec<u8>,
 }
-impl EventSyncEvent {
-    pub fn serialize<T>(val: &T) -> Option<EventSyncEvent>
+impl ImpulseSynchronizer {
+    /// Creates an ImpulseSynchronizer from the provided Impulse. Will fail if Impulse is not registered with GlobalImpulses
+    pub fn serialize<T>(val: &T) -> Option<ImpulseSynchronizer>
     where
-        T: IGameEvent + 'static,
+        T: ImpulseCommon + 'static,
     {
         // pull out any values we need from the IState to record its identity
         let event_id = T::id();
@@ -26,23 +28,19 @@ impl EventSyncEvent {
         };
 
         //
-        Some(EventSyncEvent {
-            id: event_id,
+        Some(ImpulseSynchronizer {
+            impulse_id: event_id,
             payload: serialized_state,
-            ownership: event_ownership,
+            impulse_scope: event_ownership,
         })
     }
-    pub fn deserialize(&self) -> Option<Box<dyn Any>> {
-        // conver the state data into an IState
-        let Some(deserialized_state) = Self::deserialize_sync_event(&self.id, &self.payload) else {
-            return None;
-        };
 
-        // return the value
-        Some(deserialized_state)
+    /// Creates an Impulse cast as a Box<Any> from this ImpulseSynchronizer. Will fail if Impulse is not registered with GlobalImpulses.
+    pub fn deserialize(&self) -> Option<Box<dyn Any>> {
+        Self::deserialize_sync_event(&self.impulse_id, &self.payload)
     }
 }
-impl EventSyncEvent {
+impl ImpulseSynchronizer {
     fn deserialize_sync_event(id: &i32, bytes: &Vec<u8>) -> Option<Box<dyn Any>> {
         // get global fn
         let Some(fn_deserialize) = &get_global_event_deserializer(id) else {
@@ -53,9 +51,10 @@ impl EventSyncEvent {
         // return result
         Some(fn_deserialize(&bytes.as_slice()))
     }
+
     fn serialize_sync_event<T>(id: &i32, value: &T) -> Option<Vec<u8>>
     where
-        T: IGameEvent + 'static,
+        T: ImpulseCommon + 'static,
     {
         // get global fn
         let Some(fn_serialize) = &get_global_event_serializer(id) else {

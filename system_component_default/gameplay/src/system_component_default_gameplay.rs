@@ -4,12 +4,12 @@ use crate::{
     static_fns::{register_built_in_facets::register_built_in_component, register_built_in_habits::register_built_in_ecs},
     traits::ui_events::IUIEvent,
 };
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Formation, IGameEvent, Ledger, Nerve, SystemComponent, TabState, Vector3};
-use std::{fmt::Display, vec};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Formation, ImpulseCommon, Ledger, Nerve, PluginState, SystemComponent, Vector3};
+use std::vec;
 
 pub struct SystemComponentDefaultGameplay<T, U>
 where
-    T: IGameEvent + Clone + 'static,
+    T: ImpulseCommon + Clone + 'static,
     U: IUIEvent + 'static,
 {
     game_instance: Vec<GameplayInstance<T, U>>,
@@ -17,7 +17,7 @@ where
 
 impl<T, U> SystemComponentDefaultGameplay<T, U>
 where
-    T: IGameEvent + Clone + 'static,
+    T: ImpulseCommon + Clone + 'static,
     U: IUIEvent + 'static,
 {
     pub fn new() -> Box<SystemComponentDefaultGameplay<T, U>> {
@@ -39,7 +39,7 @@ where
 // }
 impl<T, U> SystemComponent for SystemComponentDefaultGameplay<T, U>
 where
-    T: IGameEvent + Display + 'static + Clone,
+    T: ImpulseCommon + 'static + Clone,
     U: IUIEvent + 'static,
 {
     fn name(&self) -> String {
@@ -72,7 +72,7 @@ where
         let reg = COMPONENT_REGISTRY.read().expect("Registry poisoned");
         reg.get_def_state.iter().map(|x| x.1.clone()).collect()
     }
-    fn get_state(&self, ledger: &Vec<Ledger>) -> Vec<(String, TabState)> {
+    fn get_state(&self, ledger: &Vec<Ledger>) -> Vec<(String, PluginState)> {
         let mut result = Vec::new();
         for i in 0..self.game_instance.len() {
             let name = format!("{}-{}", ledger[i].network.me().mode, ledger[i].network.me().guid.to_string());

@@ -1,5 +1,5 @@
 use crate::traits::ui_events::IUIEvent;
-use curio_core::{EventScope, IGameEvent};
+use curio_core::{ImpulseCommon, ImpulseScope};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
@@ -19,7 +19,7 @@ where
         todo!()
     }
 }
-impl<T> IGameEvent for UIEvents<T>
+impl<T> ImpulseCommon for UIEvents<T>
 where
     T: Clone + Sync + IUIEvent + 'static,
 {
@@ -30,10 +30,10 @@ where
         1
     }
 
-    fn ownership(&self) -> EventScope
+    fn ownership(&self) -> ImpulseScope
     where
         Self: Sized + 'static,
     {
-        EventScope::ConnectedPeers
+        ImpulseScope::ConnectedPeers
     }
 }

@@ -4,7 +4,7 @@ use crate::{input::axis_code::AxisCode, ButtonCode, ButtonPressed, Vector3};
 /// Handles propogating external events into the Curio such as Application, Window and Input events.
 pub trait CurioCommon {
     // application
-    fn application_refresh(&mut self) {}
+    fn update(&mut self) {}
     // window
     fn window_opened(&mut self) {}
     fn window_closed(&mut self) {}

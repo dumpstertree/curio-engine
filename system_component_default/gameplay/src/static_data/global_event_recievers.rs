@@ -1,4 +1,4 @@
-use curio_core::IGameEvent;
+use curio_core::ImpulseCommon;
 use std::{
     any::Any,
     collections::HashMap,
@@ -20,7 +20,7 @@ static RECEIVER_REGISTRY: LazyLock<RwLock<ReceiverRegistry>> = LazyLock::new(|| 
 /// We store a constructor that returns `Box<R>` but erased to `Box<dyn Any>`.
 pub fn register_global_event_receiver<T, R>()
 where
-    T: IGameEvent + Clone + 'static,
+    T: ImpulseCommon + Clone + 'static,
     R: Impulse<T> + Default + Any + 'static,
 {
     // Curio::log(Severity::Info, &format!("Registered Global Impulse: {}", type_name::<T>()));
@@ -40,7 +40,7 @@ where
 }
 pub fn get_global_event_receivers<T>() -> Vec<Box<dyn Impulse<T>>>
 where
-    T: IGameEvent + Clone + 'static,
+    T: ImpulseCommon + Clone + 'static,
 {
     let reg = RECEIVER_REGISTRY.read().expect("Registry poisoned");
     let id = T::id();

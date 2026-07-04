@@ -1,4 +1,4 @@
-use crate::{EventScope, EventSyncEvent, NetworkModes};
+use crate::{ImpulseScope, ImpulseSynchronizer, NetworkModes};
 
 #[derive(Clone)]
 pub struct EventNetworkCapabilities {
@@ -6,14 +6,14 @@ pub struct EventNetworkCapabilities {
     pub privilege: NetworkModes,
 
     /// events waiting to be drained and sent to other game states
-    pub ouput_sync_events: Vec<EventSyncEvent>,
+    pub ouput_sync_events: Vec<ImpulseSynchronizer>,
 }
 // Public - Fns
 impl EventNetworkCapabilities {
-    pub fn has_write_privilege(&self, state_ownership: EventScope) -> bool {
+    pub fn has_write_privilege(&self, state_ownership: ImpulseScope) -> bool {
         // if the state is owned by the instance we never need to send it
         match state_ownership {
-            EventScope::Instance => return false,
+            ImpulseScope::Instance => return false,
             _ => {}
         }
         // // if the state is owned by the host we right it if we have host privilege
@@ -25,12 +25,12 @@ impl EventNetworkCapabilities {
         // }
         true
     }
-    pub fn drain_sync_events(&mut self) -> Vec<EventSyncEvent> {
+    pub fn drain_sync_events(&mut self) -> Vec<ImpulseSynchronizer> {
         let result = self.ouput_sync_events.clone();
         self.ouput_sync_events.clear();
         result
     }
-    pub fn enqueue_sync_events(&mut self, event: EventSyncEvent) {
+    pub fn enqueue_sync_events(&mut self, event: ImpulseSynchronizer) {
         self.ouput_sync_events.push(event);
     }
 }

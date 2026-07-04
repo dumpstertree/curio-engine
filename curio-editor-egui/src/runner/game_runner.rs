@@ -29,7 +29,7 @@ use crate::runner::{
 use curio_core::io::asset_cache::AssetCache;
 use curio_core::io::asset_database::AssetDatabase;
 use curio_core::io::asset_loader::AssetLoader;
-use curio_core::{set_services, ComponentState, Curio, CurioCommon, EngineServices, FormsSnapshot, GpuHandle, Logger, TabGroupState};
+use curio_core::{set_services, ComponentState, Curio, CurioCommon, EngineServices, GpuHandle, Logger, PluginGroupState};
 
 use egui_wgpu::wgpu::{Adapter, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
 
@@ -51,8 +51,8 @@ use std::{
 
 #[derive(Default, Clone)]
 pub struct SharedGameData {
-    pub forms: FormsSnapshot,
-    pub plugin: TabGroupState,
+    // pub forms: FormsSnapshot,
+    pub plugin: PluginGroupState,
 }
 
 pub static SHARED_DATA: Lazy<Mutex<SharedGameData>> = Lazy::new(|| Mutex::new(SharedGameData::default()));
@@ -223,9 +223,9 @@ impl GameRunner {
                 capture_width: CAPTURE_WIDTH,
                 capture_height: CAPTURE_HEIGHT,
             },
-            set_fullscreen,
-            set_resolution,
-            set_cursor_visible,
+            // set_fullscreen,
+            // set_resolution,
+            // set_cursor_visible,
         }));
 
         let services_ptr = self.services.as_deref().unwrap() as *const EngineServices;
@@ -254,7 +254,7 @@ impl GameRunner {
             match self.state {
                 RunnerState::Playing => {
                     if let Some(x) = self.loaded_app.as_mut() {
-                        x.app_instance.curio.application_refresh();
+                        x.app_instance.curio.update();
                     }
                     self.render_frame();
                 }
@@ -299,8 +299,8 @@ impl GameRunner {
         readback.kick_map();
 
         let mut shared_data = SHARED_DATA.lock();
-        shared_data.forms = loaded_app.app_instance.curio.context_snapshot();
-        shared_data.plugin = loaded_app.app_instance.curio.tab_snapshot();
+        // shared_data.forms = loaded_app.app_instance.curio.context_snapshot();
+        shared_data.plugin = loaded_app.app_instance.curio.get_plugin_group_state();
     }
 
     // ── Message dispatch ─────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 use crate::Vector2;
 
+/// A mapping of viewport anchors for one user
 #[derive(Clone)]
 pub struct GraphicsMapping {
     pub viewport_min: Vector2,

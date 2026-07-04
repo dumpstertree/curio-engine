@@ -1,6 +1,6 @@
 use crate::input::axis_code::AxisCode;
-use crate::{ButtonCode, ButtonPressed, ComponentState, Nerve, TabState};
-use crate::{EngineCommands, Ledger};
+use crate::{ButtonCode, ButtonPressed, ComponentState, Nerve, PluginState};
+use crate::{CurioCommands, Ledger};
 use crate::{Formation, Vector3};
 use egui_wgpu::wgpu::{CommandEncoder, Texture, TextureView};
 use winit::event::WindowEvent;
@@ -11,7 +11,7 @@ pub trait SystemComponent {
     fn order(&self) -> i32 {
         0
     }
-    fn refresh(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<Nerve>) -> Vec<EngineCommands> {
+    fn refresh(&mut self, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<Nerve>) -> Vec<CurioCommands> {
         vec![]
     }
 
@@ -33,7 +33,7 @@ pub trait SystemComponent {
     fn set_game_mode(&mut self, _ledger: &mut Vec<Ledger>, _game_mode: &Formation) {}
 
     // state
-    fn get_state(&self, _ledger: &Vec<Ledger>) -> Vec<(String, TabState)> {
+    fn get_state(&self, _ledger: &Vec<Ledger>) -> Vec<(String, PluginState)> {
         vec![]
     }
     fn get_facets(&self) -> Vec<ComponentState> {

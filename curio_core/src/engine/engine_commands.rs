@@ -1,36 +1,16 @@
-use std::fmt::Display;
-
 use crate::Vector3;
 use serde::{Deserialize, Serialize};
 
+// Commands for Curios and Plugins to interact
 #[derive(Clone, Serialize, Deserialize)]
-pub enum EngineCommands {
-    Redraw,
-
-    // tick
+pub enum CurioCommands {
+    // loop
     Tick,
-    // window
+    // lifecycle
     Exit,
+    // window mgmt
     Resize(Vector3),
     Fullscreen(bool),
     Resizable(bool),
     Cursor(bool),
-
-    //editor
-    SetDebugMode(bool),
-    SetPauseMode(bool),
-
-    // mulitplayer
-    SetNumInputs(i32),
-    SetNumScreens(i32),
-
-    //
-    SetHost(),
-    SetPeer(),
-}
-
-impl Display for EngineCommands {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "EngineCommand")
-    }
 }

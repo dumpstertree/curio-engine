@@ -1,6 +1,6 @@
-use crate::{graphics::graphics_mapping::GraphicsMapping, InputMapping, NetworkModes};
+use crate::{GraphicsMapping, InputMapping, NetworkModes};
 
-/// A definition the defines the input, graphics and network of a user in a curio
+/// A definition defines the input, graphics and network of a user in a Curio
 #[derive(Clone)]
 pub struct Seat {
     pub network: NetworkModes,

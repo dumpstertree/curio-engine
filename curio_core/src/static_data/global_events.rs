@@ -5,7 +5,7 @@ use std::{
     sync::{LazyLock, RwLock},
 };
 
-use crate::IGameEvent;
+use crate::ImpulseCommon;
 
 struct StateRegistry {
     creators: HashMap<i32, CreateFn>,
@@ -21,7 +21,7 @@ static REGISTRY: LazyLock<RwLock<StateRegistry>> = LazyLock::new(|| {
     })
 });
 
-type CreateFn = fn() -> Box<dyn IGameEvent>;
+type CreateFn = fn() -> Box<dyn ImpulseCommon>;
 type SerializerFn = fn(&dyn Any) -> Vec<u8>;
 type DeserializerFn = fn(&[u8]) -> Box<dyn Any>;
 
@@ -85,7 +85,7 @@ pub fn get_global_event_serializer(id: &i32) -> Option<SerializerFn> {
 /// Register a State  to be added to the Global State Registry that conforms to Serialize and DeserializeOwned in order to be transmisable between GameStates
 pub fn register_global_events<T>()
 where
-    T: IGameEvent + Serialize + DeserializeOwned + Default + Any + 'static,
+    T: ImpulseCommon + Serialize + DeserializeOwned + Default + Any + 'static,
 {
     let mut registry = REGISTRY.write().expect("Registry poisoned");
 

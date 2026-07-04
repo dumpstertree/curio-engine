@@ -12,7 +12,7 @@ use crate::project::Project;
 use crate::render_shared::RenderShared;
 use crate::runner::{GameMessage, GameRunner, InputEvent, SHARED_DATA};
 
-use curio_core::{get_and_clear_logs, Curio, ObjectState, Severity, TabGroupState};
+use curio_core::{get_and_clear_logs, Curio, ObjectState, PluginGroupState, Severity};
 
 use std::{
     collections::{HashSet, VecDeque},
@@ -75,7 +75,9 @@ fn timestamp() -> String {
     // No time-formatting crate pulled in for this — good enough for the
     // console overlay; swap for `time`/`chrono` if wall-clock display
     // formatting needs to change.
-    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
     let secs = now.as_secs() % 86_400;
     format!("{:02}:{:02}:{:02}", secs / 3600, (secs % 3600) / 60, secs % 60)
 }
@@ -91,7 +93,10 @@ struct CompileHandle {
 
 impl Default for CompileHandle {
     fn default() -> Self {
-        Self { status: Mutex::new(CompileStatus::Idle), child: Mutex::new(None) }
+        Self {
+            status: Mutex::new(CompileStatus::Idle),
+            child: Mutex::new(None),
+        }
     }
 }
 
@@ -115,7 +120,7 @@ pub struct EditorState {
     pub project: Arc<Mutex<Project>>,
     pub project_path: String,
 
-    pub tab_group_state: Option<TabGroupState>,
+    pub tab_group_state: Option<PluginGroupState>,
     pub selected_instance: String,
     pub active_left_tab: usize,
 
@@ -380,11 +385,7 @@ impl EditorState {
     pub fn refresh_tab_group(&mut self) {
         let tab_group_state = SHARED_DATA.lock().plugin.clone();
         let keys: Vec<String> = tab_group_state.id_for_tabs.keys().cloned().collect();
-        let valid_key = if keys.iter().any(|k| k == &self.selected_instance) {
-            self.selected_instance.clone()
-        } else {
-            keys.first().cloned().unwrap_or_default()
-        };
+        let valid_key = if keys.iter().any(|k| k == &self.selected_instance) { self.selected_instance.clone() } else { keys.first().cloned().unwrap_or_default() };
         self.selected_instance = valid_key;
         self.tab_group_state = Some(tab_group_state);
     }
@@ -401,7 +402,8 @@ impl EditorState {
             LogLevel::Info
         };
 
-        self.logs.push_back(LogLine { level, message: line, time: timestamp() });
+        self.logs
+            .push_back(LogLine { level, message: line, time: timestamp() });
         while self.logs.len() > 500 {
             self.logs.pop_front();
         }
@@ -436,7 +438,10 @@ impl EditorState {
             for arg in &project.build_args {
                 command.arg(arg);
             }
-            command.current_dir(&project.project_path).stdout(Stdio::piped()).stderr(Stdio::piped());
+            command
+                .current_dir(&project.project_path)
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped());
 
             let mut child = match command.spawn() {
                 Ok(c) => c,
@@ -497,7 +502,7 @@ impl EditorState {
     }
 }
 
-fn resolve_object<'a>(tab_group_state: &'a TabGroupState, selected_instance: &str, active_left_tab: usize, path: &[usize]) -> Option<&'a ObjectState> {
+fn resolve_object<'a>(tab_group_state: &'a PluginGroupState, selected_instance: &str, active_left_tab: usize, path: &[usize]) -> Option<&'a ObjectState> {
     let tabs = tab_group_state.id_for_tabs.get(selected_instance)?;
     let mut nodes: &Vec<ObjectState> = &tabs.get(active_left_tab)?.objects;
     let mut obj: Option<&ObjectState> = None;

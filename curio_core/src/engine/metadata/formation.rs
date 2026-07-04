@@ -1,4 +1,4 @@
-use crate::{graphics::graphics_mapping::GraphicsMapping, InputMapping, NetworkModes, Seat, Vector2};
+use crate::{GraphicsMapping, InputMapping, NetworkModes, Seat, Vector2};
 
 /// A formation of Seats used to define the visuals and input for a Curio
 #[derive(Clone)]
