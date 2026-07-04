@@ -3,7 +3,7 @@ use crate::{
     form_ref::{FormRef, MutQuery},
     static_data::global_components::COMPONENT_REGISTRY,
     traits::{facet_common::FacetCommon, field_override::FieldOverride},
-    traits_internal::world_context_common::{self, ContextCommon, spawn_prefab_recursive_internal},
+    traits_internal::world_context_common::spawn_prefab_recursive_internal,
 };
 use curio_core::{Composition, ObjectState, Quaternion, Vector3};
 use hecs::{Entity, Query, World};

@@ -1,9 +1,9 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
 use curio_core::{Ledger, Matrix4x4, TextureAsset, services};
-use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, Buffer, BufferDescriptor, BufferUsages, ColorTargetState, Device, Face, FragmentState, RenderPass, RenderPipeline, ShaderModule, SurfaceConfiguration, TextureFormat, util::DeviceExt};
+use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, Buffer, BufferDescriptor, BufferUsages, ColorTargetState, Device, Face, FragmentState, RenderPass, RenderPipeline, ShaderModule, TextureFormat};
 use ext_rendering::{Material, Mesh, SysRecordRendering, data::mesh::Vertex};
 use lighting::{LightSystem, SysRecordLights, SysRecordSun};
-use std::{collections::HashMap, sync::Arc, time::Instant};
+use std::{collections::HashMap, sync::Arc};
 
 pub struct RenderFeatureDrawMesh {
     light_system: Vec<LightSystem>,
@@ -30,16 +30,6 @@ impl RenderFeatureDrawMesh {
         b
     }
 
-    pub fn prewarm_pipelines(&mut self, shaders: &[Arc<ShaderModule>], camera_bind: &BindGroupLayout, diffuse_bind_layout: &BindGroupLayout, light_bind_layout: &BindGroupLayout, shadow_bind_layout: &BindGroupLayout, config: &SurfaceConfiguration, device: &Device) {
-        for shader in shaders {
-            for wireframe in [false, true] {
-                let key = PipelineCacheKey { shader_id: Arc::as_ptr(shader) as usize, wireframe };
-                self.pipeline_cache
-                    .entry(key)
-                    .or_insert_with(|| RenderFeatureDrawMesh::get_render_pipeline(camera_bind, diffuse_bind_layout, light_bind_layout, shadow_bind_layout, device, shader.clone(), wireframe));
-            }
-        }
-    }
     fn draw_all_mesh(&mut self, ledger: &mut Ledger, device: &Device, render_pass: &mut RenderPass, camera: &CameraRenderingComponents, camera_index: usize, shadow_system_bind_group_layout: &BindGroupLayout, shadow_system_bind_group: &BindGroup) {
         // prewarm
 

@@ -2,7 +2,7 @@ use crate::form::Form;
 use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
 use curio_core::Composition;
-use curio_core::io::asset_loader::{AssetLoader, Assets};
+use curio_core::io::asset_loader::Assets;
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -70,7 +70,7 @@ pub(crate) fn spawn_prefab_recursive_internal(world: Rc<RefCell<World>>, prefab:
         let mut parent_form = spawn_prefab_recursive_internal(world.clone(), &asset, split[1].to_owned());
 
         // create parent child relationship
-        for mut child in child_forms {
+        for child in child_forms {
             child.set_parent(Some(parent_form.clone()));
         }
 
@@ -105,7 +105,7 @@ pub(crate) fn spawn_prefab_recursive_internal(world: Rc<RefCell<World>>, prefab:
     let mut parent_form = FormRef::new(&name, world, entity);
 
     // create parent child relationship
-    for mut child in child_forms {
+    for child in child_forms {
         child.set_parent(Some(parent_form.clone()));
     }
 

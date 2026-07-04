@@ -3,7 +3,7 @@ use std::sync::Arc;
 use camera::SysRecordCamera;
 use curio_core::{
     Color, GraphicsMapping, Ledger, Matrix4x4, Quaternion, TextureAsset, Vector2, Vector3,
-    io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader, Assets},
+    io::asset_loader::{ASSET_UID_SHADER_UNLIT, Assets},
     services,
 };
 use egui_wgpu::wgpu::{AddressMode, BindGroup, BindGroupLayout, CompareFunction, Device, Extent3d, FilterMode, RenderPass, RenderPassDepthStencilAttachment, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureUsages, TextureViewDescriptor};

@@ -40,5 +40,5 @@ pub trait SystemComponent {
         vec![]
     }
 
-    fn render(&mut self, output_texture: &Texture, output_view: &TextureView, command_encoder: &mut CommandEncoder, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {}
+    fn render(&mut self, _output_texture: &Texture, _output_view: &TextureView, _command_encoder: &mut CommandEncoder, _ledger: &mut Vec<Ledger>, _event_queue: &mut Vec<Nerve>) {}
 }

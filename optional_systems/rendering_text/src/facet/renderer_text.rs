@@ -1,6 +1,6 @@
 use curio_core::{
     Color, FieldState, Matrix4x4, Quaternion, Vector2, Vector3,
-    io::asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader, Assets},
+    io::asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, Assets},
 };
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;

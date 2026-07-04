@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use curio_core::{
     AssetCommon, Matrix4x4, Random, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetLoader, Assets},
+    io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, Assets},
 };
 use ext_rendering::{
     Material, Mesh,

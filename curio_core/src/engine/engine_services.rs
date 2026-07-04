@@ -2,12 +2,9 @@ use std::ptr;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 // use egui::Window;
-use egui_wgpu::wgpu::{Device, Queue, Surface, SurfaceConfiguration, Texture};
-use winit::window::Window;
-
 use crate::io::asset_loader::AssetLoader;
 use crate::io::log::Logger;
-use crate::TextureAsset;
+use egui_wgpu::wgpu::{Device, Queue, Texture};
 
 #[repr(C)]
 pub struct GpuHandle {

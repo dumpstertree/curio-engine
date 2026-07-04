@@ -1,6 +1,6 @@
 use crate::form::FormBuilder3D;
 use crate::traits_internal::world_context_common::ContextCommon;
-use curio_core::{Composition, Quaternion, Vector3};
+use curio_core::{Quaternion, Vector3};
 use hecs::World;
 use std::cell::RefCell;
 use std::rc::Rc;

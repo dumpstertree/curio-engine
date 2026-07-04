@@ -1,6 +1,6 @@
 use curio_core::{
     Color, FieldState,
-    io::asset_loader::{AssetLoader, Assets},
+    io::asset_loader::Assets,
 };
 // use ext_rendering::RendererCommon;
 use facet::facet;

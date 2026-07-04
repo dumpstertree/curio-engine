@@ -1,7 +1,7 @@
 use egui_wgpu::wgpu::{Texture, TextureView};
 use serde::Serialize;
 
-use crate::{ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
+use crate::{services, ButtonCode, ButtonPressed, EngineCommands, Nerve, NetworkModes, Random};
 use std::collections::HashMap;
 
 use crate::{
@@ -56,7 +56,9 @@ pub struct Curio {
 impl Curio {
     /// Log a system wide message
     pub fn log(severity: Severity, contents: &str) {
-        // log(0, severity, &format!("[SYS]: {}", contents));
+        services()
+            .logger()
+            .log(0, severity, &format!("[SYS]: {}", contents));
     }
     pub fn facet_snapshot(&self) -> Vec<ComponentState> {
         let mut f = Vec::new();

@@ -1,4 +1,4 @@
-use curio_core::{Ledger, TextureAsset, services};
+use curio_core::{TextureAsset, services};
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::{AddressMode, CompareFunction, Device, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor};
@@ -20,7 +20,7 @@ pub struct RenderFeaturePostProcessHelper {
     pp_resource: PostProcessResources,
     features: Vec<Box<dyn RenderFeaturePostProcess>>,
     // Owned depth texture — written by 3D pass, read by post-process features
-    pub depth_texture: TextureAsset,
+    // pub depth_texture: TextureAsset,
 }
 
 impl RenderFeaturePostProcessHelper {
@@ -45,7 +45,7 @@ impl RenderFeaturePostProcessHelper {
             RenderFeaturePostProcessFog::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
         ];
 
-        RenderFeaturePostProcessHelper { pp_resource, features, depth_texture }
+        RenderFeaturePostProcessHelper { pp_resource, features /*depth_texture*/ }
     }
 
     fn create_depth_texture(device: &Device, width: u32, height: u32) -> TextureAsset {
@@ -105,9 +105,9 @@ impl RenderFeaturePostProcessHelper {
 }
 
 pub struct PostProcessResources {
-    pub texture_a: egui_wgpu::wgpu::Texture,
+    // pub texture_a: egui_wgpu::wgpu::Texture,
     pub view_a: TextureView,
-    pub texture_b: egui_wgpu::wgpu::Texture,
+    // pub texture_b: egui_wgpu::wgpu::Texture,
     pub view_b: TextureView,
 }
 
@@ -130,6 +130,7 @@ impl PostProcessResources {
         let texture_b = device.create_texture(&desc("post B"));
         let view_b = texture_b.create_view(&TextureViewDescriptor::default());
 
-        Self { texture_a, view_a, texture_b, view_b }
+        Self { view_a, view_b }
+        // Self { texture_a, view_a, texture_b, view_b }
     }
 }
