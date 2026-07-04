@@ -1,6 +1,6 @@
 use curio_core::{
     AssetCommon, Matrix4x4, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_FONT_ATLAS, AssetLoader},
+    io::asset_loader::{ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_FONT_ATLAS, AssetLoader, Assets},
 };
 use ext_rendering::{
     Material, Mesh,
@@ -55,10 +55,10 @@ impl FontAsset {
         // let shader = AssetLoader::load_shader_desc(&File::join_path(&File::get_built_in_asset_path(), &desc.shader_path));
 
         // let texture = AssetLoader::load_texture_from_path(&ASSET_UID_TEXTURE_FONT_ATLAS);
-        let texture = AssetLoader::load_asset::<TextureAsset>(&ASSET_UID_TEXTURE_FONT_ATLAS);
+        let texture = Assets::load_asset::<TextureAsset>(&ASSET_UID_TEXTURE_FONT_ATLAS);
         println!("{}, {}", texture.texture.width(), texture.texture.height());
 
-        let shader = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT);
+        let shader = Assets::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT);
 
         let w = texture.texture.width() as f32;
         let h = texture.texture.height() as f32;

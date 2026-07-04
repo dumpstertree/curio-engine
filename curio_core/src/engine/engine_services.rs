@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicPtr, Ordering};
 use egui_wgpu::wgpu::{Device, Queue, Surface, SurfaceConfiguration, Texture};
 use winit::window::Window;
 
+use crate::io::asset_loader::AssetLoader;
 use crate::io::log::Logger;
 use crate::TextureAsset;
 
@@ -54,6 +55,7 @@ unsafe impl Sync for EngineServices {}
 #[repr(C)]
 pub struct EngineServices {
     pub logger: *mut Logger,
+    pub assets: *mut AssetLoader,
     pub gpu: GpuHandle,
     pub set_resolution: unsafe extern "C" fn(w: i32, h: i32),
     pub set_fullscreen: unsafe extern "C" fn(fullscreen: bool),
@@ -65,6 +67,9 @@ impl EngineServices {
     }
     pub fn logger(&self) -> &mut Logger {
         unsafe { &mut *self.logger }
+    }
+    pub fn assets(&self) -> &mut AssetLoader {
+        unsafe { &mut *self.assets }
     }
 }
 

@@ -1,6 +1,6 @@
 use curio_core::{
     Color, FieldState, Matrix4x4, Quaternion, Vector2, Vector3,
-    io::asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader},
+    io::asset_loader::{ASSET_UID_FONT_ASSET_DEFAULT, AssetLoader, Assets},
 };
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
@@ -29,7 +29,7 @@ impl FieldOverride for RendererText {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
             // "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
-            "asset" => self.font_asset = Some(AssetLoader::load_asset::<FontAsset>(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
+            "asset" => self.font_asset = Some(Assets::load_asset::<FontAsset>(&Assets::try_lookup_key_for_name(value).unwrap())),
             "contents" => self.contents = value.to_string(),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "font_size" => self.font_size = value.parse().unwrap_or_default(),
@@ -139,7 +139,7 @@ impl RendererText {
         //     .unwrap_or_else(|| AssetLoader::load_font_asset("assets/default.font"));
 
         if self.font_asset.is_none() {
-            self.font_asset = Some(AssetLoader::load_asset::<FontAsset>(&ASSET_UID_FONT_ASSET_DEFAULT));
+            self.font_asset = Some(Assets::load_asset::<FontAsset>(&ASSET_UID_FONT_ASSET_DEFAULT));
         }
         let Some(font_asset) = &self.font_asset else {
             println!("font asset is none");
@@ -264,5 +264,3 @@ pub enum AligmentVertical {
     Center,
     Bottom,
 }
-
-

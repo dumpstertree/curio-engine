@@ -2,7 +2,7 @@ import type { TabGroupState } from './types';
 import { useEditorStore } from './store';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Mock data — matches Rust serialization exactly
+// Mock data
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MOCK: TabGroupState = {
@@ -62,6 +62,7 @@ async function invoke<T>(cmd: string, args?: Record<string, unknown>): Promise<T
   const { invoke: tauriInvoke } = await import('@tauri-apps/api/core');
   return tauriInvoke<T>(cmd, args);
 }
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -132,9 +133,29 @@ export const api = {
   getCompileStatus: (): Promise<string> => isTauri() ? invoke('get_compile_status') : Promise.resolve('idle'),
   cancelCompile: (): Promise<void> => isTauri() ? invoke('cancel_compile') : Promise.resolve(),
 
-  // Viewport — poll for raw RGBA frame bytes, null if no new frame
-  getFrame: (): Promise<number[] | null> =>
-    isTauri() ? invoke<number[] | null>('get_frame') : Promise.resolve(null),
+  // Viewport — push model via Channel, no per-frame round-trip IPC.
+  // Calls stream_frames once; Rust pushes raw RGBA bytes as fast as frames
+  // are ready. Returns a cleanup function to call on unmount.
+  // Returns a Promise<cleanup fn> — await it in useEffect via a wrapper.
+  startFrameStream: async (onFrame: (bytes: Uint8ClampedArray) => void): Promise<() => void> => {
+    if (!isTauri()) return () => { };
+
+    const { invoke: tauriInvoke, Channel } = await import('@tauri-apps/api/core');
+
+    let active = true;
+    const channel = new Channel<ArrayBuffer>();
+
+    channel.onmessage = (raw: ArrayBuffer) => {
+      if (!active) return;
+      const plain = new ArrayBuffer(raw.byteLength);
+      new Uint8Array(plain).set(new Uint8Array(raw));
+      onFrame(new Uint8ClampedArray(plain));
+    };
+
+    await tauriInvoke('stream_frames', { onFrame: channel });
+
+    return () => { active = false; };
+  },
 
   // Input
   sendInput: (event: InputEvent): Promise<void> =>

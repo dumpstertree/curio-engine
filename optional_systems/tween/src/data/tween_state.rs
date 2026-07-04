@@ -57,7 +57,7 @@ pub struct TweenState {
 }
 impl Clone for TweenState {
     fn clone(&self) -> Self {
-        println!("Complete is not yet cloned");
+        // println!("Complete is not yet cloned");
         Self {
             duration: self.duration.clone(),
             elapsed: self.elapsed.clone(),

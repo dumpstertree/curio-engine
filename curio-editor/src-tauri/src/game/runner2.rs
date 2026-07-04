@@ -1,7 +1,7 @@
 use crate::{
     callbacks::{set_cursor_visible, set_fullscreen, set_resolution},
     game::{
-        capture::{map_and_store, record_readback, CAPTURE_HEIGHT, CAPTURE_WIDTH},
+        capture::{lock_process_memory, record_readback, ReadbackBuffers, CAPTURE_HEIGHT, CAPTURE_WIDTH},
         plugin_loader::{self, load_library},
     },
     PROJECT, SHARED_DATA,
@@ -9,9 +9,7 @@ use crate::{
 
 use curio_core::{set_services, AxisCode, ButtonCode, ButtonPressed, ComponentState, Curio, CurioCommon, EngineServices, GpuHandle, Logger, Vector3};
 
-use egui_wgpu::wgpu::{
-    Adapter, Buffer, BufferDescriptor, BufferUsages, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
-};
+use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
 
 use libloading::Symbol;
 use pollster::FutureExt;
@@ -105,12 +103,12 @@ pub struct GameRunner2 {
 
     state: RunnerState,
     rx: Receiver<GameMessage2>,
-
     services: Option<Box<EngineServices>>,
     capture_texture: Option<Arc<Texture>>,
-    readback_buffer: Option<Buffer>,
     surface_format: TextureFormat,
     loaded_app: Option<AppInstance>,
+    // Render thread owns readback exclusively — no shared mutex needed
+    readback: Option<ReadbackBuffers>,
 }
 
 impl GameRunner2 {
@@ -121,7 +119,7 @@ impl GameRunner2 {
             services: None,
             loaded_app: None,
             capture_texture: None,
-            readback_buffer: None,
+            readback: None,
             state: RunnerState::Stopped,
             surface_format: TextureFormat::Rgba8UnormSrgb,
             device: None,
@@ -179,13 +177,7 @@ impl GameRunner2 {
             view_formats: &[],
         }));
 
-        let bytes_per_row = crate::utils::align_to(CAPTURE_WIDTH * 4, 256);
-        let readback_buffer = device.create_buffer(&BufferDescriptor {
-            label: Some("readback_buffer"),
-            size: (bytes_per_row * CAPTURE_HEIGHT) as u64,
-            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
+        let readback = ReadbackBuffers::new(device.clone(), CAPTURE_WIDTH, CAPTURE_HEIGHT);
 
         self.services = Some(Box::new(EngineServices {
             logger: self.logger.as_mut() as *mut Logger,
@@ -209,16 +201,16 @@ impl GameRunner2 {
         self.queue = Some(queue);
         self.adapter = Some(adapter);
         self.capture_texture = Some(capture_texture);
-        self.readback_buffer = Some(readback_buffer);
+        self.readback = Some(readback);
     }
 
     // ── Main loop ────────────────────────────────────────────────────────────
 
     pub fn run(mut self) {
+        lock_process_memory();
         self.setup_gpu();
 
-        // Target ~60fps — gives ~16.67ms per frame
-        let frame_duration = Duration::from_micros(16_667);
+        let frame_duration = Duration::from_micros(16_667); // ~60fps
 
         loop {
             let frame_start = Instant::now();
@@ -227,11 +219,9 @@ impl GameRunner2 {
 
             match self.state {
                 RunnerState::Playing => {
-                    // Run game tick
                     if let Some(x) = self.loaded_app.as_mut() {
                         x.app_instance.curio.application_refresh();
                     }
-                    // Render and readback
                     self.render_frame();
                 }
                 RunnerState::Paused | RunnerState::Stopped => {
@@ -240,8 +230,6 @@ impl GameRunner2 {
                 }
             }
 
-            // Sleep off any remaining frame budget so we don't
-            // hammer the CPU/GPU at uncapped rate
             let elapsed = frame_start.elapsed();
             if elapsed < frame_duration {
                 std::thread::sleep(frame_duration - elapsed);
@@ -250,37 +238,41 @@ impl GameRunner2 {
     }
 
     // ── Per-frame render ─────────────────────────────────────────────────────
+    // The render thread owns readback exclusively.
+    // It renders, submits, kicks map_async, then blocks on poll(Wait).
+    // Completed frames are pushed to the stream thread via mpsc.
 
     fn render_frame(&mut self) {
-        let (Some(loaded_app), Some(services), Some(capture_texture), Some(readback_buffer)) = (self.loaded_app.as_mut(), &self.services, &self.capture_texture, &self.readback_buffer) else {
+        let (Some(loaded_app), Some(services), Some(capture_texture), Some(readback)) = (self.loaded_app.as_mut(), &self.services, &self.capture_texture, self.readback.as_mut()) else {
+            eprintln!("[render_frame] missing component");
             return;
         };
 
         let device = services.gpu.device();
         let queue = services.gpu.queue();
 
+        // ── Collect previous frame (blocks until GPU done) ────────────────
+        // This is frame N-1's readback completing while we prepare frame N.
+        // poll(Wait) fires here — the callback runs, map completes, we copy.
+        readback.blocking_collect_and_push(capture_texture.width(), capture_texture.height());
+
+        // ── Render frame N ────────────────────────────────────────────────
         let output_view = capture_texture.create_view(&TextureViewDescriptor::default());
 
-        // Single encoder for both render and readback copy —
-        // one submit means no pipeline stall between the two
-        let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor { label: Some("curio_frame_encoder") });
+        let mut encoder = device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor { label: Some("curio_frame_encoder") });
 
-        // Curio renders into capture_texture
         loaded_app
             .app_instance
             .curio
             .render(capture_texture, &output_view, &mut encoder);
 
-        // Record the GPU → CPU copy into the same encoder
-        record_readback(&mut encoder, capture_texture, readback_buffer);
+        record_readback(&mut encoder, capture_texture, &readback.write_buf);
 
-        // Single submit — render + copy in one batch
         queue.submit(std::iter::once(encoder.finish()));
 
-        // Map the readback buffer and write into the double-buffer store
-        map_and_store(device, readback_buffer, capture_texture.width(), capture_texture.height());
+        // Kick map_async for this frame — will be collected next iteration
+        readback.kick_map();
 
-        // Update shared state for inspector / tab group polling
         if let Ok(mut shared_data) = SHARED_DATA.lock() {
             shared_data.forms = loaded_app.app_instance.curio.context_snapshot();
             shared_data.plugin = loaded_app.app_instance.curio.tab_snapshot();
@@ -300,12 +292,6 @@ impl GameRunner2 {
                         let guard = project.lock().expect("Failed to lock project");
                         let services_ptr = self.services.as_deref().unwrap() as *const EngineServices;
                         let path = format!("{}/target/release/", guard.project_path);
-
-                        if let Err(e) = std::panic::catch_unwind(|| load_curio(Path::new(&path), services_ptr)) {
-                            eprintln!("load_curio panicked: {:?}", e);
-                            return;
-                        }
-
                         let loaded_curio = load_curio(Path::new(&path), services_ptr);
                         let mut app_instance = AppInstance::new(loaded_curio);
                         app_instance.app_instance.curio.window_opened();
@@ -317,7 +303,6 @@ impl GameRunner2 {
                 GameMessage2::Pause => {
                     self.state = RunnerState::Paused;
                 }
-
                 GameMessage2::Resume => {
                     self.state = RunnerState::Playing;
                 }
@@ -325,7 +310,9 @@ impl GameRunner2 {
                 GameMessage2::Stop => {
                     if let Some(app) = self.loaded_app.take() {
                         drop(app);
-                        println!("dropped from stop");
+                    }
+                    if let Some(rb) = self.readback.as_mut() {
+                        rb.reset();
                     }
                     self.state = RunnerState::Stopped;
                 }
@@ -359,22 +346,14 @@ impl GameRunner2 {
             view_formats: &[],
         }));
 
-        let bytes_per_row = crate::utils::align_to(w * 4, 256);
-        let readback_buffer = device.create_buffer(&BufferDescriptor {
-            label: Some("readback_buffer"),
-            size: (bytes_per_row * h) as u64,
-            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-
         if let Some(services) = &mut self.services {
             services.gpu.capture_texture = Arc::as_ptr(&capture_texture) as *const ();
             services.gpu.capture_width = w;
             services.gpu.capture_height = h;
         }
 
+        self.readback = Some(ReadbackBuffers::new(device.clone(), w, h));
         self.capture_texture = Some(capture_texture);
-        self.readback_buffer = Some(readback_buffer);
     }
 }
 
@@ -387,85 +366,72 @@ type PeekCurioFn = unsafe extern "C" fn() -> *mut Vec<ComponentState>;
 
 pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
-
     for entry in entries.flatten() {
         let path = entry.path();
-
         if let Err(e) = load_library(&path) {
             eprintln!("load_library failed for {:?}: {}", path, e);
             continue;
         }
-
         let l2 = plugin_loader::library_slot().lock();
         let lib = match l2 {
             Ok(l) => l,
-            Err(e) => panic!("library slot mutex poisoned for {:?}: {}", path, e),
+            Err(e) => panic!("mutex poisoned: {}", e),
         };
         let lib = match lib.as_ref() {
             Some(l) => l,
             None => {
-                eprintln!("library slot is None after load for {:?}", path);
+                eprintln!("slot None for {:?}", path);
                 continue;
             }
         };
-
         let curio = unsafe {
-            let init_fn: Symbol<PeekCurioFn> = if let Ok(f) = lib.get(b"curio_peek") { f } else { continue };
-            let raw = init_fn();
+            let f: Symbol<PeekCurioFn> = if let Ok(f) = lib.get(b"curio_peek") { f } else { continue };
+            let raw = f();
             if raw.is_null() {
-                eprintln!("curio_peek returned null for {:?}", path);
                 continue;
             }
             Box::from_raw(raw)
         };
-
         return curio;
     }
-    panic!("No curio plugin found in {:?}", folder);
+    panic!("No curio plugin found");
 }
 
 pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
-
     for entry in entries.flatten() {
         let path = entry.path();
-
         let is_plugin = matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"));
         if !is_plugin {
             continue;
         }
-
         if let Err(e) = load_library(&path) {
             eprintln!("load_library failed for {:?}: {}", path, e);
             continue;
         }
-
         let l2 = plugin_loader::library_slot().lock();
         let lib = match l2 {
             Ok(l) => l,
-            Err(e) => panic!("library slot mutex poisoned for {:?}: {}", path, e),
+            Err(e) => panic!("mutex poisoned: {}", e),
         };
         let lib = match lib.as_ref() {
             Some(l) => l,
             None => {
-                eprintln!("library slot is None after load for {:?}", path);
+                eprintln!("slot None for {:?}", path);
                 continue;
             }
         };
-
         let curio = unsafe {
-            let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
-            let raw = init_fn(gpu);
+            let f: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
+            let raw = f(gpu);
             if raw.is_null() {
-                eprintln!("curio_init returned null for {:?}", path);
+                eprintln!("curio_init null for {:?}", path);
                 continue;
             }
             Box::from_raw(raw)
         };
-
         eprintln!("loaded: {}", curio.meta.name);
         return LoadedCurio { curio };
     }
-
-    panic!("No curio plugin found in {:?}", folder);
+    panic!("No curio plugin found");
 }

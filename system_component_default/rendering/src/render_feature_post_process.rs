@@ -25,6 +25,7 @@ pub struct RenderFeaturePostProcessHelper {
 
 impl RenderFeaturePostProcessHelper {
     pub fn new(offscreen_view: &TextureView) -> RenderFeaturePostProcessHelper {
+        println!("pp");
         let s = services();
         let device = Arc::new(s.gpu.device().clone());
 

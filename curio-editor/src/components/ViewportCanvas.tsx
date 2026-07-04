@@ -1,53 +1,86 @@
 import React, { useEffect, useRef } from 'react';
 import { useEditorStore } from '../store';
-import { api, InputEvent } from '../api';
+import { api } from '../api';
 
-// These must match CAPTURE_WIDTH / CAPTURE_HEIGHT in capture.rs
+// Must match CAPTURE_WIDTH / CAPTURE_HEIGHT in capture.rs
 const FRAME_WIDTH = 1280;
 const FRAME_HEIGHT = 720;
 
 export function ViewportCanvas() {
   const { mode } = useEditorStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number | null>(null);
+  const imageDataRef = useRef<ImageData | null>(null);
+  const bitmapPromiseRef = useRef<Promise<ImageBitmap> | null>(null);
 
-  // ── Frame polling loop ────────────────────────────────────────────────────
+  // ── Frame stream ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (mode === 'stopped') return;
 
-    let running = true;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    const poll = async () => {
-      if (!running) return;
+    // Allocate once — reused every frame via .data.set()
+    imageDataRef.current = new ImageData(FRAME_WIDTH, FRAME_HEIGHT);
 
-      try {
-        const bytes = await api.getFrame();
+    // Frame counter for timing logs
+    let frameCount = 0;
+    let lastLog = performance.now();
 
-        if (bytes && canvasRef.current) {
-          const canvas = canvasRef.current;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            // Raw RGBA — build ImageData directly, no PNG decode
-            const uint8 = new Uint8ClampedArray(bytes);
-            const imageData = new ImageData(uint8, FRAME_WIDTH, FRAME_HEIGHT);
-            ctx.putImageData(imageData, 0, 0);
-          }
-        }
-      } catch (e) {
-        console.error('[ViewportCanvas] getFrame error:', e);
+    const onFrame = (bytes: Uint8ClampedArray) => {
+      if (!imageDataRef.current) return;
+
+      const t0 = performance.now();
+
+      // Draw the previous frame's bitmap while we process this one —
+      // bitmapPromiseRef holds the createImageBitmap started last call
+      if (bitmapPromiseRef.current) {
+        bitmapPromiseRef.current.then(bitmap => {
+          ctx.drawImage(bitmap, 0, 0);
+          bitmap.close();
+        });
       }
 
-      rafRef.current = requestAnimationFrame(poll);
+      // Overwrite ImageData in place — no allocation
+      imageDataRef.current.data.set(bytes);
+
+      // Kick createImageBitmap for this frame — will be drawn next call
+      bitmapPromiseRef.current = createImageBitmap(imageDataRef.current);
+
+      // Log fps ~once per second
+      frameCount++;
+      const now = performance.now();
+      if (now - lastLog >= 1000) {
+        const fps = (frameCount / ((now - lastLog) / 1000)).toFixed(1);
+        console.log(`[viewport] ${fps} fps  set+kick=${(performance.now() - t0).toFixed(1)}ms`);
+        frameCount = 0;
+        lastLog = now;
+      }
     };
 
-    rafRef.current = requestAnimationFrame(poll);
+    // Establish the push channel — async because it awaits the Tauri import
+    // and the stream_frames invoke before returning the cleanup fn.
+    let stopStream: (() => void) | null = null;
+    let unmounted = false;
+
+    api.startFrameStream(onFrame).then(cleanup => {
+      if (unmounted) {
+        // Component already unmounted before stream started — clean up immediately
+        cleanup();
+      } else {
+        stopStream = cleanup;
+      }
+    }).catch(e => {
+      console.error('[ViewportCanvas] startFrameStream failed:', e);
+    });
 
     return () => {
-      running = false;
-      if (rafRef.current !== null) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
+      unmounted = true;
+      if (stopStream) stopStream();
+      bitmapPromiseRef.current?.then(b => b.close()).catch(() => { });
+      bitmapPromiseRef.current = null;
+      imageDataRef.current = null;
     };
   }, [mode]);
 
@@ -76,7 +109,6 @@ export function ViewportCanvas() {
       width={FRAME_WIDTH}
       height={FRAME_HEIGHT}
       className="viewport-canvas"
-      // Pointer events — position relative to canvas top-left
       onPointerMove={e => {
         const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
         sendAxis(e.clientX - rect.left, e.clientY - rect.top);
@@ -86,7 +118,6 @@ export function ViewportCanvas() {
         sendButton(e.button, true);
       }}
       onPointerUp={e => sendButton(e.button, false)}
-      // Keyboard events — canvas needs tabIndex to receive these
       tabIndex={0}
       onKeyDown={e => {
         e.preventDefault();
@@ -98,7 +129,6 @@ export function ViewportCanvas() {
         if (mode !== 'playing') return;
         api.sendInput({ type: 'Button', code: e.keyCode, pressed: false });
       }}
-      // Prevent right-click context menu stealing events
       onContextMenu={e => e.preventDefault()}
     />
   );

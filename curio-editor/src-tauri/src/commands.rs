@@ -1,6 +1,6 @@
 use crate::{
     game::{
-        capture::take_frame,
+        capture::{install_frame_sender, recv_frame, uninstall_frame_sender},
         runner2::{peek_curio, GameMessage2, GameRunner2, InputEvent},
     },
     state::{EditorMode, EditorState},
@@ -17,7 +17,7 @@ use std::{
 
 use curio_core::{get_and_clear_logs, io::file::File, ComponentState, Curio, FormsSnapshot, LedgerSnapshot, Severity, TabGroupState};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, State};
+use tauri::{ipc::Channel, AppHandle, State};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Compile state
@@ -30,8 +30,6 @@ static COMPILE_CHILD: Mutex<Option<Child>> = Mutex::new(None);
 // Lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Called once when the React app mounts. Spins up the GameRunner2 thread so
-/// it is ready before any compile or play commands arrive.
 #[tauri::command]
 pub fn initialize(state: State<Mutex<EditorState>>) -> Result<(), String> {
     let mut state = state.lock().unwrap();
@@ -100,14 +98,43 @@ pub fn press_stop(state: State<Mutex<EditorState>>) -> Result<(), String> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Viewport frame — React polls this instead of listening to a Tauri event
+// Viewport frame streaming — push model via Channel
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Returns raw RGBA bytes for the latest rendered frame, or null if no new
-/// frame is available since the last call.
+/// Establishes a push channel that streams raw RGBA frame bytes to JS as fast
+/// as the render thread produces them. No polling, no per-frame IPC round-trip.
+/// The render thread does poll(Wait) and pushes completed frames via mpsc;
+/// this thread just receives and forwards them to JS via the Tauri Channel.
 #[tauri::command]
-pub fn get_frame() -> Option<Vec<u8>> {
-    take_frame()
+pub fn stream_frames(on_frame: Channel<Vec<u8>>) -> Result<(), String> {
+    // Create the mpsc pair — render thread writes, this thread reads.
+    // sync_channel(1) means the render thread's push_frame() never blocks:
+    // if a frame is already queued and not yet consumed, the new one is
+    // dropped via try_send rather than stalling the render loop.
+    let (tx, rx) = std::sync::mpsc::sync_channel::<Vec<u8>>(1);
+    install_frame_sender(tx);
+
+    std::thread::spawn(move || {
+        loop {
+            // Blocks until the render thread pushes a completed frame
+            match recv_frame(&rx) {
+                Some(bytes) => {
+                    if on_frame.send(bytes).is_err() {
+                        eprintln!("[stream] channel closed, exiting");
+                        break;
+                    }
+                }
+                None => {
+                    // rx disconnected — render thread / sender torn down
+                    eprintln!("[stream] frame sender disconnected, exiting");
+                    break;
+                }
+            }
+        }
+        uninstall_frame_sender();
+    });
+
+    Ok(())
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

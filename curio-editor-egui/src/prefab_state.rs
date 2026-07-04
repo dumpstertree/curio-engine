@@ -1,0 +1,224 @@
+//! State backing the prefab editor (`.comp` files) — combines what
+//! `PrefabLoader.tsx` (load/resolve/save orchestration) and
+//! `PrefabInspectorView.tsx` (tree/component/field edit actions) did.
+//!
+//! Same action-queue shape as `asset_state.rs`: the tree/inspector widget
+//! walks `raw` immutably each frame and returns a list of `PrefabAction`s,
+//! applied afterward by `PrefabState::apply`. Every apply re-resolves the
+//! `base:` chain and writes the file back to disk — there's no debounce
+//! timer (the original TS had a 300ms one); instead, like the asset tree's
+//! rename field, edits commit on blur/Enter/dropdown-select rather than
+//! per-keystroke, so there's no need to throttle saves at all.
+
+use crate::fs_ops;
+use crate::prefab_resolver::{self, ResolvedGameObject};
+use crate::prefab_types::{self, PrefabGameObjectRaw};
+use std::collections::HashSet;
+
+pub struct PrefabState {
+    pub file_path: Option<String>,
+    pub raw: Option<PrefabGameObjectRaw>,
+    pub resolved: Option<ResolvedGameObject>,
+    pub load_error: Option<String>,
+
+    pub selected_path: Option<Vec<usize>>,
+    pub expanded_nodes: HashSet<String>,
+    pub open_components: HashSet<String>,
+
+    /// Gizmo-based drag transform editing is not implemented in this pass
+    /// (see `prefab_viewer.rs` doc comment) — transforms are edited via the
+    /// numeric fields in the inspector instead, which is a fully functional
+    /// if less flashy path to the same data.
+    pub camera_reset_requested: bool,
+}
+
+impl PrefabState {
+    pub fn new() -> Self {
+        Self { file_path: None, raw: None, resolved: None, load_error: None, selected_path: None, expanded_nodes: HashSet::new(), open_components: HashSet::new(), camera_reset_requested: false }
+    }
+
+    /// Call each frame a `.comp` file is selected in the Asset tab. No-ops
+    /// if the same file is already loaded.
+    pub fn ensure_loaded(&mut self, project_root: &str, path: &str) {
+        if self.file_path.as_deref() == Some(path) {
+            return;
+        }
+        self.file_path = Some(path.to_string());
+        self.selected_path = None;
+        self.load_error = None;
+
+        match fs_ops::read_file_bytes(path) {
+            Ok(bytes) => match prefab_resolver::load_raw(&bytes) {
+                Ok(raw) => {
+                    self.resolved = Some(prefab_resolver::resolve_node(project_root, &raw, &mut HashSet::new()));
+                    self.raw = Some(raw);
+                }
+                Err(e) => self.load_error = Some(e),
+            },
+            Err(e) => self.load_error = Some(format!("Failed to read file: {e}")),
+        }
+    }
+
+    pub fn reload(&mut self, project_root: &str) {
+        let Some(path) = self.file_path.clone() else { return };
+        self.file_path = None;
+        self.ensure_loaded(project_root, &path);
+    }
+
+    fn save_and_resolve(&mut self, project_root: &str) {
+        let Some(raw) = &self.raw else { return };
+        self.resolved = Some(prefab_resolver::resolve_node(project_root, raw, &mut HashSet::new()));
+
+        if let (Some(path), Ok(text)) = (&self.file_path, prefab_resolver::dump_raw(raw)) {
+            if let Err(e) = fs_ops::write_file_text(path, &text) {
+                eprintln!("[PrefabState] save failed: {e}");
+            }
+        }
+    }
+
+    pub fn apply(&mut self, action: PrefabAction, project_root: &str) {
+        // Non-mutating actions (UI-only state) short-circuit before touching `raw`.
+        match action {
+            PrefabAction::ToggleExpand(key) => {
+                if !self.expanded_nodes.remove(&key) {
+                    self.expanded_nodes.insert(key);
+                }
+                return;
+            }
+            PrefabAction::ToggleComponentOpen(key) => {
+                if !self.open_components.remove(&key) {
+                    self.open_components.insert(key);
+                }
+                return;
+            }
+            PrefabAction::Select(path) => {
+                self.selected_path = path;
+                return;
+            }
+            PrefabAction::RequestCameraReset => {
+                self.camera_reset_requested = true;
+                return;
+            }
+            _ => {}
+        }
+
+        let Some(raw) = &self.raw else { return };
+        let mut new_raw = raw.clone();
+
+        match action {
+            PrefabAction::SetEnabled(path, enabled) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    node.enabled = enabled;
+                }
+            }
+            PrefabAction::SetName(path, name) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    node.name = name;
+                }
+            }
+            PrefabAction::SetBase(path, base) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    node.base = base;
+                }
+            }
+            PrefabAction::AddChild(path) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    node.children.push(prefab_types::default_game_object("New GameObject"));
+                }
+            }
+            PrefabAction::RemoveChild(path) => {
+                if let Some((parent_path, idx)) = split_last(&path) {
+                    if let Some(parent) = prefab_types::get_node_at_path_mut(&mut new_raw, &parent_path) {
+                        if idx < parent.children.len() {
+                            parent.children.remove(idx);
+                        }
+                    }
+                }
+                if self.selected_path.as_deref() == Some(path.as_slice()) {
+                    self.selected_path = None;
+                }
+            }
+            PrefabAction::DuplicateChild(path) => {
+                if let Some((parent_path, idx)) = split_last(&path) {
+                    if let Some(parent) = prefab_types::get_node_at_path_mut(&mut new_raw, &parent_path) {
+                        if let Some(node) = parent.children.get(idx).cloned() {
+                            let mut dup = node;
+                            dup.name = format!("{}_1", dup.name);
+                            parent.children.insert(idx + 1, dup);
+                        }
+                    }
+                }
+            }
+            PrefabAction::AddComponent(path, kind) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    node.components.push(prefab_types::default_component(&kind));
+                }
+            }
+            PrefabAction::RemoveComponent(path, comp_index) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    if comp_index < node.components.len() {
+                        node.components.remove(comp_index);
+                    }
+                }
+            }
+            PrefabAction::MoveComponent(path, from, to) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    if from < node.components.len() && to < node.components.len() {
+                        let comp = node.components.remove(from);
+                        node.components.insert(to, comp);
+                    }
+                }
+            }
+            PrefabAction::SetComponentField(path, comp_index, raw_field) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    if let Some(comp) = node.components.get_mut(comp_index) {
+                        let key = prefab_types::split_field(&raw_field).0;
+                        comp.fields.retain(|f| prefab_types::split_field(f).0 != key);
+                        comp.fields.push(raw_field);
+                    }
+                }
+            }
+            PrefabAction::RemoveComponentField(path, comp_index, key) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    if let Some(comp) = node.components.get_mut(comp_index) {
+                        comp.fields.retain(|f| prefab_types::split_field(f).0 != key);
+                    }
+                }
+            }
+            PrefabAction::ToggleExpand(_) | PrefabAction::ToggleComponentOpen(_) | PrefabAction::Select(_) | PrefabAction::RequestCameraReset => unreachable!("handled above"),
+        }
+
+        self.raw = Some(new_raw);
+        self.save_and_resolve(project_root);
+    }
+}
+
+fn split_last(path: &[usize]) -> Option<(Vec<usize>, usize)> {
+    if path.is_empty() {
+        return None;
+    }
+    Some((path[..path.len() - 1].to_vec(), path[path.len() - 1]))
+}
+
+/// `Fn(&PrefabGameObjectRaw) -> PrefabGameObjectRaw` type actions are collected
+/// while walking the tree this frame, applied afterward — same reasoning as
+/// `asset_state.rs::TreeAction`.
+pub enum PrefabAction {
+    ToggleExpand(String),
+    ToggleComponentOpen(String),
+    Select(Option<Vec<usize>>),
+    RequestCameraReset,
+
+    SetEnabled(Vec<usize>, bool),
+    SetName(Vec<usize>, String),
+    SetBase(Vec<usize>, Option<String>),
+    AddChild(Vec<usize>),
+    RemoveChild(Vec<usize>),
+    DuplicateChild(Vec<usize>),
+
+    AddComponent(Vec<usize>, String),
+    RemoveComponent(Vec<usize>, usize),
+    MoveComponent(Vec<usize>, usize, usize),
+    SetComponentField(Vec<usize>, usize, String),
+    RemoveComponentField(Vec<usize>, usize, String),
+}

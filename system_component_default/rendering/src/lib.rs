@@ -57,9 +57,12 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // let device = services().gpu.device();
         // let mut encoder = device.create_command_encoder(&CommandEncoderDescriptor::default());
 
+        println!("r0");
         // shadows
         self.shadow_system
             .ensure_screens(ledger.len(), Matrix4x4::default());
+        println!("r1");
+
         for i in 0..ledger.len() {
             let state_sun = ledger[i].read::<SysRecordSun>();
             if state_sun.cast_shadows {
@@ -69,13 +72,16 @@ impl SystemComponent for SystemComponentDefaultGraphics {
                     .render_for_screen(&mut encoder, i, &ledger[i].read::<SysRecordRendering>().draw_calls);
             }
         }
+        println!("r2");
 
         self.render_feature_3d_helper
             .draw_3d_features(&mut self.graphics_mappings, ledger, &mut encoder, &mut self.offscreen_view, &self.shadow_system);
+        println!("r3");
 
         // post-process offscreen → swapchain
         self.render_feature_pp_helper
             .draw_post_features(&mut encoder, &self.offscreen_view, &output_view);
+        println!("r4");
 
         // ── capture step ────────────────────────────────────────
         // capture AFTER post-processing and 2D — from swapchain, not offscreen
@@ -107,6 +113,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
                 },
             );
         }
+        println!("r5");
     }
     fn init(&mut self, _ledger: &mut Vec<Ledger>) {}
     fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {

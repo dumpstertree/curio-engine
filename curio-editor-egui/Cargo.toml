@@ -1,0 +1,56 @@
+[package]
+name = "curio-editor"
+version = "0.2.0"
+description = "Curio engine editor (egui/eframe, native)"
+authors = ["you"]
+edition = "2021"
+
+[[bin]]
+name = "curio-editor"
+path = "src/main.rs"
+
+[dependencies]
+# UI
+eframe = { version = "0.31.1", default-features = false, features = ["default_fonts", "wgpu", "persistence"] }
+egui = "0.31.1"
+egui_extras = { version = "0.31.1", features = ["image"] }
+# Pinned to match curio_core's own egui-wgpu dependency exactly (0.31.1) —
+# this is what guarantees the game runner's Device/Queue and curio_core's
+# GpuHandle casts resolve to the identical wgpu type. See README.
+egui-wgpu = { version = "0.31.1", features = ["winit"] }
+
+# Engine — this crate is meant to sit as a sibling of `curio_core/` (where
+# `curio-editor/` used to live before `src-tauri/` added a nesting level).
+# Adjust this path if you place it elsewhere.
+curio_core = { path = "../curio_core" }
+
+# Plugin / process / serialization
+libloading = "0.8"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+rfd = { version = "0.15", default-features = false, features = ["xdg-portal", "tokio"] }
+
+# GLB asset preview
+gltf = "1"
+glam = "0.29"
+bytemuck = { version = "1", features = ["derive"] }
+
+# Spine (.anim) asset preview — .anim is a zip of skeleton.atlas +
+# skeleton.json + skeleton.png (Spine 3.8 native JSON export), see
+# anim_viewer.rs for details.
+rusty_spine = { path = "../../rusty_spine3.8" }
+zip = { version = "2", default-features = false, features = ["deflate"] }
+
+# Concurrency / misc
+parking_lot = "0.12"
+once_cell = "1"
+pollster = "0.3"
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[profile.dev.package."*"]
+opt-level = 1
