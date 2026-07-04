@@ -103,12 +103,12 @@ pub struct GameRunner2 {
 
     state: RunnerState,
     rx: Receiver<GameMessage2>,
-
     services: Option<Box<EngineServices>>,
     capture_texture: Option<Arc<Texture>>,
-    readback: Option<ReadbackBuffers>,
     surface_format: TextureFormat,
     loaded_app: Option<AppInstance>,
+    // Render thread owns readback exclusively — no shared mutex needed
+    readback: Option<ReadbackBuffers>,
 }
 
 impl GameRunner2 {
@@ -177,8 +177,7 @@ impl GameRunner2 {
             view_formats: &[],
         }));
 
-        // Two readback buffers — one for GPU writes, one for CPU reads
-        let readback = ReadbackBuffers::new(&device, CAPTURE_WIDTH, CAPTURE_HEIGHT);
+        let readback = ReadbackBuffers::new(device.clone(), CAPTURE_WIDTH, CAPTURE_HEIGHT);
 
         self.services = Some(Box::new(EngineServices {
             logger: self.logger.as_mut() as *mut Logger,
@@ -239,23 +238,25 @@ impl GameRunner2 {
     }
 
     // ── Per-frame render ─────────────────────────────────────────────────────
+    // The render thread owns readback exclusively.
+    // It renders, submits, kicks map_async, then blocks on poll(Wait).
+    // Completed frames are pushed to the stream thread via mpsc.
 
     fn render_frame(&mut self) {
         let (Some(loaded_app), Some(services), Some(capture_texture), Some(readback)) = (self.loaded_app.as_mut(), &self.services, &self.capture_texture, self.readback.as_mut()) else {
+            eprintln!("[render_frame] missing component");
             return;
         };
 
         let device = services.gpu.device();
         let queue = services.gpu.queue();
 
-        // ── Collect previous frame if ready ──────────────────────────────
-        // poll(Poll) fires any pending wgpu callbacks (including map_async)
-        // without blocking. try_collect then checks if the map completed
-        // and copies pixels if so — also without blocking.
-        device.poll(egui_wgpu::wgpu::MaintainBase::Poll);
-        readback.try_collect(capture_texture.width(), capture_texture.height());
+        // ── Collect previous frame (blocks until GPU done) ────────────────
+        // This is frame N-1's readback completing while we prepare frame N.
+        // poll(Wait) fires here — the callback runs, map completes, we copy.
+        readback.blocking_collect_and_push(capture_texture.width(), capture_texture.height());
 
-        // ── Render this frame ─────────────────────────────────────────────
+        // ── Render frame N ────────────────────────────────────────────────
         let output_view = capture_texture.create_view(&TextureViewDescriptor::default());
 
         let mut encoder = device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor { label: Some("curio_frame_encoder") });
@@ -265,33 +266,17 @@ impl GameRunner2 {
             .curio
             .render(capture_texture, &output_view, &mut encoder);
 
-        // let t0 = Instant::now();
-        // Copy render result into write_buf — this buffer is guaranteed
-        // unmapped because try_collect swaps write/read after unmap,
-        // and we only ever submit into write_buf.
         record_readback(&mut encoder, capture_texture, &readback.write_buf);
 
-        // println!("t0: {}", t0.elapsed().as_millis());
-        // let t0 = Instant::now();
-
         queue.submit(std::iter::once(encoder.finish()));
-        // println!("t1: {}", t0.elapsed().as_millis());
 
-        // After submit, swap write→read and kick the async map on read_buf.
-        // write_buf and read_buf swap inside kick_map via try_collect's swap,
-        // so the next submit will again go into the unmapped buffer.
-        // let t0 = Instant::now();
-
+        // Kick map_async for this frame — will be collected next iteration
         readback.kick_map();
-        // println!("t2: {}", t0.elapsed().as_millis());
-
-        // let t0 = Instant::now();
 
         if let Ok(mut shared_data) = SHARED_DATA.lock() {
             shared_data.forms = loaded_app.app_instance.curio.context_snapshot();
             shared_data.plugin = loaded_app.app_instance.curio.tab_snapshot();
         }
-        // println!("t3: {}", t0.elapsed().as_millis());
     }
 
     // ── Message dispatch ─────────────────────────────────────────────────────
@@ -318,7 +303,6 @@ impl GameRunner2 {
                 GameMessage2::Pause => {
                     self.state = RunnerState::Paused;
                 }
-
                 GameMessage2::Resume => {
                     self.state = RunnerState::Playing;
                 }
@@ -326,7 +310,6 @@ impl GameRunner2 {
                 GameMessage2::Stop => {
                     if let Some(app) = self.loaded_app.take() {
                         drop(app);
-                        println!("dropped from stop");
                     }
                     if let Some(rb) = self.readback.as_mut() {
                         rb.reset();
@@ -363,17 +346,14 @@ impl GameRunner2 {
             view_formats: &[],
         }));
 
-        // Replace readback buffers with new size — old ones dropped here
-        let readback = ReadbackBuffers::new(device, w, h);
-
         if let Some(services) = &mut self.services {
             services.gpu.capture_texture = Arc::as_ptr(&capture_texture) as *const ();
             services.gpu.capture_width = w;
             services.gpu.capture_height = h;
         }
 
+        self.readback = Some(ReadbackBuffers::new(device.clone(), w, h));
         self.capture_texture = Some(capture_texture);
-        self.readback = Some(readback);
     }
 }
 
@@ -386,85 +366,72 @@ type PeekCurioFn = unsafe extern "C" fn() -> *mut Vec<ComponentState>;
 
 pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
-
     for entry in entries.flatten() {
         let path = entry.path();
-
         if let Err(e) = load_library(&path) {
             eprintln!("load_library failed for {:?}: {}", path, e);
             continue;
         }
-
         let l2 = plugin_loader::library_slot().lock();
         let lib = match l2 {
             Ok(l) => l,
-            Err(e) => panic!("library slot mutex poisoned for {:?}: {}", path, e),
+            Err(e) => panic!("mutex poisoned: {}", e),
         };
         let lib = match lib.as_ref() {
             Some(l) => l,
             None => {
-                eprintln!("library slot is None after load for {:?}", path);
+                eprintln!("slot None for {:?}", path);
                 continue;
             }
         };
-
         let curio = unsafe {
-            let init_fn: Symbol<PeekCurioFn> = if let Ok(f) = lib.get(b"curio_peek") { f } else { continue };
-            let raw = init_fn();
+            let f: Symbol<PeekCurioFn> = if let Ok(f) = lib.get(b"curio_peek") { f } else { continue };
+            let raw = f();
             if raw.is_null() {
-                eprintln!("curio_peek returned null for {:?}", path);
                 continue;
             }
             Box::from_raw(raw)
         };
-
         return curio;
     }
-    panic!("No curio plugin found in {:?}", folder);
+    panic!("No curio plugin found");
 }
 
 pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
-
     for entry in entries.flatten() {
         let path = entry.path();
-
         let is_plugin = matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"));
         if !is_plugin {
             continue;
         }
-
         if let Err(e) = load_library(&path) {
             eprintln!("load_library failed for {:?}: {}", path, e);
             continue;
         }
-
         let l2 = plugin_loader::library_slot().lock();
         let lib = match l2 {
             Ok(l) => l,
-            Err(e) => panic!("library slot mutex poisoned for {:?}: {}", path, e),
+            Err(e) => panic!("mutex poisoned: {}", e),
         };
         let lib = match lib.as_ref() {
             Some(l) => l,
             None => {
-                eprintln!("library slot is None after load for {:?}", path);
+                eprintln!("slot None for {:?}", path);
                 continue;
             }
         };
-
         let curio = unsafe {
-            let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
-            let raw = init_fn(gpu);
+            let f: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
+            let raw = f(gpu);
             if raw.is_null() {
-                eprintln!("curio_init returned null for {:?}", path);
+                eprintln!("curio_init null for {:?}", path);
                 continue;
             }
             Box::from_raw(raw)
         };
-
         eprintln!("loaded: {}", curio.meta.name);
         return LoadedCurio { curio };
     }
-
-    panic!("No curio plugin found in {:?}", folder);
+    panic!("No curio plugin found");
 }

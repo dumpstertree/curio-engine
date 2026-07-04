@@ -1,16 +1,20 @@
 use crate::{io::file::File, Curio, Severity};
 use chrono::DateTime;
-use egui::ahash::{HashMap, HashMapExt};
 use serde::{Deserialize, Serialize};
-use std::{error::Error, time::SystemTime};
+use std::{collections::HashMap, error::Error, time::SystemTime};
+
 const STALE_HOURS: f32 = 1.0;
 const STALE_MIN: f32 = 0.0;
 const STALE_SEC: f32 = 0.0;
+
 pub struct AssetDatabase {
     pub lookup: HashMap<String, i16>,
     pub listings: HashMap<i16, AssetDatabaseListing>,
 }
 impl AssetDatabase {
+    pub fn new() -> AssetDatabase {
+        AssetDatabase { lookup: HashMap::new(), listings: HashMap::new() }
+    }
     pub fn append(&mut self, listings: Vec<(String, i16, AssetDatabaseListing)>) {
         for x in &listings {
             self.lookup.insert(x.0.clone(), x.1);

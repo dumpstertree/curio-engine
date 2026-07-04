@@ -19,7 +19,8 @@ members = [
     "system_component_default/networking",
     "system_component_default/animation",
     "system_component_default/input",
-    "curio-editor/src-tauri",
+    # "curio-editor/src-tauri",
+    "curio-editor-egui",
     "optional_systems/camera",
     "optional_systems/rendering_static",
     "optional_systems/rendering_dynamic",
@@ -50,7 +51,7 @@ physics = { path = "system_component_default/physics" }
 input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
 animation = { path = "system_component_default/animation" }
-curio_editor = { path = "curio-editor/src-tauri" }
+# curio_editor = { path = "curio-editor/src-tauri" }
 camera = { path = "optional_systems/camera" }
 ext_rendering = { path = "optional_systems/rendering" }
 rendering_static = { path = "optional_systems/rendering_static" }
@@ -62,6 +63,7 @@ lighting = { path = "optional_systems/lighting" }
 collision = { path = "optional_systems/collision" }
 skybox = { path = "optional_systems/skybox" }
 tween = { path = "optional_systems/tween" }
+curio_editor_egui = { path = "curio-editor-egui" }
 
 
 [workspace.package]

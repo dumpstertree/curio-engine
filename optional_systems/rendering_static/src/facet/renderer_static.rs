@@ -1,5 +1,8 @@
 use crate::ModelAsset;
-use curio_core::{Color, FieldState, io::asset_loader::AssetLoader};
+use curio_core::{
+    Color, FieldState,
+    io::asset_loader::{AssetLoader, Assets},
+};
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
 use std::sync::Arc;
@@ -15,7 +18,7 @@ impl FieldOverride for RendererStatic {
         println!("value :{}", value);
         let value = value.trim();
         match field {
-            "asset" => self.asset = Some(AssetLoader::load_asset::<ModelAsset>(&value.parse().unwrap_or_default())),
+            "asset" => self.asset = Some(Assets::load_asset::<ModelAsset>(&value.parse().unwrap_or_default())),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}
         }

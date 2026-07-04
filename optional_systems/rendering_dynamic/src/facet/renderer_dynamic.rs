@@ -1,4 +1,7 @@
-use curio_core::{Color, FieldState, io::asset_loader::AssetLoader};
+use curio_core::{
+    Color, FieldState,
+    io::asset_loader::{AssetLoader, Assets},
+};
 // use ext_rendering::RendererCommon;
 use facet::facet;
 use gameplay::{form::Form, traits::field_override::FieldOverride};
@@ -62,7 +65,7 @@ impl RendererDynamic {
 impl FieldOverride for RendererDynamic {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.asset = Some(AssetLoader::load_asset::<ModelAssetAnimated>(&AssetLoader::try_lookup_key_for_name(value).unwrap())),
+            "asset" => self.asset = Some(Assets::load_asset::<ModelAssetAnimated>(&Assets::try_lookup_key_for_name(value).unwrap())),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             "animation" => self.animation = value.to_string(),

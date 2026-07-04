@@ -1,6 +1,6 @@
 use curio_core::{
     AssetCommon, ExtensionsF32, Matrix4x4, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_LIT, AssetLoader},
+    io::asset_loader::{ASSET_UID_SHADER_LIT, AssetLoader, Assets},
 };
 
 use egui::ahash::HashMap;
@@ -240,7 +240,7 @@ impl ModelAssetAnimated {
 impl AssetCommon<ModelAssetAnimated> for ModelAssetAnimated {
     fn from_bits(bits: &Vec<u8>) -> ModelAssetAnimated {
         //create a material
-        let shader_desc = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_LIT);
+        let shader_desc = Assets::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_LIT);
         let spine_data = Self::unwrap_spine(bits);
         let Ok(spine_data) = spine_data else {
             panic!("Err {}", spine_data.err().unwrap());

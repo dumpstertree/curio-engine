@@ -1,0 +1,90 @@
+curio-editor -- ./curio-editor/src-tauri/Cargo.toml:
+	libc
+	tauri-build
+curio_entry -- ./system_component_default/gameplay_macros/curio_entry/Cargo.toml:
+	serde
+record -- ./system_component_default/gameplay_macros/record/Cargo.toml:
+	quote
+	syn
+animation -- ./system_component_default/animation/Cargo.toml:
+physics -- ./system_component_default/physics/Cargo.toml:
+	rapier3d
+rendering_gizmos -- ./optional_systems/rendering_gizmos/Cargo.toml:
+lighting -- ./optional_systems/lighting/Cargo.toml:
+collision -- ./optional_systems/collision/Cargo.toml:
+	bytemuck
+	camera
+	ctor
+	ext_rendering
+	gameplay
+	gltf
+	habit
+	record_serializablector = "0.8.0"
+
+rendering_text -- ./optional_systems/rendering_text/Cargo.toml:
+	bytemuck
+	camera
+	ctor
+	gltf
+	record_serializable
+rendering_dynamic -- ./optional_systems/rendering_dynamic/Cargo.toml:
+	bytemuck
+	ctor
+	record_serializable
+	serde
+tween -- ./optional_systems/tween/Cargo.toml:
+	bytemuck
+	ctor
+	gltf
+	record_serializable
+	serde
+rendering_static -- ./optional_systems/rendering_static/Cargo.toml:
+	bytemuck
+	ctor
+	record_serializable
+	serde
+ext_rendering -- ./optional_systems/rendering/Cargo.toml:
+	ctor
+	facet
+	gameplay
+camera -- ./optional_systems/camera/Cargo.toml:
+	ctor
+skybox -- ./optional_systems/skybox/Cargo.toml:
+	bytemuck
+	camera
+	ctor
+	ext_rendering
+	gameplay
+	gltf
+	habit
+	serde
+rendering_image -- ./optional_systems/rendering_image/Cargo.toml:
+	bytemuck
+	camera
+	ctor
+	gltf
+	habit
+	record_serializable
+	serde
+curio_engine -- ./curio_engine/Cargo.toml:
+	bincode
+	bytemuck
+	cgmath
+	chrono
+	colored
+	downcast-rs
+	egui
+	gltf
+	image
+	log
+	mesh-tools
+	message-io
+	rand
+	rapier3d
+	rayon
+	reqwest
+	serde
+	serde_json
+	serde_yaml
+	simple_logger
+	zip

@@ -3,22 +3,8 @@ name = "animation"
 version = "0.1.0"
 edition = "2024"
 
-
 [dependencies]
-curio_core = { workspace = true }
-rendering = { workspace = true }
-rendering_dynamic = { workspace = true }
-rusty_spine = { path = "../../../rusty_spine3.8" }
-serde = { version = "1.0.104", features = ["derive"] }
-zip = "0.6"
-rayon = "1.11.0"
-egui = "0.31.1"
 libc = "0.2"
-
-[dependencies.image]
-version = "0.24"
-default-features = false
-features = ["png", "jpeg"]
 
 [target.x86_64-unknown-linux-gnu]
 linker = "clang"

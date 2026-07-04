@@ -12,3 +12,6 @@ edition = "2018"
 
 [dependencies]
 curio_core = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"

@@ -10,6 +10,15 @@ pub struct AssetCache {
     pub max_cache_len: usize,
 }
 impl AssetCache {
+    /// get the last time an asset was accessed
+    pub fn try_get_last_access(&self, id: &i16) -> Option<Instant> {
+        if let Some(instant) = self.access.get(id) {
+            // return clone of arc value
+            return Some(instant.clone());
+        }
+        // none found
+        None
+    }
     /// set to get an asset from the cache
     pub fn try_get_asset<T: AssetCommon<T>>(&mut self, id: &i16) -> Option<Arc<T>> {
         if let Some(edited_val) = self.cache.get::<Arc<T>, i16>(id) {

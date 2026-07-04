@@ -1,6 +1,6 @@
 use curio_core::{
     Color, FieldState, Matrix4x4, Quaternion, TextureAsset, Vector3,
-    io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader},
+    io::asset_loader::{ASSET_UID_SHADER_UNLIT, AssetLoader, Assets},
 };
 use ext_rendering::{
     Material, Mesh,
@@ -36,7 +36,7 @@ impl RendererImage {
 impl FieldOverride for RendererImage {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
-            "asset" => self.set_asset(Some(AssetLoader::load_asset::<TextureAsset>(&AssetLoader::try_lookup_key_for_name(value).unwrap()))),
+            "asset" => self.set_asset(Some(Assets::load_asset::<TextureAsset>(&Assets::try_lookup_key_for_name(value).unwrap()))),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "tint" => self.tint = value.parse().unwrap_or_default(),
             _ => {}
@@ -56,7 +56,7 @@ impl RendererImage {
         if let Some(asset) = asset.clone() {
             self.bounds_matrix = Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::new(1.0, 0.5 * (asset.texture.height() as f32 / asset.texture.width() as f32), 1.0));
         }
-        let shader = AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT);
+        let shader = Assets::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT);
         let mut material = Material::new("image", shader, false);
         material.set_texture_with_label(asset, "diffuse");
         material.finalize();

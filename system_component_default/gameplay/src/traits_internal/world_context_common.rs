@@ -2,7 +2,7 @@ use crate::form::Form;
 use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
 use curio_core::Composition;
-use curio_core::io::asset_loader::AssetLoader;
+use curio_core::io::asset_loader::{AssetLoader, Assets};
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -51,7 +51,11 @@ pub(crate) fn spawn_prefab_recursive_internal(world: Rc<RefCell<World>>, prefab:
         let split: Vec<&str> = name.split("::").into_iter().collect();
         let name = split[0].replace("!", "");
 
-        let Some(key) = AssetLoader::try_lookup_key_for_name(&name) else {
+        // let Some(key) = AssetLoader::try_lookup_key_for_name(&name) else {
+        //     panic!();
+        // };
+
+        let Some(key) = Assets::try_lookup_key_for_name(&name) else {
             panic!();
         };
 
@@ -62,7 +66,7 @@ pub(crate) fn spawn_prefab_recursive_internal(world: Rc<RefCell<World>>, prefab:
             .map(|x| spawn_prefab_recursive_internal(world.clone(), x, x.name.clone()))
             .collect();
 
-        let asset = AssetLoader::load_asset::<Composition>(&key);
+        let asset = Assets::load_asset::<Composition>(&key);
         let mut parent_form = spawn_prefab_recursive_internal(world.clone(), &asset, split[1].to_owned());
 
         // create parent child relationship

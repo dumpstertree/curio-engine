@@ -138,8 +138,9 @@ pub fn run() {
             commands::press_play_start,
             commands::initialize,
             commands::send_input,
-            commands::get_frame,
-            commands::set_resolution
+            // commands::get_frame,
+            commands::set_resolution,
+            commands::stream_frames
         ])
         .run(tauri::generate_context!())
         .expect("failed to run tauri app");

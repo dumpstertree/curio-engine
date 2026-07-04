@@ -3,8 +3,9 @@ use egui_wgpu::wgpu::{Buffer, BufferDescriptor, BufferUsages, BufferView, Device
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use std::sync::{
-    atomic::{AtomicBool, AtomicUsize, Ordering},
-    Arc,
+    atomic::{AtomicUsize, Ordering},
+    mpsc::{self, Receiver, SyncSender},
+    Arc, Mutex,
 };
 
 // ── Dimensions ───────────────────────────────────────────────────────────────
@@ -12,15 +13,47 @@ use std::sync::{
 pub const CAPTURE_WIDTH: u32 = 1280;
 pub const CAPTURE_HEIGHT: u32 = 720;
 
-// ── Double-buffered frame store (CPU side) ────────────────────────────────────
+// ── Frame channel ─────────────────────────────────────────────────────────────
+// The render thread sends completed frames here.
+// The stream thread reads and forwards them to JS via Tauri Channel.
+// SyncSender with bound=1 means the render thread never blocks waiting for
+// the stream thread — if a frame is already waiting it just drops it and
+// moves on, keeping the render loop running at full speed.
 
-static FRAME_BUFFERS: Lazy<[Arc<RwLock<Vec<u8>>>; 2]> = Lazy::new(|| {
-    let size = (CAPTURE_WIDTH * CAPTURE_HEIGHT * 4) as usize;
-    [Arc::new(RwLock::new(vec![0u8; size])), Arc::new(RwLock::new(vec![0u8; size]))]
-});
+static FRAME_TX: Mutex<Option<SyncSender<Vec<u8>>>> = Mutex::new(None);
 
-static WRITE_IDX: AtomicUsize = AtomicUsize::new(0);
-static FRAME_READY: AtomicBool = AtomicBool::new(false);
+pub fn install_frame_sender(tx: SyncSender<Vec<u8>>) {
+    eprintln!("[capture] install_frame_sender called");
+    *FRAME_TX.lock().unwrap() = Some(tx);
+}
+
+pub fn uninstall_frame_sender() {
+    eprintln!("[capture] uninstall_frame_sender called");
+    *FRAME_TX.lock().unwrap() = None;
+}
+
+/// Called by the render thread after a frame is ready.
+/// Sends to the stream thread — drops the frame silently if the channel is
+/// full (stream thread hasn't consumed the previous one yet).
+pub fn push_frame(bytes: Vec<u8>) {
+    if let Ok(guard) = FRAME_TX.lock() {
+        if let Some(tx) = guard.as_ref() {
+            match tx.try_send(bytes) {
+                Ok(()) => eprintln!("[capture] push_frame: sent ok"),
+                Err(e) => eprintln!("[capture] push_frame: try_send failed: {:?}", e),
+            }
+        } else {
+            eprintln!("[capture] push_frame: no sender installed");
+        }
+    } else {
+        eprintln!("[capture] push_frame: FRAME_TX lock failed");
+    }
+}
+
+/// Called by the stream thread to wait for the next frame.
+pub fn recv_frame(rx: &Receiver<Vec<u8>>) -> Option<Vec<u8>> {
+    rx.recv().ok()
+}
 
 // ── Utility ───────────────────────────────────────────────────────────────────
 
@@ -33,23 +66,16 @@ pub fn readback_buffer_size(width: u32, height: u32) -> u64 {
 }
 
 // ── Ping-pong readback buffers ────────────────────────────────────────────────
-// Two GPU readback buffers. While the GPU writes into one, the CPU reads
-// the other. They are never in the same state at the same time, so we
-// never submit into a mapped buffer.
 
 pub struct ReadbackBuffers {
-    // Buffer the GPU is currently copying into
     pub write_buf: Buffer,
-    // Buffer the CPU is currently reading / waiting to read
     pub read_buf: Buffer,
-    // True when read_buf has an in-flight map_async
+    pub device: Arc<Device>,
     pub map_pending: bool,
-    // True when read_buf is mapped and ready to collect
-    pub map_ready: Arc<AtomicBool>,
 }
 
 impl ReadbackBuffers {
-    pub fn new(device: &Device, width: u32, height: u32) -> Self {
+    pub fn new(device: Arc<Device>, width: u32, height: u32) -> Self {
         let size = readback_buffer_size(width, height);
         let make = |label| {
             device.create_buffer(&BufferDescriptor {
@@ -62,85 +88,63 @@ impl ReadbackBuffers {
         Self {
             write_buf: make("readback_write"),
             read_buf: make("readback_read"),
+            device,
             map_pending: false,
-            map_ready: Arc::new(AtomicBool::new(false)),
         }
     }
 
-    /// Called after queue.submit(). Kicks an async map on read_buf if one
-    /// isn't already in flight. Returns immediately.
+    /// Kick map_async on read_buf after submit.
     pub fn kick_map(&mut self) {
         if self.map_pending {
             return;
         }
-        let flag = self.map_ready.clone();
-        self.read_buf
-            .slice(..)
-            .map_async(MapMode::Read, move |result| {
-                if result.is_ok() {
-                    flag.store(true, Ordering::Release);
-                }
-            });
+        self.read_buf.slice(..).map_async(MapMode::Read, |_| {});
         self.map_pending = true;
     }
 
-    /// Called at the start of each frame after poll(Poll).
-    /// If read_buf is mapped, copies pixels into the frame store and unmaps.
-    /// Then swaps write_buf and read_buf so the GPU writes into the freshly
-    /// unmapped buffer next frame.
-    pub fn try_collect(&mut self, width: u32, height: u32) {
+    /// Block until the GPU copy is done, collect pixels, push to stream thread.
+    /// Call this on the RENDER thread — it owns the buffers exclusively.
+    pub fn blocking_collect_and_push(&mut self, width: u32, height: u32) {
         if !self.map_pending {
+            eprintln!("[capture] blocking_collect_and_push: no map pending, skipping");
             return;
         }
-        if !self.map_ready.load(Ordering::Acquire) {
-            return;
-        }
+        eprintln!("[capture] blocking_collect_and_push: waiting on poll(Wait)...");
 
-        // Collect pixels from read_buf
-        {
+        // Block until GPU finishes — fires the map_async callback internally
+        self.device.poll(egui_wgpu::wgpu::MaintainBase::Wait);
+
+        let bytes = {
             let view: BufferView = self.read_buf.slice(..).get_mapped_range();
             let pixel_stride = (width * 4) as usize;
             let padded_stride = align_to(width * 4, 256) as usize;
-
-            let write_idx = WRITE_IDX.load(Ordering::Acquire);
-            let mut buf = FRAME_BUFFERS[write_idx].write();
-
-            let expected = pixel_stride * height as usize;
-            if buf.len() != expected {
-                buf.resize(expected, 0);
-            }
+            let mut out = vec![0u8; pixel_stride * height as usize];
 
             for row in 0..height as usize {
                 let src = row * padded_stride;
                 let dst = row * pixel_stride;
-                buf[dst..dst + pixel_stride].copy_from_slice(&view[src..src + pixel_stride]);
+                out[dst..dst + pixel_stride].copy_from_slice(&view[src..src + pixel_stride]);
             }
+            out
             // view dropped here before unmap
-        }
+        };
 
         self.read_buf.unmap();
-        self.map_ready.store(false, Ordering::Release);
         self.map_pending = false;
 
-        // Swap — read_buf (now unmapped) becomes the new write target,
-        // write_buf (freshly submitted into) becomes the new read target
         std::mem::swap(&mut self.write_buf, &mut self.read_buf);
 
-        WRITE_IDX.fetch_xor(1, Ordering::AcqRel);
-        FRAME_READY.store(true, Ordering::Release);
+        // Send to stream thread — non-blocking, drops frame if full
+        push_frame(bytes);
     }
 
-    /// Reset state when stopping or resizing
     pub fn reset(&mut self) {
         self.map_pending = false;
-        self.map_ready.store(false, Ordering::Release);
     }
 }
 
-// ── Readback record (called before submit) ────────────────────────────────────
+// ── GPU copy record ───────────────────────────────────────────────────────────
 
-/// Records the GPU → CPU copy of `capture_texture` into `write_buf`.
-/// Must be called BEFORE queue.submit() and write_buf must NOT be mapped.
 pub fn record_readback(encoder: &mut egui_wgpu::wgpu::CommandEncoder, capture_texture: &Texture, write_buf: &Buffer) {
     let width = capture_texture.width();
     let height = capture_texture.height();
@@ -163,16 +167,6 @@ pub fn record_readback(encoder: &mut egui_wgpu::wgpu::CommandEncoder, capture_te
         },
         Extent3d { width, height, depth_or_array_layers: 1 },
     );
-}
-
-// ── Read path (Tauri command thread) ─────────────────────────────────────────
-
-pub fn take_frame() -> Option<Vec<u8>> {
-    if !FRAME_READY.swap(false, Ordering::AcqRel) {
-        return None;
-    }
-    let read_idx = WRITE_IDX.load(Ordering::Acquire);
-    Some(FRAME_BUFFERS[read_idx].read().clone())
 }
 
 // ── Memory locking ────────────────────────────────────────────────────────────

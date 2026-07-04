@@ -9,18 +9,10 @@ const FRAME_HEIGHT = 720;
 export function ViewportCanvas() {
   const { mode } = useEditorStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const rafRef = useRef<number | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Persistent ImageData — allocated once, reused every frame.
-  // .data.set() overwrites in place with no heap allocation.
   const imageDataRef = useRef<ImageData | null>(null);
-
-  // Pipelining: bitmapPromise holds the createImageBitmap call for the
-  // frame we just fetched so we can draw it next tick without extra awaiting.
   const bitmapPromiseRef = useRef<Promise<ImageBitmap> | null>(null);
 
-  // ── Frame polling loop ────────────────────────────────────────────────────
+  // ── Frame stream ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (mode === 'stopped') return;
 
@@ -29,92 +21,63 @@ export function ViewportCanvas() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Allocate the reusable ImageData once for the lifetime of this effect
+    // Allocate once — reused every frame via .data.set()
     imageDataRef.current = new ImageData(FRAME_WIDTH, FRAME_HEIGHT);
 
-    let running = true;
-    let missCount = 0;
+    // Frame counter for timing logs
+    let frameCount = 0;
+    let lastLog = performance.now();
 
-    const scheduleNext = (delay = 0) => {
-      if (!running) return;
-      if (delay > 0) {
-        timeoutRef.current = setTimeout(() => {
-          rafRef.current = requestAnimationFrame(poll);
-        }, delay);
+    const onFrame = (bytes: Uint8ClampedArray) => {
+      if (!imageDataRef.current) return;
+
+      const t0 = performance.now();
+
+      // Draw the previous frame's bitmap while we process this one —
+      // bitmapPromiseRef holds the createImageBitmap started last call
+      if (bitmapPromiseRef.current) {
+        bitmapPromiseRef.current.then(bitmap => {
+          ctx.drawImage(bitmap, 0, 0);
+          bitmap.close();
+        });
+      }
+
+      // Overwrite ImageData in place — no allocation
+      imageDataRef.current.data.set(bytes);
+
+      // Kick createImageBitmap for this frame — will be drawn next call
+      bitmapPromiseRef.current = createImageBitmap(imageDataRef.current);
+
+      // Log fps ~once per second
+      frameCount++;
+      const now = performance.now();
+      if (now - lastLog >= 1000) {
+        const fps = (frameCount / ((now - lastLog) / 1000)).toFixed(1);
+        console.log(`[viewport] ${fps} fps  set+kick=${(performance.now() - t0).toFixed(1)}ms`);
+        frameCount = 0;
+        lastLog = now;
+      }
+    };
+
+    // Establish the push channel — async because it awaits the Tauri import
+    // and the stream_frames invoke before returning the cleanup fn.
+    let stopStream: (() => void) | null = null;
+    let unmounted = false;
+
+    api.startFrameStream(onFrame).then(cleanup => {
+      if (unmounted) {
+        // Component already unmounted before stream started — clean up immediately
+        cleanup();
       } else {
-        rafRef.current = requestAnimationFrame(poll);
+        stopStream = cleanup;
       }
-    };
-
-    const poll = async () => {
-      if (!running) return;
-
-      try {
-        const t0 = performance.now();
-
-        // ── Draw last frame's bitmap while fetching this frame ────────────
-        // Await the bitmap we kicked off at the end of the previous iteration
-        // concurrently with the IPC fetch below — but actually we draw it
-        // first to get it on screen as early as possible.
-        const prevBitmap = bitmapPromiseRef.current
-          ? await bitmapPromiseRef.current
-          : null;
-
-        if (prevBitmap) {
-          ctx.drawImage(prevBitmap, 0, 0);
-          prevBitmap.close();
-        }
-
-        // ── Fetch this frame ──────────────────────────────────────────────
-        const bytes = await api.getFrame();
-        const t1 = performance.now();
-
-        if (bytes && imageDataRef.current) {
-          missCount = 0;
-
-          // Overwrite reusable ImageData in place — no allocation
-          imageDataRef.current.data.set(bytes);
-          const t2 = performance.now();
-
-          // Kick createImageBitmap for this frame — don't await it yet.
-          // It will be drawn at the start of the next poll iteration,
-          // overlapping with the next IPC fetch.
-          bitmapPromiseRef.current = createImageBitmap(imageDataRef.current);
-          const t3 = performance.now();
-
-          // Log timing ~once per second
-          if (Math.random() < 0.017) {
-            console.log(
-              `[viewport] fetch=${(t1 - t0).toFixed(1)}ms  ` +
-              `set=${(t2 - t1).toFixed(1)}ms  ` +
-              `kickBitmap=${(t3 - t2).toFixed(1)}ms`
-            );
-          }
-        } else {
-          // No new frame — clear the pipeline so we don't redraw stale bitmaps
-          bitmapPromiseRef.current = null;
-          missCount++;
-        }
-      } catch (e) {
-        console.error('[ViewportCanvas] poll error:', e);
-        bitmapPromiseRef.current = null;
-      }
-
-      // ── Schedule next iteration ───────────────────────────────────────
-      // After 5 consecutive misses slow to ~30Hz to reduce IPC overhead
-      // when the game is producing frames slower than the display rate.
-      scheduleNext(missCount > 5 ? 33 : 0);
-    };
-
-    // Kick the first iteration
-    bitmapPromiseRef.current = null;
-    rafRef.current = requestAnimationFrame(poll);
+    }).catch(e => {
+      console.error('[ViewportCanvas] startFrameStream failed:', e);
+    });
 
     return () => {
-      running = false;
-      if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-      if (timeoutRef.current !== null) { clearTimeout(timeoutRef.current); timeoutRef.current = null; }
-      // Let any in-flight bitmap resolve and close to avoid leaking GPU memory
+      unmounted = true;
+      if (stopStream) stopStream();
       bitmapPromiseRef.current?.then(b => b.close()).catch(() => { });
       bitmapPromiseRef.current = null;
       imageDataRef.current = null;

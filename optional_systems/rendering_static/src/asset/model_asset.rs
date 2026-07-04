@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use curio_core::{
     AssetCommon, Matrix4x4, Random, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetLoader},
+    io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetLoader, Assets},
 };
 use ext_rendering::{
     Material, Mesh,
@@ -78,7 +78,7 @@ impl ModelAsset {
                 } else {
                     println!("default texture");
 
-                    AssetLoader::load_asset::<TextureAsset>(&ASSET_UID_TEXTURE_DEFAULT)
+                    Assets::load_asset::<TextureAsset>(&ASSET_UID_TEXTURE_DEFAULT)
                     // TextureAsset::default()
                 };
 
@@ -91,7 +91,7 @@ impl ModelAsset {
                     //     .unwrap()
                     //     .clone();
 
-                    shader_desc = AssetLoader::load_asset(&ASSET_UID_SHADER_LIT);
+                    shader_desc = Assets::load_asset(&ASSET_UID_SHADER_LIT);
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 } else if material.name().unwrap().starts_with("unlit:") {
@@ -101,7 +101,7 @@ impl ModelAsset {
                     //     .unwrap()
                     //     .clone();
 
-                    shader_desc = AssetLoader::load_asset(&ASSET_UID_SHADER_UNLIT);
+                    shader_desc = Assets::load_asset(&ASSET_UID_SHADER_UNLIT);
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/unlit_shader.shader");
                 } else {
@@ -111,7 +111,7 @@ impl ModelAsset {
                     //     .unwrap()
                     //     .clone();
 
-                    shader_desc = AssetLoader::load_asset(&ASSET_UID_SHADER_LIT);
+                    shader_desc = Assets::load_asset(&ASSET_UID_SHADER_LIT);
 
                     // shader_desc = AssetLoader::load_shader_desc("assets/shader/my_shader.shader");
                 }
@@ -183,8 +183,8 @@ impl ModelAsset {
 impl AssetCommon<ModelAsset> for ModelAsset {
     fn from_bits(bits: &Vec<u8>) -> ModelAsset {
         let mut all_shaders = HashMap::new();
-        all_shaders.insert("assets/shader/my_shader.shader".to_string(), AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_LIT));
-        all_shaders.insert("assets/shader/unlit_shader.shader".to_string(), AssetLoader::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT));
+        all_shaders.insert("assets/shader/my_shader.shader".to_string(), Assets::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_LIT));
+        all_shaders.insert("assets/shader/unlit_shader.shader".to_string(), Assets::load_asset::<ShaderDesc>(&ASSET_UID_SHADER_UNLIT));
 
         let x = ModelAsset::unwrap_gltf(bits, all_shaders).unwrap();
 

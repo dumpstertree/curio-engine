@@ -74,7 +74,10 @@ impl TextureAsset {
         println!("width: {}", width);
         println!("height: {}", height);
         // println!("bytes: {}", rgba.len);
+        println!("will writing");
+
         println!("expected: {}", width * height * 4);
+        println!("writing");
         queue.write_texture(
             egui_wgpu::wgpu::TexelCopyTextureInfo {
                 aspect: egui_wgpu::wgpu::TextureAspect::All,
@@ -91,7 +94,9 @@ impl TextureAsset {
             size,
         );
 
+        println!("0");
         let view = texture.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
+        println!("1");
         let sampler = device.create_sampler(&egui_wgpu::wgpu::SamplerDescriptor {
             address_mode_u: egui_wgpu::wgpu::AddressMode::ClampToEdge,
             address_mode_v: egui_wgpu::wgpu::AddressMode::ClampToEdge,
@@ -101,6 +106,8 @@ impl TextureAsset {
             mipmap_filter: egui_wgpu::wgpu::FilterMode::Nearest,
             ..Default::default()
         });
+
+        println!("created tx");
 
         // return
         TextureAsset {
