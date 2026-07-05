@@ -1,8 +1,4 @@
-use crate::{
-    engine::impulse_common::ImpulseCommon,
-    static_data::global_events::{get_global_event_deserializer, get_global_event_serializer},
-    Curio, ImpulseScope,
-};
+use crate::{engine::impulse_common::ImpulseCommon, static_data::global_events::GlobalImpulses, Curio, ImpulseScope};
 use std::any::Any;
 #[derive(Clone)]
 
@@ -42,27 +38,27 @@ impl ImpulseSynchronizer {
 }
 impl ImpulseSynchronizer {
     fn deserialize_from_global(id: &i32, bytes: &Vec<u8>) -> Option<Box<dyn Any>> {
-        // get global fn
-        let Some(fn_deserialize) = &get_global_event_deserializer(id) else {
+        // fetch the global impulse registration
+        let Some(impluse_reg) = GlobalImpulses::try_get_registration(id) else {
             Curio::log(crate::Severity::Warning, "Failed to get GlobalDeserializeFn");
             return None;
         };
 
         // return result
-        Some(fn_deserialize(&bytes.as_slice()))
+        Some((impluse_reg.deserialize_fn)(&bytes.as_slice()))
     }
 
     fn serialize_from_global<T>(id: &i32, value: &T) -> Option<Vec<u8>>
     where
         T: ImpulseCommon + 'static,
     {
-        // get global fn
-        let Some(fn_serialize) = &get_global_event_serializer(id) else {
+        // fetch the global impulse registration
+        let Some(impluse_reg) = GlobalImpulses::try_get_registration(id) else {
             Curio::log(crate::Severity::Warning, "Failed to get GlobalSerializeFn");
             return None;
         };
 
         // return result
-        Some(fn_serialize(value))
+        Some((impluse_reg.serialize_fn)(value))
     }
 }

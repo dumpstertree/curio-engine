@@ -1,9 +1,9 @@
+use crate::static_data::global_events::GlobalImpulses;
 use crate::Services;
 use crate::{engine::metadata::identity::Identity, ButtonCode, ButtonPressed, Commands, CurioBuilder, CurioNetwork, CurioNetworkParticipant, Nerve, PluginGroupState, Random};
 use crate::{
     engine::{curio_common::CurioCommon, serialization::plugin_group_state::CurioState},
     input::axis_code::AxisCode,
-    static_data::{global_events::get_global_event_constructor_all, global_states::get_global_state_constructor_all},
     system::system_component::SystemComponent,
     Formation, Ledger, Severity, Vector3, Version,
 };
@@ -98,8 +98,9 @@ impl Curio {
 // impl -Private fns
 impl Curio {
     fn log_ledger() {
+        println!("THIS IS WRONG");
         // get all being added
-        let all = get_global_state_constructor_all();
+        let all = GlobalImpulses::get_all_registrations();
 
         //create empty string
         let mut ledger_record_log = String::new();
@@ -115,7 +116,7 @@ impl Curio {
     }
     fn log_nerve() {
         // get all being added
-        let all = get_global_event_constructor_all();
+        let all = GlobalImpulses::get_all_registrations();
 
         // create empty string
         let mut nerve_impulse_log = String::new();
