@@ -60,11 +60,11 @@ pub fn record_serializable(attr: TokenStream, item: TokenStream) -> TokenStream 
     // Pick the correct registration call
     let register_call = if serializable {
         quote! {
-            curio_core::static_data::global_states::register_global_state_serializable::<#struct_name>();
+            curio_core::GlobalRecords::register_serializable::<#struct_name>();
         }
     } else {
         quote! {
-            curio_core::static_data::global_states::register_global_state::<#struct_name>();
+            curio_core::GlobalRecords::register::<#struct_name>();
         }
     };
 

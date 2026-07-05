@@ -1,4 +1,4 @@
-use crate::{engine::impulse_common::ImpulseCommon, static_data::global_events::GlobalImpulses, Curio, ImpulseScope};
+use crate::{engine::impulse_common::ImpulseCommon, Curio, GlobalImpulses, ImpulseScope};
 use std::any::Any;
 #[derive(Clone)]
 

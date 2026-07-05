@@ -1,7 +1,4 @@
-use crate::{
-    static_data::global_states::{get_global_state_deserializer, get_global_state_serializer},
-    Curio, RecordCommon, RecordScope,
-};
+use crate::{Curio, GlobalRecords, RecordCommon, RecordScope};
 use serde::{Deserialize, Serialize};
 
 /// An representation of a Record that is serialized for rebuild by a Ledger
@@ -47,26 +44,38 @@ impl RecordSynchronizer {
 }
 impl RecordSynchronizer {
     fn deserialize_from_global(id: &i32, bytes: &Vec<u8>) -> Option<Box<dyn RecordCommon>> {
-        // get global fn
-        let Some(fn_deserialize) = &get_global_state_deserializer(id) else {
+        // fetch the global impulse registration
+        let Some(record_reg) = GlobalRecords::try_get_registration(id) else {
+            Curio::log(crate::Severity::Warning, "Failed to get GlobalDeserializeFn");
+            return None;
+        };
+
+        // make sure there is registry has a serialize
+        let Some(deserialize_fn) = record_reg.deserialize_fn else {
             Curio::log(crate::Severity::Warning, "Failed to get GlobalDeserializeFn");
             return None;
         };
 
         // return result
-        Some(fn_deserialize(&bytes.as_slice()))
+        Some(deserialize_fn(&bytes.as_slice()))
     }
     fn serialize_from_global<T>(id: &i32, value: &T) -> Option<Vec<u8>>
     where
         T: 'static,
     {
-        // get global fn
-        let Some(fn_serialize) = &get_global_state_serializer(id) else {
+        // fetch the global impulse registration
+        let Some(record_reg) = GlobalRecords::try_get_registration(id) else {
+            Curio::log(crate::Severity::Warning, "Failed to get GlobalSerializeFn");
+            return None;
+        };
+
+        // make sure there is registry has a serialize
+        let Some(serialize_fn) = record_reg.serialize_fn else {
             Curio::log(crate::Severity::Warning, "Failed to get GlobalSerializeFn");
             return None;
         };
 
         // return result
-        Some(fn_serialize(value))
+        Some(serialize_fn(value))
     }
 }

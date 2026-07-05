@@ -1,4 +1,4 @@
-use crate::static_data::global_events::GlobalImpulses;
+use crate::GlobalImpulses;
 use crate::Services;
 use crate::{engine::metadata::identity::Identity, ButtonCode, ButtonPressed, Commands, CurioBuilder, CurioNetwork, CurioNetworkParticipant, Nerve, PluginGroupState, Random};
 use crate::{

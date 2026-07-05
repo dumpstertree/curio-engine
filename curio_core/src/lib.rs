@@ -99,6 +99,12 @@ pub use crate::extensions::extensions_i32::ExtensionsI32;
 pub use crate::system::record_id::RecordId;
 pub use crate::system::system_component::SystemComponent;
 
+//global
+pub use crate::static_data::global_impulses::GlobalImpulses;
+pub use crate::static_data::global_records::GlobalRecords;
+pub use crate::static_data::impulse_registration::ImpulseRegistration;
+pub use crate::static_data::record_registration::RecordRegistration;
+
 //
 pub mod graphics {
     pub(crate) mod gpu;
@@ -195,16 +201,16 @@ pub mod collections {
 pub mod network {
     pub(crate) mod network_modes;
 }
-
 pub mod static_data {
-    pub mod global_events;
-    pub mod global_states;
+    pub(crate) mod global_impulses;
+    pub(crate) mod global_records;
+    pub(crate) mod impulse_registration;
+    pub(crate) mod record_registration;
 }
 pub mod system {
     pub(crate) mod record_id;
     pub(crate) mod system_component;
 }
-
 pub mod built_in {
     pub mod record {
         pub mod sys_record_debug;

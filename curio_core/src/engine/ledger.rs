@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
-use crate::static_data::global_states::get_global_state_constructor_all;
+use crate::GlobalRecords;
 use crate::{ComponentState, Curio, CurioNetwork, LedgerEntry, ObjectState, PluginState, RecordCommon, RecordNetworkCapabilities, RecordScope, RecordSynchronizer, Services, Severity};
 
 #[derive(Clone)]
@@ -64,7 +64,7 @@ impl Ledger {
     /// Instance populated from the GlobalRecord registry
     pub fn new(network: CurioNetwork) -> Self {
         // get all constructors
-        let constructors = get_global_state_constructor_all();
+        let constructors = GlobalRecords::get_all_registrations();
 
         // get the max count of the constructors
         let max_id = constructors.iter().map(|(id, _)| *id).max().unwrap_or(-1);
@@ -74,7 +74,7 @@ impl Ledger {
 
         // populate indicies of entries vec
         for (id, constructor) in constructors {
-            entries[id as usize] = Some(LedgerEntry::new(constructor()));
+            entries[id as usize] = Some(LedgerEntry::new((constructor.construct_fn)()));
         }
 
         // create and return the ledger
