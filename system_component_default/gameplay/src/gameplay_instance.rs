@@ -90,7 +90,7 @@ where
         for ecs_system in self.ecs_systems.iter_mut() {
             // do a network mode check
             let run_on_network_modes = ecs_system.0.run_on_instance(ledger);
-            let this_network_mode = &ledger.network_capabilities.clone().unwrap().privilege;
+            let this_network_mode = &ledger.network_capabilities.clone().privilege;
 
             // ignore if doesnt run on this instance
             if !run_on_network_modes.contains(this_network_mode) {
@@ -119,7 +119,7 @@ where
             ecs_system.1 = should_be_enabled;
         }
 
-        let this_network_mode = &ledger.network_capabilities.clone().unwrap().privilege;
+        let this_network_mode = &ledger.network_capabilities.clone().privilege;
 
         // update any timed events to get added to the queu before we pull anything
         event_queue.update_timed_events();
@@ -190,7 +190,7 @@ where
             }
             // do a network mode check
             let run_on_network_modes = ecs_system.0.run_on_instance(ledger);
-            let this_network_mode = &ledger.network_capabilities.clone().unwrap().privilege;
+            let this_network_mode = &ledger.network_capabilities.clone().privilege;
 
             // ignore if doesnt run on this instance
             if !run_on_network_modes.contains(this_network_mode) {

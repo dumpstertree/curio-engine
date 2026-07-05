@@ -15,7 +15,6 @@ pub use crate::math::vector4_int::Vector4Int;
 pub use crate::collections::any_map::AnyMap;
 pub use crate::collections::any_queue::AnyQueue;
 pub use crate::collections::event_runner::EventRunner;
-pub use crate::collections::ledger::Ledger;
 
 // io
 pub use crate::io::log::get_and_clear_logs;
@@ -55,6 +54,8 @@ pub use crate::engine::impulse_common::ImpulseCommon;
 pub use crate::engine::impulse_network_capabilities::ImpulseNetworkCapabilities;
 pub use crate::engine::impulse_scope::ImpulseScope;
 pub use crate::engine::impulse_synchronizer::ImpulseSynchronizer;
+pub use crate::engine::ledger::Ledger;
+pub use crate::engine::ledger_entry::LedgerEntry;
 pub use crate::engine::metadata::formation::Formation;
 pub use crate::engine::metadata::graphics_mapping::GraphicsMapping;
 pub use crate::engine::metadata::identity::Identity;
@@ -144,6 +145,8 @@ pub mod engine {
     pub(crate) mod impulse_network_capabilities;
     pub(crate) mod impulse_scope;
     pub(crate) mod impulse_synchronizer;
+    pub(crate) mod ledger;
+    pub(crate) mod ledger_entry;
     pub(crate) mod nerve;
     pub(crate) mod record_clone;
     pub(crate) mod record_common;
@@ -175,7 +178,6 @@ pub mod collections {
     pub(crate) mod any_map;
     pub(crate) mod any_queue;
     pub(crate) mod event_runner;
-    pub(crate) mod ledger;
 }
 pub mod network {
     pub(crate) mod network_modes;
@@ -186,7 +188,6 @@ pub mod static_data {
     pub mod global_states;
 }
 pub mod system {
-
     pub(crate) mod record_id;
     pub(crate) mod system_component;
 }

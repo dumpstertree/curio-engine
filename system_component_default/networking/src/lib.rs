@@ -189,12 +189,10 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             };
 
             // get the network capabilities of the gamestate. This is not required and can be silently passed
-            let Some(ledger_a_network_capabalities) = ledger_a.network_capabilities.clone() else {
-                continue;
-            };
+            let ledger_a_network_capabalities = ledger_a.network_capabilities.clone();
 
             // drain all network sync events
-            let drained_sync_events = ledger_a.try_drain_network_sync_events();
+            let drained_sync_events = ledger_a.try_drain_synchronizers();
             // iterate over each sync event
             for sync_event in &drained_sync_events {
                 // if this state change is instance only we can skip it
@@ -213,10 +211,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                         continue;
                     };
 
-                    // get the network capabilities of the GameState. This is not required and can be silently passed
-                    let Some(ledger_b_network_capabalities) = ledger_b.network_capabilities.clone() else {
-                        continue;
-                    };
+                    let ledger_b_network_capabalities = ledger_b.network_capabilities.clone();
 
                     // compare privilege levels and make sure the ones trying to override are higher
                     if ledger_a_network_capabalities.privilege >= ledger_b_network_capabalities.privilege {
@@ -244,14 +239,14 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             };
 
             // apply all the sync events
-            ledger_a.try_apply_network_sync_events(&pending_changes);
+            ledger_a.try_apply_synchronizers(&pending_changes);
         }
 
         // send events
         for i in 0..event_queue.len() {
             //get queuue
             let event_queue_a = event_queue.get_mut(i).unwrap();
-            let events = event_queue_a.try_drain_network_sync_events();
+            let events = event_queue_a.try_drain_synchronizers();
 
             for event in events {
                 match event.impulse_scope {
@@ -266,7 +261,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             let event_queue_b = event_queue.get_mut(j).unwrap();
 
                             // apply to the reciever
-                            event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
+                            event_queue_b.try_apply_synchronizers(vec![event.clone()]);
                         }
                     }
                     ImpulseScope::ConnectedHost => {
@@ -280,9 +275,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             let event_queue_b = event_queue.get_mut(j).unwrap();
 
                             // get network cabailities for reciever
-                            let Some(network_capabilities) = &ledger[j].network_capabilities else {
-                                continue;
-                            };
+                            let network_capabilities = &ledger[j].network_capabilities;
 
                             // make sure these have the correct privilage
                             if network_capabilities.privilege != NetworkModes::LocalHost && network_capabilities.privilege != NetworkModes::OnlineHost {
@@ -290,7 +283,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             }
 
                             // enqueue
-                            event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
+                            event_queue_b.try_apply_synchronizers(vec![event.clone()]);
                         }
                     }
                     ImpulseScope::ConnectedPeers => {
@@ -304,9 +297,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             let event_queue_b = event_queue.get_mut(j).unwrap();
 
                             // get network cabailities for reciever
-                            let Some(network_capabilities) = &ledger[j].network_capabilities else {
-                                continue;
-                            };
+                            let network_capabilities = &ledger[j].network_capabilities;
 
                             // make sure these have the correct privilage
                             if network_capabilities.privilege != NetworkModes::LocalPeer && network_capabilities.privilege != NetworkModes::OnlinePeer {
@@ -314,7 +305,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
                             }
 
                             // enqueue
-                            event_queue_b.try_apply_network_sync_events(vec![event.clone()]);
+                            event_queue_b.try_apply_synchronizers(vec![event.clone()]);
                         }
                     }
                     _ => {}
@@ -325,9 +316,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, _game_mode: &Formation) {
         let mut v = vec![];
         for x in ledger.iter() {
-            let Some(network_capabilities) = &x.network_capabilities else {
-                continue;
-            };
+            let network_capabilities = &x.network_capabilities;
             if network_capabilities.privilege == NetworkModes::LocalPeer || network_capabilities.privilege == NetworkModes::OnlinePeer {
                 v.push(x.network.me().guid);
             }

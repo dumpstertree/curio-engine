@@ -105,7 +105,7 @@ impl Nerve {
     }
 
     /// Try to apply any synchronize event that was pushed from another nerve
-    pub fn try_apply_network_sync_events(&mut self, sync_events: Vec<ImpulseSynchronizer>) {
+    pub fn try_apply_synchronizers(&mut self, sync_events: Vec<ImpulseSynchronizer>) {
         for sync in sync_events {
             let Some(payload) = sync.deserialize() else {
                 println!("failed deserialize");
@@ -120,7 +120,7 @@ impl Nerve {
     }
 
     /// Try to get any synchronize event that should be pushed to another nerve
-    pub fn try_drain_network_sync_events(&mut self) -> Vec<ImpulseSynchronizer> {
+    pub fn try_drain_synchronizers(&mut self) -> Vec<ImpulseSynchronizer> {
         self.network_capabilities.drain_synchronizers()
     }
 }

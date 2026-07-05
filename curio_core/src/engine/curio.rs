@@ -1,5 +1,5 @@
 use crate::Services;
-use crate::{engine::metadata::identity::Identity, ButtonCode, ButtonPressed, CurioBuilder, Commands, CurioNetwork, CurioNetworkParticipant, Nerve, PluginGroupState, Random};
+use crate::{engine::metadata::identity::Identity, ButtonCode, ButtonPressed, Commands, CurioBuilder, CurioNetwork, CurioNetworkParticipant, Nerve, PluginGroupState, Random};
 use crate::{
     engine::{curio_common::CurioCommon, serialization::plugin_group_state::CurioState},
     input::axis_code::AxisCode,
@@ -145,7 +145,7 @@ impl CurioCommon for Curio {
 
         // get all the ledger tabs
         for x in &self.ledgers {
-            let s = x.to_state();
+            let s = x.serializable();
             let key = &s.0;
             if !id_for_tabs.contains_key(key) {
                 id_for_tabs.insert(key.clone(), Vec::new());
