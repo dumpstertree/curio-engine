@@ -1,4 +1,6 @@
-use crate::{input::axis_code::AxisCode, ButtonCode, ButtonPressed, Vector3};
+use egui_wgpu::wgpu::{CommandEncoder, Texture, TextureView};
+
+use crate::{engine::serialization::plugin_group_state::CurioState, input::axis_code::AxisCode, ButtonCode, ButtonPressed, Vector3};
 
 /// Base trait that an object needs to implement to be a Curio.
 /// Handles propogating external events into the Curio such as Application, Window and Input events.
@@ -15,4 +17,8 @@ pub trait CurioCommon {
     // input
     fn input_axis(&mut self, _axis: AxisCode, _state: Vector3) {}
     fn input_button(&mut self, _button: ButtonCode, _state: ButtonPressed) {}
+    // serialize
+    fn serializable(&self) -> CurioState;
+    // rendering
+    fn render(&mut self, output_texture: &Texture, output_view: &TextureView, encoder: &mut CommandEncoder);
 }

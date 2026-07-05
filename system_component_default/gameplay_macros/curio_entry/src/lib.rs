@@ -15,7 +15,7 @@ pub fn curio_entry(_attr: TokenStream, item: TokenStream) -> TokenStream {
         pub extern "C" fn curio_init(
             services: *const EngineServices,
         ) -> *mut Curio {
-            set_services(services);
+            EngineServices::set(services);
 
             register_built_in_ecs();
             register_built_in_records();

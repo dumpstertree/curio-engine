@@ -18,6 +18,14 @@
 //!   needs to read it from anywhere — but `Mutex` not `unsafe`).
 //! - No Tauri `Channel`; frames are published via `capture::push_frame`
 //!   instead (a `Mutex<Option<Frame>>` slot — see that module).
+//!
+//! Confirmed against the real `curio_core` (not guessed — corrected
+//! directly from a working build): `Services` has an `assets: *mut
+//! AssetLoader` field alongside `logger`, constructed the same way
+//! (`self.assets.as_mut() as *mut AssetLoader`); `AssetLoader::new` takes
+//! an `AssetCache` and `AssetDatabase`; and this wgpu version's
+//! `Adapter::request_device` takes a second `Option<&Path>` trace-path
+//! argument (`None` here).
 
 use crate::project::Project;
 use crate::runner::{
@@ -29,7 +37,7 @@ use crate::runner::{
 use curio_core::io::asset_cache::AssetCache;
 use curio_core::io::asset_database::AssetDatabase;
 use curio_core::io::asset_loader::AssetLoader;
-use curio_core::{set_services, ComponentState, Curio, CurioCommon, EngineServices, GpuHandle, Logger, PluginGroupState};
+use curio_core::{ComponentState, Curio, CurioCommon, GpuHandle, Logger, PluginGroupState, Services};
 
 use egui_wgpu::wgpu::{Adapter, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
 
@@ -133,7 +141,7 @@ pub struct GameRunner {
     project: Arc<Mutex<Project>>,
     state: RunnerState,
     rx: Receiver<GameMessage>,
-    services: Option<Box<EngineServices>>,
+    services: Option<Box<Services>>,
     capture_texture: Option<Arc<Texture>>,
     surface_format: TextureFormat,
     loaded_app: Option<AppInstance>,
@@ -213,7 +221,7 @@ impl GameRunner {
 
         let readback = ReadbackBuffers::new(device.clone(), CAPTURE_WIDTH, CAPTURE_HEIGHT);
 
-        self.services = Some(Box::new(EngineServices {
+        self.services = Some(Box::new(Services {
             assets: self.assets.as_mut() as *mut AssetLoader,
             logger: self.logger.as_mut() as *mut Logger,
             gpu: GpuHandle {
@@ -223,13 +231,10 @@ impl GameRunner {
                 capture_width: CAPTURE_WIDTH,
                 capture_height: CAPTURE_HEIGHT,
             },
-            // set_fullscreen,
-            // set_resolution,
-            // set_cursor_visible,
         }));
 
-        let services_ptr = self.services.as_deref().unwrap() as *const EngineServices;
-        set_services(services_ptr);
+        let services_ptr = self.services.as_deref().unwrap() as *const Services;
+        Services::set(services_ptr);
 
         self.device = Some(device);
         self.queue = Some(queue);
@@ -300,7 +305,11 @@ impl GameRunner {
 
         let mut shared_data = SHARED_DATA.lock();
         // shared_data.forms = loaded_app.app_instance.curio.context_snapshot();
-        shared_data.plugin = loaded_app.app_instance.curio.get_plugin_group_state();
+        shared_data.plugin = loaded_app
+            .app_instance
+            .curio
+            .serializable()
+            .plugin_group_state;
     }
 
     // ── Message dispatch ─────────────────────────────────────────────────────
@@ -310,7 +319,7 @@ impl GameRunner {
             match msg {
                 GameMessage::Start => {
                     let project = self.project.lock().clone();
-                    let services_ptr = self.services.as_deref().unwrap() as *const EngineServices;
+                    let services_ptr = self.services.as_deref().unwrap() as *const Services;
                     let path = format!("{}/target/release/", project.project_path);
                     let loaded_curio = load_curio(Path::new(&path), services_ptr);
                     let mut app_instance = AppInstance::new(loaded_curio);
@@ -374,7 +383,7 @@ impl GameRunner {
 // Plugin loading
 // ─────────────────────────────────────────────────────────────────────────────
 
-type InitCurioFn = unsafe extern "C" fn(gpu: *const EngineServices) -> *mut Curio;
+type InitCurioFn = unsafe extern "C" fn(gpu: *const Services) -> *mut Curio;
 type PeekCurioFn = unsafe extern "C" fn() -> *mut Vec<ComponentState>;
 
 pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
@@ -400,7 +409,7 @@ pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
     panic!("No curio plugin found");
 }
 
-pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
+pub fn load_curio(folder: &Path, gpu: *const Services) -> LoadedCurio {
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
     for entry in entries.flatten() {
         let path = entry.path();
@@ -423,7 +432,7 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
             }
             Box::from_raw(raw)
         };
-        eprintln!("loaded: {}", curio.meta.name);
+        eprintln!("loaded: {}", curio.identity.name);
         return LoadedCurio { curio };
     }
     panic!("No curio plugin found");

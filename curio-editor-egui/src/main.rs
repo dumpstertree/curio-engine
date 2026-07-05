@@ -1,6 +1,6 @@
 // Prevents an additional console window on Windows in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-#![allow(warnings)]
+
 mod anim_viewer;
 mod app;
 mod asset_state;
@@ -9,6 +9,7 @@ mod glb_viewer;
 mod panels;
 mod png_viewer;
 mod prefab_facets;
+mod prefab_gizmo;
 mod prefab_resolver;
 mod prefab_state;
 mod prefab_transforms;
@@ -29,10 +30,7 @@ fn main() -> eframe::Result<()> {
     let project = Project::load_local();
 
     let native_options = eframe::NativeOptions {
-        viewport: eframe::egui::ViewportBuilder::default()
-            .with_inner_size([1400.0, 900.0])
-            .with_min_inner_size([900.0, 600.0])
-            .with_title("Curio Editor"),
+        viewport: eframe::egui::ViewportBuilder::default().with_inner_size([1400.0, 900.0]).with_min_inner_size([900.0, 600.0]).with_title("Curio Editor"),
         renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };

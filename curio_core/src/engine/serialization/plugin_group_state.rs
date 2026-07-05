@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use serde::Serialize;
 
+use crate::{Formation, Identity};
+
 #[derive(Default, Clone, Serialize)]
 pub struct PluginGroupState {
     //populates the left menu. ids are used for the dropdown and value are all the tabs in the tabgroup
@@ -47,4 +49,11 @@ impl FieldState {
             data: serde_json::to_value(value).unwrap(),
         }
     }
+}
+
+#[derive(Default, Clone, Serialize)]
+pub struct CurioState {
+    pub identity: Identity,
+    pub formation: Formation,
+    pub plugin_group_state: PluginGroupState,
 }

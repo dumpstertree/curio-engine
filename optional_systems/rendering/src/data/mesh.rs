@@ -1,4 +1,4 @@
-use curio_core::{ExtensionsF32, Matrix4x4, Random, Vector3, services};
+use curio_core::{Services, ExtensionsF32, Matrix4x4, Random, Vector3};
 use egui_wgpu::wgpu::{Buffer, BufferAddress, VertexAttribute, VertexBufferLayout, util::DeviceExt};
 use std::hash::Hash;
 
@@ -283,7 +283,7 @@ impl Mesh {
     pub fn new(name: String, verticies: Vec<Vertex>, indicies: Vec<u32>, matrix: Matrix4x4) -> Mesh {
         // panic!("GPU CONVERSION FAILURE");
 
-        let device = services().gpu.device();
+        let device = Services::get().gpu.device();
         let i_buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(&indicies),

@@ -1,7 +1,8 @@
 use crate::{Random, Version};
+use serde::Serialize;
 
 /// Identity represents the specifics of a Curio instance
-#[derive(Clone)]
+#[derive(Default, Clone, Serialize)]
 pub struct Identity {
     pub name: String,
     pub icon: String,

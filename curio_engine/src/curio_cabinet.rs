@@ -14,7 +14,7 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, EngineServices, GpuHandle, Identity, Portal, Severity, TextureAsset, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, Services, GpuHandle, Identity, Portal, Severity, TextureAsset, Vector3};
 
 // static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
 static OPEN_DISPLAY_WINDOWS: LazyLock<Mutex<Vec<CabinetWindow>>> = LazyLock::new(|| Mutex::new(Vec::new()));
@@ -72,7 +72,7 @@ pub struct CabinetWindowOwner {
     did_run: bool,
     // gpu_instance: Option<Arc<GPUInstance>>,
     // gpu: Option<Arc<SystemGPU>>,           // ← new, keeps Arc alive
-    services: Option<Box<EngineServices>>, // ← new, Box gives stable address
+    services: Option<Box<Services>>, // ← new, Box gives stable address
     // loaded_curio: Option<LoadedCurio>,     // ← new, keeps .so alive
     app_instance: Option<LoadedCurio>,
     _portal: Portal,
@@ -279,7 +279,7 @@ impl ApplicationHandler for CabinetWindowOwner {
         // self.gpu = Some(gpu);
 
         // get a raw pointer to the Boxed services — stable as long as Box lives
-        let services_ptr: *const EngineServices = self.services.as_deref().unwrap();
+        let services_ptr: *const Services = self.services.as_deref().unwrap();
 
         // keep LoadedCurio on self so the .so stays loaded
         let mut loaded = load_curio(Path::new("./plugins"), services_ptr);
@@ -434,7 +434,7 @@ pub struct LoadedCurio {
     pub curio: Box<Curio>,
 }
 
-pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
+pub fn load_curio(folder: &Path, gpu: *const Services) -> LoadedCurio {
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
 
     for entry in entries.flatten() {
@@ -484,7 +484,7 @@ pub fn load_curio(folder: &Path, gpu: *const EngineServices) -> LoadedCurio {
             Box::from_raw(raw)
         };
 
-        eprintln!("loaded: {}", curio.meta.name);
+        eprintln!("loaded: {}", curio.identity.name);
 
         return LoadedCurio { curio };
     }
@@ -495,4 +495,4 @@ use libloading::Symbol;
 
 use crate::plugin_loader::{self, load_library};
 
-type InitCurioFn = unsafe extern "C" fn(gpu: *const EngineServices) -> *mut Curio;
+type InitCurioFn = unsafe extern "C" fn(gpu: *const Services) -> *mut Curio;

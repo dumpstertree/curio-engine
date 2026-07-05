@@ -1,3 +1,100 @@
+# Curio Editor — egui rewrite (pass 7: prefab transform gizmo)
+
+This replaces the Tauri + React frontend with a native `eframe`/`egui`
+application that talks to `curio_core` directly — no IPC layer, no webview,
+one process.
+
+## Confirmed `curio_core` API corrections (from your working build)
+
+Two facts about `curio_core` that were wrong/incomplete in earlier passes,
+now fixed in `runner/game_runner.rs` from your corrected copy:
+- `Adapter::request_device` in this wgpu version takes a second
+  `Option<&Path>` trace-path argument (`None` here) — this project's
+  earlier passes were missing it.
+- `EngineServices` has an `assets: *mut AssetLoader` field alongside
+  `logger`, constructed the same way as `logger`
+  (`self.assets.as_mut() as *mut AssetLoader`). `AssetLoader::new` takes an
+  `AssetCache` and `AssetDatabase` (`curio_core::io::{asset_cache,
+  asset_database, asset_loader}`). `GameRunner` now owns a `Box<AssetLoader>`
+  the same way it owns `Box<Logger>`.
+
+## Prefab 3D viewport: move/rotate/scale gizmo
+
+The prefab viewport (`.comp` files) now has real click-and-drag transform
+handles, not just numeric-field editing:
+
+- **Select** an object by clicking it in the 3D view (ray-vs-triangle
+  picking, already existed) — the gizmo appears at its position.
+- **Move/Rotate/Scale** toolbar in the viewport switches which handles show.
+- **Drag a handle** to edit that field live — the object visibly moves/
+  rotates/scales in the 3D view as you drag.
+- **If the object has no local `Transform3D` yet** (its position/rotation/
+  scale is entirely inherited from a `base:`, or it's a fresh object with
+  no transform at all), starting a drag adds one automatically, seeded from
+  the object's current *effective* (possibly-inherited) values — so it
+  doesn't visually jump the instant you grab a handle. Then the specific
+  field you dragged gets updated on top of that.
+- The actual file write happens **once, on mouse release** — not every
+  frame during the drag. Live visual feedback during the drag is a
+  transient, in-memory-only override of the render tree (`prefab_tab.rs`
+  bakes the live value into a scratch copy before building the frame's
+  render entries); `raw`/`resolved`/disk are untouched until you let go.
+  This avoids hammering the disk with a write per frame while dragging,
+  consistent with the "commit at natural interaction boundaries" pattern
+  used everywhere else in this editor (asset rename on blur, dropdown
+  selects, etc.).
+
+### Design choices worth knowing about (`prefab_gizmo.rs`)
+
+- **The gizmo is a 2D screen-space overlay**, not real 3D geometry in the
+  wgpu pipeline — handles are projected from world space via the camera's
+  `view_proj` and drawn/hit-tested with `ui.painter()`, reusing the same
+  projection math already used for the Spine placeholder markers. Simpler
+  than building actual 3D gizmo meshes, at the cost of handles not being
+  depth-tested against the scene (a handle always draws on top, even
+  "behind" a mesh from the current angle). Reasonable for a composition
+  preview tool; a production-grade gizmo would want real 3D geometry.
+- **Translate handles are world-aligned** (X/Y/Z always point the same way
+  regardless of the object's rotation — the common "global" gizmo default).
+  **Rotate and Scale handles are object-local** (transformed by the
+  object's own world rotation) — rotating/scaling "along local X" is the
+  meaningful operation for those, unlike translation.
+- **Rotation is Euler-additive**, not quaternion composition: a rotate drag
+  adds degrees directly to the corresponding Euler `rotation` component.
+  Works well from a fresh/zero rotation (the common case) but doesn't
+  correctly compose once multiple axes already have non-zero rotation — a
+  real gizmo would compose quaternion deltas. Flagged in code rather than
+  silently wrong.
+- **Scale drags are pixel-delta × a sensitivity constant**, not derived
+  from world distance — there's no coherent "world unit of scale" once
+  parent rotation/non-uniform scale are involved, so this sidesteps that
+  entirely (the same simplification most simple gizmo implementations use).
+- Everything here builds on `prefab_transforms.rs`'s new
+  `local_matrix`/`world_matrices_for_path` helpers, which factor out (and
+  reuse) the same local-transform-matrix logic `collect_render_entries`
+  already had.
+
+Not implemented: multi-select, snapping, a "local vs. global" toggle for
+translate (it's always global), and a numeric input overlay while dragging
+(the inspector's fields update once the drag commits, not live — a minor,
+deliberate scope trim to avoid threading the same transient-override
+plumbing through both the viewport and the separate inspector panel for a
+"nice to have" rather than a "must have").
+
+## Build note
+
+Not compile-checked (same standing toolchain limitation as every pass).
+Worth flagging specifically for this one: while writing it, an editing
+mistake in `prefab_state.rs` briefly deleted a function's own signature
+line while leaving its body in place (caught and fixed by re-reading the
+whole file before finalizing — mentioned here mainly as a reminder that
+"the diff looked right" isn't sufficient verification without a compiler,
+so a `cargo check` here is worth doing before assuming this pass is clean).
+
+---
+
+# Earlier passes (1–6): shell, viewports, asset browser, all asset previews, prefab editing, viewport reliability fix
+
 # Curio Editor — egui rewrite (pass 6: viewport reliability fix + refactor plan)
 
 This replaces the Tauri + React frontend with a native `eframe`/`egui`

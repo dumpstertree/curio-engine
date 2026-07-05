@@ -12,7 +12,7 @@
 
 use crate::fs_ops;
 use crate::prefab_resolver::{self, ResolvedGameObject};
-use crate::prefab_types::{self, PrefabGameObjectRaw};
+use crate::prefab_types::{self, PrefabComponentRaw, PrefabGameObjectRaw};
 use std::collections::HashSet;
 
 pub struct PrefabState {
@@ -25,16 +25,31 @@ pub struct PrefabState {
     pub expanded_nodes: HashSet<String>,
     pub open_components: HashSet<String>,
 
-    /// Gizmo-based drag transform editing is not implemented in this pass
-    /// (see `prefab_viewer.rs` doc comment) — transforms are edited via the
-    /// numeric fields in the inspector instead, which is a fully functional
-    /// if less flashy path to the same data.
     pub camera_reset_requested: bool,
+
+    /// Which handles the 3D viewport's gizmo currently shows for the
+    /// selected object — move/rotate/scale, chosen via the small toolbar in
+    /// `prefab_tab.rs::show_viewport`.
+    pub gizmo_mode: GizmoMode,
+    /// Set while the user is actively dragging a gizmo handle; `None`
+    /// otherwise. See `GizmoDrag`'s doc comment and `prefab_gizmo.rs`.
+    pub gizmo_drag: Option<GizmoDrag>,
 }
 
 impl PrefabState {
     pub fn new() -> Self {
-        Self { file_path: None, raw: None, resolved: None, load_error: None, selected_path: None, expanded_nodes: HashSet::new(), open_components: HashSet::new(), camera_reset_requested: false }
+        Self {
+            file_path: None,
+            raw: None,
+            resolved: None,
+            load_error: None,
+            selected_path: None,
+            expanded_nodes: HashSet::new(),
+            open_components: HashSet::new(),
+            camera_reset_requested: false,
+            gizmo_mode: GizmoMode::default(),
+            gizmo_drag: None,
+        }
     }
 
     /// Call each frame a `.comp` file is selected in the Asset tab. No-ops
@@ -154,6 +169,11 @@ impl PrefabState {
                     node.components.push(prefab_types::default_component(&kind));
                 }
             }
+            PrefabAction::AddComponentWithFields(path, kind, fields) => {
+                if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
+                    node.components.push(PrefabComponentRaw { kind, fields });
+                }
+            }
             PrefabAction::RemoveComponent(path, comp_index) => {
                 if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
                     if comp_index < node.components.len() {
@@ -193,6 +213,73 @@ impl PrefabState {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Gizmo state — see `prefab_gizmo.rs` for the drawing/interaction logic.
+// Kept here (not in `prefab_gizmo.rs`) so `PrefabState` stays the single
+// owner of all prefab-editing state, matching `selected_path`/
+// `expanded_nodes`/etc. Deliberately free of `egui` types (uses `glam::Vec2`
+// for screen coordinates) to keep this file's dependency footprint the same
+// as the rest of the module — `prefab_gizmo.rs` converts at its boundary.
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GizmoMode {
+    Translate,
+    Rotate,
+    Scale,
+}
+
+impl Default for GizmoMode {
+    fn default() -> Self {
+        GizmoMode::Translate
+    }
+}
+
+/// Mode-specific data captured once at drag start, needed to convert mouse
+/// movement into the right kind of delta each frame.
+#[derive(Debug, Clone)]
+pub enum GizmoDragKind {
+    /// `world_axis_dir` is one of the world X/Y/Z unit vectors (translate
+    /// handles are world-aligned, not object-local — see `prefab_gizmo.rs`).
+    /// `screen_units_per_world` is precomputed at drag start: how many
+    /// screen pixels correspond to one world unit of movement along this
+    /// axis, from the object's current position and the camera's
+    /// projection — lets translate convert screen-space mouse delta into
+    /// an accurate world-space distance.
+    Translate { world_axis_dir: glam::Vec3, screen_axis_dir: glam::Vec2, screen_units_per_world: f32 },
+    /// Scale handles are the object's own local axes (so scaling "along X"
+    /// always means the object's local X, regardless of its rotation).
+    /// Scale deltas are NOT derived from world distance (there's no
+    /// coherent "world unit of scale" once parent rotation/non-uniform
+    /// scale are involved) — just a direct pixel-delta-times-sensitivity,
+    /// the same simplification most simple gizmo implementations use.
+    Scale { screen_axis_dir: glam::Vec2 },
+    /// Rotate handles are also object-local axes, but the drag itself is
+    /// angle-based: the angle (radians) from the object's projected screen
+    /// center to the mouse, at drag start.
+    Rotate { start_mouse_angle: f32 },
+}
+
+/// An in-progress gizmo drag. Lives on `PrefabState` so it persists across
+/// frames; the *actual* file write only happens once, when the drag ends
+/// (mouse released) — see `prefab_gizmo.rs`. `current_value` is recomputed
+/// every frame the drag is active and is what drives the live 3D preview
+/// (`prefab_tab.rs` bakes it into a transient copy of the tree before
+/// calling `PrefabScene::sync`, without touching `raw`/disk).
+#[derive(Debug, Clone)]
+pub struct GizmoDrag {
+    pub path: Vec<usize>,
+    /// Index the edited `Transform3D` component has (or will have, if it
+    /// was just added this same drag) in the node's own `components`.
+    pub comp_index: usize,
+    /// 0/1/2 = X/Y/Z.
+    pub axis: usize,
+    pub start_value: prefab_types::Vec3,
+    pub current_value: prefab_types::Vec3,
+    pub start_mouse: glam::Vec2,
+    pub kind: GizmoDragKind,
+}
+
 fn split_last(path: &[usize]) -> Option<(Vec<usize>, usize)> {
     if path.is_empty() {
         return None;
@@ -217,6 +304,12 @@ pub enum PrefabAction {
     DuplicateChild(Vec<usize>),
 
     AddComponent(Vec<usize>, String),
+    /// Same as `AddComponent`, but seeds initial fields instead of leaving
+    /// it empty — used by the gizmo when it needs to add a `Transform3D` to
+    /// a node that only had one via inheritance, so the new local override
+    /// starts from the object's current *effective* transform instead of
+    /// resetting it to the origin (see `prefab_gizmo.rs`).
+    AddComponentWithFields(Vec<usize>, String, Vec<String>),
     RemoveComponent(Vec<usize>, usize),
     MoveComponent(Vec<usize>, usize, usize),
     SetComponentField(Vec<usize>, usize, String),

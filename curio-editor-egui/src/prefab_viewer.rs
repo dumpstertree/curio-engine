@@ -1,16 +1,15 @@
 //! 3D scene preview for a resolved prefab — the Rust equivalent of
-//! `PrefabViewport.tsx`, minus the transform gizmos (see below).
+//! `PrefabViewport.tsx`.
 //!
-//! **Scope cuts, clearly called out:**
-//! - **No transform gizmos (translate/rotate/scale drag handles).** The
-//!   original built these on three.js's `TransformControls`; a faithful
-//!   port means hand-building gizmo geometry, mouse-ray-vs-handle hit
-//!   testing, and drag-to-transform math from scratch — a substantial,
-//!   separate piece of work from "render the composed scene and let you
-//!   click to select." Transforms are fully editable via the numeric
-//!   position/rotation/scale fields in the inspector instead (see
-//!   `panels/prefab_tab.rs`), which was always a complete, if less
-//!   flashy, path to the same data even in the original.
+//! **Move/rotate/scale gizmo:** implemented, but as a 2D screen-space
+//! overlay in `prefab_gizmo.rs` (drawn/hit-tested via `ui.painter()` off
+//! this module's `view_proj`/camera state), not real 3D geometry inside
+//! this file's wgpu pipeline. See `prefab_gizmo.rs`'s doc comment for the
+//! reasoning and the specific simplifications that come with that choice
+//! (e.g. handles aren't depth-tested against the scene, Euler-additive
+//! rotation rather than quaternion composition).
+//!
+//! **Remaining scope cuts, clearly called out:**
 //! - **`RendererDynamic` (Spine `.anim`) entries render as a placeholder
 //!   marker**, not the actual animated skeleton. Getting real Spine
 //!   rendering into this same 3D scene means transforming 2D skeleton
@@ -151,6 +150,9 @@ pub struct OrbitCameraHandle(OrbitCamera);
 impl OrbitCameraHandle {
     pub fn apply_input(&mut self, drag_delta: egui::Vec2, scroll_delta: f32) {
         self.0.apply_input(drag_delta, scroll_delta);
+    }
+    pub fn eye(&self) -> Vec3 {
+        self.0.eye()
     }
 }
 

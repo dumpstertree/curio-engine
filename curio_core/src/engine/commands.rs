@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 // Commands for Curios and Plugins to interact
 #[derive(Clone, Serialize, Deserialize)]
-pub enum CurioCommands {
+pub enum Commands {
     // loop
     Tick,
     // lifecycle

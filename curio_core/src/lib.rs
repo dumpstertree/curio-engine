@@ -39,21 +39,17 @@ pub use crate::input::input_mapped::InputMapped;
 pub use crate::input::input_raw::InputRaw;
 
 // graphics
-// pub use crate::graphics::gpu_instance::GPUInstance;
+pub use crate::graphics::gpu::GpuHandle;
 pub use crate::graphics::shaders::Shaders;
 
 // engine
 pub use crate::engine::as_any::AsAny;
+pub use crate::engine::commands::Commands;
 pub use crate::engine::curio::Curio;
 pub use crate::engine::curio_builder::CurioBuilder;
 pub use crate::engine::curio_common::CurioCommon;
 pub use crate::engine::curio_network::CurioNetwork;
 pub use crate::engine::curio_network_participant::CurioNetworkParticipant;
-pub use crate::engine::engine_commands::CurioCommands;
-pub use crate::engine::engine_services::services;
-pub use crate::engine::engine_services::set_services;
-pub use crate::engine::engine_services::EngineServices;
-pub use crate::engine::engine_services::GpuHandle;
 pub use crate::engine::impulse_clone::ImpulseClone;
 pub use crate::engine::impulse_common::ImpulseCommon;
 pub use crate::engine::impulse_scope::ImpulseScope;
@@ -71,6 +67,7 @@ pub use crate::engine::serialization::plugin_group_state::FieldState;
 pub use crate::engine::serialization::plugin_group_state::ObjectState;
 pub use crate::engine::serialization::plugin_group_state::PluginGroupState;
 pub use crate::engine::serialization::plugin_group_state::PluginState;
+pub use crate::engine::services::Services;
 
 // network
 pub use crate::network::event_network_capabilities::EventNetworkCapabilities;
@@ -93,7 +90,7 @@ pub use crate::system::system_component::SystemComponent;
 
 //
 pub mod graphics {
-    pub(crate) mod gpu_instance;
+    pub(crate) mod gpu;
     pub(crate) mod shaders;
 }
 pub mod input {
@@ -135,18 +132,18 @@ pub mod engine {
         pub(crate) mod plugin_group_state;
     }
     pub(crate) mod as_any;
+    pub(crate) mod commands;
     pub(crate) mod curio;
     pub(crate) mod curio_builder;
     pub(crate) mod curio_common;
     pub(crate) mod curio_network;
     pub(crate) mod curio_network_participant;
-    pub(crate) mod engine_commands;
-    pub(crate) mod engine_services;
     pub(crate) mod impulse_clone;
     pub(crate) mod impulse_common;
     pub(crate) mod impulse_scope;
     pub(crate) mod impulse_synchronizer;
     pub(crate) mod nerve;
+    pub(crate) mod services;
 }
 pub mod extensions {
     pub(crate) mod extensions_f32;

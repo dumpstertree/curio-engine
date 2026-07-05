@@ -1,4 +1,4 @@
-use curio_core::{Matrix4x4, Vector3, services};
+use curio_core::{Matrix4x4, Services, Vector3};
 use ext_rendering::DrawCall;
 use ext_rendering::data::mesh::Vertex;
 use std::num::NonZeroU64;
@@ -35,7 +35,7 @@ impl ShadowSystem {
     /// Create a shadow system for `num_screens` screens. Each screen will get its own shadow map and uniform buffer.
     pub fn new(initial_light_view_proj: Matrix4x4, num_screens: usize) -> Self {
         println!("shadow");
-        let s = services();
+        let s = Services::get();
         let device = s.gpu.device();
 
         // -------------------------
@@ -229,7 +229,7 @@ impl ShadowSystem {
     /// Ensure the system has resources for at least `num_screens`.
     /// This will allocate additional per-screen resources if needed using `initial_matrix` as initial contents.
     pub fn ensure_screens(&mut self, num_screens: usize, initial_matrix: Matrix4x4) {
-        let s = services();
+        let s: &Services = Services::get();
         let device = s.gpu.device();
 
         if self.buffers.len() >= num_screens {
@@ -313,7 +313,7 @@ impl ShadowSystem {
 
     /// Recompute light matrix for a specific screen and write into its buffer.
     pub fn update_for_screen(&mut self, screen_index: usize, direction: &Vector3) {
-        let s = services();
+        let s = Services::get();
         let queue = s.gpu.queue();
 
         if screen_index >= self.buffers.len() {
@@ -339,7 +339,7 @@ impl ShadowSystem {
             return;
         }
 
-        let s = services();
+        let s = Services::get();
         let device = s.gpu.device();
         let depth_view = &self.depth_views[screen_index];
 

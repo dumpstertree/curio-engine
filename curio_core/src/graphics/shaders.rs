@@ -1,11 +1,11 @@
 use egui_wgpu::wgpu::{ShaderModule, ShaderModuleDescriptor, ShaderSource};
 use std::sync::{Arc, LazyLock};
 
-use crate::engine::engine_services::services;
+use crate::Services;
 
 static LIT: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| {
     Arc::new(
-        services()
+        Services::get()
             .gpu
             .device()
             .create_shader_module(ShaderModuleDescriptor {
@@ -17,7 +17,7 @@ static LIT: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| {
 
 static UNLIT: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| {
     Arc::new(
-        services()
+        Services::get()
             .gpu
             .device()
             .create_shader_module(ShaderModuleDescriptor {

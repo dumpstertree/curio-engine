@@ -1,4 +1,4 @@
-use curio_core::{TextureAsset, services};
+use curio_core::{Services, TextureAsset};
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::{AddressMode, CompareFunction, Device, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor};
@@ -26,7 +26,7 @@ pub struct RenderFeaturePostProcessHelper {
 impl RenderFeaturePostProcessHelper {
     pub fn new(offscreen_view: &TextureView) -> RenderFeaturePostProcessHelper {
         println!("pp");
-        let s = services();
+        let s = Services::get();
         let device = Arc::new(s.gpu.device().clone());
 
         let width = s.gpu.capture_width;
