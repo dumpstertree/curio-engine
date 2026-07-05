@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
-
 use crate::{input::axis_code::AxisCode, AxisState, ButtonCode, ButtonState, InputMapping, Vector2};
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, hash::Hash};
 
 // Result of testing raw input to mapped input

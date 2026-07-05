@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use curio_core::CurioCommands;
+use curio_core::Commands;
 use curio_core::Ledger;
 use curio_core::Nerve;
 use curio_core::SystemComponent;
@@ -77,7 +77,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn refresh(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) -> Vec<CurioCommands> {
+    fn refresh(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) -> Vec<Commands> {
         // get state
         let state_time = ledger[0].read::<SysRecordTime>();
 
@@ -92,7 +92,7 @@ impl SystemComponent for SystemComponentDefaultTime {
             self.next_update = (1.0 / state_time.target_frame_rate) as f64;
 
             // do tick
-            return vec![CurioCommands::Tick];
+            return vec![Commands::Tick];
         }
         // defualt
         return vec![];

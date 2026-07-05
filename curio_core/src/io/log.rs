@@ -4,11 +4,11 @@ use std::{
 };
 
 pub fn get_and_clear_logs() -> Vec<(Severity, String)> {
-    services().logger().get_and_clear_logs()
+    Services::get().logger().get_and_clear_logs()
 }
 use colored::Colorize;
 
-use crate::services;
+use crate::Services;
 
 // all available colors for source_ids
 const COLORS: [(u8, u8, u8); 9] = [
@@ -31,7 +31,7 @@ static ID_FOR_COLOR: LazyLock<Mutex<HashMap<i32, (u8, u8, u8)>>> = LazyLock::new
 
 /// log a message. source_id corresponds to the owner and severity represents the log level
 pub fn log(source_id: i32, severity: Severity, contents: &str) {
-    services().logger().log(source_id, severity, contents);
+    Services::get().logger().log(source_id, severity, contents);
 }
 
 #[derive(PartialEq, PartialOrd, Eq, Clone)]

@@ -1,7 +1,9 @@
+use serde::Serialize;
+
 use crate::{GraphicsMapping, InputMapping, NetworkModes, Seat, Vector2};
 
 /// A formation of Seats used to define the visuals and input for a Curio
-#[derive(Clone)]
+#[derive(Default, Clone, Serialize)]
 pub struct Formation {
     pub seats: Vec<Seat>,
 }

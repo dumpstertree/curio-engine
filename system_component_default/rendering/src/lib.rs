@@ -22,7 +22,7 @@ mod render_feature_post_processes {
 use crate::render_feature_3d::RenderFeature3DHelper;
 use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePostProcessHelper};
 use crate::shadow_system::ShadowSystem;
-use curio_core::{Nerve, services};
+use curio_core::{Services, Nerve};
 // use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::{Formation, GraphicsMapping, Matrix4x4};
 use curio_core::{Ledger, SystemComponent};
@@ -77,7 +77,7 @@ impl SystemComponent for SystemComponentDefaultGraphics {
 
         // ── capture step ────────────────────────────────────────
         // capture AFTER post-processing and 2D — from swapchain, not offscreen
-        let s = services();
+        let s = Services::get();
         if let Some(capture_tex) = s.gpu.capture_texture() {
             let cap_size = capture_tex.size();
             let out_size = output_texture.size();
@@ -244,7 +244,7 @@ impl SystemComponentDefaultGraphics {
 
     // dependency
     pub fn generate_render_texture() -> (egui_wgpu::wgpu::Texture, TextureView) {
-        let s = services();
+        let s = Services::get();
         // let surface_config = s.gpu.config();
         // println!("{:#?}", surface_config);
         let device = s.gpu.device();

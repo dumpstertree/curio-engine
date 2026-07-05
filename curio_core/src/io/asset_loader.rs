@@ -1,9 +1,9 @@
 use crate::io::asset_cache::AssetCache;
 use crate::io::asset_database::AssetDatabase;
 use crate::io::asset_database::AssetDatabaseListing;
-use crate::services;
 use crate::AssetCommon;
 use crate::Curio;
+use crate::Services;
 use crate::Severity;
 use crate::TextureAsset;
 use core::panic;
@@ -107,12 +107,15 @@ impl Assets {
     where
         T: AssetCommon<T>,
     {
-        services().assets().load_asset::<T>(uid)
+        Services::get().assets().load_asset::<T>(uid)
     }
     pub fn try_lookup_key_for_name(name: &str) -> Option<i16> {
-        services().assets().try_lookup_key_for_name(name)
+        Services::get().assets().try_lookup_key_for_name(name)
     }
     pub fn append(listings: Vec<(String, i16, AssetDatabaseListing)>) {
-        services().assets().asset_database.append(listings);
+        Services::get()
+            .assets()
+            .asset_database
+            .append(listings);
     }
 }

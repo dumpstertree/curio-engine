@@ -2,9 +2,8 @@ use std::sync::Arc;
 
 use camera::SysRecordCamera;
 use curio_core::{
-    Color, GraphicsMapping, Ledger, Matrix4x4, Quaternion, TextureAsset, Vector2, Vector3,
+    Color, Services, GraphicsMapping, Ledger, Matrix4x4, Quaternion, TextureAsset, Vector2, Vector3,
     io::asset_loader::{ASSET_UID_SHADER_UNLIT, Assets},
-    services,
 };
 use egui_wgpu::wgpu::{AddressMode, BindGroup, BindGroupLayout, CompareFunction, Device, Extent3d, FilterMode, RenderPass, RenderPassDepthStencilAttachment, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureUsages, TextureViewDescriptor};
 use ext_rendering::{
@@ -68,7 +67,7 @@ impl RenderFeature3DHelper {
         TextureAsset { texture, view, sampler }
     }
     pub fn draw_3d_features(&mut self, graphics_mappings: &mut Vec<GraphicsMapping>, ledger: &mut Vec<Ledger>, encoder: &mut egui_wgpu::wgpu::CommandEncoder, target_view: &mut egui_wgpu::wgpu::TextureView, shadow_system: &ShadowSystem) {
-        let s = services();
+        let s = Services::get();
         // generate a render pass for this instance
         // let depth = s.gpu.depth();
         let device = s.gpu.device();
@@ -133,8 +132,8 @@ impl RenderFeature3DHelper {
             let cur_camera_snapshot = &state_camera.cameras;
             let cur_graphics_mapping = &graphics_mappings[i];
 
-            let width = services().gpu.capture_width;
-            let height = services().gpu.capture_height;
+            let width = Services::get().gpu.capture_width;
+            let height = Services::get().gpu.capture_height;
 
             // create viewport bounds
             let viewport = Viewport::new(Vector2::new(width as f32, height as f32), cur_graphics_mapping.viewport_min, cur_graphics_mapping.viewport_max);

@@ -1,9 +1,11 @@
+use serde::Serialize;
 use std::fmt::{Display, Formatter, Result};
 
-#[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug)]
+#[derive(Default, Clone, Copy, PartialEq, PartialOrd, Eq, Ord, Debug, Serialize)]
 pub enum NetworkModes {
     LocalHost = 4,
     OnlineHost = 3,
+    #[default]
     LocalPeer = 2,
     OnlinePeer = 1,
 }

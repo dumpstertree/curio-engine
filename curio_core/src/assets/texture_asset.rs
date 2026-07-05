@@ -1,4 +1,6 @@
-use crate::engine::engine_services::services;
+// use crate::engine::engine_services::services;
+
+use crate::Services;
 
 use super::asset_common::AssetCommon;
 
@@ -17,7 +19,7 @@ impl TextureAsset {
     pub const DEPTH_FORMAT: egui_wgpu::wgpu::TextureFormat = egui_wgpu::wgpu::TextureFormat::Depth32Float; // 1.
 
     pub fn none() -> TextureAsset {
-        let s = services();
+        let s = Services::get();
         let device = s.gpu.device();
 
         let size = egui_wgpu::wgpu::Extent3d { width: 1, height: 1, depth_or_array_layers: 1 };
@@ -46,7 +48,7 @@ impl TextureAsset {
         TextureAsset { sampler: sampler, texture: texture, view: view }
     }
     pub fn new_from_buffer(label: Option<&str>, width: u32, height: u32, buffer: &[u8]) -> TextureAsset {
-        let s = services();
+        let s = Services::get();
         let queue = s.gpu.queue();
         let device = s.gpu.device();
 

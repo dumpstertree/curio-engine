@@ -3,6 +3,11 @@
 //! and collecting one `RenderEntry` per `RendererStatic`/`RendererDynamic`
 //! component found on an enabled object — this is what the 3D preview
 //! (`prefab_viewer.rs`) iterates to know what to draw and where.
+//!
+//! Also provides `local_matrix`/`world_matrices_for_path`, used by
+//! `prefab_gizmo.rs` to know where to draw the move/rotate/scale handles
+//! for the currently-selected object and how to convert a gizmo drag (in
+//! world space) back into that object's own parent-local transform fields.
 
 use crate::fs_ops;
 use crate::prefab_types::{euler_deg_to_quat, is_renderer, is_transform, read_renderer_asset, read_transform_fields, PrefabGameObjectRaw};
@@ -23,6 +28,34 @@ pub struct RenderEntry {
     pub asset_abs_path: String,
 }
 
+/// A node's own local transform matrix (identity if it has no
+/// `Transform2D`/`Transform3D` component at all).
+pub fn local_matrix(node: &PrefabGameObjectRaw) -> Mat4 {
+    let Some(transform_comp) = node.components.iter().find(|c| is_transform(&c.kind)) else {
+        return Mat4::IDENTITY;
+    };
+    let t = read_transform_fields(transform_comp);
+    let q = euler_deg_to_quat(t.rotation);
+    Mat4::from_scale_rotation_translation(Vec3::new(t.scale.x, t.scale.y, t.scale.z), Quat::from_xyzw(q.x, q.y, q.z, q.w), Vec3::new(t.position.x, t.position.y, t.position.z))
+}
+
+/// Returns `(world_matrix_of_target, world_matrix_of_targets_parent)` by
+/// walking `root` down `path`. The parent's world matrix is what a gizmo
+/// drag's world-space delta needs to be run through (as a vector, not a
+/// point — no translation) to get the equivalent delta in the target's own
+/// parent-local `position` field.
+pub fn world_matrices_for_path(root: &PrefabGameObjectRaw, path: &[usize]) -> (Mat4, Mat4) {
+    let mut current = root;
+    let mut world = local_matrix(current);
+    let mut parent_world = Mat4::IDENTITY;
+    for &idx in path {
+        parent_world = world;
+        current = &current.children[idx];
+        world = world * local_matrix(current);
+    }
+    (world, parent_world)
+}
+
 /// Walks the hierarchy collecting renderer entries, resolving asset IDs to
 /// absolute paths via the manifest (same ID→URI lookup the asset dropdown
 /// and prefab resolver use).
@@ -36,14 +69,7 @@ pub fn collect_render_entries(project_root: &str, root: &PrefabGameObjectRaw) ->
 }
 
 fn walk(project_root: &str, node: &PrefabGameObjectRaw, parent_matrix: Mat4, path: &[usize], id_to_uri: &std::collections::HashMap<String, String>, out: &mut Vec<RenderEntry>) {
-    let mut local_matrix = Mat4::IDENTITY;
-    if let Some(transform_comp) = node.components.iter().find(|c| is_transform(&c.kind)) {
-        let t = read_transform_fields(transform_comp);
-        let q = euler_deg_to_quat(t.rotation);
-        local_matrix = Mat4::from_scale_rotation_translation(Vec3::new(t.scale.x, t.scale.y, t.scale.z), Quat::from_xyzw(q.x, q.y, q.z, q.w), Vec3::new(t.position.x, t.position.y, t.position.z));
-    }
-
-    let world_matrix = parent_matrix * local_matrix;
+    let world_matrix = parent_matrix * local_matrix(node);
 
     if !node.enabled {
         return;

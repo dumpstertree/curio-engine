@@ -1,10 +1,11 @@
-//! Port of `PrefabViewport.tsx` (minus gizmos — see `prefab_viewer.rs`'s
-//! doc comment) and `PrefabInspectorView.tsx` (tree + component/field
-//! editing — this part is fully ported, no cuts).
+//! Port of `PrefabViewport.tsx` — including the move/rotate/scale gizmo
+//! (`prefab_gizmo.rs`; earlier passes shipped this viewport without it) —
+//! and `PrefabInspectorView.tsx` (tree + component/field editing).
 
 use crate::fs_ops;
+use crate::prefab_gizmo::{self, GizmoTarget};
 use crate::prefab_resolver;
-use crate::prefab_state::PrefabAction;
+use crate::prefab_state::{GizmoMode, PrefabAction};
 use crate::prefab_transforms;
 use crate::prefab_types::{self, EntryType, FieldDescriptor, PrefabComponentRaw, PrefabGameObjectRaw};
 use crate::state::EditorState;
@@ -45,7 +46,68 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     }
 
     let full_raw = prefab_resolver::resolved_to_raw_full(resolved);
-    let entries = prefab_transforms::collect_render_entries(&project_root, &full_raw);
+
+    // Everything the gizmo needs, gathered from the COMMITTED tree before
+    // any of this frame's interaction happens. `local_transform_index`/
+    // `has_local_transform` come from `state.prefab.raw` specifically (the
+    // unresolved tree) since edits target that node's own `components`
+    // list; `effective` comes from `full_raw` (resolved) so a fresh drag
+    // starts from the object's real on-screen position even if that's
+    // entirely inherited from a base prefab.
+    let selected_path = state.prefab.selected_path.clone();
+    let gizmo_target_info = selected_path.as_ref().and_then(|sel_path| {
+        let raw_root = state.prefab.raw.as_ref()?;
+        let local_node = prefab_types::get_node_at_path(raw_root, sel_path)?;
+        let has_local_transform = local_node.components.iter().any(|c| c.kind == "Transform3D");
+        let next_comp_index = local_node.components.iter().position(|c| c.kind == "Transform3D").unwrap_or(local_node.components.len());
+
+        let full_node = prefab_types::get_node_at_path(&full_raw, sel_path);
+        let effective = full_node.and_then(|n| n.components.iter().find(|c| c.kind == "Transform3D")).map(prefab_types::read_transform_fields).unwrap_or_default();
+
+        let (world_matrix, parent_world_matrix) = prefab_transforms::world_matrices_for_path(&full_raw, sel_path);
+        Some((sel_path.clone(), world_matrix, parent_world_matrix, effective, has_local_transform, next_comp_index))
+    });
+
+    // If a gizmo drag is active, bake its live value into a transient copy
+    // of the tree for THIS frame's render only — `raw`/`resolved`/disk stay
+    // untouched until the drag commits on mouse release (see
+    // `prefab_gizmo.rs`). This is why `entries` is computed from
+    // `preview_raw` rather than `full_raw` directly.
+    let mut gizmo_mode = state.prefab.gizmo_mode;
+    let mut gizmo_drag = state.prefab.gizmo_drag.take();
+    if gizmo_target_info.is_none() {
+        gizmo_drag = None;
+    }
+
+    let preview_raw = match (&gizmo_drag, &selected_path) {
+        (Some(drag), Some(sel_path)) if &drag.path == sel_path => {
+            let mode = mode_of_drag(drag);
+            let mut tree = full_raw.clone();
+            if let Some(node) = prefab_types::get_node_at_path_mut(&mut tree, sel_path) {
+                if let Some(comp) = node.components.iter_mut().find(|c| c.kind == "Transform3D") {
+                    let mut fields = prefab_types::read_transform_fields(comp);
+                    match mode {
+                        GizmoMode::Translate => fields.position = drag.current_value,
+                        GizmoMode::Rotate => fields.rotation = drag.current_value,
+                        GizmoMode::Scale => fields.scale = drag.current_value,
+                    }
+                    *comp = prefab_types::write_transform_fields(comp, fields);
+                } else {
+                    let mut fields = prefab_types::TransformFields::default();
+                    match mode {
+                        GizmoMode::Translate => fields.position = drag.current_value,
+                        GizmoMode::Rotate => fields.rotation = drag.current_value,
+                        GizmoMode::Scale => fields.scale = drag.current_value,
+                    }
+                    node.components.push(prefab_types::write_transform_fields(&prefab_types::default_component("Transform3D"), fields));
+                }
+            }
+            tree
+        }
+        _ => full_raw.clone(),
+    };
+
+    let entries = prefab_transforms::collect_render_entries(&project_root, &preview_raw);
 
     let scene = state.prefab_scene.as_mut().unwrap();
     scene.sync(&entries);
@@ -60,12 +122,22 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     // touches `state.prefab` directly to avoid relying on the borrow
     // checker's disjoint-field-capture analysis working perfectly through
     // a closure boundary (same reasoning as `asset_tree.rs`'s action queue).
-    let selected_path_snapshot = state.prefab.selected_path.clone();
+    // `gizmo_mode`/`gizmo_drag` are handled the same way — taken out as
+    // locals above, mutated freely inside the closure, written back after.
     let mut pending_select: Option<Option<Vec<usize>>> = None;
+    let mut gizmo_actions: Vec<PrefabAction> = Vec::new();
 
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
             ui.label(RichText::new(format!("{} render entries", entries.len())).small().color(theme::TEXT_SECONDARY));
+
+            ui.separator();
+            for (mode, label) in [(GizmoMode::Translate, "Move"), (GizmoMode::Rotate, "Rotate"), (GizmoMode::Scale, "Scale")] {
+                if ui.selectable_label(gizmo_mode == mode, label).clicked() {
+                    gizmo_mode = mode;
+                }
+            }
+
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.small_button("Reset camera").clicked() {
                     scene.reset_camera();
@@ -82,49 +154,84 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
         ui.painter().image(texture_id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
 
+        let view_proj = scene.view_proj(aspect);
+        let camera_eye = scene.camera.eye();
+
+        // Gizmo takes priority over camera-drag/ray-pick when it's
+        // actively involved (hovering close enough to start a drag, or
+        // continuing one already in progress) — it reports back via the
+        // `Some(..)` return whether it owns this frame's input.
+        let mut gizmo_owns_input = false;
+        if let Some((gpath, world_matrix, parent_world_matrix, effective, has_local_transform, next_comp_index)) = &gizmo_target_info {
+            let target = GizmoTarget { path: gpath, world_matrix: *world_matrix, parent_world_matrix: *parent_world_matrix, effective: *effective, has_local_transform: *has_local_transform, next_comp_index: *next_comp_index };
+            if prefab_gizmo::interact(ui, rect, view_proj, camera_eye, gizmo_mode, &target, &mut gizmo_drag, &mut gizmo_actions).is_some() {
+                gizmo_owns_input = true;
+            }
+        }
+
         // Marker overlay for Spine (RendererDynamic) entries — see
         // prefab_viewer.rs's doc comment on why these aren't fully rendered.
-        let view_proj = scene.view_proj(aspect);
         let mut marker_click: Option<Vec<usize>> = None;
         for (world_pos, marker_path, name) in scene.markers() {
             if let Some(screen_pos) = world_to_screen(*world_pos, view_proj, rect) {
-                let is_selected = selected_path_snapshot.as_deref() == Some(marker_path.as_slice());
+                let is_selected = selected_path.as_deref() == Some(marker_path.as_slice());
                 let color = if is_selected { theme::BLUE } else { theme::ORANGE };
                 ui.painter().circle_filled(screen_pos, 5.0, color);
                 ui.painter().text(screen_pos + egui::vec2(8.0, -4.0), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(11.0), color);
                 let marker_rect = egui::Rect::from_center_size(screen_pos, egui::vec2(14.0, 14.0));
-                if ui.rect_contains_pointer(marker_rect) && ui.input(|i| i.pointer.primary_clicked()) {
+                if !gizmo_owns_input && ui.rect_contains_pointer(marker_rect) && ui.input(|i| i.pointer.primary_clicked()) {
                     marker_click = Some(marker_path.clone());
                 }
             }
         }
 
-        if response.dragged() {
-            scene.camera.apply_input(response.drag_delta(), 0.0);
-        }
-        let scroll = ui.input(|i| i.smooth_scroll_delta.y);
-        if response.hovered() && scroll != 0.0 {
-            scene.camera.apply_input(egui::Vec2::ZERO, scroll);
-        }
+        if !gizmo_owns_input {
+            if response.dragged() {
+                scene.camera.apply_input(response.drag_delta(), 0.0);
+            }
+            let scroll = ui.input(|i| i.smooth_scroll_delta.y);
+            if response.hovered() && scroll != 0.0 {
+                scene.camera.apply_input(egui::Vec2::ZERO, scroll);
+            }
 
-        if let Some(path) = marker_click {
-            pending_select = Some(Some(path));
-        } else if response.clicked() && !response.dragged() {
-            if let Some(pointer) = response.interact_pointer_pos() {
-                let local = pointer - rect.min;
-                if let Some((origin, dir)) = screen_to_ray(local, rect.size(), view_proj) {
-                    pending_select = Some(scene.pick(origin, dir));
+            if let Some(path) = marker_click {
+                pending_select = Some(Some(path));
+            } else if response.clicked() && !response.dragged() {
+                if let Some(pointer) = response.interact_pointer_pos() {
+                    let local = pointer - rect.min;
+                    if let Some((origin, dir)) = screen_to_ray(local, rect.size(), view_proj) {
+                        pending_select = Some(scene.pick(origin, dir));
+                    }
                 }
             }
-        }
 
-        if response.dragged() || (response.hovered() && scroll != 0.0) {
+            let scroll_active = response.hovered() && scroll != 0.0;
+            if response.dragged() || scroll_active {
+                ui.ctx().request_repaint();
+            }
+        } else {
+            // Actively dragging a gizmo handle also needs continuous
+            // repaint for smooth visual feedback.
             ui.ctx().request_repaint();
         }
     });
 
+    state.prefab.gizmo_mode = gizmo_mode;
+    state.prefab.gizmo_drag = gizmo_drag;
+
     if let Some(new_selection) = pending_select {
         state.prefab.apply(PrefabAction::Select(new_selection), &project_root);
+    }
+    for action in gizmo_actions {
+        state.prefab.apply(action, &project_root);
+    }
+}
+
+fn mode_of_drag(drag: &crate::prefab_state::GizmoDrag) -> GizmoMode {
+    match &drag.kind {
+        crate::prefab_state::GizmoDragKind::Translate { .. } => GizmoMode::Translate,
+        crate::prefab_state::GizmoDragKind::Rotate { .. } => GizmoMode::Rotate,
+        crate::prefab_state::GizmoDragKind::Scale { .. } => GizmoMode::Scale,
     }
 }
 

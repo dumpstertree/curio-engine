@@ -1,7 +1,9 @@
+use serde::Serialize;
+
 use crate::Vector2;
 
 /// A mapping of viewport anchors for one user
-#[derive(Clone)]
+#[derive(Default, Clone, Serialize)]
 pub struct GraphicsMapping {
     pub viewport_min: Vector2,
     pub viewport_max: Vector2,

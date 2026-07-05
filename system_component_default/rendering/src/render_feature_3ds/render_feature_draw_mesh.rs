@@ -1,5 +1,5 @@
 use crate::{camera_rendering_components::CameraRenderingComponents, render_feature_3d::RenderFeature3D};
-use curio_core::{Ledger, Matrix4x4, TextureAsset, services};
+use curio_core::{Services, Ledger, Matrix4x4, TextureAsset};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, BlendState, Buffer, BufferDescriptor, BufferUsages, ColorTargetState, Device, Face, FragmentState, RenderPass, RenderPipeline, ShaderModule, TextureFormat};
 use ext_rendering::{Material, Mesh, SysRecordRendering, data::mesh::Vertex};
 use lighting::{LightSystem, SysRecordLights, SysRecordSun};
@@ -61,7 +61,7 @@ impl RenderFeatureDrawMesh {
             self.instance_buffer_capacity = total_instances;
         }
 
-        let queue = services().gpu.queue();
+        let queue = Services::get().gpu.queue();
         let mut offset = 0;
         let mut batches_with_offsets: Vec<(Arc<Mesh>, Arc<Material>, Vec<Matrix4x4>, usize)> = Vec::new();
 
@@ -206,7 +206,7 @@ impl RenderFeature3D for RenderFeatureDrawMesh {
 
         self.light_system[camera_index].update(&ledger.read::<SysRecordSun>().get_draw_call(), &ledger.read::<SysRecordLights>().all_lights);
 
-        let s = services();
+        let s = Services::get();
         // let config = s.gpu.config();
         let device = s.gpu.device();
 

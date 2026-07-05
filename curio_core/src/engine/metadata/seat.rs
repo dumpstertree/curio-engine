@@ -1,7 +1,9 @@
+use serde::Serialize;
+
 use crate::{GraphicsMapping, InputMapping, NetworkModes};
 
 /// A definition defines the input, graphics and network of a user in a Curio
-#[derive(Clone)]
+#[derive(Default, Clone, Serialize)]
 pub struct Seat {
     pub network: NetworkModes,
     pub graphics: GraphicsMapping,

@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use curio_core::{ExtensionsF32, services};
+use curio_core::{Services, ExtensionsF32};
 use egui_wgpu::wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferDescriptor, BufferUsages, ShaderStages};
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, num::NonZeroU64};
@@ -70,7 +70,7 @@ pub struct LightSystem {
 impl LightSystem {
     /// Create a LightSystem: allocates uniform buffer sized for MAX_LIGHTS and creates bind group layout.
     pub fn new() -> Self {
-        let device = services().gpu.device();
+        let device = Services::get().gpu.device();
 
         // Each GpuLight is 64 bytes, plus a 16-byte header
         let header_size = 16u64;
@@ -113,7 +113,7 @@ impl LightSystem {
 
     /// Write lights to GPU buffer. Call each frame before drawing 3D.
     pub fn update(&self, sun: &DrawCallLight, lights: &[DrawCallLight]) {
-        let queue = services().gpu.queue();
+        let queue = Services::get().gpu.queue();
         let n = lights.len().min(MAX_LIGHTS);
 
         // Header: first 16 bytes. First u32 = count

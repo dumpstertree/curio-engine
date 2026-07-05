@@ -1,5 +1,5 @@
 use core::panic;
-use curio_core::{AssetCommon, Color, Random, Shaders, TextureAsset, services};
+use curio_core::{AssetCommon, Color, Services, Random, Shaders, TextureAsset};
 use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, Buffer, ShaderModule, util::DeviceExt};
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, sync::Arc};
@@ -134,7 +134,7 @@ impl Material {
     // Helpers
     //=========================================
     fn upload_color_buffer(&mut self, index: usize) {
-        let device = services().gpu.device();
+        let device = Services::get().gpu.device();
         let c = self.colors[index];
         let buffer = device.create_buffer_init(&egui_wgpu::wgpu::util::BufferInitDescriptor {
             label: Some("Color Buffer"),
@@ -148,7 +148,7 @@ impl Material {
     // Combined Binding Group
     //=========================================
     pub fn finalize(&mut self) {
-        let device = services().gpu.device();
+        let device = Services::get().gpu.device();
         let mut entries: Vec<egui_wgpu::wgpu::BindGroupEntry> = Vec::new();
         let mut layouts: Vec<egui_wgpu::wgpu::BindGroupLayoutEntry> = Vec::new();
         let mut binding_index = 0u32;
