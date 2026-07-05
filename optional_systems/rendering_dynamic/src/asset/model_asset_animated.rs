@@ -1,7 +1,4 @@
-use curio_core::{
-    AssetCommon, ExtensionsF32, Matrix4x4, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_LIT, Assets},
-};
+use curio_core::{ASSET_UID_SHADER_LIT, AssetCommon, Assets, ExtensionsF32, Matrix4x4, TextureAsset};
 
 use egui::ahash::HashMap;
 use ext_rendering::{

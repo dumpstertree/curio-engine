@@ -1,8 +1,7 @@
 use crate::form::Form;
 use crate::form_ref::FormRef;
 use crate::static_data::global_components::get_global_ecs_instances;
-use curio_core::Composition;
-use curio_core::io::asset_loader::Assets;
+use curio_core::{Assets, Composition};
 use hecs::{QueryMut, World};
 use std::cell::RefCell;
 use std::rc::Rc;

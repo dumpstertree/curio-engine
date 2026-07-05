@@ -14,7 +14,7 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, Services, GpuHandle, Identity, Portal, Severity, TextureAsset, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, Gpu, Identity, Portal, Services, Severity, TextureAsset, Vector3};
 
 // static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
 static OPEN_DISPLAY_WINDOWS: LazyLock<Mutex<Vec<CabinetWindow>>> = LazyLock::new(|| Mutex::new(Vec::new()));
@@ -130,7 +130,7 @@ impl CabinetWindowOwner {
             app_instance.curio.window_opened();
         }
     }
-    pub fn get_gpu_settings(&self) -> Arc<GpuHandle> {
+    pub fn get_gpu_settings(&self) -> Arc<Gpu> {
         if let Some(_gpu_settings) = &self.services {
             self.get_gpu_settings() // gpu_settings.clone()
         } else {

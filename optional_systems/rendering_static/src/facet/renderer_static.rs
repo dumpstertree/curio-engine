@@ -1,5 +1,5 @@
 use crate::ModelAsset;
-use curio_core::{Color, FieldState, io::asset_loader::Assets};
+use curio_core::{Assets, Color, FieldState};
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
 use std::sync::Arc;

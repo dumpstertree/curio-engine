@@ -1,15 +1,15 @@
 use egui_wgpu::wgpu::{Device, Queue, Texture};
 
+/// Access to the GPU and GPU params on the host system
 #[repr(C)]
-pub struct GpuHandle {
+pub struct Gpu {
     pub device: *const (),
     pub queue: *const (),
     pub capture_texture: *const (),
     pub capture_width: u32,
     pub capture_height: u32,
 }
-
-impl GpuHandle {
+impl Gpu {
     pub fn device(&self) -> &Device {
         unsafe { &*(self.device as *const Device) }
     }

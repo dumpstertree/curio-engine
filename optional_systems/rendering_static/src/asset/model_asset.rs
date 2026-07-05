@@ -1,9 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use curio_core::{
-    AssetCommon, Matrix4x4, Random, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, Assets},
-};
+use curio_core::{ASSET_UID_SHADER_LIT, ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_DEFAULT, AssetCommon, Assets, Matrix4x4, Random, TextureAsset};
 use ext_rendering::{
     Material, Mesh,
     data::{material::ShaderDesc, mesh::Vertex},

@@ -1,7 +1,4 @@
-use curio_core::{
-    Color, FieldState,
-    io::asset_loader::Assets,
-};
+use curio_core::{Assets, Color, FieldState};
 // use ext_rendering::RendererCommon;
 use facet::facet;
 use gameplay::{form::Form, traits::field_override::FieldOverride};

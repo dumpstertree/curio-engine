@@ -1,7 +1,4 @@
-use curio_core::{
-    Color, FieldState, Matrix4x4, Quaternion, TextureAsset, Vector3,
-    io::asset_loader::{ASSET_UID_SHADER_UNLIT, Assets},
-};
+use curio_core::{ASSET_UID_SHADER_UNLIT, Assets, Color, FieldState, Matrix4x4, Quaternion, TextureAsset, Vector3};
 use ext_rendering::{
     Material, Mesh,
     data::{material::ShaderDesc, mesh::Vertex},

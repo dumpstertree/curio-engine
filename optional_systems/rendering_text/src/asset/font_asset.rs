@@ -1,7 +1,4 @@
-use curio_core::{
-    AssetCommon, Matrix4x4, TextureAsset,
-    io::asset_loader::{ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_FONT_ATLAS, Assets},
-};
+use curio_core::{ASSET_UID_SHADER_UNLIT, ASSET_UID_TEXTURE_FONT_ATLAS, AssetCommon, Assets, Matrix4x4, TextureAsset};
 use ext_rendering::{
     Material, Mesh,
     data::{material::ShaderDesc, mesh::Vertex},

@@ -17,10 +17,20 @@ pub use crate::collections::any_queue::AnyQueue;
 pub use crate::collections::event_runner::EventRunner;
 
 // io
-pub use crate::io::log::get_and_clear_logs;
-pub use crate::io::log::log;
-pub use crate::io::log::Logger;
-pub use crate::io::log::Severity;
+pub use crate::io::asset_cache::AssetCache;
+pub use crate::io::asset_database::AssetDatabase;
+pub use crate::io::asset_database_listing::AssetDatabaseListing;
+pub use crate::io::asset_pipeline::AssetPipeline;
+pub use crate::io::asset_pipeline::ASSET_UID_FONT_ASSET_DEFAULT;
+pub use crate::io::asset_pipeline::ASSET_UID_SHADER_LIT;
+pub use crate::io::asset_pipeline::ASSET_UID_SHADER_UNLIT;
+pub use crate::io::asset_pipeline::ASSET_UID_TEXTURE_DEFAULT;
+pub use crate::io::asset_pipeline::ASSET_UID_TEXTURE_FONT_ATLAS;
+pub use crate::io::assets::Assets;
+pub use crate::io::cache_metadata::CacheMetadata;
+pub use crate::io::file::File;
+pub use crate::io::logger::Logger;
+pub use crate::io::severity::Severity;
 
 // assets
 pub use crate::assets::asset_common::AssetCommon;
@@ -38,7 +48,7 @@ pub use crate::input::input_mapped::InputMapped;
 pub use crate::input::input_raw::InputRaw;
 
 // graphics
-pub use crate::graphics::gpu::GpuHandle;
+pub use crate::graphics::gpu::Gpu;
 pub use crate::graphics::shaders::Shaders;
 
 // engine
@@ -86,7 +96,6 @@ pub use crate::extensions::extensions_f64::ExtensionsF64;
 pub use crate::extensions::extensions_i32::ExtensionsI32;
 
 //system
-
 pub use crate::system::record_id::RecordId;
 pub use crate::system::system_component::SystemComponent;
 
@@ -168,11 +177,15 @@ pub mod assets {
     pub(crate) mod texture_asset;
 }
 pub mod io {
-    pub mod asset_cache;
-    pub mod asset_database;
-    pub mod asset_loader;
-    pub mod file;
-    pub(crate) mod log;
+    pub(crate) mod asset_cache;
+    pub(crate) mod asset_database;
+    pub(crate) mod asset_database_listing;
+    pub(crate) mod asset_pipeline;
+    pub(crate) mod assets;
+    pub(crate) mod cache_metadata;
+    pub(crate) mod file;
+    pub(crate) mod logger;
+    pub(crate) mod severity;
 }
 pub mod collections {
     pub(crate) mod any_map;

@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{io::asset_cache::AssetCache, AssetCommon};
+    use curio_core::{AssetCache, AssetCommon};
 
     use std::sync::Arc;
 

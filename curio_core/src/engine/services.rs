@@ -1,6 +1,6 @@
-use crate::io::asset_loader::AssetLoader;
-use crate::io::log::Logger;
-use crate::GpuHandle;
+use crate::io::asset_pipeline::AssetPipeline;
+use crate::io::logger::Logger;
+use crate::Gpu;
 use std::ptr;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
@@ -11,8 +11,8 @@ static SERVICES: AtomicPtr<Services> = AtomicPtr::new(ptr::null_mut());
 #[repr(C)]
 pub struct Services {
     pub logger: *mut Logger,
-    pub assets: *mut AssetLoader,
-    pub gpu: GpuHandle,
+    pub assets: *mut AssetPipeline,
+    pub gpu: Gpu,
 }
 impl Services {
     pub fn set(ptr: *const Services) {
@@ -28,7 +28,7 @@ impl Services {
     pub fn logger(&self) -> &mut Logger {
         unsafe { &mut *self.logger }
     }
-    pub fn assets(&self) -> &mut AssetLoader {
+    pub fn assets(&self) -> &mut AssetPipeline {
         unsafe { &mut *self.assets }
     }
 }

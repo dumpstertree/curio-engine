@@ -12,7 +12,7 @@ use crate::project::Project;
 use crate::render_shared::RenderShared;
 use crate::runner::{GameMessage, GameRunner, InputEvent, SHARED_DATA};
 
-use curio_core::{get_and_clear_logs, Curio, ObjectState, PluginGroupState, Severity};
+use curio_core::{Curio, ObjectState, PluginGroupState, Services, Severity};
 
 use std::{
     collections::{HashSet, VecDeque},
@@ -372,7 +372,7 @@ impl EditorState {
         if !self.log_polling {
             return;
         }
-        for (sev, msg) in get_and_clear_logs() {
+        for (sev, msg) in Services::get().logger().drain() {
             let level = match sev {
                 Severity::Info => "[INFO]",
                 Severity::Warning => "[WARN]",

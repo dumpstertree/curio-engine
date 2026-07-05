@@ -1,16 +1,25 @@
 use crate::{collections::any_map::AnyMap, AssetCommon};
 use std::{collections::HashMap, sync::Arc, time::Instant, usize};
 
-unsafe impl Send for AssetCache {}
-unsafe impl Sync for AssetCache {}
-
 pub struct AssetCache {
     cache: AnyMap<i16>,
     access: HashMap<i16, Instant>,
     pub max_cache_len: usize,
 }
+// impl -> Pub Static Fns
 impl AssetCache {
-    /// get the last time an asset was accessed
+    /// Create an AssetCache with fixed cache length. Once cache length is exceded least used objects are dropped from memory
+    pub fn new(max_cache_len: usize) -> AssetCache {
+        AssetCache {
+            cache: AnyMap::default(),
+            access: HashMap::new(),
+            max_cache_len,
+        }
+    }
+}
+// impl -> Pub Fns
+impl AssetCache {
+    /// Get the last time an asset was accessed
     pub fn try_get_last_access(&self, id: &i16) -> Option<Instant> {
         if let Some(instant) = self.access.get(id) {
             // return clone of arc value
@@ -19,7 +28,7 @@ impl AssetCache {
         // none found
         None
     }
-    /// set to get an asset from the cache
+    /// Try to get an asset from the cache. This will update the last access timestamp.
     pub fn try_get_asset<T: AssetCommon<T>>(&mut self, id: &i16) -> Option<Arc<T>> {
         if let Some(edited_val) = self.cache.get::<Arc<T>, i16>(id) {
             // update access to now
@@ -31,7 +40,7 @@ impl AssetCache {
         None
     }
 
-    /// try to set an asset to the cache
+    /// Try to set an asset to the cache. This will update the last access timestamp.
     pub fn try_set_asset<T: AssetCommon<T>>(&mut self, id: &i16, asset: Arc<T>) {
         // get now to reususe
         let now: Instant = Instant::now();
@@ -51,11 +60,6 @@ impl AssetCache {
         // insert asset
         self.cache.insert(*id, asset);
     }
-    pub fn new(max_cache_len: usize) -> AssetCache {
-        AssetCache {
-            cache: AnyMap::default(),
-            access: HashMap::new(),
-            max_cache_len,
-        }
-    }
 }
+unsafe impl Send for AssetCache {}
+unsafe impl Sync for AssetCache {}

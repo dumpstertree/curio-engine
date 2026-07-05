@@ -4,7 +4,7 @@ use std::rc::Rc;
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
 use crate::static_data::global_states::get_global_state_constructor_all;
-use crate::{log, ComponentState, Curio, CurioNetwork, LedgerEntry, ObjectState, PluginState, RecordCommon, RecordNetworkCapabilities, RecordScope, RecordSynchronizer, Severity};
+use crate::{ComponentState, Curio, CurioNetwork, LedgerEntry, ObjectState, PluginState, RecordCommon, RecordNetworkCapabilities, RecordScope, RecordSynchronizer, Services, Severity};
 
 #[derive(Clone)]
 pub struct Ledger {
@@ -105,7 +105,9 @@ impl Ledger {
 
     /// Log adding tracing through this Ledger for debugging
     pub fn log(&self, severity: Severity, contents: &str) {
-        log(self.network.me().guid, severity, &format!("[{}~{}]: {}", self.network_capabilities.clone().privilege, self.network.me().guid, contents));
+        Services::get()
+            .logger()
+            .log(self.network.me().guid, severity, &format!("[{}~{}]: {}", self.network_capabilities.clone().privilege, self.network.me().guid, contents));
     }
 
     /// Returns the current value of TRecord wrapped in Rc to avoid excess cloning. This will fail if TRecord is not registered with GlobalRecords

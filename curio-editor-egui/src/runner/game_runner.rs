@@ -34,10 +34,10 @@ use crate::runner::{
     plugin_loader::{self, load_library},
 };
 
-use curio_core::io::asset_cache::AssetCache;
-use curio_core::io::asset_database::AssetDatabase;
-use curio_core::io::asset_loader::AssetLoader;
-use curio_core::{ComponentState, Curio, CurioCommon, GpuHandle, Logger, PluginGroupState, Services};
+use curio_core::AssetDatabase;
+use curio_core::AssetPipeline;
+use curio_core::{AssetCache, Severity};
+use curio_core::{ComponentState, Curio, CurioCommon, Gpu, Logger, PluginGroupState, Services};
 
 use egui_wgpu::wgpu::{Adapter, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
 
@@ -133,7 +133,7 @@ impl AppInstance {
 
 pub struct GameRunner {
     pub logger: Box<Logger>,
-    pub assets: Box<AssetLoader>,
+    pub assets: Box<AssetPipeline>,
     pub device: Option<Arc<Device>>,
     pub queue: Option<Arc<Queue>>,
     pub adapter: Option<Arc<Adapter>>,
@@ -154,8 +154,8 @@ impl GameRunner {
         Self {
             rx,
             project,
-            logger: Box::new(Logger::new()),
-            assets: Box::new(AssetLoader::new(AssetCache::new(100), AssetDatabase::new())),
+            logger: Box::new(Logger::new(Severity::Info)),
+            assets: Box::new(AssetPipeline::new(AssetCache::new(100), AssetDatabase::new())),
             services: None,
             loaded_app: None,
             capture_texture: None,
@@ -222,9 +222,9 @@ impl GameRunner {
         let readback = ReadbackBuffers::new(device.clone(), CAPTURE_WIDTH, CAPTURE_HEIGHT);
 
         self.services = Some(Box::new(Services {
-            assets: self.assets.as_mut() as *mut AssetLoader,
+            assets: self.assets.as_mut() as *mut AssetPipeline,
             logger: self.logger.as_mut() as *mut Logger,
-            gpu: GpuHandle {
+            gpu: Gpu {
                 device: Arc::as_ptr(&device) as *const (),
                 queue: Arc::as_ptr(&queue) as *const (),
                 capture_texture: Arc::as_ptr(&capture_texture) as *const (),

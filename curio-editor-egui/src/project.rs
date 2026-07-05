@@ -1,4 +1,4 @@
-use curio_core::io::file::File;
+use curio_core::File;
 use serde::Deserialize;
 
 /// On-disk project descriptor (`test.proj` in the working directory).
