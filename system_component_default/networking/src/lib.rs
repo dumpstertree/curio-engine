@@ -1,5 +1,5 @@
 use curio_core::{Formation, ImpulseScope, Ledger, Nerve, RecordScope, RecordSynchronizer, Severity, built_in::record::sys_record_network::SysRecordNetwork};
-use curio_core::{NetworkModes, SystemComponent};
+use curio_core::{NetworkModes, PluginCommon};
 use message_io::node;
 // use message_io::node::NodeEvent;
 use message_io::{
@@ -164,7 +164,7 @@ impl SystemComponentDefaultNetworking {
     //     guard.clear();
     // }
 }
-impl SystemComponent for SystemComponentDefaultNetworking {
+impl PluginCommon for SystemComponentDefaultNetworking {
     fn order(&self) -> i32 {
         10000
     }
@@ -313,7 +313,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             }
         }
     }
-    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, _game_mode: &Formation) {
+    fn set_formation(&mut self, ledger: &mut Vec<Ledger>, _game_mode: &Formation) {
         let mut v = vec![];
         for x in ledger.iter() {
             let network_capabilities = &x.network_capabilities;

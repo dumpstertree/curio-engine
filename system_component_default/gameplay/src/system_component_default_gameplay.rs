@@ -4,7 +4,7 @@ use crate::{
     static_fns::{register_built_in_facets::register_built_in_component, register_built_in_habits::register_built_in_ecs},
     traits::ui_events::IUIEvent,
 };
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Formation, ImpulseCommon, Ledger, Nerve, PluginState, SystemComponent, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Formation, ImpulseCommon, Ledger, Nerve, PluginCommon, PluginState, Vector3};
 use std::vec;
 
 pub struct SystemComponentDefaultGameplay<T, U>
@@ -37,7 +37,7 @@ where
 // {
 //     // fn set_systems(&mut self, _ecs_systems_eventless: Vec<fn() -> Box<dyn ECsystemEventless>>) {}
 // }
-impl<T, U> SystemComponent for SystemComponentDefaultGameplay<T, U>
+impl<T, U> PluginCommon for SystemComponentDefaultGameplay<T, U>
 where
     T: ImpulseCommon + 'static + Clone,
     U: IUIEvent + 'static,
@@ -51,12 +51,11 @@ where
         5000
     }
     fn init(&mut self, _: &mut Vec<Ledger>) {}
-    fn set_game_mode(&mut self, _ledger: &mut Vec<Ledger>, game_mode: &Formation) {
+    fn set_formation(&mut self, _ledger: &mut Vec<Ledger>, game_mode: &Formation) {
         for _ in &game_mode.seats {
             self.game_instance.push(GameplayInstance::new());
         }
     }
-    fn debug(&mut self, _ledger: &mut Vec<Ledger>, _system_queue: &mut Vec<Nerve>) {}
     fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {
         // iterate over each gamestate
         for i in 0..ledger.len() {
@@ -68,11 +67,11 @@ where
             self.game_instance[i].tick(ledger, event_queue);
         }
     }
-    fn get_facets(&self) -> Vec<curio_core::ComponentState> {
+    fn peek(&self) -> Vec<curio_core::ComponentState> {
         let reg = COMPONENT_REGISTRY.read().expect("Registry poisoned");
         reg.get_def_state.iter().map(|x| x.1.clone()).collect()
     }
-    fn get_state(&self, ledger: &Vec<Ledger>) -> Vec<(String, PluginState)> {
+    fn serializable(&self, ledger: &Vec<Ledger>) -> Vec<(String, PluginState)> {
         let mut result = Vec::new();
         for i in 0..self.game_instance.len() {
             let name = format!("{}-{}", ledger[i].network.me().mode, ledger[i].network.me().guid.to_string());

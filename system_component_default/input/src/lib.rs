@@ -3,7 +3,7 @@ use curio_core::Formation;
 use curio_core::InputMapped;
 use curio_core::Ledger;
 use curio_core::Nerve;
-use curio_core::SystemComponent;
+use curio_core::PluginCommon;
 use curio_core::built_in::record::sys_record_input::SysRecordInput;
 use curio_core::{AxisCode, ButtonCode, InputMapping, Severity, Vector2, Vector3};
 use std::collections::HashMap;
@@ -26,7 +26,7 @@ impl SystemComponentDefaultInput {
     }
 }
 // impl SystemComponentInput for SystemComponentDefaultInput {}
-impl SystemComponent for SystemComponentDefaultInput {
+impl PluginCommon for SystemComponentDefaultInput {
     fn order(&self) -> i32 {
         1000
     }
@@ -74,7 +74,7 @@ impl SystemComponent for SystemComponentDefaultInput {
     fn input_button(&mut self, _: &mut Vec<Ledger>, code: ButtonCode, val: ButtonPressed) {
         self.state_button.insert(code, val == ButtonPressed::Down);
     }
-    fn set_game_mode(&mut self, ledger: &mut Vec<Ledger>, game_mode: &Formation) {
+    fn set_formation(&mut self, ledger: &mut Vec<Ledger>, game_mode: &Formation) {
         let mut active_mappings = vec![];
         let mut index = 0;
         for game_instance in &game_mode.seats {

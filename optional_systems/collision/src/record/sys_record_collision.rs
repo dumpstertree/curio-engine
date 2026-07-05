@@ -1,5 +1,5 @@
 use crate::facet::component_collider::CollisionSnapshot;
-use curio_core::{FieldState, RecordCommon, RecordId, RecordOverride};
+use curio_core::{FieldState, RecordCommon, SequentialRecordUIDs, RecordOverride};
 use std::sync::OnceLock;
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
@@ -15,7 +15,7 @@ impl RecordCommon for SysRecordCollision {
         String::from("Collision")
     }
     fn id() -> i32 {
-        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordCollision>())
+        *SYS_RECORD_ID.get_or_init(|| SequentialRecordUIDs::of::<SysRecordCollision>())
     }
 }
 impl RecordOverride for SysRecordCollision {

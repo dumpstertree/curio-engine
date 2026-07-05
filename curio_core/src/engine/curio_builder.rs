@@ -1,9 +1,9 @@
-use crate::{Curio, Formation, Identity, Severity, SystemComponent};
+use crate::{Curio, Formation, Identity, PluginCommon, Severity};
 
 /// Builder for setting up a Curio. Complete by running Imbue
 pub struct CurioBuilder {
     pub(crate) metadata: Identity,
-    pub(crate) plugins: Vec<Box<dyn SystemComponent>>,
+    pub(crate) plugins: Vec<Box<dyn PluginCommon>>,
     pub(crate) gamemode: Formation,
 }
 impl CurioBuilder {
@@ -18,7 +18,7 @@ impl CurioBuilder {
         self
     }
     /// Add a plugin to be used
-    pub fn plugin(mut self, plugin: Box<dyn SystemComponent>) -> Self {
+    pub fn plugin(mut self, plugin: Box<dyn PluginCommon>) -> Self {
         self.plugins.push(plugin);
         self
     }

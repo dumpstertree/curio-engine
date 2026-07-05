@@ -1,4 +1,4 @@
-use curio_core::{FieldState, RecordCommon, RecordId, RecordOverride};
+use curio_core::{FieldState, RecordCommon, SequentialRecordUIDs, RecordOverride};
 use std::sync::OnceLock;
 
 use crate::ColliderSnapshot;
@@ -16,7 +16,7 @@ impl RecordCommon for SysRecordCollider {
         String::from("Collider")
     }
     fn id() -> i32 {
-        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordCollider>())
+        *SYS_RECORD_ID.get_or_init(|| SequentialRecordUIDs::of::<SysRecordCollider>())
     }
 }
 impl RecordOverride for SysRecordCollider {

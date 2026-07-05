@@ -22,10 +22,10 @@ mod render_feature_post_processes {
 use crate::render_feature_3d::RenderFeature3DHelper;
 use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePostProcessHelper};
 use crate::shadow_system::ShadowSystem;
-use curio_core::{Services, Nerve};
+use curio_core::{Nerve, Services};
 // use curio_core::built_in::record::sys_record_rendering::SysRecordRendering;
 use curio_core::{Formation, GraphicsMapping, Matrix4x4};
-use curio_core::{Ledger, SystemComponent};
+use curio_core::{Ledger, PluginCommon};
 use egui_wgpu::wgpu::{Texture, TextureView};
 use ext_rendering::SysRecordRendering;
 use lighting::SysRecordSun;
@@ -42,7 +42,7 @@ pub struct SystemComponentDefaultGraphics {
     is_dirty: bool,
 }
 
-impl SystemComponent for SystemComponentDefaultGraphics {
+impl PluginCommon for SystemComponentDefaultGraphics {
     fn order(&self) -> i32 {
         9000
     }
@@ -171,12 +171,12 @@ impl SystemComponent for SystemComponentDefaultGraphics {
         // // finalize — present swapchain
         // Self::finalize_frame(output, encoder);
     }
-    fn raw_event(&mut self, _event: WindowEvent) {
-        // let s = services().gpu.window;
-        // let _window = SystemGPU::get_window();
-        // self.egui_renderer.handle_input(&window, &event);
-    }
-    fn set_game_mode(&mut self, _: &mut Vec<Ledger>, game_mode: &Formation) {
+    // fn raw_event(&mut self, _event: WindowEvent) {
+    //     // let s = services().gpu.window;
+    //     // let _window = SystemGPU::get_window();
+    //     // self.egui_renderer.handle_input(&window, &event);
+    // }
+    fn set_formation(&mut self, _: &mut Vec<Ledger>, game_mode: &Formation) {
         let mut graphics_mapping = vec![];
         for x in &game_mode.seats {
             graphics_mapping.push(x.graphics.clone());

@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::{system::record_id::RecordId, RecordCommon, RecordOverride};
+use crate::{RecordCommon, RecordOverride, SequentialRecordUIDs};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
@@ -19,7 +19,7 @@ impl RecordCommon for SysRecordDebug {
         String::from("Debug")
     }
     fn id() -> i32 {
-        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordDebug>())
+        *SYS_RECORD_ID.get_or_init(|| SequentialRecordUIDs::of::<SysRecordDebug>())
     }
 }
 impl RecordOverride for SysRecordDebug {

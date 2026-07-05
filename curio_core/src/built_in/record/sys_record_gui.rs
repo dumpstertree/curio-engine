@@ -6,7 +6,7 @@ use std::{
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
-use crate::{extensions::extensions_f32::ExtensionsF32, system::record_id::RecordId, Color, Ledger, RecordCommon, Vector3};
+use crate::{extensions::extensions_f32::ExtensionsF32, Color, Ledger, RecordCommon, SequentialRecordUIDs, Vector3};
 
 #[derive(Default, Hash, Clone)]
 pub struct SysRecordGui {
@@ -22,7 +22,7 @@ impl RecordCommon for SysRecordGui {
         String::from("GUI")
     }
     fn id() -> i32 {
-        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordGui>())
+        *SYS_RECORD_ID.get_or_init(|| SequentialRecordUIDs::of::<SysRecordGui>())
     }
 }
 #[derive(Default, Clone, PartialEq)]

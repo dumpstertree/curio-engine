@@ -4,8 +4,7 @@ static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 use crate::{
     extensions::{extensions_f32::ExtensionsF32, extensions_f64::ExtensionsF64},
-    system::record_id::RecordId,
-    FieldState, RecordCommon, RecordOverride,
+    FieldState, RecordCommon, SequentialRecordUIDs, RecordOverride,
 };
 
 #[derive(Default, PartialEq, Clone)]
@@ -24,7 +23,7 @@ impl RecordCommon for SysRecordTime {
         String::from("Time")
     }
     fn id() -> i32 {
-        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordTime>())
+        *SYS_RECORD_ID.get_or_init(|| SequentialRecordUIDs::of::<SysRecordTime>())
     }
 }
 impl Hash for SysRecordTime {

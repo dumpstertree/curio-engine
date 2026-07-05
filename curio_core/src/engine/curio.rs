@@ -4,8 +4,7 @@ use crate::{engine::metadata::identity::Identity, ButtonCode, ButtonPressed, Com
 use crate::{
     engine::{curio_common::CurioCommon, serialization::plugin_group_state::CurioState},
     input::axis_code::AxisCode,
-    system::system_component::SystemComponent,
-    Formation, Ledger, Severity, Vector3, Version,
+    Formation, Ledger, PluginCommon, Severity, Vector3, Version,
 };
 use egui_wgpu::wgpu::{Texture, TextureView};
 use std::collections::HashMap;
@@ -14,7 +13,7 @@ use std::collections::HashMap;
 /// You can redesign Curio by implenting CurioCommon and passing it into the CurioCabinet'.
 pub struct Curio {
     pub identity: Identity,
-    pub plugins: Vec<Box<dyn SystemComponent>>,
+    pub plugins: Vec<Box<dyn PluginCommon>>,
     pub nerves: Vec<Nerve>,
     pub ledgers: Vec<Ledger>,
     pub formation: Formation,
@@ -158,7 +157,7 @@ impl CurioCommon for Curio {
 
         // get all the plugin tabs
         for x in &self.plugins {
-            let y = x.get_state(&self.ledgers);
+            let y = x.serializable(&self.ledgers);
             for r in y {
                 if !id_for_tabs.contains_key(&r.0) {
                     id_for_tabs.insert(r.0.clone(), Vec::new());
@@ -181,7 +180,7 @@ impl CurioCommon for Curio {
         // iterate over each component calling refresh and gathering the returned commands and adding them to the buffer
         for c in &mut self.plugins {
             self.command_buffer
-                .extend(c.refresh(&mut self.ledgers, &mut self.nerves));
+                .extend(c.update(&mut self.ledgers, &mut self.nerves));
         }
 
         // call fn on each command in the buffer
@@ -236,7 +235,7 @@ impl CurioCommon for Curio {
             Curio::log(Severity::Info, &format!("Set Gamemode Plugin: {}", &plugin.name()));
 
             //set the gamemode the state will start with
-            plugin.set_game_mode(&mut self.ledgers, &self.formation);
+            plugin.set_formation(&mut self.ledgers, &self.formation);
         }
     }
     fn window_closed(&mut self) {

@@ -81,7 +81,7 @@ pub fn record_serializable(attr: TokenStream, item: TokenStream) -> TokenStream 
                 Self: Sized + 'static,
             {
                 *#static_id.get_or_init(|| {
-                    curio_core::RecordId::of::<#struct_name>()
+                    curio_core::SequentialRecordUIDs::of::<#struct_name>()
                 })
             }
 

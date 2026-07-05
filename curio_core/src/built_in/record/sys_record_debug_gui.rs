@@ -9,8 +9,7 @@ use crate::{
         sys_record_gui::{GuiElement, GuiWindow},
     },
     extensions::extensions_f32::ExtensionsF32,
-    system::record_id::RecordId,
-    Color, Ledger, RecordCommon, Vector3,
+    Color, Ledger, RecordCommon, SequentialRecordUIDs, Vector3,
 };
 
 #[derive(Default, PartialEq, Clone)]
@@ -61,7 +60,7 @@ impl RecordCommon for SysRecordDebugGui {
         String::from("DebugGUI")
     }
     fn id() -> i32 {
-        *SYS_RECORD_ID.get_or_init(|| RecordId::of::<SysRecordDebugGui>())
+        *SYS_RECORD_ID.get_or_init(|| SequentialRecordUIDs::of::<SysRecordDebugGui>())
     }
 }
 impl RecordOverride for SysRecordDebugGui {

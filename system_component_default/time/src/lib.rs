@@ -3,7 +3,7 @@ use std::time::Instant;
 use curio_core::Commands;
 use curio_core::Ledger;
 use curio_core::Nerve;
-use curio_core::SystemComponent;
+use curio_core::PluginCommon;
 use curio_core::built_in::record::sys_record_debug::SysRecordDebug;
 use curio_core::built_in::record::sys_record_time::SysRecordTime;
 
@@ -25,7 +25,7 @@ impl SystemComponentDefaultTime {
     }
 }
 // impl SystemComponentTime for SystemComponentDefaultTime {}
-impl SystemComponent for SystemComponentDefaultTime {
+impl PluginCommon for SystemComponentDefaultTime {
     fn order(&self) -> i32 {
         1000
     }
@@ -77,7 +77,7 @@ impl SystemComponent for SystemComponentDefaultTime {
         }
     }
 
-    fn refresh(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) -> Vec<Commands> {
+    fn update(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) -> Vec<Commands> {
         // get state
         let state_time = ledger[0].read::<SysRecordTime>();
 
