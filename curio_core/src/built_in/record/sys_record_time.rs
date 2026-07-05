@@ -4,8 +4,8 @@ static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 use crate::{
     extensions::{extensions_f32::ExtensionsF32, extensions_f64::ExtensionsF64},
-    system::{record_common::RecordOverride, record_id::RecordId},
-    FieldState, RecordCommon,
+    system::record_id::RecordId,
+    FieldState, RecordCommon, RecordOverride,
 };
 
 #[derive(Default, PartialEq, Clone)]
@@ -41,7 +41,7 @@ impl Hash for SysRecordTime {
 impl Eq for SysRecordTime {}
 
 impl RecordOverride for SysRecordTime {
-    fn apply(&mut self, _field: &str, _val: &str) {}
+    fn set_state(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
         vec![
             FieldState::new("scaled_time", self.scaled_time),

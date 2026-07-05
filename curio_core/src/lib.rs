@@ -52,6 +52,7 @@ pub use crate::engine::curio_network::CurioNetwork;
 pub use crate::engine::curio_network_participant::CurioNetworkParticipant;
 pub use crate::engine::impulse_clone::ImpulseClone;
 pub use crate::engine::impulse_common::ImpulseCommon;
+pub use crate::engine::impulse_network_capabilities::ImpulseNetworkCapabilities;
 pub use crate::engine::impulse_scope::ImpulseScope;
 pub use crate::engine::impulse_synchronizer::ImpulseSynchronizer;
 pub use crate::engine::metadata::formation::Formation;
@@ -62,6 +63,12 @@ pub use crate::engine::metadata::portal::Portal;
 pub use crate::engine::metadata::seat::Seat;
 pub use crate::engine::metadata::version::Version;
 pub use crate::engine::nerve::Nerve;
+pub use crate::engine::record_clone::RecordClone;
+pub use crate::engine::record_common::RecordCommon;
+pub use crate::engine::record_network_capabilities::RecordNetworkCapabilities;
+pub use crate::engine::record_override::RecordOverride;
+pub use crate::engine::record_scope::RecordScope;
+pub use crate::engine::record_synchronizer::RecordSynchronizer;
 pub use crate::engine::serialization::plugin_group_state::ComponentState;
 pub use crate::engine::serialization::plugin_group_state::FieldState;
 pub use crate::engine::serialization::plugin_group_state::ObjectState;
@@ -70,11 +77,7 @@ pub use crate::engine::serialization::plugin_group_state::PluginState;
 pub use crate::engine::services::Services;
 
 // network
-pub use crate::network::event_network_capabilities::EventNetworkCapabilities;
 pub use crate::network::network_modes::NetworkModes;
-pub use crate::network::state_network_capabilities::StateNetworkCapabilities;
-pub use crate::network::state_ownerships::StateOwnerships;
-pub use crate::network::state_sync_event::StateSyncEvent;
 
 // extensions
 pub use crate::extensions::extensions_f32::ExtensionsF32;
@@ -82,9 +85,7 @@ pub use crate::extensions::extensions_f64::ExtensionsF64;
 pub use crate::extensions::extensions_i32::ExtensionsI32;
 
 //system
-pub use crate::system::record_common::RecordCommon;
-pub use crate::system::record_common::RecordOverride;
-pub use crate::system::record_common_clone::RecordCommonClone;
+
 pub use crate::system::record_id::RecordId;
 pub use crate::system::system_component::SystemComponent;
 
@@ -140,9 +141,16 @@ pub mod engine {
     pub(crate) mod curio_network_participant;
     pub(crate) mod impulse_clone;
     pub(crate) mod impulse_common;
+    pub(crate) mod impulse_network_capabilities;
     pub(crate) mod impulse_scope;
     pub(crate) mod impulse_synchronizer;
     pub(crate) mod nerve;
+    pub(crate) mod record_clone;
+    pub(crate) mod record_common;
+    pub(crate) mod record_network_capabilities;
+    pub(crate) mod record_override;
+    pub(crate) mod record_scope;
+    pub(crate) mod record_synchronizer;
     pub(crate) mod services;
 }
 pub mod extensions {
@@ -170,11 +178,7 @@ pub mod collections {
     pub(crate) mod ledger;
 }
 pub mod network {
-    pub(crate) mod event_network_capabilities;
     pub(crate) mod network_modes;
-    pub(crate) mod state_network_capabilities;
-    pub(crate) mod state_ownerships;
-    pub(crate) mod state_sync_event;
 }
 
 pub mod static_data {
@@ -182,8 +186,7 @@ pub mod static_data {
     pub mod global_states;
 }
 pub mod system {
-    pub(crate) mod record_common;
-    pub(crate) mod record_common_clone;
+
     pub(crate) mod record_id;
     pub(crate) mod system_component;
 }

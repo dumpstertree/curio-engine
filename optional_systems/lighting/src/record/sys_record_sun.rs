@@ -2,7 +2,7 @@ use crate::{DrawCallLight, LightType};
 use curio_core::{Color, FieldState, RecordOverride, Vector3};
 use record_serializable::record_serializable;
 
-#[record_serializable(name = "Sun", ownership = curio_core::StateOwnerships::Instance)]
+#[record_serializable(name = "Sun", ownership = curio_core::RecordScope::Instance)]
 pub struct SysRecordSun {
     pub cast_shadows: bool,
     pub direction: Vector3,
@@ -21,7 +21,7 @@ impl SysRecordSun {
     }
 }
 impl RecordOverride for SysRecordSun {
-    fn apply(&mut self, _: &str, _: &str) {}
+    fn set_state(&mut self, _: &str, _: &str) {}
     fn get_state(&self) -> Vec<FieldState> {
         vec![
             FieldState::new("cast_shadows", self.cast_shadows), //

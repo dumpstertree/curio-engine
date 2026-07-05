@@ -1,7 +1,7 @@
 use crate::{
     engine::impulse_common::ImpulseCommon,
     static_data::global_events::{get_global_event_deserializer, get_global_event_serializer},
-    ImpulseScope,
+    Curio, ImpulseScope,
 };
 use std::any::Any;
 #[derive(Clone)]
@@ -23,7 +23,7 @@ impl ImpulseSynchronizer {
         let event_ownership = val.ownership();
 
         // convert the state data to raw bytes to send
-        let Some(serialized_state) = Self::serialize_sync_event(&event_id, val) else {
+        let Some(serialized_state) = Self::serialize_from_global(&event_id, val) else {
             return None;
         };
 
@@ -37,14 +37,14 @@ impl ImpulseSynchronizer {
 
     /// Creates an Impulse cast as a Box<Any> from this ImpulseSynchronizer. Will fail if Impulse is not registered with GlobalImpulses.
     pub fn deserialize(&self) -> Option<Box<dyn Any>> {
-        Self::deserialize_sync_event(&self.impulse_id, &self.payload)
+        Self::deserialize_from_global(&self.impulse_id, &self.payload)
     }
 }
 impl ImpulseSynchronizer {
-    fn deserialize_sync_event(id: &i32, bytes: &Vec<u8>) -> Option<Box<dyn Any>> {
+    fn deserialize_from_global(id: &i32, bytes: &Vec<u8>) -> Option<Box<dyn Any>> {
         // get global fn
         let Some(fn_deserialize) = &get_global_event_deserializer(id) else {
-            println!("Failed to get GlobalDeserializeFn");
+            Curio::log(crate::Severity::Warning, "Failed to get GlobalDeserializeFn");
             return None;
         };
 
@@ -52,13 +52,13 @@ impl ImpulseSynchronizer {
         Some(fn_deserialize(&bytes.as_slice()))
     }
 
-    fn serialize_sync_event<T>(id: &i32, value: &T) -> Option<Vec<u8>>
+    fn serialize_from_global<T>(id: &i32, value: &T) -> Option<Vec<u8>>
     where
         T: ImpulseCommon + 'static,
     {
         // get global fn
         let Some(fn_serialize) = &get_global_event_serializer(id) else {
-            println!("Failed to get GlobalSerializeFn");
+            Curio::log(crate::Severity::Warning, "Failed to get GlobalSerializeFn");
             return None;
         };
 

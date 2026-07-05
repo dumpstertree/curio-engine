@@ -1,9 +1,10 @@
 use crate::RecordCommon;
 
-pub trait RecordCommonClone {
+/// A helper trait for cloning specific for Records
+pub trait RecordClone {
     fn clone_box(&self) -> Box<dyn RecordCommon>;
 }
-impl<T> RecordCommonClone for T
+impl<T> RecordClone for T
 where
     T: 'static + RecordCommon + Clone,
 {

@@ -20,7 +20,7 @@ impl RecordCommon for SysRecordCollider {
     }
 }
 impl RecordOverride for SysRecordCollider {
-    fn apply(&mut self, _field: &str, _val: &str) {}
+    fn set_state(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<FieldState> {
         vec![]
     }

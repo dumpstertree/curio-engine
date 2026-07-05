@@ -1,9 +1,6 @@
 use std::{hash::Hash, sync::OnceLock};
 
-use crate::{
-    system::{record_common::RecordOverride, record_id::RecordId},
-    FieldState, RecordCommon,
-};
+use crate::{system::record_id::RecordId, FieldState, RecordCommon, RecordOverride};
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
@@ -35,7 +32,7 @@ impl RecordCommon for SysRecordNetwork {
     }
 }
 impl RecordOverride for SysRecordNetwork {
-    fn apply(&mut self, _field: &str, _val: &str) {}
+    fn set_state(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
         vec![
             FieldState::new("peer_ids", &self.peer_instance_ids()), //

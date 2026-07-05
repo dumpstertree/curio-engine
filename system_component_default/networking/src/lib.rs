@@ -1,4 +1,4 @@
-use curio_core::{Formation, ImpulseScope, Ledger, Nerve, Severity, StateOwnerships, StateSyncEvent, built_in::record::sys_record_network::SysRecordNetwork};
+use curio_core::{Formation, ImpulseScope, Ledger, Nerve, RecordScope, RecordSynchronizer, Severity, built_in::record::sys_record_network::SysRecordNetwork};
 use curio_core::{NetworkModes, SystemComponent};
 use message_io::node;
 // use message_io::node::NodeEvent;
@@ -20,7 +20,7 @@ pub struct SystemComponentDefaultNetworking {
     pub network_mode: NetworkModes,
     pub node_handler: NodeHandler<Signal>,
     pub endpoints: Arc<Mutex<Vec<Endpoint>>>,
-    pub incoming_events: Arc<Mutex<Vec<StateSyncEvent>>>,
+    pub incoming_events: Arc<Mutex<Vec<RecordSynchronizer>>>,
 }
 
 // impl SystemComponentNetworking for SystemComponentDefaultNetworking {}
@@ -178,7 +178,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
     }
     fn tick(&mut self, ledger: &mut Vec<Ledger>, event_queue: &mut Vec<Nerve>) {
         // save all pending changes and apply them at the end
-        let mut pending_changes: HashMap<usize, Vec<StateSyncEvent>> = HashMap::new();
+        let mut pending_changes: HashMap<usize, Vec<RecordSynchronizer>> = HashMap::new();
 
         // iterate over each gamestate creating list of pending changes
         for i in 0..ledger.len() {
@@ -198,7 +198,7 @@ impl SystemComponent for SystemComponentDefaultNetworking {
             // iterate over each sync event
             for sync_event in &drained_sync_events {
                 // if this state change is instance only we can skip it
-                if sync_event.ownership == StateOwnerships::Instance {
+                if sync_event.record_scope == RecordScope::Instance {
                     continue;
                 }
                 // iterate over all gamestates again

@@ -4,7 +4,7 @@ use std::rc::Rc;
 use crate::built_in::record::sys_record_screen::SysRecordScreen;
 use crate::built_in::record::sys_record_time::SysRecordTime;
 use crate::static_data::global_states::get_global_state_constructor_all;
-use crate::{log, ComponentState, CurioNetwork, ObjectState, PluginState, RecordCommon, Severity, StateNetworkCapabilities, StateOwnerships, StateSyncEvent};
+use crate::{log, ComponentState, CurioNetwork, ObjectState, PluginState, RecordCommon, RecordNetworkCapabilities, RecordScope, RecordSynchronizer, Severity};
 
 // -------------------------------------------------------------------------
 // Internal entry — owns both sides of a single state type
@@ -49,7 +49,7 @@ impl Clone for Entry {
 #[derive(Clone)]
 pub struct Ledger {
     entries: Vec<Option<Entry>>,
-    pub network_capabilities: Option<StateNetworkCapabilities>,
+    pub network_capabilities: Option<RecordNetworkCapabilities>,
     pub network: CurioNetwork,
 }
 
@@ -91,7 +91,7 @@ impl Ledger {
             // instance_id,
             // all_instance_id,
             entries,
-            network_capabilities: Some(StateNetworkCapabilities::new(network.me().mode)),
+            network_capabilities: Some(RecordNetworkCapabilities::new(network.me().mode)),
             network,
         };
 
@@ -213,11 +213,11 @@ impl Ledger {
             edit_fn(state);
             entry.sync_read();
 
-            if ownership != StateOwnerships::Instance {
+            if ownership != RecordScope::Instance {
                 entry
                     .write
                     .downcast_ref::<TRecord>()
-                    .and_then(|val| StateSyncEvent::serialize(val))
+                    .and_then(|val| RecordSynchronizer::serialize(val))
             } else {
                 None
             }
@@ -225,7 +225,7 @@ impl Ledger {
 
         if let Some(event) = sync_event {
             if let Some(net) = &mut self.network_capabilities {
-                net.enqueue_sync_events(event);
+                net.enqueue_synchronizer(event);
             }
         }
     }
@@ -236,30 +236,30 @@ impl Ledger {
 
     /// Apply incoming sync events from other instances.
     /// Overwrites both the write-side value and immediately syncs the read Rc.
-    pub fn try_apply_network_sync_events(&mut self, sync: &[StateSyncEvent]) {
+    pub fn try_apply_network_sync_events(&mut self, sync: &[RecordSynchronizer]) {
         if self.network_capabilities.is_none() {
             return;
         }
 
         for evnt in sync {
             if let Some(value) = evnt.deserialize() {
-                let index = evnt.id as usize;
+                let index = evnt.record_id as usize;
                 if let Some(Some(entry)) = self.entries.get_mut(index) {
                     entry.write = value;
                     entry.sync_read();
                 } else {
-                    eprintln!("[{}] try_apply_network_sync_events: no entry for id {}", self.network.me().guid, evnt.id);
+                    eprintln!("[{}] try_apply_network_sync_events: no entry for id {}", self.network.me().guid, evnt.record_id);
                 }
             } else {
-                eprintln!("[{}] try_apply_network_sync_events: deserialize failed for id {}", self.network.me().guid, evnt.id);
+                eprintln!("[{}] try_apply_network_sync_events: deserialize failed for id {}", self.network.me().guid, evnt.record_id);
             }
         }
     }
 
     /// Drain all pending outbound sync events produced this frame.
-    pub fn try_drain_network_sync_events(&mut self) -> Vec<StateSyncEvent> {
+    pub fn try_drain_network_sync_events(&mut self) -> Vec<RecordSynchronizer> {
         self.network_capabilities
             .as_mut()
-            .map_or_else(Vec::new, |nc| nc.drain_sync_events())
+            .map_or_else(Vec::new, |nc| nc.drain_synchronizers())
     }
 }

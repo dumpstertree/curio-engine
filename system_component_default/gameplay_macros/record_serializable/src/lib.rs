@@ -30,7 +30,7 @@ pub fn record_serializable(attr: TokenStream, item: TokenStream) -> TokenStream 
 
     let ownership = match ownership_val {
         Some(path) => quote! { #path },
-        None => quote! { curio_core::StateOwnerships::Instance },
+        None => quote! { curio_core::RecordScope::Instance },
     };
 
     let mut input = parse_macro_input!(item as ItemStruct);
@@ -86,7 +86,7 @@ pub fn record_serializable(attr: TokenStream, item: TokenStream) -> TokenStream 
             }
 
             #[allow(non_snake_case)]
-            fn ownership() -> curio_core::StateOwnerships
+            fn ownership() -> curio_core::RecordScope
             where
                 Self: Sized + 'static,
             {

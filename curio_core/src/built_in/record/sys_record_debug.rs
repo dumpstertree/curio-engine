@@ -1,9 +1,6 @@
 use std::sync::OnceLock;
 
-use crate::{
-    system::{record_common::RecordOverride, record_id::RecordId},
-    RecordCommon,
-};
+use crate::{system::record_id::RecordId, RecordCommon, RecordOverride};
 
 static SYS_RECORD_ID: OnceLock<i32> = OnceLock::new();
 
@@ -26,7 +23,7 @@ impl RecordCommon for SysRecordDebug {
     }
 }
 impl RecordOverride for SysRecordDebug {
-    fn apply(&mut self, _field: &str, _val: &str) {}
+    fn set_state(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
         vec![]
     }

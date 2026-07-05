@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use curio_core::{Color, FieldState, RecordOverride, StateOwnerships, TextureAsset};
+use curio_core::{Color, FieldState, RecordOverride, RecordScope, TextureAsset};
 use record_serializable::record_serializable;
 
-#[record_serializable(name = "Skybox", ownership = StateOwnerships::Instance)]
+#[record_serializable(name = "Skybox", ownership = RecordScope::Instance)]
 pub struct SysRecordSkybox {
     pub skybox: SkyboxTypes,
 }
@@ -17,7 +17,7 @@ pub enum SkyboxTypes {
     CubeMap(Arc<TextureAsset>),
 }
 impl RecordOverride for SysRecordSkybox {
-    fn apply(&mut self, _: &str, _: &str) {}
+    fn set_state(&mut self, _: &str, _: &str) {}
     fn get_state(&self) -> Vec<FieldState> {
         match &self.skybox {
             SkyboxTypes::Defualt => vec![FieldState::new("type", "default")],

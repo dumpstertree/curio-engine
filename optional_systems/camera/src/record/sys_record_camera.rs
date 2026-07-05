@@ -1,9 +1,9 @@
 use crate::camera_snapshot::CameraSnapshot;
-use curio_core::{FieldState, RecordOverride, Vector3};
+use curio_core::{FieldState, RecordOverride, RecordScope, Vector3};
 use record_serializable::record_serializable;
 
 // #[derive(Default, Hash, Clone)]
-#[record_serializable(name = "Camera", ownership = curio_core::StateOwnerships::Instance)]
+#[record_serializable(name = "Camera", ownership = RecordScope::Instance)]
 pub struct SysRecordCamera {
     pub resolution_width: i32,
     pub resolution_height: i32,
@@ -28,7 +28,7 @@ impl SysRecordCamera {
     );
 }
 impl RecordOverride for SysRecordCamera {
-    fn apply(&mut self, _: &str, _: &str) {}
+    fn set_state(&mut self, _: &str, _: &str) {}
     fn get_state(&self) -> Vec<FieldState> {
         vec![FieldState::new("camera", &self.cameras)]
     }
