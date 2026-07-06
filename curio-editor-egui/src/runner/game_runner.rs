@@ -29,7 +29,6 @@
 
 use crate::project::Project;
 use crate::runner::{
-    callbacks::{set_cursor_visible, set_fullscreen, set_resolution},
     capture::{lock_process_memory, record_readback, ReadbackBuffers, CAPTURE_HEIGHT, CAPTURE_WIDTH},
     plugin_loader::{self, load_library},
 };

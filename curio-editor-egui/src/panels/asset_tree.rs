@@ -26,45 +26,59 @@ pub fn show(ui: &mut Ui, asset: &mut AssetState, project_root: &str) {
     let mut actions = Vec::new();
 
     ui.horizontal(|ui| {
-        if ui.button("\u{2913} Import").on_hover_text("Import file").clicked() {
+        if ui
+            .button("\u{2913} Import")
+            .on_hover_text("Import file")
+            .clicked()
+        {
             actions.push(TreeAction::Import);
         }
-        if ui.button("\u{1F4C1}+ Folder").on_hover_text("New folder").clicked() {
+        if ui
+            .button("\u{1F4C1}+ Folder")
+            .on_hover_text("New folder")
+            .clicked()
+        {
             actions.push(TreeAction::NewFolder);
         }
-        if ui.button("\u{1F9E9}+ Comp").on_hover_text("New prefab (.comp)").clicked() {
+        if ui
+            .button("\u{1F9E9}+ Comp")
+            .on_hover_text("New prefab (.comp)")
+            .clicked()
+        {
             actions.push(TreeAction::NewComp);
         }
     });
     ui.separator();
 
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-        if let Some(err) = &asset.load_error {
-            ui.colored_label(theme::RED, err);
-            return;
-        }
-        if asset.roots.is_empty() {
-            ui.weak("Empty folder");
-            return;
-        }
+    egui::ScrollArea::vertical()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            if let Some(err) = &asset.load_error {
+                ui.colored_label(theme::RED, err);
+                return;
+            }
+            if asset.roots.is_empty() {
+                ui.weak("Empty folder");
+                return;
+            }
 
-        // Two-pass: collect a read-only snapshot of what's rendered, since
-        // we need `asset` immutably (selected_path, drag state, etc.) while
-        // also building the list of nodes to walk. `AssetState`'s fields
-        // besides `roots` are cheap Options/Strings — clone the bits the row
-        // renderer needs to compare against, rather than juggling split
-        // borrows through the recursion.
-        let selected_path = asset.selected_path.clone();
-        let drag_path = asset.drag_path.clone();
-        let drop_target = asset.drop_target.clone();
-        let renaming_path = asset.renaming_path.clone();
-        let confirming_delete_path = asset.confirming_delete_path.clone();
+            // Two-pass: collect a read-only snapshot of what's rendered, since
+            // we need `asset` immutably (selected_path, drag state, etc.) while
+            // also building the list of nodes to walk. `AssetState`'s fields
+            // besides `roots` are cheap Options/Strings — clone the bits the row
+            // renderer needs to compare against, rather than juggling split
+            // borrows through the recursion.
+            let selected_path = asset.selected_path.clone();
+            let drag_path = asset.drag_path.clone();
+            let drop_target = asset.drop_target.clone();
+            let renaming_path = asset.renaming_path.clone();
+            let confirming_delete_path = asset.confirming_delete_path.clone();
 
-        for i in 0..asset.roots.len() {
-            let node = &asset.roots[i];
-            row(ui, node, 0, &selected_path, &drag_path, &drop_target, &renaming_path, &asset.rename_draft, &confirming_delete_path, &mut actions);
-        }
-    });
+            for i in 0..asset.roots.len() {
+                let node = &asset.roots[i];
+                row(ui, node, 0, &selected_path, &drag_path, &drop_target, &renaming_path, &asset.rename_draft, &confirming_delete_path, &mut actions);
+            }
+        });
 
     for action in actions {
         asset.apply(action, project_root);
@@ -72,18 +86,7 @@ pub fn show(ui: &mut Ui, asset: &mut AssetState, project_root: &str) {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn row(
-    ui: &mut Ui,
-    node: &TreeNode,
-    depth: usize,
-    selected_path: &Option<String>,
-    drag_path: &Option<String>,
-    drop_target: &Option<String>,
-    renaming_path: &Option<String>,
-    rename_draft: &str,
-    confirming_delete_path: &Option<String>,
-    actions: &mut Vec<TreeAction>,
-) {
+fn row(ui: &mut Ui, node: &TreeNode, depth: usize, selected_path: &Option<String>, drag_path: &Option<String>, drop_target: &Option<String>, renaming_path: &Option<String>, rename_draft: &str, confirming_delete_path: &Option<String>, actions: &mut Vec<TreeAction>) {
     let entry = &node.entry;
     let ext = fs_ops::file_ext(&entry.name);
     let is_supported = entry.is_dir || SUPPORTED_EXTS.contains(&ext.as_str());
@@ -97,7 +100,7 @@ fn row(
     }
 
     let fill = if is_selected {
-        theme::BG_SELECTED
+        theme::BG_ACTIVE
     } else if is_drop_target {
         theme::BG_HOVER
     } else if is_dragging {
@@ -106,90 +109,114 @@ fn row(
         egui::Color32::TRANSPARENT
     };
 
-    let row_resp = egui::Frame::NONE.fill(fill).inner_margin(egui::Margin::symmetric(0, 1)).show(ui, |ui| {
-        ui.horizontal(|ui| {
-            ui.add_space(depth as f32 * 14.0 + 4.0);
+    let row_resp = egui::Frame::NONE
+        .fill(fill)
+        .inner_margin(egui::Margin::symmetric(0, 1))
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_space(depth as f32 * 14.0 + 4.0);
 
-            // Chevron
-            if entry.is_dir {
-                let glyph = if node.expanded { "\u{25BE}" } else { "\u{25B8}" };
-                if ui.add(egui::Label::new(RichText::new(glyph).size(9.0).color(theme::TEXT_SECONDARY)).sense(egui::Sense::click())).clicked() {
-                    actions.push(TreeAction::ToggleExpand(entry.path.clone()));
-                }
-            } else {
-                ui.add_space(10.0);
-            }
-
-            // Include checkbox (files only)
-            if !entry.is_dir {
-                let mut included = node.meta.as_ref().map(|m| m.included).unwrap_or(true);
-                let resp = ui.checkbox(&mut included, "");
-                if resp.changed() {
-                    actions.push(TreeAction::ToggleIncluded(entry.path.clone()));
-                }
-                if let Some(meta) = &node.meta {
-                    resp.on_hover_text(format!("{} (ID: {})", if meta.included { "Included" } else { "Excluded" }, meta.id));
-                }
-            }
-
-            ui.label(file_icon(entry));
-
-            if is_renaming {
-                let mut draft = rename_draft.to_string();
-                let resp = ui.text_edit_singleline(&mut draft);
-                if draft != rename_draft {
-                    // Draft changed this frame — commit isn't right here
-                    // (AssetState owns `rename_draft`); we surface the new
-                    // text back up as an action so `AssetState::apply` can
-                    // update it. Cheaper: apply directly since AssetState is
-                    // `&mut` all the way up through `asset_tab.rs`. To keep
-                    // this function's signature simple we just stash it as
-                    // a `StartRename` re-fire with the same path — see NOTE.
-                    actions.push(TreeAction::StartRename(entry.path.clone(), draft));
-                }
-                if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                    actions.push(TreeAction::CommitRename(entry.path.clone()));
-                }
-                if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-                    actions.push(TreeAction::CancelRename);
-                }
-                resp.request_focus();
-            } else {
-                let name_color = if is_selected { theme::BLUE } else if is_supported { theme::TEXT_PRIMARY } else { theme::TEXT_MUTED };
-                let name_resp = ui.add(egui::Label::new(RichText::new(&entry.name).color(name_color)).sense(egui::Sense::click()));
-
-                if name_resp.clicked() {
-                    if entry.is_dir {
+                // Chevron
+                if entry.is_dir {
+                    let glyph = if node.expanded { "\u{25BE}" } else { "\u{25B8}" };
+                    if ui
+                        .add(egui::Label::new(RichText::new(glyph).size(9.0).color(theme::TEXT_SECONDARY)).sense(egui::Sense::click()))
+                        .clicked()
+                    {
                         actions.push(TreeAction::ToggleExpand(entry.path.clone()));
-                        actions.push(TreeAction::SetFocusedDir(entry.path.clone()));
-                    } else if is_supported {
-                        actions.push(TreeAction::Select(entry.path.clone()));
+                    }
+                } else {
+                    ui.add_space(10.0);
+                }
+
+                // Include checkbox (files only)
+                if !entry.is_dir {
+                    let mut included = node.meta.as_ref().map(|m| m.included).unwrap_or(true);
+                    let resp = ui.checkbox(&mut included, "");
+                    if resp.changed() {
+                        actions.push(TreeAction::ToggleIncluded(entry.path.clone()));
+                    }
+                    if let Some(meta) = &node.meta {
+                        resp.on_hover_text(format!("{} (ID: {})", if meta.included { "Included" } else { "Excluded" }, meta.id));
                     }
                 }
 
-                // Drag source
-                if name_resp.drag_started() {
-                    actions.push(TreeAction::DragStart(entry.path.clone()));
-                }
-                if name_resp.drag_stopped() {
-                    actions.push(TreeAction::DragEnd);
+                ui.label(file_icon(entry));
+
+                if is_renaming {
+                    let mut draft = rename_draft.to_string();
+                    let resp = ui.text_edit_singleline(&mut draft);
+                    if draft != rename_draft {
+                        // Draft changed this frame — commit isn't right here
+                        // (AssetState owns `rename_draft`); we surface the new
+                        // text back up as an action so `AssetState::apply` can
+                        // update it. Cheaper: apply directly since AssetState is
+                        // `&mut` all the way up through `asset_tab.rs`. To keep
+                        // this function's signature simple we just stash it as
+                        // a `StartRename` re-fire with the same path — see NOTE.
+                        actions.push(TreeAction::StartRename(entry.path.clone(), draft));
+                    }
+                    if resp.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                        actions.push(TreeAction::CommitRename(entry.path.clone()));
+                    }
+                    if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                        actions.push(TreeAction::CancelRename);
+                    }
+                    resp.request_focus();
+                } else {
+                    let name_color = if is_selected {
+                        theme::BLUE
+                    } else if is_supported {
+                        theme::TEXT_PRIMARY
+                    } else {
+                        theme::TEXT_MUTED
+                    };
+                    let name_resp = ui.add(egui::Label::new(RichText::new(&entry.name).color(name_color)).sense(egui::Sense::click()));
+
+                    if name_resp.clicked() {
+                        if entry.is_dir {
+                            actions.push(TreeAction::ToggleExpand(entry.path.clone()));
+                            actions.push(TreeAction::SetFocusedDir(entry.path.clone()));
+                        } else if is_supported {
+                            actions.push(TreeAction::Select(entry.path.clone()));
+                        }
+                    }
+
+                    // Drag source
+                    if name_resp.drag_started() {
+                        actions.push(TreeAction::DragStart(entry.path.clone()));
+                    }
+                    if name_resp.drag_stopped() {
+                        actions.push(TreeAction::DragEnd);
+                    }
+
+                    if !entry.is_dir && !is_supported {
+                        ui.label(
+                            RichText::new(if ext.is_empty() { "?".to_string() } else { ext.clone() })
+                                .small()
+                                .color(theme::TEXT_MUTED),
+                        );
+                    }
                 }
 
-                if !entry.is_dir && !is_supported {
-                    ui.label(RichText::new(if ext.is_empty() { "?".to_string() } else { ext.clone() }).small().color(theme::TEXT_MUTED));
-                }
-            }
-
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.small_button("\u{2715}").on_hover_text("Delete").clicked() {
-                    actions.push(TreeAction::RequestDelete(entry.path.clone()));
-                }
-                if ui.small_button("\u{270E}").on_hover_text("Rename").clicked() {
-                    actions.push(TreeAction::StartRename(entry.path.clone(), entry.name.clone()));
-                }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui
+                        .small_button("\u{2715}")
+                        .on_hover_text("Delete")
+                        .clicked()
+                    {
+                        actions.push(TreeAction::RequestDelete(entry.path.clone()));
+                    }
+                    if ui
+                        .small_button("\u{270E}")
+                        .on_hover_text("Rename")
+                        .clicked()
+                    {
+                        actions.push(TreeAction::StartRename(entry.path.clone(), entry.name.clone()));
+                    }
+                });
             });
         });
-    });
 
     // Drop target — hovering a drag over this row while something's being
     // dragged marks it (folder) or its parent dir (file) as the target;

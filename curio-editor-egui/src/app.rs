@@ -11,6 +11,7 @@ pub struct CurioEditorApp {
 
 impl CurioEditorApp {
     pub fn new(cc: &eframe::CreationContext<'_>, project: Project) -> Self {
+        theme::install_fonts(&cc.egui_ctx);
         theme::apply(&cc.egui_ctx);
         let mut state = EditorState::new(project);
 
@@ -29,7 +30,10 @@ impl CurioEditorApp {
         // previews would need a fallback headless device to work without
         // it, but that path isn't implemented here since it isn't the
         // configuration this was built for.
-        let render_state = cc.wgpu_render_state.as_ref().expect("eframe must be built with the \"wgpu\" renderer (Cargo.toml: eframe features = [..., \"wgpu\"])");
+        let render_state = cc
+            .wgpu_render_state
+            .as_ref()
+            .expect("eframe must be built with the \"wgpu\" renderer (Cargo.toml: eframe features = [..., \"wgpu\"])");
         state.set_render_shared(RenderShared {
             device: std::sync::Arc::new(render_state.device.clone()),
             queue: std::sync::Arc::new(render_state.queue.clone()),
@@ -53,42 +57,74 @@ impl eframe::App for CurioEditorApp {
             ctx.request_repaint_after(std::time::Duration::from_millis(16));
         }
 
-        egui::TopBottomPanel::top("toolbar").frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(4)).show(ctx, |ui| {
-            toolbar::show(ui, &mut self.state);
-        });
+        egui::TopBottomPanel::top("toolbar")
+            .frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(4))
+            .show(ctx, |ui| {
+                toolbar::show(ui, &mut self.state);
+            });
 
-        egui::TopBottomPanel::top("tab_bar").frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(egui::Margin::symmetric(8, 4))).show(ctx, |ui| {
-            tab_bar::show(ui, &mut self.state);
-        });
+        egui::TopBottomPanel::top("tab_bar")
+            .frame(
+                egui::Frame::NONE
+                    .fill(theme::BG_SECONDARY)
+                    .inner_margin(egui::Margin::symmetric(8, 4)),
+            )
+            .show(ctx, |ui| {
+                tab_bar::show(ui, &mut self.state);
+            });
 
-        egui::TopBottomPanel::bottom("status_bar").frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(egui::Margin::symmetric(10, 4))).show(ctx, |ui| {
-            status_bar::show(ui, &self.state);
-        });
+        egui::TopBottomPanel::bottom("status_bar")
+            .frame(
+                egui::Frame::NONE
+                    .fill(theme::BG_SECONDARY)
+                    .inner_margin(egui::Margin::symmetric(10, 4)),
+            )
+            .show(ctx, |ui| {
+                status_bar::show(ui, &self.state);
+            });
 
         match self.state.active_tab {
             TopTab::Play => {
-                egui::SidePanel::left("left_panel").frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6)).default_width(240.0).resizable(true).show(ctx, |ui| {
-                    left_panel::show(ui, &mut self.state);
-                });
-                egui::SidePanel::right("inspector_panel").frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6)).default_width(280.0).resizable(true).show(ctx, |ui| {
-                    inspector::show(ui, &self.state);
-                });
+                egui::SidePanel::left("left_panel")
+                    .frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6))
+                    .default_width(240.0)
+                    .resizable(true)
+                    .show(ctx, |ui| {
+                        left_panel::show(ui, &mut self.state);
+                    });
+                egui::SidePanel::right("inspector_panel")
+                    .frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6))
+                    .default_width(280.0)
+                    .resizable(true)
+                    .show(ctx, |ui| {
+                        inspector::show(ui, &self.state);
+                    });
             }
             TopTab::Asset => {
-                egui::SidePanel::left("asset_tree_panel").frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6)).default_width(260.0).resizable(true).show(ctx, |ui| {
-                    crate::panels::asset_tab::show_tree(ui, &mut self.state);
-                });
-                egui::SidePanel::right("asset_inspector_panel").frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6)).default_width(280.0).resizable(true).show(ctx, |ui| {
-                    crate::panels::asset_tab::show_inspector_for_selected(ui, &mut self.state);
-                });
+                egui::SidePanel::left("asset_tree_panel")
+                    .frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6))
+                    .default_width(260.0)
+                    .resizable(true)
+                    .show(ctx, |ui| {
+                        crate::panels::asset_tab::show_tree(ui, &mut self.state);
+                    });
+                egui::SidePanel::right("asset_inspector_panel")
+                    .frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6))
+                    .default_width(280.0)
+                    .resizable(true)
+                    .show(ctx, |ui| {
+                        crate::panels::asset_tab::show_inspector_for_selected(ui, &mut self.state);
+                    });
             }
             _ => {}
         }
 
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(theme::BG_PRIMARY).inner_margin(6)).show(ctx, |ui| match self.state.active_tab {
-            TopTab::Play => center_panel::show(ui, &mut self.state),
-            TopTab::Asset => crate::panels::asset_tab::show_viewport(ui, &mut self.state),
-            other => placeholder::show(ui, other),
-        });
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(theme::BG_PRIMARY).inner_margin(6))
+            .show(ctx, |ui| match self.state.active_tab {
+                TopTab::Play => center_panel::show(ui, &mut self.state),
+                TopTab::Asset => crate::panels::asset_tab::show_viewport(ui, &mut self.state),
+                other => placeholder::show(ui, other),
+            });
     }
 }

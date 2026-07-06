@@ -1,4 +1,5 @@
 use crate::GlobalImpulses;
+use crate::GlobalRecords;
 use crate::Services;
 use crate::{engine::metadata::identity::Identity, ButtonCode, ButtonPressed, Commands, CurioBuilder, CurioNetwork, CurioNetworkParticipant, Nerve, PluginGroupState, Random};
 use crate::{
@@ -99,7 +100,7 @@ impl Curio {
     fn log_ledger() {
         println!("THIS IS WRONG");
         // get all being added
-        let all = GlobalImpulses::get_all_registrations();
+        let all = GlobalRecords::get_all_registrations();
 
         //create empty string
         let mut ledger_record_log = String::new();

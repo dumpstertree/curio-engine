@@ -13,7 +13,7 @@ use crate::{
 
 pub struct GameplayInstance<T, U>
 where
-    T: ImpulseCommon + Clone + 'static,
+    T: ImpulseCommon + 'static,
     U: IUIEvent + Clone + 'static,
 {
     phantom_u: PhantomData<U>,

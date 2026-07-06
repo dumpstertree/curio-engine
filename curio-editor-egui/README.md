@@ -1,3 +1,107 @@
+# Curio Editor — egui rewrite (pass 9: prefab editor UX fixes)
+
+This replaces the Tauri + React frontend with a native `eframe`/`egui`
+application that talks to `curio_core` directly — no IPC layer, no webview,
+one process.
+
+## Four fixes to the prefab (`.comp`) editor
+
+1. **Global/Local gizmo space toggle.** New `GizmoSpace` enum
+   (`prefab_state.rs`), toolbar buttons next to Move/Rotate/Scale in the
+   viewport. Applies uniformly to all three modes: Global uses world-
+   aligned X/Y/Z axes, Local uses the selected object's own (rotated) axes.
+   The underlying drag math didn't need to change — it already converted
+   whatever world-space axis direction it was given into the right
+   parent-local delta; only *which* direction each axis points needed to
+   become a runtime choice instead of being hardcoded per-mode.
+
+2. **Add Facet/Add Child on nested children — root cause found and fixed.**
+   This wasn't actually a missing feature: `game_object_node` already
+   recurses and renders "+ Add Facet"/"+ Add Child" for every node at every
+   depth. The real bug was that non-root nodes **defaulted to collapsed**
+   — so a freshly-added child appeared in the "Children (N)" list with its
+   own controls hidden until you noticed and clicked its tiny expand arrow,
+   which reasonably read as "there's no way to do this." Fixed by
+   defaulting every node to expanded (tracking *closed* state instead via
+   a `"closed:"`-prefixed key, the same convention `component_block`
+   already used) — a new child's own Add Facet/Add Child buttons are now
+   immediately visible the moment you add it.
+
+3. **Camera no longer auto-fits on every edit.** `PrefabScene` now only
+   auto-frames the camera **once**, the first time a prefab loads
+   (tracked via a `framed_once` flag) — previously it re-ran "fit
+   everything in view" on *every* `sync()`, which fires on any edit
+   (including mid-drag, since a gizmo drag changes the scene's world
+   matrices and thus its signature). That meant the camera would yank back
+   to a wide fit after every tweak, fighting whatever framing you'd set up
+   yourself. "Reset camera" (the existing button) is still there for
+   deliberately re-framing on demand.
+
+4. **W/E/R hotkeys for Move/Rotate/Scale.** Standard editor convention.
+   Guarded on `ctx.memory(|m| m.focused().is_none())` — i.e., only active
+   when no text field anywhere currently has keyboard focus, so typing
+   "w"/"e"/"r" while renaming something or editing a text field doesn't
+   accidentally swap gizmo modes out from under you. Toolbar buttons now
+   show the hotkey in their label ("Move (W)", etc.) as a discoverability
+   hint.
+
+---
+
+# Earlier passes (1–8): shell, viewports, asset browser, all asset previews, prefab editing + gizmo, viewport reliability fix, curio_core rename
+
+# Curio Editor — egui rewrite (pass 8: curio_core rename + gizmo borrow-check fix)
+
+This replaces the Tauri + React frontend with a native `eframe`/`egui`
+application that talks to `curio_core` directly — no IPC layer, no webview,
+one process.
+
+## Two fixes this pass
+
+**1. `prefab_gizmo.rs` borrow-checker error (E0502), fixed.** The scale/
+rotate drag math did `set_axis(&mut v, axis, get_axis(&v, axis) + delta)` —
+taking a mutable borrow of `v` as the first argument while also trying to
+borrow it immutably for the second argument in the same call. Rust
+evaluates arguments left-to-right but the borrows still overlap in scope.
+Fixed by computing the new value into a temporary first, then calling
+`set_axis` with just that value — no borrow conflict since there's only
+ever one borrow of `v` alive at a time now.
+
+**2. Adopted your `curio_core` renames.** Your corrected `game_runner.rs`
+is in verbatim. Confirmed renames from that file:
+- `EngineServices` → `Services`, with `Services::set(ptr)` (a static
+  method) replacing the free function `set_services(ptr)`.
+- `TabGroupState` → `PluginGroupState`.
+- `Curio::application_refresh()` → `Curio::update()`.
+- `Curio::tab_snapshot()` → `Curio::serializable().plugin_group_state`
+  (via a new `serializable()` accessor).
+- `Curio::meta.name` → `Curio::identity.name`.
+- `forms`/`FormsSnapshot`/`context_snapshot()` appear to be gone
+  entirely (commented out in your file, not replaced by anything) —
+  treated as removed rather than renamed.
+- The `Services` struct itself no longer takes `set_fullscreen`/
+  `set_resolution`/`set_cursor_visible` function-pointer fields — only
+  `assets`/`logger`/`gpu` now. `runner/callbacks.rs`'s three stub
+  functions are consequently unused/orphaned; left in place rather than
+  deleted in case they're meant to be wired up elsewhere, flagged in that
+  file's doc comment.
+
+**Only `state.rs` referenced `TabGroupState` directly** (grepped the whole
+codebase to check) — updated its import and the two usage sites
+(`EditorState.tab_group_state` field, `resolve_object`'s signature) to
+`PluginGroupState`.
+
+**Assumption worth flagging, since I don't have `curio_core`'s source:**
+`state.rs::refresh_tab_group` reads `tab_group_state.id_for_tabs` — I'm
+assuming `PluginGroupState` kept that same internal field (just the outer
+type got renamed), since your file only showed the rename at the
+`SharedGameData`/access-path level, not `PluginGroupState`'s own
+definition. If its internal shape also changed, that's an isolated,
+obvious `cargo check` error in exactly that one spot.
+
+---
+
+# Earlier passes (1–7): shell, viewports, asset browser, all asset previews, prefab editing + gizmo, viewport reliability fix
+
 # Curio Editor — egui rewrite (pass 7: prefab transform gizmo)
 
 This replaces the Tauri + React frontend with a native `eframe`/`egui`

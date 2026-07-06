@@ -9,7 +9,7 @@ use std::vec;
 
 pub struct SystemComponentDefaultGameplay<T, U>
 where
-    T: ImpulseCommon + Clone + 'static,
+    T: ImpulseCommon + 'static,
     U: IUIEvent + 'static,
 {
     game_instance: Vec<GameplayInstance<T, U>>,

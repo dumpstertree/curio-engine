@@ -229,6 +229,14 @@ pub struct PrefabScene {
 
     pub camera: OrbitCameraHandle,
     entries_signature: String,
+    /// Set after the first `sync()` frames the camera. Auto-framing only
+    /// happens once, on initial load — re-framing on every edit (the
+    /// original behavior) meant the camera would yank back to "fit
+    /// everything" mid-drag or after any small tweak, which is more
+    /// disruptive than helpful once you're actually working in the scene.
+    /// "Reset camera" (button, or a future keybind) is still available for
+    /// deliberately re-framing on demand.
+    framed_once: bool,
 }
 
 impl PrefabScene {
@@ -277,6 +285,7 @@ impl PrefabScene {
             texture_id: None,
             camera: OrbitCameraHandle(OrbitCamera::framing(Vec3::ZERO, 2.0)),
             entries_signature: String::new(),
+            framed_once: false,
         }
     }
 
@@ -345,10 +354,11 @@ impl PrefabScene {
         self.pick_ranges = pick_ranges;
         self.markers = markers;
 
-        if min.x <= max.x {
+        if !self.framed_once && min.x <= max.x {
             let center = (min + max) * 0.5;
             let radius = (max - min).length() * 0.5;
             self.camera = OrbitCameraHandle(OrbitCamera::framing(center, radius));
+            self.framed_once = true;
         }
     }
 

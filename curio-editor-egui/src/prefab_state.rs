@@ -31,6 +31,7 @@ pub struct PrefabState {
     /// selected object — move/rotate/scale, chosen via the small toolbar in
     /// `prefab_tab.rs::show_viewport`.
     pub gizmo_mode: GizmoMode,
+    pub gizmo_space: GizmoSpace,
     /// Set while the user is actively dragging a gizmo handle; `None`
     /// otherwise. See `GizmoDrag`'s doc comment and `prefab_gizmo.rs`.
     pub gizmo_drag: Option<GizmoDrag>,
@@ -48,6 +49,7 @@ impl PrefabState {
             open_components: HashSet::new(),
             camera_reset_requested: false,
             gizmo_mode: GizmoMode::default(),
+            gizmo_space: GizmoSpace::default(),
             gizmo_drag: None,
         }
     }
@@ -232,6 +234,24 @@ pub enum GizmoMode {
 impl Default for GizmoMode {
     fn default() -> Self {
         GizmoMode::Translate
+    }
+}
+
+/// Whether the gizmo's axes align with world X/Y/Z or the selected
+/// object's own (rotated) local axes. Applies uniformly to all three
+/// modes — a real editor might reasonably keep Scale always-local (a
+/// "world-space scale" isn't a very coherent concept once rotation is
+/// involved), but a single toggle covering all three is simpler to reason
+/// about and is what was asked for.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GizmoSpace {
+    Global,
+    Local,
+}
+
+impl Default for GizmoSpace {
+    fn default() -> Self {
+        GizmoSpace::Global
     }
 }
 

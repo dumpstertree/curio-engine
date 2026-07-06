@@ -11,14 +11,11 @@
 //! camera angle). For a prefab-composition preview tool this is a
 //! reasonable tradeoff; a AAA-grade gizmo would want real 3D geometry.
 //!
-//! **Axis conventions:**
-//! - Translate handles are **world-aligned** (X/Y/Z always point the same
-//!   way on screen regardless of the object's rotation) — this is the
-//!   common "global" gizmo mode default in most editors.
-//! - Rotate and Scale handles are **object-local** (transformed by the
-//!   object's own world rotation) — rotating "around local X" and scaling
-//!   "along local X" are the meaningful operations for those, unlike
-//!   translation.
+//! **Axis space:** togglable between world-aligned ("Global" — X/Y/Z always
+//! point the same way on screen regardless of the object's rotation) and
+//! object-local ("Local" — axes follow the object's own rotated axes),
+//! via `GizmoSpace`. Applies uniformly to all three modes; see that type's
+//! doc comment for why a single toggle rather than per-mode defaults.
 //!
 //! **Known simplification:** rotation drags add degrees directly to the
 //! Euler `rotation` field's corresponding axis component. This works well
@@ -27,7 +24,7 @@
 //! already have non-zero rotation (a real gizmo would compose quaternion
 //! deltas). Flagged here rather than silently wrong.
 
-use crate::prefab_state::{GizmoDrag, GizmoDragKind, GizmoMode, PrefabAction};
+use crate::prefab_state::{GizmoDrag, GizmoDragKind, GizmoMode, GizmoSpace, PrefabAction};
 use crate::prefab_types::{self, TransformFields};
 use eframe::egui::{self, Color32, Pos2, Stroke, Ui};
 use glam::{Mat4, Vec2 as GVec2, Vec3};
@@ -125,7 +122,7 @@ pub struct GizmoTarget<'a> {
 /// camera-drag and ray-pick handling for this frame's input when this
 /// returns `Some(..)` (the gizmo owns the input this frame). Returns `None`
 /// if no gizmo drag is in progress.
-pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3, mode: GizmoMode, target: &GizmoTarget, gizmo_drag: &mut Option<GizmoDrag>, actions: &mut Vec<PrefabAction>) -> Option<TransformFields> {
+pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3, mode: GizmoMode, space: GizmoSpace, target: &GizmoTarget, gizmo_drag: &mut Option<GizmoDrag>, actions: &mut Vec<PrefabAction>) -> Option<TransformFields> {
     // A stale drag (selection changed mid-drag, shouldn't normally happen
     // since selection changes go through the same deferred-action queue,
     // but defensive) — drop it rather than apply it to the wrong object.
@@ -136,27 +133,17 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
     let origin = target.world_matrix.transform_point3(Vec3::ZERO);
     let handle_length = ((camera_eye - origin).length() * 0.2).max(0.05);
     let Some(origin_screen) = world_to_screen(origin, view_proj, rect) else {
-        return gizmo_drag
-            .as_ref()
-            .map(|d| fields_with(target.effective, mode, d.current_value));
+        return gizmo_drag.as_ref().map(|d| fields_with(target.effective, mode, d.current_value));
     };
 
-    let axis_dirs: [Vec3; 3] = match mode {
-        GizmoMode::Translate => [Vec3::X, Vec3::Y, Vec3::Z],
-        GizmoMode::Rotate | GizmoMode::Scale => [
-            target
-                .world_matrix
-                .transform_vector3(Vec3::X)
-                .normalize_or_zero(),
-            target
-                .world_matrix
-                .transform_vector3(Vec3::Y)
-                .normalize_or_zero(),
-            target
-                .world_matrix
-                .transform_vector3(Vec3::Z)
-                .normalize_or_zero(),
-        ],
+    // Global: axes always point along world X/Y/Z, regardless of the
+    // object's rotation — the common editor default. Local: axes follow
+    // the object's own (rotated) axes. This applies uniformly to all three
+    // modes — see `GizmoSpace`'s doc comment for why that's a deliberate
+    // simplification rather than, say, forcing Scale to always be local.
+    let axis_dirs: [Vec3; 3] = match space {
+        GizmoSpace::Global => [Vec3::X, Vec3::Y, Vec3::Z],
+        GizmoSpace::Local => [target.world_matrix.transform_vector3(Vec3::X).normalize_or_zero(), target.world_matrix.transform_vector3(Vec3::Y).normalize_or_zero(), target.world_matrix.transform_vector3(Vec3::Z).normalize_or_zero()],
     };
 
     let pointer = ui.input(|i| i.pointer.latest_pos());
@@ -169,9 +156,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
 
     for (axis, &dir) in axis_dirs.iter().enumerate() {
         let color = AXIS_COLORS[axis];
-        let is_dragging_this = gizmo_drag
-            .as_ref()
-            .is_some_and(|d| d.axis == axis && d.path == target.path);
+        let is_dragging_this = gizmo_drag.as_ref().is_some_and(|d| d.axis == axis && d.path == target.path);
 
         match mode {
             GizmoMode::Translate | GizmoMode::Scale => {
@@ -188,8 +173,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                 let hovered = dist_to_pointer.is_some_and(|d| d < HANDLE_HIT_PX);
 
                 let stroke_w = if is_dragging_this || hovered { 3.5 } else { 2.0 };
-                ui.painter()
-                    .line_segment([to_pos2(origin_screen), to_pos2(tip_screen)], Stroke::new(stroke_w, color));
+                ui.painter().line_segment([to_pos2(origin_screen), to_pos2(tip_screen)], Stroke::new(stroke_w, color));
 
                 if mode == GizmoMode::Translate {
                     let dir2 = (tip_screen - origin_screen).normalize_or_zero();
@@ -197,11 +181,9 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                     let tip = to_pos2(tip_screen + dir2 * 6.0);
                     let base_a = to_pos2(tip_screen - dir2 * 4.0 + perp);
                     let base_b = to_pos2(tip_screen - dir2 * 4.0 - perp);
-                    ui.painter()
-                        .add(egui::Shape::convex_polygon(vec![tip, base_a, base_b], color, Stroke::NONE));
+                    ui.painter().add(egui::Shape::convex_polygon(vec![tip, base_a, base_b], color, Stroke::NONE));
                 } else {
-                    ui.painter()
-                        .rect_filled(egui::Rect::from_center_size(to_pos2(tip_screen), egui::vec2(8.0, 8.0)), 1.0, color);
+                    ui.painter().rect_filled(egui::Rect::from_center_size(to_pos2(tip_screen), egui::vec2(8.0, 8.0)), 1.0, color);
                 }
             }
 
@@ -234,8 +216,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                 let hovered = min_dist < HANDLE_HIT_PX;
 
                 let stroke_w = if is_dragging_this || hovered { 3.0 } else { 1.5 };
-                ui.painter()
-                    .add(egui::Shape::line(screen_points, Stroke::new(stroke_w, color)));
+                ui.painter().add(egui::Shape::line(screen_points, Stroke::new(stroke_w, color)));
             }
         }
     }
@@ -261,11 +242,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
             let kind = match mode {
                 GizmoMode::Translate => {
                     let screen_units_per_world = ((tip_screen - origin_screen).length() / handle_length).max(0.001);
-                    GizmoDragKind::Translate {
-                        world_axis_dir: dir,
-                        screen_axis_dir,
-                        screen_units_per_world,
-                    }
+                    GizmoDragKind::Translate { world_axis_dir: dir, screen_axis_dir, screen_units_per_world }
                 }
                 GizmoMode::Scale => GizmoDragKind::Scale { screen_axis_dir },
                 GizmoMode::Rotate => {
@@ -275,15 +252,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                 }
             };
 
-            *gizmo_drag = Some(GizmoDrag {
-                path: target.path.to_vec(),
-                comp_index: target.next_comp_index,
-                axis,
-                start_value,
-                current_value: start_value,
-                start_mouse: to_gvec2(p),
-                kind,
-            });
+            *gizmo_drag = Some(GizmoDrag { path: target.path.to_vec(), comp_index: target.next_comp_index, axis, start_value, current_value: start_value, start_mouse: to_gvec2(p), kind });
         }
     }
 
@@ -294,38 +263,27 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
             let mouse_delta = mouse - drag.start_mouse;
 
             drag.current_value = match &drag.kind {
-                GizmoDragKind::Translate {
-                    world_axis_dir,
-                    screen_axis_dir,
-                    screen_units_per_world,
-                } => {
+                GizmoDragKind::Translate { world_axis_dir, screen_axis_dir, screen_units_per_world } => {
                     let pixels_along_axis = mouse_delta.dot(*screen_axis_dir);
                     let world_units = pixels_along_axis / *screen_units_per_world;
                     let world_delta = *world_axis_dir * world_units;
-                    let local_delta = target
-                        .parent_world_matrix
-                        .inverse()
-                        .transform_vector3(world_delta);
-                    prefab_types::Vec3 {
-                        x: drag.start_value.x + local_delta.x,
-                        y: drag.start_value.y + local_delta.y,
-                        z: drag.start_value.z + local_delta.z,
-                    }
+                    let local_delta = target.parent_world_matrix.inverse().transform_vector3(world_delta);
+                    prefab_types::Vec3 { x: drag.start_value.x + local_delta.x, y: drag.start_value.y + local_delta.y, z: drag.start_value.z + local_delta.z }
                 }
                 GizmoDragKind::Scale { screen_axis_dir } => {
                     let pixels_along_axis = mouse_delta.dot(*screen_axis_dir);
                     let delta = pixels_along_axis * SCALE_SENSITIVITY;
                     let mut v = drag.start_value;
-                    let v2 = v.clone();
-                    set_axis(&mut v, drag.axis, (get_axis(&v2, drag.axis) + delta).max(MIN_SCALE));
+                    let new_axis_value = (get_axis(&v, drag.axis) + delta).max(MIN_SCALE);
+                    set_axis(&mut v, drag.axis, new_axis_value);
                     v
                 }
                 GizmoDragKind::Rotate { start_mouse_angle } => {
                     let angle = (mouse.y - origin_screen.y).atan2(mouse.x - origin_screen.x);
                     let delta_deg = (angle - start_mouse_angle).to_degrees();
                     let mut v = drag.start_value;
-                    let v2 = v.clone();
-                    set_axis(&mut v, drag.axis, get_axis(&v2, drag.axis) + delta_deg);
+                    let new_axis_value = get_axis(&v, drag.axis) + delta_deg;
+                    set_axis(&mut v, drag.axis, new_axis_value);
                     v
                 }
             };

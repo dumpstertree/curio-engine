@@ -58,11 +58,21 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     let gizmo_target_info = selected_path.as_ref().and_then(|sel_path| {
         let raw_root = state.prefab.raw.as_ref()?;
         let local_node = prefab_types::get_node_at_path(raw_root, sel_path)?;
-        let has_local_transform = local_node.components.iter().any(|c| c.kind == "Transform3D");
-        let next_comp_index = local_node.components.iter().position(|c| c.kind == "Transform3D").unwrap_or(local_node.components.len());
+        let has_local_transform = local_node
+            .components
+            .iter()
+            .any(|c| c.kind == "Transform3D");
+        let next_comp_index = local_node
+            .components
+            .iter()
+            .position(|c| c.kind == "Transform3D")
+            .unwrap_or(local_node.components.len());
 
         let full_node = prefab_types::get_node_at_path(&full_raw, sel_path);
-        let effective = full_node.and_then(|n| n.components.iter().find(|c| c.kind == "Transform3D")).map(prefab_types::read_transform_fields).unwrap_or_default();
+        let effective = full_node
+            .and_then(|n| n.components.iter().find(|c| c.kind == "Transform3D"))
+            .map(prefab_types::read_transform_fields)
+            .unwrap_or_default();
 
         let (world_matrix, parent_world_matrix) = prefab_transforms::world_matrices_for_path(&full_raw, sel_path);
         Some((sel_path.clone(), world_matrix, parent_world_matrix, effective, has_local_transform, next_comp_index))
@@ -74,9 +84,26 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     // `prefab_gizmo.rs`). This is why `entries` is computed from
     // `preview_raw` rather than `full_raw` directly.
     let mut gizmo_mode = state.prefab.gizmo_mode;
+    let mut gizmo_space = state.prefab.gizmo_space;
     let mut gizmo_drag = state.prefab.gizmo_drag.take();
     if gizmo_target_info.is_none() {
         gizmo_drag = None;
+    }
+
+    // W/E/R switch gizmo mode — standard convention, matching most 3D
+    // editors. Guarded on nothing currently having keyboard focus so
+    // typing "w"/"e"/"r" into a rename box or a text field elsewhere in
+    // the inspector doesn't accidentally change modes out from under you.
+    if ui.ctx().memory(|m| m.focused().is_none()) {
+        ui.ctx().input(|i| {
+            if i.key_pressed(egui::Key::W) {
+                gizmo_mode = GizmoMode::Translate;
+            } else if i.key_pressed(egui::Key::E) {
+                gizmo_mode = GizmoMode::Rotate;
+            } else if i.key_pressed(egui::Key::R) {
+                gizmo_mode = GizmoMode::Scale;
+            }
+        });
     }
 
     let preview_raw = match (&gizmo_drag, &selected_path) {
@@ -99,7 +126,8 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
                         GizmoMode::Rotate => fields.rotation = drag.current_value,
                         GizmoMode::Scale => fields.scale = drag.current_value,
                     }
-                    node.components.push(prefab_types::write_transform_fields(&prefab_types::default_component("Transform3D"), fields));
+                    node.components
+                        .push(prefab_types::write_transform_fields(&prefab_types::default_component("Transform3D"), fields));
                 }
             }
             tree
@@ -129,12 +157,23 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
 
     ui.vertical(|ui| {
         ui.horizontal(|ui| {
-            ui.label(RichText::new(format!("{} render entries", entries.len())).small().color(theme::TEXT_SECONDARY));
+            ui.label(
+                RichText::new(format!("{} render entries", entries.len()))
+                    .small()
+                    .color(theme::TEXT_SECONDARY),
+            );
 
             ui.separator();
-            for (mode, label) in [(GizmoMode::Translate, "Move"), (GizmoMode::Rotate, "Rotate"), (GizmoMode::Scale, "Scale")] {
+            for (mode, label) in [(GizmoMode::Translate, "Move (W)"), (GizmoMode::Rotate, "Rotate (E)"), (GizmoMode::Scale, "Scale (R)")] {
                 if ui.selectable_label(gizmo_mode == mode, label).clicked() {
                     gizmo_mode = mode;
+                }
+            }
+
+            ui.separator();
+            for (space, label) in [(crate::prefab_state::GizmoSpace::Global, "Global"), (crate::prefab_state::GizmoSpace::Local, "Local")] {
+                if ui.selectable_label(gizmo_space == space, label).clicked() {
+                    gizmo_space = space;
                 }
             }
 
@@ -152,7 +191,8 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
 
         let (texture_id, size) = scene.render(&render_shared.render_state, width, height);
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
-        ui.painter().image(texture_id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+        ui.painter()
+            .image(texture_id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
 
         let view_proj = scene.view_proj(aspect);
         let camera_eye = scene.camera.eye();
@@ -163,8 +203,15 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
         // `Some(..)` return whether it owns this frame's input.
         let mut gizmo_owns_input = false;
         if let Some((gpath, world_matrix, parent_world_matrix, effective, has_local_transform, next_comp_index)) = &gizmo_target_info {
-            let target = GizmoTarget { path: gpath, world_matrix: *world_matrix, parent_world_matrix: *parent_world_matrix, effective: *effective, has_local_transform: *has_local_transform, next_comp_index: *next_comp_index };
-            if prefab_gizmo::interact(ui, rect, view_proj, camera_eye, gizmo_mode, &target, &mut gizmo_drag, &mut gizmo_actions).is_some() {
+            let target = GizmoTarget {
+                path: gpath,
+                world_matrix: *world_matrix,
+                parent_world_matrix: *parent_world_matrix,
+                effective: *effective,
+                has_local_transform: *has_local_transform,
+                next_comp_index: *next_comp_index,
+            };
+            if prefab_gizmo::interact(ui, rect, view_proj, camera_eye, gizmo_mode, gizmo_space, &target, &mut gizmo_drag, &mut gizmo_actions).is_some() {
                 gizmo_owns_input = true;
             }
         }
@@ -177,7 +224,8 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
                 let is_selected = selected_path.as_deref() == Some(marker_path.as_slice());
                 let color = if is_selected { theme::BLUE } else { theme::ORANGE };
                 ui.painter().circle_filled(screen_pos, 5.0, color);
-                ui.painter().text(screen_pos + egui::vec2(8.0, -4.0), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(11.0), color);
+                ui.painter()
+                    .text(screen_pos + egui::vec2(8.0, -4.0), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(11.0), color);
                 let marker_rect = egui::Rect::from_center_size(screen_pos, egui::vec2(14.0, 14.0));
                 if !gizmo_owns_input && ui.rect_contains_pointer(marker_rect) && ui.input(|i| i.pointer.primary_clicked()) {
                     marker_click = Some(marker_path.clone());
@@ -217,10 +265,13 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     });
 
     state.prefab.gizmo_mode = gizmo_mode;
+    state.prefab.gizmo_space = gizmo_space;
     state.prefab.gizmo_drag = gizmo_drag;
 
     if let Some(new_selection) = pending_select {
-        state.prefab.apply(PrefabAction::Select(new_selection), &project_root);
+        state
+            .prefab
+            .apply(PrefabAction::Select(new_selection), &project_root);
     }
     for action in gizmo_actions {
         state.prefab.apply(action, &project_root);
@@ -272,9 +323,17 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState, path: &str) {
     state.prefab.ensure_loaded(&project_root, path);
 
     ui.horizontal(|ui| {
-        ui.label(RichText::new("Inspector").strong().color(theme::TEXT_PRIMARY));
+        ui.label(
+            RichText::new("Inspector")
+                .strong()
+                .color(theme::TEXT_PRIMARY),
+        );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.small_button("\u{27F3} Refresh").on_hover_text("Re-resolve from disk").clicked() {
+            if ui
+                .small_button("\u{27F3} Refresh")
+                .on_hover_text("Re-resolve from disk")
+                .clicked()
+            {
                 state.prefab.reload(&project_root);
             }
         });
@@ -300,9 +359,11 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState, path: &str) {
     ui.add_space(6.0);
 
     let mut actions = Vec::new();
-    egui::ScrollArea::vertical().auto_shrink([false, false]).show(ui, |ui| {
-        game_object_node(ui, state, &raw, 0, &[], &mut actions, &project_root);
-    });
+    egui::ScrollArea::vertical()
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            game_object_node(ui, state, &raw, 0, &[], &mut actions, &project_root);
+        });
 
     for action in actions {
         state.prefab.apply(action, &project_root);
@@ -313,39 +374,59 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState, path: &str) {
 fn game_object_node(ui: &mut Ui, state: &EditorState, node: &PrefabGameObjectRaw, depth: usize, path: &[usize], actions: &mut Vec<PrefabAction>, project_root: &str) {
     let path_key = format!("{path:?}");
     let is_selected = state.prefab.selected_path.as_deref() == Some(path);
-    let is_open = path.is_empty() || state.prefab.expanded_nodes.contains(&path_key);
+    // Default EXPANDED (not just the root) — a freshly-added child needs
+    // its own "+ Add Facet"/"+ Add Child" controls visible immediately, or
+    // it looks like there's no way to build nested structure at all.
+    // Tracked as "closed" (a prefix key) rather than "open", same
+    // default-open convention `component_block` already uses.
+    let closed_key = format!("closed:{path_key}");
+    let is_open = !state.prefab.expanded_nodes.contains(&closed_key);
 
-    egui::Frame::NONE.fill(if is_selected { theme::BG_SELECTED } else { egui::Color32::TRANSPARENT }).inner_margin(egui::Margin::symmetric(0, 1)).show(ui, |ui| {
-        ui.horizontal(|ui| {
-            ui.add_space(depth as f32 * 12.0);
+    egui::Frame::NONE
+        .fill(if is_selected { theme::BG_ACTIVE } else { egui::Color32::TRANSPARENT })
+        .inner_margin(egui::Margin::symmetric(0, 1))
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.add_space(depth as f32 * 12.0);
 
-            let glyph = if is_open { "\u{25BE}" } else { "\u{25B8}" };
-            if ui.add(egui::Label::new(RichText::new(glyph).size(9.0).color(theme::TEXT_SECONDARY)).sense(egui::Sense::click())).clicked() {
-                actions.push(PrefabAction::ToggleExpand(path_key.clone()));
-            }
+                let glyph = if is_open { "\u{25BE}" } else { "\u{25B8}" };
+                if ui
+                    .add(egui::Label::new(RichText::new(glyph).size(9.0).color(theme::TEXT_SECONDARY)).sense(egui::Sense::click()))
+                    .clicked()
+                {
+                    actions.push(PrefabAction::ToggleExpand(closed_key.clone()));
+                }
 
-            let mut enabled = node.enabled;
-            if ui.checkbox(&mut enabled, "").changed() {
-                actions.push(PrefabAction::SetEnabled(path.to_vec(), enabled));
-            }
+                let mut enabled = node.enabled;
+                if ui.checkbox(&mut enabled, "").changed() {
+                    actions.push(PrefabAction::SetEnabled(path.to_vec(), enabled));
+                }
 
-            let name_resp = ui.add(egui::Label::new(RichText::new(&node.name).color(if is_selected { theme::BLUE } else { theme::TEXT_PRIMARY })).sense(egui::Sense::click()));
-            if name_resp.clicked() {
-                actions.push(PrefabAction::Select(if is_selected { None } else { Some(path.to_vec()) }));
-            }
+                let name_resp = ui.add(egui::Label::new(RichText::new(&node.name).color(if is_selected { theme::BLUE } else { theme::TEXT_PRIMARY })).sense(egui::Sense::click()));
+                if name_resp.clicked() {
+                    actions.push(PrefabAction::Select(if is_selected { None } else { Some(path.to_vec()) }));
+                }
 
-            if !path.is_empty() {
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.small_button("\u{2715}").on_hover_text("Delete").clicked() {
-                        actions.push(PrefabAction::RemoveChild(path.to_vec()));
-                    }
-                    if ui.small_button("\u{2398}").on_hover_text("Duplicate").clicked() {
-                        actions.push(PrefabAction::DuplicateChild(path.to_vec()));
-                    }
-                });
-            }
+                if !path.is_empty() {
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui
+                            .small_button("\u{2715}")
+                            .on_hover_text("Delete")
+                            .clicked()
+                        {
+                            actions.push(PrefabAction::RemoveChild(path.to_vec()));
+                        }
+                        if ui
+                            .small_button("\u{2398}")
+                            .on_hover_text("Duplicate")
+                            .clicked()
+                        {
+                            actions.push(PrefabAction::DuplicateChild(path.to_vec()));
+                        }
+                    });
+                }
+            });
         });
-    });
 
     if !is_open {
         return;
@@ -367,7 +448,11 @@ fn game_object_node(ui: &mut Ui, state: &EditorState, node: &PrefabGameObjectRaw
         add_component_button(ui, path, &node.components, actions, project_root);
 
         if !node.children.is_empty() {
-            ui.label(RichText::new(format!("Children ({})", node.children.len())).small().color(theme::TEXT_MUTED));
+            ui.label(
+                RichText::new(format!("Children ({})", node.children.len()))
+                    .small()
+                    .color(theme::TEXT_MUTED),
+            );
         }
         for (i, child) in node.children.iter().enumerate() {
             let mut child_path = path.to_vec();
@@ -390,39 +475,61 @@ fn component_block(ui: &mut Ui, state: &EditorState, comp: &PrefabComponentRaw, 
     let closed_key = format!("closed:{path:?}#{index}");
     let is_open = !state.prefab.open_components.contains(&closed_key);
 
-    egui::Frame::NONE.fill(theme::BG_TERTIARY).inner_margin(4).corner_radius(3).show(ui, |ui| {
-        ui.horizontal(|ui| {
-            let glyph = if is_open { "\u{25BE}" } else { "\u{25B8}" };
-            if ui.add(egui::Label::new(RichText::new(glyph).size(9.0)).sense(egui::Sense::click())).clicked() {
-                actions.push(PrefabAction::ToggleComponentOpen(closed_key.clone()));
-            }
-            ui.label(RichText::new(&comp.kind).color(theme::GREEN));
+    egui::Frame::NONE
+        .fill(theme::BG_TERTIARY)
+        .inner_margin(4)
+        .corner_radius(3)
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                let glyph = if is_open { "\u{25BE}" } else { "\u{25B8}" };
+                if ui
+                    .add(egui::Label::new(RichText::new(glyph).size(9.0)).sense(egui::Sense::click()))
+                    .clicked()
+                {
+                    actions.push(PrefabAction::ToggleComponentOpen(closed_key.clone()));
+                }
+                ui.label(RichText::new(&comp.kind).color(theme::GREEN));
 
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if ui.small_button("\u{2715}").clicked() {
-                    actions.push(PrefabAction::RemoveComponent(path.to_vec(), index));
-                }
-                if ui.small_button("\u{2193}").on_hover_text("Move down").clicked() {
-                    actions.push(PrefabAction::MoveComponent(path.to_vec(), index, index + 1));
-                }
-                if index > 0 && ui.small_button("\u{2191}").on_hover_text("Move up").clicked() {
-                    actions.push(PrefabAction::MoveComponent(path.to_vec(), index, index - 1));
-                }
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if ui.small_button("\u{2715}").clicked() {
+                        actions.push(PrefabAction::RemoveComponent(path.to_vec(), index));
+                    }
+                    if ui
+                        .small_button("\u{2193}")
+                        .on_hover_text("Move down")
+                        .clicked()
+                    {
+                        actions.push(PrefabAction::MoveComponent(path.to_vec(), index, index + 1));
+                    }
+                    if index > 0
+                        && ui
+                            .small_button("\u{2191}")
+                            .on_hover_text("Move up")
+                            .clicked()
+                    {
+                        actions.push(PrefabAction::MoveComponent(path.to_vec(), index, index - 1));
+                    }
+                });
             });
+
+            if !is_open {
+                return;
+            }
+
+            let known_fields = crate::prefab_facets::component_fields(project_root, &comp.kind);
+            let known_keys: Vec<&str> = known_fields.iter().map(|f| f.name.as_str()).collect();
+            let extra_fields: Vec<FieldDescriptor> = comp
+                .fields
+                .iter()
+                .map(|f| prefab_types::split_field(f).0)
+                .filter(|k| !known_keys.contains(&k.as_str()))
+                .map(|k| FieldDescriptor { name: k, kind: EntryType::Float })
+                .collect();
+
+            for field in known_fields.iter().chain(extra_fields.iter()) {
+                field_row(ui, comp, field, comp.kind == "Transform2D", index, path, actions, project_root);
+            }
         });
-
-        if !is_open {
-            return;
-        }
-
-        let known_fields = crate::prefab_facets::component_fields(project_root, &comp.kind);
-        let known_keys: Vec<&str> = known_fields.iter().map(|f| f.name.as_str()).collect();
-        let extra_fields: Vec<FieldDescriptor> = comp.fields.iter().map(|f| prefab_types::split_field(f).0).filter(|k| !known_keys.contains(&k.as_str())).map(|k| FieldDescriptor { name: k, kind: EntryType::Float }).collect();
-
-        for field in known_fields.iter().chain(extra_fields.iter()) {
-            field_row(ui, comp, field, comp.kind == "Transform2D", index, path, actions, project_root);
-        }
-    });
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -446,7 +553,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
             let is_transform_field = prefab_types::is_transform(&comp.kind) && matches!(field.name.as_str(), "position" | "rotation" | "scale");
 
             ui.horizontal(|ui| {
-                ui.label(RichText::new(&field.name).small().color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }));
+                ui.label(
+                    RichText::new(&field.name)
+                        .small()
+                        .color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }),
+                );
                 if is_set {
                     let mut nums = prefab_types::parse_tuple(value.as_deref().unwrap_or(""));
                     nums.resize(axes.len(), 0.0);
@@ -457,7 +568,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
                         if is_transform_field && is2d && field.name != "rotation" && *axis == "z" {
                             continue;
                         }
-                        ui.label(RichText::new(axis.to_uppercase()).small().color(theme::TEXT_MUTED));
+                        ui.label(
+                            RichText::new(axis.to_uppercase())
+                                .small()
+                                .color(theme::TEXT_MUTED),
+                        );
                         let mut n = nums[i];
                         if ui.add(egui::DragValue::new(&mut n).speed(0.05)).changed() {
                             nums[i] = n;
@@ -481,7 +596,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
 
         EntryType::Asset(suffix) => {
             ui.horizontal(|ui| {
-                ui.label(RichText::new(&field.name).small().color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }));
+                ui.label(
+                    RichText::new(&field.name)
+                        .small()
+                        .color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }),
+                );
                 let id_source = ("prefab_field", path.to_vec(), comp_index, field.name.clone());
                 if let Some(new_val) = asset_dropdown(ui, id_source, value.as_deref().filter(|v| !v.trim().is_empty()), &[suffix.as_str()], "\u{2014} select asset \u{2014}", project_root) {
                     match new_val {
@@ -494,7 +613,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
 
         EntryType::Bool => {
             ui.horizontal(|ui| {
-                ui.label(RichText::new(&field.name).small().color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }));
+                ui.label(
+                    RichText::new(&field.name)
+                        .small()
+                        .color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }),
+                );
                 if is_set {
                     let mut checked = value.as_deref() == Some("true");
                     if ui.checkbox(&mut checked, "").changed() {
@@ -514,7 +637,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
 
         EntryType::Float | EntryType::Int => {
             ui.horizontal(|ui| {
-                ui.label(RichText::new(&field.name).small().color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }));
+                ui.label(
+                    RichText::new(&field.name)
+                        .small()
+                        .color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }),
+                );
                 if is_set {
                     let mut draft = value.clone().unwrap_or_default();
                     let resp = ui.text_edit_singleline(&mut draft);
@@ -571,20 +698,29 @@ fn asset_dropdown(ui: &mut Ui, id_source: impl std::hash::Hash, value: Option<&s
     };
 
     let mut result = None;
-    egui::ComboBox::from_id_salt(id_source).selected_text(display).show_ui(ui, |ui| {
-        if current_entry.is_some() && ui.selectable_label(false, RichText::new("\u{2014} clear \u{2014}").italics()).clicked() {
-            result = Some(None);
-        }
-        for entry in &entries {
-            let ext = fs_ops::file_ext(&entry.uri);
-            if !accepts.contains(&ext.as_str()) {
-                continue;
+    egui::ComboBox::from_id_salt(id_source)
+        .selected_text(display)
+        .show_ui(ui, |ui| {
+            if current_entry.is_some()
+                && ui
+                    .selectable_label(false, RichText::new("\u{2014} clear \u{2014}").italics())
+                    .clicked()
+            {
+                result = Some(None);
             }
-            let label = format!("{}  ({})", entry.name, entry.uri.rsplit('/').next().unwrap_or(&entry.uri));
-            if ui.selectable_label(Some(entry.id) == current_id, label).clicked() {
-                result = Some(Some(entry.id.to_string()));
+            for entry in &entries {
+                let ext = fs_ops::file_ext(&entry.uri);
+                if !accepts.contains(&ext.as_str()) {
+                    continue;
+                }
+                let label = format!("{}  ({})", entry.name, entry.uri.rsplit('/').next().unwrap_or(&entry.uri));
+                if ui
+                    .selectable_label(Some(entry.id) == current_id, label)
+                    .clicked()
+                {
+                    result = Some(Some(entry.id.to_string()));
+                }
             }
-        }
-    });
+        });
     result
 }
