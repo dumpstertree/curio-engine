@@ -1,8 +1,8 @@
 use std::any::type_name;
 use std::rc::Rc;
 
-use crate::built_in::record::sys_record_screen::SysRecordScreen;
-use crate::built_in::record::sys_record_time::SysRecordTime;
+// use crate::built_in::record::sys_record_screen::SysRecordScreen;
+// use crate::built_in::record::sys_record_time::SysRecordTime;
 use crate::GlobalRecords;
 use crate::{ComponentState, Curio, CurioNetwork, LedgerEntry, ObjectState, PluginState, RecordCommon, RecordNetworkCapabilities, RecordScope, RecordSynchronizer, Services, Severity};
 
@@ -15,12 +15,12 @@ pub struct Ledger {
 
 // impl Fns -> Convience
 impl Ledger {
-    pub fn time(&self) -> Rc<SysRecordTime> {
-        self.read::<SysRecordTime>()
-    }
-    pub fn screen(&self) -> Rc<SysRecordScreen> {
-        self.read::<SysRecordScreen>()
-    }
+    // pub fn time(&self) -> Rc<SysRecordTime> {
+    // self.read::<SysRecordTime>()
+    // }
+    // pub fn screen(&self) -> Rc<SysRecordScreen> {
+    //     self.read::<SysRecordScreen>()
+    // }
 }
 // Ledger -> impl Private Fns
 impl Ledger {

@@ -4,8 +4,11 @@ use curio_core::Commands;
 use curio_core::Ledger;
 use curio_core::Nerve;
 use curio_core::PluginCommon;
-use curio_core::built_in::record::sys_record_debug::SysRecordDebug;
-use curio_core::built_in::record::sys_record_time::SysRecordTime;
+// use curio_core::built_in::record::sys_record_time::SysRecordTime;
+
+pub use sys_record_time::ExtensionsLedger;
+pub use sys_record_time::SysRecordTime;
+mod sys_record_time;
 
 pub struct SystemComponentDefaultTime {
     instant: Instant,
@@ -42,7 +45,7 @@ impl PluginCommon for SystemComponentDefaultTime {
 
     fn tick(&mut self, ledger: &mut Vec<Ledger>, _: &mut Vec<Nerve>) {
         for ledger in ledger {
-            let state_debug = ledger.read::<SysRecordDebug>();
+            // let state_debug = ledger.read::<SysRecordDebug>();
 
             let cur_time = self.instant.elapsed().as_secs_f64();
 
@@ -60,7 +63,7 @@ impl PluginCommon for SystemComponentDefaultTime {
             let average_fps = (total / (self.fps_average.len() as f64)).round();
 
             // is paused
-            let pause_timescale = self.timescale * if state_debug.is_paused { 0.0 } else { 1.0 };
+            // let pause_timescale = self.timescale * if state_debug.is_paused { 0.0 } else { 1.0 };
 
             // edit the state
             ledger.write::<SysRecordTime>(|x| {
@@ -68,7 +71,7 @@ impl PluginCommon for SystemComponentDefaultTime {
                 x.average_fps = average_fps as i32;
                 // delta time
                 x.unscaled_delta_time = (cur_time - x.unscaled_time) as f32;
-                x.scaled_delta_time = x.unscaled_delta_time * pause_timescale;
+                x.scaled_delta_time = x.unscaled_delta_time;
 
                 // time
                 x.scaled_time = x.scaled_time + x.scaled_delta_time as f64;

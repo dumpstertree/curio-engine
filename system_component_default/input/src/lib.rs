@@ -1,11 +1,15 @@
 use curio_core::ButtonPressed;
+use curio_core::FieldState;
 use curio_core::Formation;
 use curio_core::InputMapped;
+use curio_core::InputRaw;
 use curio_core::Ledger;
 use curio_core::Nerve;
 use curio_core::PluginCommon;
-use curio_core::built_in::record::sys_record_input::SysRecordInput;
+use curio_core::RecordOverride;
+use curio_core::RecordScope;
 use curio_core::{AxisCode, ButtonCode, InputMapping, Severity, Vector2, Vector3};
+use record_serializable::record_serializable;
 use std::collections::HashMap;
 
 pub struct SystemComponentDefaultInput {
@@ -84,5 +88,26 @@ impl PluginCommon for SystemComponentDefaultInput {
         }
         self.active_mappings = active_mappings;
         self.mappings_is_dirty = true;
+    }
+}
+
+#[record_serializable(name = "Input", ownership = RecordScope::Instance)]
+pub struct SysRecordInput {
+    pub mapped: Vec<InputMapped>,
+    pub raw: InputRaw,
+}
+
+impl SysRecordInput {
+    pub fn default() -> SysRecordInput {
+        SysRecordInput { mapped: Vec::new(), raw: InputRaw::new() }
+    }
+}
+impl RecordOverride for SysRecordInput {
+    fn set_state(&mut self, _field: &str, _val: &str) {}
+    fn get_state(&self) -> Vec<crate::FieldState> {
+        vec![
+            FieldState::new("mapped", &self.mapped), //
+            FieldState::new("raw", &self.raw),
+        ]
     }
 }

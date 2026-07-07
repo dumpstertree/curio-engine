@@ -5,6 +5,7 @@ edition = "2024"
 
 
 [dependencies]
+time = { workspace = true }
 facet = { workspace = true }
 camera = { workspace = true }
 habit = { workspace = true }

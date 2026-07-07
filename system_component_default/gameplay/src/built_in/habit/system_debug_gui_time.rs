@@ -1,39 +1,39 @@
-use curio_core::{
-    Nerve, NetworkModes,
-    built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui, sys_record_time::SysRecordTime},
-    Ledger,
-};
+// use curio_core::{
+//     Ledger, Nerve, NetworkModes,
+//     built_in::record::{sys_record_debug::SysRecordDebug, sys_record_debug_gui::SysRecordDebugGui},
+// };
+// use time::SysRecordTime;
 
-use crate::{
-    context_3d::Context3D,
-    traits::{habit::Habit, scope::Scope},
-};
+// use crate::{
+//     context_3d::Context3D,
+//     traits::{habit::Habit, scope::Scope},
+// };
 
-#[derive(Default)]
-pub struct Instance {}
-impl Instance {
-    pub fn new() -> Box<Instance> {
-        Box::new(Instance {})
-    }
-}
-impl Scope for Instance {
-    fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
-        ledger.read::<SysRecordDebug>().is_inspecting
-    }
-    fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
-        NetworkModes::all()
-    }
-}
-impl Habit for Instance {
-    fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
-        // get state
-        let state_time = ledger.read::<SysRecordTime>();
+// #[derive(Default)]
+// pub struct Instance {}
+// impl Instance {
+//     pub fn new() -> Box<Instance> {
+//         Box::new(Instance {})
+//     }
+// }
+// impl Scope for Instance {
+//     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool {
+//         ledger.read::<SysRecordDebug>().is_inspecting
+//     }
+//     fn run_on_instance(&mut self, _ledger: &mut Ledger) -> Vec<NetworkModes> {
+//         NetworkModes::all()
+//     }
+// }
+// impl Habit for Instance {
+//     fn tick(&mut self, ledger: &mut Ledger, _: &mut Context3D, _: &mut Nerve) {
+//         // get state
+//         let state_time = ledger.read::<SysRecordTime>();
 
-        ledger.write::<SysRecordDebugGui>(|x| {
-            x.append(format!("FPS: {} / Target FPS: {}", state_time.average_fps, state_time.target_frame_rate));
-            x.append(format!("Scaled Time: {}", state_time.scaled_time));
-            x.append(format!("Unscaled Time: {}", state_time.unscaled_time));
-            x.append(format!("Frame Num: {}", state_time.frame_num));
-        });
-    }
-}
+//         ledger.write::<SysRecordDebugGui>(|x| {
+//             x.append(format!("FPS: {} / Target FPS: {}", state_time.average_fps, state_time.target_frame_rate));
+//             x.append(format!("Scaled Time: {}", state_time.scaled_time));
+//             x.append(format!("Unscaled Time: {}", state_time.unscaled_time));
+//             x.append(format!("Frame Num: {}", state_time.frame_num));
+//         });
+//     }
+// }

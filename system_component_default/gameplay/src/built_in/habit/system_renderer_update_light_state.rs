@@ -1,4 +1,5 @@
-use curio_core::{Nerve, NetworkModes, built_in::record::sys_record_time::SysRecordTime, Ledger};
+use curio_core::{Ledger, Nerve, NetworkModes};
+use time::SysRecordTime;
 
 use crate::{
     context_3d::Context3D,

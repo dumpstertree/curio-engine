@@ -209,15 +209,3 @@ pub mod static_data {
     pub(crate) mod record_registration;
     pub(crate) mod sequential_record_uids;
 }
-
-pub mod built_in {
-    pub mod record {
-        pub mod sys_record_debug;
-        pub mod sys_record_debug_gui;
-        pub mod sys_record_gui;
-        pub mod sys_record_input;
-        pub mod sys_record_network;
-        pub mod sys_record_screen;
-        pub mod sys_record_time;
-    }
-}

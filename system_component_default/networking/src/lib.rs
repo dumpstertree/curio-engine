@@ -1,4 +1,4 @@
-use curio_core::{Formation, ImpulseScope, Ledger, Nerve, RecordScope, RecordSynchronizer, Severity, built_in::record::sys_record_network::SysRecordNetwork};
+use curio_core::{Formation, ImpulseScope, Ledger, Nerve, RecordScope, RecordSynchronizer, Severity};
 use curio_core::{NetworkModes, PluginCommon};
 use message_io::node;
 // use message_io::node::NodeEvent;
@@ -321,9 +321,9 @@ impl PluginCommon for SystemComponentDefaultNetworking {
                 v.push(x.network.me().guid);
             }
         }
-        for gs in ledger.iter_mut() {
-            gs.write::<SysRecordNetwork>(|x| x.set_peer_instance_ids(v.clone()));
-        }
+        // for gs in ledger.iter_mut() {
+        //     gs.write::<SysRecordNetwork>(|x| x.set_peer_instance_ids(v.clone()));
+        // }
     }
 }
 

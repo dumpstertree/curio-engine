@@ -1499,6 +1499,7 @@ dependencies = [
  "hecs",
  "num",
  "serde",
+ "time 0.1.0",
 ]
 
 [[package]]
@@ -2155,7 +2156,9 @@ dependencies = [
 name = "input"
 version = "0.1.0"
 dependencies = [
+ "ctor",
  "curio_core",
+ "record_serializable",
 ]
 
 [[package]]
@@ -3736,6 +3739,7 @@ dependencies = [
  "rendering_static",
  "rusty_spine",
  "serde",
+ "time 0.1.0",
  "zip 0.6.6",
 ]
 
@@ -4644,7 +4648,9 @@ dependencies = [
 name = "time"
 version = "0.1.0"
 dependencies = [
+ "ctor",
  "curio_core",
+ "record_serializable",
 ]
 
 [[package]]
@@ -4914,6 +4920,7 @@ dependencies = [
  "habit",
  "record_serializable",
  "serde",
+ "time 0.1.0",
 ]
 
 [[package]]

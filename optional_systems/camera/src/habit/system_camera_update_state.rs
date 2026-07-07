@@ -1,5 +1,5 @@
 use crate::{Camera, SysRecordCamera};
-use curio_core::{Ledger, Nerve, NetworkModes, built_in::record::sys_record_debug::SysRecordDebug};
+use curio_core::{Ledger, Nerve, NetworkModes};
 use gameplay::{
     built_in::facet::transform::transform3d::Transform3D,
     context_3d::Context3D,
@@ -20,11 +20,6 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
-        // currently using debug controls
-        if state.read::<SysRecordDebug>().is_paused {
-            return;
-        }
-
         // iterate over each camera in context
         world.edit::<(&Transform3D, &Camera)>(|q| {
             // update records to match cameras in context
