@@ -6,6 +6,7 @@ mod app;
 mod asset_state;
 mod fs_ops;
 mod glb_viewer;
+mod icons;
 mod panels;
 mod png_viewer;
 mod prefab_facets;

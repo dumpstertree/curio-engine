@@ -3,7 +3,7 @@ use crate::theme;
 use eframe::egui::{self, RichText, Ui};
 
 const TABS: &[(TopTab, &str, bool)] = &[
-    (TopTab::Play, "\u{25B6} Play", false),
+    (TopTab::Play, "Play", false),
     (TopTab::Asset, "Asset", false),
     (TopTab::Input, "Input", true),
     (TopTab::Prefab, "Prefab", true),

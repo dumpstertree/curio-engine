@@ -11,24 +11,24 @@ pub fn show(ui: &mut Ui, state: &EditorState) {
     ui.horizontal(|ui| {
         match state.mode {
             EditorMode::Playing => {
-                ui.label(RichText::new("\u{25CF}").color(theme::PLAY));
+                crate::icons::dot(ui, true, 3.0, theme::PLAY);
                 ui.label(RichText::new("Playing").color(theme::TEXT_PRIMARY));
             }
             EditorMode::Paused => {
-                ui.label(RichText::new("\u{23F8} Paused").color(theme::PAUSE));
+                ui.label(RichText::new("Paused").color(theme::PAUSE));
             }
             EditorMode::Stopped => {
-                ui.label(RichText::new("\u{25A0} Stopped").color(theme::TEXT_SECONDARY));
+                ui.label(RichText::new("Stopped").color(theme::TEXT_SECONDARY));
             }
         }
 
         if state.compile_status == CompileStatus::Compiling {
             ui.separator();
-            ui.label(RichText::new("Compiling\u{2026}").color(theme::ACCENT));
+            ui.label(RichText::new("Compiling...").color(theme::ACCENT));
         }
         if state.compile_status == CompileStatus::Error {
             ui.separator();
-            ui.label(RichText::new("\u{2715} Compile error").color(theme::RED));
+            ui.label(RichText::new("Compile error").color(theme::RED));
         }
 
         if let Some(tgs) = &state.tab_group_state {

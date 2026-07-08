@@ -274,10 +274,15 @@ pub enum GizmoDragKind {
     /// scale are involved) — just a direct pixel-delta-times-sensitivity,
     /// the same simplification most simple gizmo implementations use.
     Scale { screen_axis_dir: glam::Vec2 },
-    /// Rotate handles are also object-local axes, but the drag itself is
+    /// Rotate handles use whatever `GizmoSpace` was active at drag start
+    /// (frozen here, in case it's toggled mid-drag) — the drag itself is
     /// angle-based: the angle (radians) from the object's projected screen
-    /// center to the mouse, at drag start.
-    Rotate { start_mouse_angle: f32 },
+    /// center to the mouse, at drag start. The resulting delta angle is
+    /// composed as a proper quaternion rotation (not added to the Euler
+    /// component directly) — see `prefab_gizmo.rs`'s rotate branch — so
+    /// this behaves correctly even once other axes already have non-zero
+    /// rotation.
+    Rotate { start_mouse_angle: f32, space: GizmoSpace },
 }
 
 /// An in-progress gizmo drag. Lives on `PrefabState` so it persists across

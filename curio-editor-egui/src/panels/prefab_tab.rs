@@ -37,7 +37,7 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     };
 
     let Some(resolved) = &state.prefab.resolved else {
-        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading\u{2026}").color(theme::TEXT_MUTED)));
+        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading...").color(theme::TEXT_MUTED)));
         return;
     };
 
@@ -47,15 +47,17 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
 
     let full_raw = prefab_resolver::resolved_to_raw_full(resolved);
 
-    // Everything the gizmo needs, gathered from the COMMITTED tree before
-    // any of this frame's interaction happens. `local_transform_index`/
-    // `has_local_transform` come from `state.prefab.raw` specifically (the
-    // unresolved tree) since edits target that node's own `components`
-    // list; `effective` comes from `full_raw` (resolved) so a fresh drag
-    // starts from the object's real on-screen position even if that's
-    // entirely inherited from a base prefab.
+    // `has_local_transform`/`next_comp_index`/`effective` describe the
+    // COMMITTED state — needed to decide (at drag start) whether a local
+    // `Transform3D` override needs adding, and what to seed it with.
+    // `world_matrix`/`parent_world_matrix` describe where the object
+    // actually IS *this frame* — computed further down from `preview_raw`
+    // (which bakes in any live drag value), not from `full_raw` — otherwise
+    // the gizmo's drawn position stays frozen at the pre-drag location
+    // while the mesh itself visibly moves, since `full_raw` never reflects
+    // an in-progress (uncommitted) drag.
     let selected_path = state.prefab.selected_path.clone();
-    let gizmo_target_info = selected_path.as_ref().and_then(|sel_path| {
+    let local_info = selected_path.as_ref().and_then(|sel_path| {
         let raw_root = state.prefab.raw.as_ref()?;
         let local_node = prefab_types::get_node_at_path(raw_root, sel_path)?;
         let has_local_transform = local_node
@@ -74,19 +76,13 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
             .map(prefab_types::read_transform_fields)
             .unwrap_or_default();
 
-        let (world_matrix, parent_world_matrix) = prefab_transforms::world_matrices_for_path(&full_raw, sel_path);
-        Some((sel_path.clone(), world_matrix, parent_world_matrix, effective, has_local_transform, next_comp_index))
+        Some((effective, has_local_transform, next_comp_index))
     });
 
-    // If a gizmo drag is active, bake its live value into a transient copy
-    // of the tree for THIS frame's render only — `raw`/`resolved`/disk stay
-    // untouched until the drag commits on mouse release (see
-    // `prefab_gizmo.rs`). This is why `entries` is computed from
-    // `preview_raw` rather than `full_raw` directly.
     let mut gizmo_mode = state.prefab.gizmo_mode;
     let mut gizmo_space = state.prefab.gizmo_space;
     let mut gizmo_drag = state.prefab.gizmo_drag.take();
-    if gizmo_target_info.is_none() {
+    if local_info.is_none() {
         gizmo_drag = None;
     }
 
@@ -134,6 +130,17 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
         }
         _ => full_raw.clone(),
     };
+
+    // Now that `preview_raw` exists (reflecting any live drag), compute the
+    // gizmo's actual draw position from it — this is the fix for "the
+    // gizmo doesn't follow the object while dragging."
+    let gizmo_target_info = selected_path
+        .as_ref()
+        .zip(local_info)
+        .map(|(sel_path, (effective, has_local_transform, next_comp_index))| {
+            let (world_matrix, parent_world_matrix) = prefab_transforms::world_matrices_for_path(&preview_raw, sel_path);
+            (sel_path.clone(), world_matrix, parent_world_matrix, effective, has_local_transform, next_comp_index)
+        });
 
     let entries = prefab_transforms::collect_render_entries(&project_root, &preview_raw);
 
@@ -330,7 +337,7 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState, path: &str) {
         );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui
-                .small_button("\u{27F3} Refresh")
+                .small_button("Refresh")
                 .on_hover_text("Re-resolve from disk")
                 .clicked()
             {
@@ -345,14 +352,14 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState, path: &str) {
         return;
     }
     let Some(raw) = state.prefab.raw.clone() else {
-        ui.weak("Loading\u{2026}");
+        ui.weak("Loading...");
         return;
     };
 
     let name = path.rsplit('/').next().unwrap_or(path);
     ui.label(RichText::new(name).strong());
     let meta = match &raw.base {
-        Some(b) => format!("Prefab \u{00B7} base: {b}"),
+        Some(b) => format!("Prefab - base: {b}"),
         None => "Prefab".to_string(),
     };
     ui.label(RichText::new(meta).small().color(theme::TEXT_SECONDARY));
@@ -389,11 +396,7 @@ fn game_object_node(ui: &mut Ui, state: &EditorState, node: &PrefabGameObjectRaw
             ui.horizontal(|ui| {
                 ui.add_space(depth as f32 * 12.0);
 
-                let glyph = if is_open { "\u{25BE}" } else { "\u{25B8}" };
-                if ui
-                    .add(egui::Label::new(RichText::new(glyph).size(9.0).color(theme::TEXT_SECONDARY)).sense(egui::Sense::click()))
-                    .clicked()
-                {
+                if crate::icons::chevron(ui, is_open, theme::TEXT_SECONDARY).clicked() {
                     actions.push(PrefabAction::ToggleExpand(closed_key.clone()));
                 }
 
@@ -409,18 +412,10 @@ fn game_object_node(ui: &mut Ui, state: &EditorState, node: &PrefabGameObjectRaw
 
                 if !path.is_empty() {
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if ui
-                            .small_button("\u{2715}")
-                            .on_hover_text("Delete")
-                            .clicked()
-                        {
+                        if ui.small_button("x").on_hover_text("Delete").clicked() {
                             actions.push(PrefabAction::RemoveChild(path.to_vec()));
                         }
-                        if ui
-                            .small_button("\u{2398}")
-                            .on_hover_text("Duplicate")
-                            .clicked()
-                        {
+                        if ui.small_button("Dup").on_hover_text("Duplicate").clicked() {
                             actions.push(PrefabAction::DuplicateChild(path.to_vec()));
                         }
                     });
@@ -436,7 +431,7 @@ fn game_object_node(ui: &mut Ui, state: &EditorState, node: &PrefabGameObjectRaw
         // base — dropdown of .comp assets
         ui.horizontal(|ui| {
             ui.label(RichText::new("base").small().color(theme::TEXT_SECONDARY));
-            if let Some(new_val) = asset_dropdown(ui, ("prefab_base", path.to_vec()), node.base.as_deref(), &[".comp"], "\u{2014} no base \u{2014}", project_root) {
+            if let Some(new_val) = asset_dropdown(ui, ("prefab_base", path.to_vec()), node.base.as_deref(), &[".comp"], "-- no base --", project_root) {
                 actions.push(PrefabAction::SetBase(path.to_vec(), new_val));
             }
         });
@@ -481,32 +476,19 @@ fn component_block(ui: &mut Ui, state: &EditorState, comp: &PrefabComponentRaw, 
         .corner_radius(3)
         .show(ui, |ui| {
             ui.horizontal(|ui| {
-                let glyph = if is_open { "\u{25BE}" } else { "\u{25B8}" };
-                if ui
-                    .add(egui::Label::new(RichText::new(glyph).size(9.0)).sense(egui::Sense::click()))
-                    .clicked()
-                {
+                if crate::icons::chevron(ui, is_open, theme::TEXT_SECONDARY).clicked() {
                     actions.push(PrefabAction::ToggleComponentOpen(closed_key.clone()));
                 }
                 ui.label(RichText::new(&comp.kind).color(theme::GREEN));
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.small_button("\u{2715}").clicked() {
+                    if ui.small_button("x").clicked() {
                         actions.push(PrefabAction::RemoveComponent(path.to_vec(), index));
                     }
-                    if ui
-                        .small_button("\u{2193}")
-                        .on_hover_text("Move down")
-                        .clicked()
-                    {
+                    if ui.small_button("v").on_hover_text("Move down").clicked() {
                         actions.push(PrefabAction::MoveComponent(path.to_vec(), index, index + 1));
                     }
-                    if index > 0
-                        && ui
-                            .small_button("\u{2191}")
-                            .on_hover_text("Move up")
-                            .clicked()
-                    {
+                    if index > 0 && ui.small_button("^").on_hover_text("Move up").clicked() {
                         actions.push(PrefabAction::MoveComponent(path.to_vec(), index, index - 1));
                     }
                 });
@@ -582,11 +564,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
                     if changed {
                         actions.push(PrefabAction::SetComponentField(path.to_vec(), comp_index, prefab_types::join_field(&field.name, &prefab_types::format_tuple(&nums))));
                     }
-                    if ui.small_button("\u{2715}").clicked() {
+                    if ui.small_button("x").clicked() {
                         actions.push(PrefabAction::RemoveComponentField(path.to_vec(), comp_index, field.name.clone()));
                     }
                 } else {
-                    ui.weak("\u{2014}");
+                    ui.weak("--");
                     if ui.small_button("set").clicked() {
                         actions.push(PrefabAction::SetComponentField(path.to_vec(), comp_index, prefab_types::join_field(&field.name, &prefab_types::format_tuple(&vec![0.0; axes.len()]))));
                     }
@@ -602,7 +584,7 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
                         .color(if is_set { theme::TEXT_SECONDARY } else { theme::TEXT_MUTED }),
                 );
                 let id_source = ("prefab_field", path.to_vec(), comp_index, field.name.clone());
-                if let Some(new_val) = asset_dropdown(ui, id_source, value.as_deref().filter(|v| !v.trim().is_empty()), &[suffix.as_str()], "\u{2014} select asset \u{2014}", project_root) {
+                if let Some(new_val) = asset_dropdown(ui, id_source, value.as_deref().filter(|v| !v.trim().is_empty()), &[suffix.as_str()], "-- select asset --", project_root) {
                     match new_val {
                         Some(id) => actions.push(PrefabAction::SetComponentField(path.to_vec(), comp_index, prefab_types::join_field(&field.name, &id))),
                         None => actions.push(PrefabAction::RemoveComponentField(path.to_vec(), comp_index, field.name.clone())),
@@ -623,11 +605,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
                     if ui.checkbox(&mut checked, "").changed() {
                         actions.push(PrefabAction::SetComponentField(path.to_vec(), comp_index, prefab_types::join_field(&field.name, if checked { "true" } else { "false" })));
                     }
-                    if ui.small_button("\u{2715}").clicked() {
+                    if ui.small_button("x").clicked() {
                         actions.push(PrefabAction::RemoveComponentField(path.to_vec(), comp_index, field.name.clone()));
                     }
                 } else {
-                    ui.weak("\u{2014}");
+                    ui.weak("--");
                     if ui.small_button("set").clicked() {
                         actions.push(PrefabAction::SetComponentField(path.to_vec(), comp_index, prefab_types::join_field(&field.name, "false")));
                     }
@@ -648,11 +630,11 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
                     if resp.lost_focus() && !draft.trim().is_empty() {
                         actions.push(PrefabAction::SetComponentField(path.to_vec(), comp_index, prefab_types::join_field(&field.name, &draft)));
                     }
-                    if ui.small_button("\u{2715}").clicked() {
+                    if ui.small_button("x").clicked() {
                         actions.push(PrefabAction::RemoveComponentField(path.to_vec(), comp_index, field.name.clone()));
                     }
                 } else {
-                    ui.weak("\u{2014}");
+                    ui.weak("--");
                     if ui.small_button("set").clicked() {
                         actions.push(PrefabAction::SetComponentField(path.to_vec(), comp_index, prefab_types::join_field(&field.name, "0")));
                     }
@@ -703,7 +685,7 @@ fn asset_dropdown(ui: &mut Ui, id_source: impl std::hash::Hash, value: Option<&s
         .show_ui(ui, |ui| {
             if current_entry.is_some()
                 && ui
-                    .selectable_label(false, RichText::new("\u{2014} clear \u{2014}").italics())
+                    .selectable_label(false, RichText::new("-- clear --").italics())
                     .clicked()
             {
                 result = Some(None);

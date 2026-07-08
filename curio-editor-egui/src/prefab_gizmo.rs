@@ -29,7 +29,7 @@ use crate::prefab_types::{self, TransformFields};
 use eframe::egui::{self, Color32, Pos2, Stroke, Ui};
 use glam::{Mat4, Vec2 as GVec2, Vec3};
 
-const HANDLE_HIT_PX: f32 = 10.0;
+const HANDLE_HIT_PX: f32 = 13.0;
 const SCALE_SENSITIVITY: f32 = 0.01;
 const MIN_SCALE: f32 = 0.01;
 
@@ -131,7 +131,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
     }
 
     let origin = target.world_matrix.transform_point3(Vec3::ZERO);
-    let handle_length = ((camera_eye - origin).length() * 0.2).max(0.05);
+    let handle_length = ((camera_eye - origin).length() * 0.14).max(0.04);
     let Some(origin_screen) = world_to_screen(origin, view_proj, rect) else {
         return gizmo_drag.as_ref().map(|d| fields_with(target.effective, mode, d.current_value));
     };
@@ -172,18 +172,18 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                 }
                 let hovered = dist_to_pointer.is_some_and(|d| d < HANDLE_HIT_PX);
 
-                let stroke_w = if is_dragging_this || hovered { 3.5 } else { 2.0 };
+                let stroke_w = if is_dragging_this || hovered { 5.5 } else { 3.5 };
                 ui.painter().line_segment([to_pos2(origin_screen), to_pos2(tip_screen)], Stroke::new(stroke_w, color));
 
                 if mode == GizmoMode::Translate {
                     let dir2 = (tip_screen - origin_screen).normalize_or_zero();
-                    let perp = GVec2::new(-dir2.y, dir2.x) * 5.0;
-                    let tip = to_pos2(tip_screen + dir2 * 6.0);
-                    let base_a = to_pos2(tip_screen - dir2 * 4.0 + perp);
-                    let base_b = to_pos2(tip_screen - dir2 * 4.0 - perp);
+                    let perp = GVec2::new(-dir2.y, dir2.x) * 7.5;
+                    let tip = to_pos2(tip_screen + dir2 * 9.0);
+                    let base_a = to_pos2(tip_screen - dir2 * 6.0 + perp);
+                    let base_b = to_pos2(tip_screen - dir2 * 6.0 - perp);
                     ui.painter().add(egui::Shape::convex_polygon(vec![tip, base_a, base_b], color, Stroke::NONE));
                 } else {
-                    ui.painter().rect_filled(egui::Rect::from_center_size(to_pos2(tip_screen), egui::vec2(8.0, 8.0)), 1.0, color);
+                    ui.painter().rect_filled(egui::Rect::from_center_size(to_pos2(tip_screen), egui::vec2(11.0, 11.0)), 1.0, color);
                 }
             }
 
@@ -215,7 +215,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                 }
                 let hovered = min_dist < HANDLE_HIT_PX;
 
-                let stroke_w = if is_dragging_this || hovered { 3.0 } else { 1.5 };
+                let stroke_w = if is_dragging_this || hovered { 4.5 } else { 2.5 };
                 ui.painter().add(egui::Shape::line(screen_points, Stroke::new(stroke_w, color)));
             }
         }
@@ -248,7 +248,7 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                 GizmoMode::Rotate => {
                     let pg = to_gvec2(p);
                     let angle = (pg.y - origin_screen.y).atan2(pg.x - origin_screen.x);
-                    GizmoDragKind::Rotate { start_mouse_angle: angle }
+                    GizmoDragKind::Rotate { start_mouse_angle: angle, space }
                 }
             };
 
@@ -278,13 +278,37 @@ pub fn interact(ui: &mut Ui, rect: egui::Rect, view_proj: Mat4, camera_eye: Vec3
                     set_axis(&mut v, drag.axis, new_axis_value);
                     v
                 }
-                GizmoDragKind::Rotate { start_mouse_angle } => {
+                GizmoDragKind::Rotate { start_mouse_angle, space } => {
                     let angle = (mouse.y - origin_screen.y).atan2(mouse.x - origin_screen.x);
-                    let delta_deg = (angle - start_mouse_angle).to_degrees();
-                    let mut v = drag.start_value;
-                    let new_axis_value = get_axis(&v, drag.axis) + delta_deg;
-                    set_axis(&mut v, drag.axis, new_axis_value);
-                    v
+                    let delta_rad = angle - start_mouse_angle;
+
+                    // Proper quaternion composition, not naive Euler-degree
+                    // addition — this is what actually fixes rotation
+                    // behaving wrong once other axes already have non-zero
+                    // rotation (in both Global and Local space). See
+                    // `prefab_types::quat_to_euler_deg`'s doc comment for
+                    // the derivation and the residual gimbal-lock caveat
+                    // that's inherent to Euler storage, not this fix.
+                    let q_start = prefab_types::euler_deg_to_quat(drag.start_value);
+                    let q_start = glam::Quat::from_xyzw(q_start.x, q_start.y, q_start.z, q_start.w);
+                    let basis = match drag.axis {
+                        0 => Vec3::X,
+                        1 => Vec3::Y,
+                        _ => Vec3::Z,
+                    };
+                    let delta_quat = glam::Quat::from_axis_angle(basis, delta_rad);
+                    let q_new = match space {
+                        // Global: the delta rotation happens around a fixed
+                        // world axis, applied on top of the current
+                        // orientation — pre-multiply.
+                        GizmoSpace::Global => delta_quat * q_start,
+                        // Local: the delta rotation happens around the
+                        // object's own (already-rotated) axis — post-
+                        // multiply, so it's expressed in the object's local
+                        // frame regardless of its current orientation.
+                        GizmoSpace::Local => q_start * delta_quat,
+                    };
+                    prefab_types::quat_to_euler_deg(prefab_types::Quat { x: q_new.x, y: q_new.y, z: q_new.z, w: q_new.w })
                 }
             };
         }

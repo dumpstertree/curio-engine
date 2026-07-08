@@ -25,7 +25,7 @@ pub fn show_viewport(ui: &mut Ui, state: &mut EditorState) {
     let Some(path) = state.asset.selected_path.clone() else {
         ui.centered_and_justified(|ui| {
             ui.vertical_centered(|ui| {
-                ui.label(RichText::new("\u{1F4C1}").size(32.0));
+                ui.label(RichText::new("No selection").color(theme::TEXT_MUTED));
                 ui.add_space(6.0);
                 ui.label(RichText::new("Select an asset to preview").color(theme::TEXT_MUTED));
             });
@@ -72,21 +72,18 @@ fn png_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
         return;
     }
     let Some(preview) = &state.png_preview else {
-        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading\u{2026}").color(theme::TEXT_MUTED)));
+        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading...").color(theme::TEXT_MUTED)));
         return;
     };
 
     ui.vertical(|ui| {
-        let avail = ui.available_size() - egui::vec2(0.0, 24.0);
+        let avail = ui.available_size();
         let tex_aspect = preview.width as f32 / preview.height.max(1) as f32;
         let avail_aspect = avail.x / avail.y.max(1.0);
         let size = if avail_aspect > tex_aspect { egui::vec2(avail.y * tex_aspect, avail.y) } else { egui::vec2(avail.x, avail.x / tex_aspect) };
 
         ui.centered_and_justified(|ui| {
             ui.add(egui::Image::new(&preview.texture).fit_to_exact_size(size));
-        });
-        ui.horizontal(|ui| {
-            ui.label(RichText::new(format!("{} \u{00D7} {} px", preview.width, preview.height)).small().color(theme::TEXT_MUTED));
         });
     });
 }
@@ -107,13 +104,14 @@ fn glb_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     };
 
     let Some(preview) = &mut state.glb_preview else {
-        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading\u{2026}").color(theme::TEXT_MUTED)));
+        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading...").color(theme::TEXT_MUTED)));
         return;
     };
 
     ui.vertical(|ui| {
+        // Top bar is actions only (mesh/triangle counts moved to the
+        // inspector panel — see `show_inspector`'s `.glb` branch).
         ui.horizontal(|ui| {
-            ui.label(RichText::new(format!("{} mesh{}, {} triangles", preview.mesh_count, if preview.mesh_count == 1 { "" } else { "es" }, preview.triangle_count)).small().color(theme::TEXT_SECONDARY));
             if ui.small_button("Reset camera").clicked() {
                 preview.reset_camera();
             }
@@ -160,16 +158,16 @@ fn anim_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
     };
 
     let Some(preview) = &mut state.anim_preview else {
-        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading\u{2026}").color(theme::TEXT_MUTED)));
+        ui.centered_and_justified(|ui| ui.label(RichText::new("Loading...").color(theme::TEXT_MUTED)));
         return;
     };
 
     ui.vertical(|ui| {
+        // Top bar is actions only (bone/slot counts moved to the inspector
+        // panel — see `show_inspector`'s `.anim` branch). The animation
+        // picker and elapsed/duration readout stay here since they're
+        // playback controls/live status, not static asset info.
         ui.horizontal(|ui| {
-            ui.label(RichText::new(format!("{} bones, {} slots", preview.bone_count, preview.slot_count)).small().color(theme::TEXT_SECONDARY));
-
-            ui.separator();
-
             let current = preview.current_animation.clone();
             egui::ComboBox::from_id_salt("anim_selector").selected_text(if current.is_empty() { "(none)".to_string() } else { current.clone() }).show_ui(ui, |ui| {
                 for name in preview.animations.clone() {
@@ -234,25 +232,31 @@ fn unsupported_placeholder(ui: &mut Ui, name: &str) {
     });
 }
 
-pub fn show_inspector(ui: &mut Ui, state: &EditorState) {
+/// Takes `&mut EditorState` (not just `&EditorState`) specifically so the
+/// `.glb`/`.anim` branches below can call `ensure_glb_preview`/
+/// `ensure_anim_preview` themselves — the inspector panel renders *before*
+/// the viewport within a frame (see `app.rs`'s panel ordering), so without
+/// this the mesh/bone info shown here would lag one frame behind on first
+/// load. Both `ensure_*` calls are cheap no-ops if the right asset is
+/// already loaded (which it will be, every frame after the first).
+pub fn show_inspector(ui: &mut Ui, state: &mut EditorState) {
     ui.vertical(|ui| {
         ui.label(RichText::new("Inspector").strong().color(theme::TEXT_PRIMARY));
         ui.separator();
 
-        let Some(path) = &state.asset.selected_path else {
+        let Some(path) = state.asset.selected_path.clone() else {
             ui.weak("No asset selected");
             return;
         };
 
-        let name = path.rsplit('/').next().unwrap_or(path);
-        ui.label(RichText::new(name).strong());
+        let name = path.rsplit('/').next().unwrap_or(&path).to_string();
+        ui.label(RichText::new(&name).strong());
         ui.label(RichText::new(path.as_str()).small().color(theme::TEXT_MUTED));
         ui.add_space(6.0);
 
         // Meta info, if it's been loaded by the tree yet — mirrors what
-        // AssetInspectorView.tsx showed above the type-specific fields
-        // (which are all part of the deferred viewport work).
-        if let Some(meta) = find_meta(&state.asset.roots, path) {
+        // AssetInspectorView.tsx showed above the type-specific fields.
+        if let Some(meta) = find_meta(&state.asset.roots, &path) {
             egui::Grid::new("asset_meta_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
                 ui.label(RichText::new("ID").color(theme::TEXT_SECONDARY));
                 ui.label(RichText::new(meta.id.to_string()).monospace());
@@ -261,6 +265,62 @@ pub fn show_inspector(ui: &mut Ui, state: &EditorState) {
                 ui.label(RichText::new(meta.included.to_string()).monospace());
                 ui.end_row();
             });
+            ui.add_space(6.0);
+        }
+
+        let ext = fs_ops::file_ext(&name);
+        match ext.as_str() {
+            ".png" => {
+                if let Some(preview) = &state.png_preview {
+                    if preview.path == path {
+                        ui.separator();
+                        ui.label(RichText::new("Image").strong().color(theme::TEXT_SECONDARY));
+                        egui::Grid::new("png_info_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
+                            ui.label(RichText::new("Dimensions").color(theme::TEXT_SECONDARY));
+                            ui.label(RichText::new(format!("{} x {} px", preview.width, preview.height)).monospace());
+                            ui.end_row();
+                        });
+                    }
+                }
+            }
+            ".glb" => {
+                state.ensure_glb_preview(&path);
+                if let Some(preview) = &state.glb_preview {
+                    if preview.path == path {
+                        ui.separator();
+                        ui.label(RichText::new("Mesh").strong().color(theme::TEXT_SECONDARY));
+                        egui::Grid::new("glb_info_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
+                            ui.label(RichText::new("Meshes").color(theme::TEXT_SECONDARY));
+                            ui.label(RichText::new(preview.mesh_count.to_string()).monospace());
+                            ui.end_row();
+                            ui.label(RichText::new("Triangles").color(theme::TEXT_SECONDARY));
+                            ui.label(RichText::new(preview.triangle_count.to_string()).monospace());
+                            ui.end_row();
+                        });
+                    }
+                }
+            }
+            ".anim" => {
+                state.ensure_anim_preview(&path);
+                if let Some(preview) = &state.anim_preview {
+                    if preview.path == path {
+                        ui.separator();
+                        ui.label(RichText::new("Skeleton").strong().color(theme::TEXT_SECONDARY));
+                        egui::Grid::new("anim_info_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
+                            ui.label(RichText::new("Bones").color(theme::TEXT_SECONDARY));
+                            ui.label(RichText::new(preview.bone_count.to_string()).monospace());
+                            ui.end_row();
+                            ui.label(RichText::new("Slots").color(theme::TEXT_SECONDARY));
+                            ui.label(RichText::new(preview.slot_count.to_string()).monospace());
+                            ui.end_row();
+                            ui.label(RichText::new("Animations").color(theme::TEXT_SECONDARY));
+                            ui.label(RichText::new(preview.animations.len().to_string()).monospace());
+                            ui.end_row();
+                        });
+                    }
+                }
+            }
+            _ => {}
         }
     });
 }

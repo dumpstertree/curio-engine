@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use ctor;
-use curio_core::{CurioNetwork, FieldState, Ledger, RecordOverride, RecordScope};
+use curio_core::{FieldState, Ledger, RecordOverride, RecordScope};
 use record_serializable::record_serializable;
 
 #[record_serializable(name = "Time", ownership = RecordScope::Instance)]

@@ -5,14 +5,14 @@ use eframe::egui::{self, RichText, Ui};
 
 fn file_icon(entry: &fs_ops::DirEntry) -> &'static str {
     if entry.is_dir {
-        return "\u{1F4C1}"; // 📁
+        return "[Dir]";
     }
     match fs_ops::file_ext(&entry.name).as_str() {
-        ".png" => "\u{1F5BC}",  // 🖼
-        ".glb" => "\u{1F4E6}",  // 📦
-        ".anim" => "\u{1F3AC}", // 🎬
-        ".comp" => "\u{1F9E9}", // 🧩
-        _ => "\u{1F4C4}",       // 📄
+        ".png" => "[Png]",
+        ".glb" => "[Glb]",
+        ".anim" => "[Anim]",
+        ".comp" => "[Comp]",
+        _ => "[File]",
     }
 }
 
@@ -26,22 +26,18 @@ pub fn show(ui: &mut Ui, asset: &mut AssetState, project_root: &str) {
     let mut actions = Vec::new();
 
     ui.horizontal(|ui| {
-        if ui
-            .button("\u{2913} Import")
-            .on_hover_text("Import file")
-            .clicked()
-        {
+        if ui.button("Import").on_hover_text("Import file").clicked() {
             actions.push(TreeAction::Import);
         }
         if ui
-            .button("\u{1F4C1}+ Folder")
+            .button("New Folder")
             .on_hover_text("New folder")
             .clicked()
         {
             actions.push(TreeAction::NewFolder);
         }
         if ui
-            .button("\u{1F9E9}+ Comp")
+            .button("New Comp")
             .on_hover_text("New prefab (.comp)")
             .clicked()
         {
@@ -118,11 +114,7 @@ fn row(ui: &mut Ui, node: &TreeNode, depth: usize, selected_path: &Option<String
 
                 // Chevron
                 if entry.is_dir {
-                    let glyph = if node.expanded { "\u{25BE}" } else { "\u{25B8}" };
-                    if ui
-                        .add(egui::Label::new(RichText::new(glyph).size(9.0).color(theme::TEXT_SECONDARY)).sense(egui::Sense::click()))
-                        .clicked()
-                    {
+                    if crate::icons::chevron(ui, node.expanded, theme::TEXT_SECONDARY).clicked() {
                         actions.push(TreeAction::ToggleExpand(entry.path.clone()));
                     }
                 } else {
@@ -200,18 +192,10 @@ fn row(ui: &mut Ui, node: &TreeNode, depth: usize, selected_path: &Option<String
                 }
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui
-                        .small_button("\u{2715}")
-                        .on_hover_text("Delete")
-                        .clicked()
-                    {
+                    if ui.small_button("Del").on_hover_text("Delete").clicked() {
                         actions.push(TreeAction::RequestDelete(entry.path.clone()));
                     }
-                    if ui
-                        .small_button("\u{270E}")
-                        .on_hover_text("Rename")
-                        .clicked()
-                    {
+                    if ui.small_button("Ren").on_hover_text("Rename").clicked() {
                         actions.push(TreeAction::StartRename(entry.path.clone(), entry.name.clone()));
                     }
                 });

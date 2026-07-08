@@ -58,7 +58,7 @@ fn viewport_toolbar(ui: &mut Ui, state: &mut EditorState) {
         });
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let label = if state.console_open { "Console \u{25BC}".to_string() } else if state.unread_logs > 0 { format!("Console ({})", state.unread_logs.min(99)) } else { "Console".to_string() };
+            let label = if state.console_open { "Console (open)".to_string() } else if state.unread_logs > 0 { format!("Console ({})", state.unread_logs.min(99)) } else { "Console".to_string() };
             let btn = egui::Button::new(label).fill(if state.console_open { theme::BG_ACTIVE } else { theme::BG_TERTIARY });
             if ui.add(btn).clicked() {
                 state.toggle_console();
@@ -93,7 +93,7 @@ fn viewport(ui: &mut Ui, state: &mut EditorState) {
     if state.compile_status == CompileStatus::Compiling {
         egui::Area::new("compile_indicator".into()).anchor(egui::Align2::LEFT_TOP, egui::vec2(10.0, 10.0)).show(ui.ctx(), |ui| {
             egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6).corner_radius(3).show(ui, |ui| {
-                ui.label(RichText::new("Compiling\u{2026}").color(theme::ACCENT));
+                ui.label(RichText::new("Compiling...").color(theme::ACCENT));
             });
         });
     }
@@ -127,7 +127,7 @@ fn game_texture(ui: &mut Ui, state: &mut EditorState) {
         // Runner thread hasn't rendered a frame yet (e.g. the instant after
         // pressing Play, before the plugin finishes loading).
         ui.centered_and_justified(|ui| {
-            ui.label(RichText::new("Waiting for first frame\u{2026}").color(theme::TEXT_MUTED));
+            ui.label(RichText::new("Waiting for first frame...").color(theme::TEXT_MUTED));
         });
         return;
     };
@@ -149,7 +149,7 @@ fn game_texture(ui: &mut Ui, state: &mut EditorState) {
     if state.mode == EditorMode::Paused {
         egui::Area::new("paused_indicator".into()).anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -12.0)).show(ui.ctx(), |ui| {
             egui::Frame::NONE.fill(theme::BG_SECONDARY.gamma_multiply(0.9)).inner_margin(egui::Margin::symmetric(10, 4)).corner_radius(3).show(ui, |ui| {
-                ui.label(RichText::new("\u{23F8} Paused").color(theme::PAUSE));
+                ui.label(RichText::new("Paused").color(theme::PAUSE));
             });
         });
     }
@@ -252,21 +252,21 @@ fn play_bar(ui: &mut Ui, state: &mut EditorState) {
         let playing = state.mode == EditorMode::Playing;
         let stopped = state.mode == EditorMode::Stopped;
 
-        if ui.add_enabled(!playing, egui::Button::new(RichText::new("\u{25B6} Play").color(if playing { theme::PLAY } else { theme::TEXT_PRIMARY }))).clicked() {
+        if ui.add_enabled(!playing, egui::Button::new(RichText::new("Play").color(if playing { theme::PLAY } else { theme::TEXT_PRIMARY }))).clicked() {
             state.play();
         }
-        if ui.add_enabled(!stopped, egui::Button::new("\u{23F8} Pause")).clicked() {
+        if ui.add_enabled(!stopped, egui::Button::new("Pause")).clicked() {
             state.pause();
         }
-        if ui.add_enabled(!stopped, egui::Button::new("\u{25A0} Stop")).clicked() {
+        if ui.add_enabled(!stopped, egui::Button::new("Stop")).clicked() {
             state.stop();
         }
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let (text, color) = match state.mode {
-                EditorMode::Playing => ("\u{25CF} Playing", theme::PLAY),
-                EditorMode::Paused => ("\u{23F8} Paused", theme::PAUSE),
-                EditorMode::Stopped => ("\u{25A0} Stopped", theme::TEXT_SECONDARY),
+                EditorMode::Playing => ("Playing", theme::PLAY),
+                EditorMode::Paused => ("Paused", theme::PAUSE),
+                EditorMode::Stopped => ("Stopped", theme::TEXT_SECONDARY),
             };
             ui.label(RichText::new(text).color(color));
         });

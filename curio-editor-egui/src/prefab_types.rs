@@ -139,6 +139,26 @@ pub fn euler_deg_to_quat(euler: Vec3) -> Quat {
     }
 }
 
+/// Inverse of `euler_deg_to_quat` — derived to match that function's exact
+/// composition order (`Q = Qx * Qy * Qz`, i.e. the resulting rotation
+/// matrix is `Rx * Ry * Rz`), by extracting XYZ Tait-Bryan angles from the
+/// equivalent rotation matrix. Used by the gizmo's rotate drag (see
+/// `prefab_gizmo.rs`) to convert a properly-quaternion-composed rotation
+/// back into this project's Euler-degree on-disk storage format.
+///
+/// Like any Euler-angle representation, this can hit gimbal lock (pitch
+/// near ±90°) where the X/Z split becomes ambiguous — inherent to storing
+/// rotation as Euler angles at all, not something this function can avoid.
+pub fn quat_to_euler_deg(q: Quat) -> Vec3 {
+    let (x, y, z, w) = (q.x, q.y, q.z, q.w);
+    let sy = (2.0 * (x * z + w * y)).clamp(-1.0, 1.0);
+    let pitch = sy.asin();
+    let roll = (2.0 * (w * x - y * z)).atan2(1.0 - 2.0 * (x * x + y * y));
+    let yaw = (2.0 * (w * z - x * y)).atan2(1.0 - 2.0 * (y * y + z * z));
+    let to_deg = 180.0 / std::f32::consts::PI;
+    Vec3 { x: roll * to_deg, y: pitch * to_deg, z: yaw * to_deg }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Component type registry — populated from facet.manifest via
 // `prefab_facets.rs`. Reuses `fs_ops::EntryType` rather than duplicating

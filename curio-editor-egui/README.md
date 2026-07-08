@@ -1,3 +1,91 @@
+# Curio Editor — egui rewrite (pass 10: gizmo fixes + icon rendering)
+
+This replaces the Tauri + React frontend with a native `eframe`/`egui`
+application that talks to `curio_core` directly — no IPC layer, no webview,
+one process.
+
+## Six fixes
+
+1. **Global/Local gizmo space toggle.** (Already landed last pass, confirming
+   it's in place: `GizmoSpace` enum, toolbar buttons next to Move/Rotate/
+   Scale.)
+
+2. **Add Facet/Add Child on children.** Root cause found last pass (default-
+   collapsed nodes hiding a fresh child's own controls) — fixed then;
+   included here for completeness of this session's fix list.
+
+3. **Gizmo now follows the object while dragging.** Real bug, now fixed:
+   the gizmo's draw position (`world_matrix`/`parent_world_matrix`) was
+   being computed from the *committed* tree (`full_raw`), which never
+   reflects an in-progress drag — so the mesh visibly moved but the handles
+   stayed frozen at the pre-drag position. Fixed by computing those
+   matrices from `preview_raw` (the transient, live-drag-adjusted tree)
+   *after* it's built, instead of from `full_raw` beforehand. `effective`/
+   `has_local_transform`/`next_comp_index` (only needed once, at drag
+   *start*, to decide whether to seed a new `Transform3D`) still correctly
+   come from the committed tree — only the drawn position needed to track
+   the live value.
+
+4. **Rotation fixed for real, in both Global and Local space.** The
+   previous "Euler-additive" approach (add degrees directly to the
+   `rotation` component being dragged) was flagged as a known
+   simplification, but it was actually the root cause of "axes don't do
+   what they're supposed to" once other axes already had non-zero
+   rotation — Euler components don't compose by simple addition. Replaced
+   with proper quaternion composition:
+   `prefab_types::quat_to_euler_deg` (new — the mathematically-derived
+   inverse of the existing `euler_deg_to_quat`, matching its exact `Qx*Qy*Qz`
+   composition order) converts a properly-composed quaternion delta back to
+   Euler degrees for storage. Global-space drags pre-multiply the delta
+   (rotate around a fixed world axis); Local-space drags post-multiply
+   (rotate around the object's own current axis). This is now correct
+   regardless of how many rotations are already stacked — the residual
+   caveat is gimbal lock (pitch near ±90°), which is inherent to storing
+   rotation as Euler angles at all and isn't something any drag-math fix
+   can avoid without changing the on-disk format.
+
+5. **Bone/slot info (`.anim`) and mesh/triangle info (`.glb`) moved to the
+   inspector panel**, out of each viewport's top bar. Top bars are now
+   actions-only (Reset camera, plus the animation picker + elapsed/
+   duration readout for `.anim`, since those are playback controls/live
+   status rather than static info). `show_inspector` now branches on file
+   extension to show type-specific info (dimensions for `.png`, mesh/
+   triangle counts for `.glb`, bone/slot/animation counts for `.anim`) in
+   addition to the existing ID/Included meta grid. Since the inspector
+   panel renders *before* the viewport within a frame (`app.rs`'s panel
+   order), `show_inspector` now calls `ensure_glb_preview`/
+   `ensure_anim_preview` itself too (cheap no-ops once loaded) so this info
+   doesn't lag a frame behind on first load.
+
+6. **Icons that rendered as empty boxes, fixed.** The root cause: egui's
+   bundled default fonts cover Latin text plus a small, specific symbol set
+   for its own chrome — not general emoji or most of the Miscellaneous
+   Symbols/Dingbats/Supplemental Arrows Unicode blocks. This project had
+   used glyphs like ▸▾⏸■▶●○✕✎⟳⤓ and several emoji (🎬📁📦🖼🧩📄) as
+   `RichText` characters throughout — most of those aren't covered, hence
+   the empty boxes. Fixed two ways:
+   - **New `icons.rs` module**: draws tree chevrons, status dots, and
+     play/pause/stop shapes directly via `egui::Painter` (filled polygons/
+     circles/rects) instead of relying on any font glyph at all —
+     guaranteed to render regardless of font support. Used for the
+     asset/object/prefab tree chevrons and the status-bar "Playing"
+     indicator dot.
+   - **Everywhere else**: replaced the risky glyph with a plain ASCII
+     text label (`"x"` for delete, `"Ren"` for rename, `"Dup"` for
+     duplicate, `"Import"`/`"Refresh"`/`"..."`/`"--"` etc.) — ASCII is
+     guaranteed to render in any font, so this is a permanent fix, not a
+     workaround.
+   - File-type "icons" in the asset tree (`file_icon`) went from emoji to
+     bracketed tags (`[Png]`, `[Glb]`, `[Anim]`, `[Comp]`, `[Dir]`,
+     `[File]`) — less decorative, fully legible.
+   - Kept a couple of Latin-1 Supplement characters (`·`, `×`) that are
+     essentially universally supported by any font (unlike the emoji/
+     Dingbats ranges) — not part of the reported problem.
+
+---
+
+# Earlier passes (1–9): shell, viewports, asset browser, all asset previews, prefab editing + gizmo, viewport reliability fix, curio_core rename, prefab UX fixes
+
 # Curio Editor — egui rewrite (pass 9: prefab editor UX fixes)
 
 This replaces the Tauri + React frontend with a native `eframe`/`egui`

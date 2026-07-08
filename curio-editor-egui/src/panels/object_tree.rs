@@ -41,11 +41,7 @@ fn node_row(ui: &mut Ui, obj: &ObjectState, path: &str, depth: usize, index_path
 
                 // Chevron
                 if has_children {
-                    let glyph = if is_expanded { "\u{25BE}" } else { "\u{25B8}" };
-                    if ui
-                        .add(egui::Label::new(RichText::new(glyph).size(9.0).color(theme::TEXT_SECONDARY)).sense(egui::Sense::click()))
-                        .clicked()
-                    {
+                    if crate::icons::chevron(ui, is_expanded, theme::TEXT_SECONDARY).clicked() {
                         if is_expanded {
                             expanded.remove(path);
                         } else {
@@ -57,8 +53,7 @@ fn node_row(ui: &mut Ui, obj: &ObjectState, path: &str, depth: usize, index_path
                 }
 
                 // Node icon: hollow circle = has children, filled = leaf
-                let icon = if has_children { "\u{25CB}" } else { "\u{25CF}" };
-                ui.label(RichText::new(icon).size(8.0).color(theme::TEXT_MUTED));
+                crate::icons::dot(ui, !has_children, 3.0, theme::TEXT_MUTED);
 
                 // Name (click to select/deselect)
                 let name_color = if is_selected { theme::BLUE } else { theme::TEXT_PRIMARY };
