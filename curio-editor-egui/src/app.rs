@@ -95,6 +95,14 @@ impl eframe::App for CurioEditorApp {
                 egui::SidePanel::right("inspector_panel")
                     .frame(egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6))
                     .default_width(280.0)
+                    // Only a minimum here — no max. `inspector.rs` now
+                    // bounds every value widget to the space actually
+                    // available to it (wrapping text, DragValues that
+                    // wrap onto a new line instead of overflowing, etc.),
+                    // so content can no longer force the panel wider on
+                    // its own; the user is free to drag it as large as
+                    // they want.
+                    .min_width(220.0)
                     .resizable(true)
                     .show(ctx, |ui| {
                         inspector::show(ui, &self.state);

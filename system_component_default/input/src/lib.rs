@@ -9,7 +9,7 @@ use curio_core::PluginCommon;
 use curio_core::RecordOverride;
 use curio_core::RecordScope;
 use curio_core::{AxisCode, ButtonCode, InputMapping, Severity, Vector2, Vector3};
-use record_serializable::record_serializable;
+use record::record;
 use std::collections::HashMap;
 
 pub struct SystemComponentDefaultInput {
@@ -91,7 +91,7 @@ impl PluginCommon for SystemComponentDefaultInput {
     }
 }
 
-#[record_serializable(name = "Input", ownership = RecordScope::Instance)]
+#[record(name = "Input", ownership = RecordScope::Instance)]
 pub struct SysRecordInput {
     pub mapped: Vec<InputMapped>,
     pub raw: InputRaw,

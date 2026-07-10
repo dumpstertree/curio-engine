@@ -11,7 +11,7 @@ camera = { workspace = true }
 habit = { workspace = true }
 gameplay = { workspace = true }
 curio_core = { workspace = true }
-record_serializable = { workspace = true }
+record = { workspace = true }
 gltf = "1.4.1"
 serde = { version = "1.0.104", features = ["derive"] }
 bytemuck = { version = "1.16", features = ["derive"] }

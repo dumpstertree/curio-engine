@@ -1,9 +1,8 @@
+use curio_core::{Color, FieldState, RecordOverride, RecordScope, TextureAsset};
+use record::record;
 use std::sync::Arc;
 
-use curio_core::{Color, FieldState, RecordOverride, RecordScope, TextureAsset};
-use record_serializable::record_serializable;
-
-#[record_serializable(name = "Skybox", ownership = RecordScope::Instance)]
+#[record(name = "Skybox", ownership = RecordScope::Instance)]
 pub struct SysRecordSkybox {
     pub skybox: SkyboxTypes,
 }

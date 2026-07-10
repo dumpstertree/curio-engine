@@ -2,9 +2,9 @@ use std::rc::Rc;
 
 use ctor;
 use curio_core::{FieldState, Ledger, RecordOverride, RecordScope};
-use record_serializable::record_serializable;
+use record::record;
 
-#[record_serializable(name = "Time", ownership = RecordScope::Instance)]
+#[record(name = "Time", ownership = RecordScope::Instance)]
 pub struct SysRecordTime {
     pub target_frame_rate: f32,
     pub scaled_time: f64,

@@ -13,7 +13,7 @@ gameplay = { workspace = true }
 curio_core = { workspace = true }
 ext_rendering = { workspace = true }
 rendering_static = { workspace = true }
-record_serializable = { workspace = true }
+record = { workspace = true }
 serde = { version = "1.0.104", features = ["derive"] }
 bytemuck = { version = "1.16", features = ["derive"] }
 ctor = "0.8.0"

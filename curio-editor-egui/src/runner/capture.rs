@@ -28,9 +28,7 @@
 //! thread), so there's no concurrent producer/consumer to race in the
 //! first place, and they keep the zero-copy shared-texture registration.
 
-use egui_wgpu::wgpu::{
-    self, Buffer, BufferDescriptor, BufferUsages, BufferView, Device, Extent3d, MapMode, Origin3d, TexelCopyBufferInfo, TexelCopyBufferLayout, TexelCopyTextureInfo, Texture, TextureAspect,
-};
+use egui_wgpu::wgpu::{self, Buffer, BufferDescriptor, BufferUsages, BufferView, Device, Extent3d, MapMode, Origin3d, TexelCopyBufferInfo, TexelCopyBufferLayout, TexelCopyTextureInfo, Texture, TextureAspect};
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use std::sync::Arc;
@@ -148,8 +146,20 @@ impl ReadbackBuffers {
         push_frame(width, height, bytes);
     }
 
+    /// Called on `GameMessage::Stop`. A `map_async` may already be in
+    /// flight (or completed but never collected) at the moment Stop
+    /// arrives — `render_frame` only collects/unmaps a pending map at the
+    /// *start* of the next frame, and Stop skips straight past that. Just
+    /// clearing `map_pending` here used to leave `read_buf` genuinely
+    /// mapped from wgpu's point of view; the next Play would reuse this
+    /// same `ReadbackBuffers` and call `map_async` on it again, which wgpu
+    /// rejects with "Buffer is already mapped" — the crash this fixes.
     pub fn reset(&mut self) {
-        self.map_pending = false;
+        if self.map_pending {
+            self.device.poll(wgpu::Maintain::Wait); // let the in-flight map finish
+            self.read_buf.unmap();
+            self.map_pending = false;
+        }
         clear_latest_frame();
     }
 }

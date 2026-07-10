@@ -50,6 +50,43 @@ struct Vertex {
     normal: [f32; 3],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct GridVertex {
+    position: [f32; 3],
+    color: [f32; 4],
+}
+
+/// XZ reference grid, same visual treatment as `glb_viewer.rs`'s (X axis
+/// red, Z axis blue, gray minor lines) — a fixed size here rather than
+/// scaled to loaded geometry, since a prefab composition scene is already
+/// built at a consistent "world scale" (unlike a single arbitrary-scale GLB
+/// asset), and stays sensible even before anything's been placed in it.
+fn build_grid() -> Vec<GridVertex> {
+    let extent = 20.0_f32;
+    let step = 1.0_f32;
+    let n = (extent / step).round() as i32;
+
+    const MINOR: [f32; 4] = [0.30, 0.30, 0.33, 1.0];
+    const AXIS_X: [f32; 4] = [0.75, 0.32, 0.36, 1.0]; // line where z = 0
+    const AXIS_Z: [f32; 4] = [0.32, 0.45, 0.75, 1.0]; // line where x = 0
+
+    let mut verts = Vec::with_capacity(((2 * n + 1) * 4) as usize);
+    for i in -n..=n {
+        let offset = i as f32 * step;
+        let is_center = i == 0;
+
+        let color = if is_center { AXIS_Z } else { MINOR };
+        verts.push(GridVertex { position: [offset, 0.0, -extent], color });
+        verts.push(GridVertex { position: [offset, 0.0, extent], color });
+
+        let color = if is_center { AXIS_X } else { MINOR };
+        verts.push(GridVertex { position: [-extent, 0.0, offset], color });
+        verts.push(GridVertex { position: [extent, 0.0, offset], color });
+    }
+    verts
+}
+
 struct LocalMesh {
     vertices: Vec<[f32; 3]>,
     normals: Vec<[f32; 3]>,
@@ -75,7 +112,10 @@ fn load_local_mesh(bytes: &[u8]) -> Result<LocalMesh, String> {
                 let reader = primitive.reader(|b| Some(&buffers[b.index()]));
                 let Some(positions) = reader.read_positions() else { continue };
                 let positions: Vec<[f32; 3]> = positions.collect();
-                let raw_normals: Vec<[f32; 3]> = reader.read_normals().map(|it| it.collect()).unwrap_or_default();
+                let raw_normals: Vec<[f32; 3]> = reader
+                    .read_normals()
+                    .map(|it| it.collect())
+                    .unwrap_or_default();
 
                 let base = vertices.len() as u32;
                 for (i, p) in positions.iter().enumerate() {
@@ -120,7 +160,12 @@ struct OrbitCamera {
 
 impl OrbitCamera {
     fn framing(center: Vec3, radius: f32) -> Self {
-        Self { yaw: 0.6, pitch: 0.35, distance: radius.max(0.5) * 2.6, target: center }
+        Self {
+            yaw: 0.6,
+            pitch: 0.35,
+            distance: radius.max(0.5) * 2.6,
+            target: center,
+        }
     }
     fn eye(&self) -> Vec3 {
         let x = self.distance * self.pitch.cos() * self.yaw.sin();
@@ -193,6 +238,32 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 }
 "#;
 
+// See `glb_viewer.rs`'s `GRID_SHADER_SRC` doc comment — identical approach:
+// unlit, per-vertex color, reusing the mesh shader's `Uniforms`/bind group
+// purely for `view_proj`.
+const GRID_SHADER_SRC: &str = r#"
+struct Uniforms { view_proj: mat4x4<f32>, light_dir: vec4<f32>, base_color: vec4<f32> };
+@group(0) @binding(0) var<uniform> u: Uniforms;
+
+struct VertexOut {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) color: vec4<f32>,
+};
+
+@vertex
+fn vs_main(@location(0) position: vec3<f32>, @location(1) color: vec4<f32>) -> VertexOut {
+    var out: VertexOut;
+    out.clip_position = u.view_proj * vec4<f32>(position, 1.0);
+    out.color = color;
+    return out;
+}
+
+@fragment
+fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
+    return in.color;
+}
+"#;
+
 /// One selectable range of triangles in the merged buffer, tagged with the
 /// prefab-tree path that produced it — used for CPU-side ray picking.
 struct PickRange {
@@ -222,6 +293,10 @@ pub struct PrefabScene {
 
     uniform_buffer: wgpu::Buffer,
 
+    grid_vertex_buffer: wgpu::Buffer,
+    grid_vertex_count: u32,
+    grid_pipeline: wgpu::RenderPipeline,
+
     color_texture: Option<wgpu::Texture>,
     depth_texture: Option<wgpu::Texture>,
     output_size: (u32, u32),
@@ -241,25 +316,134 @@ pub struct PrefabScene {
 
 impl PrefabScene {
     pub fn new(device: Arc<wgpu::Device>, queue: Arc<wgpu::Queue>) -> Self {
-        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor { label: Some("prefab_uniforms"), size: std::mem::size_of::<Uniforms>() as u64, usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
+        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("prefab_uniforms"),
+            size: std::mem::size_of::<Uniforms>() as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("prefab_bind_group_layout"),
-            entries: &[wgpu::BindGroupLayoutEntry { binding: 0, visibility: wgpu::ShaderStages::VERTEX_FRAGMENT, ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None }],
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
         });
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor { label: Some("prefab_bind_group"), layout: &bind_group_layout, entries: &[wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() }] });
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("prefab_bind_group"),
+            layout: &bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+        });
 
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("prefab_shader"), source: wgpu::ShaderSource::Wgsl(SHADER_SRC.into()) });
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some("prefab_pipeline_layout"), bind_group_layouts: &[&bind_group_layout], push_constant_ranges: &[] });
-        let vertex_layout = wgpu::VertexBufferLayout { array_stride: std::mem::size_of::<Vertex>() as u64, step_mode: wgpu::VertexStepMode::Vertex, attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3] };
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("prefab_shader"),
+            source: wgpu::ShaderSource::Wgsl(SHADER_SRC.into()),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("prefab_pipeline_layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
+        let vertex_layout = wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x3],
+        };
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("prefab_pipeline"),
             layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState { module: &shader, entry_point: Some("vs_main"), buffers: &[vertex_layout], compilation_options: Default::default() },
-            fragment: Some(wgpu::FragmentState { module: &shader, entry_point: Some("fs_main"), targets: &[Some(wgpu::ColorTargetState { format: wgpu::TextureFormat::Rgba8UnormSrgb, blend: Some(wgpu::BlendState::REPLACE), write_mask: wgpu::ColorWrites::ALL })], compilation_options: Default::default() }),
-            primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, cull_mode: None, ..Default::default() },
-            depth_stencil: Some(wgpu::DepthStencilState { format: wgpu::TextureFormat::Depth32Float, depth_write_enabled: true, depth_compare: wgpu::CompareFunction::Less, stencil: Default::default(), bias: Default::default() }),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[vertex_layout],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        // Grid: reuses `pipeline_layout`/`bind_group` above — the grid
+        // shader only reads `view_proj` out of the same `Uniforms` binding.
+        let grid_verts = build_grid();
+        let grid_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("prefab_grid_vertex_buffer"),
+            contents: bytemuck::cast_slice(&grid_verts),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let grid_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("prefab_grid_shader"),
+            source: wgpu::ShaderSource::Wgsl(GRID_SHADER_SRC.into()),
+        });
+        let grid_vertex_layout = wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<GridVertex>() as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x4],
+        };
+        let grid_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("prefab_grid_pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &grid_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[grid_vertex_layout],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &grid_shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
             cache: None,
@@ -279,6 +463,9 @@ impl PrefabScene {
             cpu_indices: Vec::new(),
             markers: Vec::new(),
             uniform_buffer,
+            grid_vertex_buffer,
+            grid_vertex_count: grid_verts.len() as u32,
+            grid_pipeline,
             color_texture: None,
             depth_texture: None,
             output_size: (0, 0),
@@ -319,7 +506,10 @@ impl PrefabScene {
             }
 
             if !self.mesh_cache.contains_key(&entry.asset_abs_path) {
-                match std::fs::read(&entry.asset_abs_path).map_err(|e| e.to_string()).and_then(|b| load_local_mesh(&b)) {
+                match std::fs::read(&entry.asset_abs_path)
+                    .map_err(|e| e.to_string())
+                    .and_then(|b| load_local_mesh(&b))
+                {
                     Ok(mesh) => {
                         self.mesh_cache.insert(entry.asset_abs_path.clone(), mesh);
                     }
@@ -338,18 +528,39 @@ impl PrefabScene {
                 min = min.min(wp);
                 max = max.max(wp);
                 let n = mesh.normals.get(i).copied().unwrap_or([0.0, 1.0, 0.0]);
-                let wn = entry.world_matrix.transform_vector3(Vec3::from(n)).normalize_or_zero();
+                let wn = entry
+                    .world_matrix
+                    .transform_vector3(Vec3::from(n))
+                    .normalize_or_zero();
                 vertices.push(Vertex { position: wp.into(), normal: wn.into() });
             }
             indices.extend(mesh.indices.iter().map(|&i| base + i));
-            pick_ranges.push(PickRange { first_index, index_count: mesh.indices.len() as u32, path: entry.path.clone() });
+            pick_ranges.push(PickRange {
+                first_index,
+                index_count: mesh.indices.len() as u32,
+                path: entry.path.clone(),
+            });
         }
 
         self.cpu_vertices = vertices.iter().map(|v| Vec3::from(v.position)).collect();
         self.cpu_indices = indices.clone();
 
-        self.vertex_buffer = (!vertices.is_empty()).then(|| self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("prefab_vertex_buffer"), contents: bytemuck::cast_slice(&vertices), usage: wgpu::BufferUsages::VERTEX }));
-        self.index_buffer = (!indices.is_empty()).then(|| self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("prefab_index_buffer"), contents: bytemuck::cast_slice(&indices), usage: wgpu::BufferUsages::INDEX }));
+        self.vertex_buffer = (!vertices.is_empty()).then(|| {
+            self.device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("prefab_vertex_buffer"),
+                    contents: bytemuck::cast_slice(&vertices),
+                    usage: wgpu::BufferUsages::VERTEX,
+                })
+        });
+        self.index_buffer = (!indices.is_empty()).then(|| {
+            self.device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("prefab_index_buffer"),
+                    contents: bytemuck::cast_slice(&indices),
+                    usage: wgpu::BufferUsages::INDEX,
+                })
+        });
         self.index_count = indices.len() as u32;
         self.pick_ranges = pick_ranges;
         self.markers = markers;
@@ -384,8 +595,26 @@ impl PrefabScene {
             return false;
         }
         self.output_size = (width, height);
-        self.color_texture = Some(self.device.create_texture(&wgpu::TextureDescriptor { label: Some("prefab_color"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 }, mip_level_count: 1, sample_count: 1, dimension: wgpu::TextureDimension::D2, format: wgpu::TextureFormat::Rgba8UnormSrgb, usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING, view_formats: &[] }));
-        self.depth_texture = Some(self.device.create_texture(&wgpu::TextureDescriptor { label: Some("prefab_depth"), size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 }, mip_level_count: 1, sample_count: 1, dimension: wgpu::TextureDimension::D2, format: wgpu::TextureFormat::Depth32Float, usage: wgpu::TextureUsages::RENDER_ATTACHMENT, view_formats: &[] }));
+        self.color_texture = Some(self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("prefab_color"),
+            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8UnormSrgb,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        }));
+        self.depth_texture = Some(self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("prefab_depth"),
+            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Depth32Float,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        }));
         true
     }
 
@@ -395,22 +624,52 @@ impl PrefabScene {
         let resized = self.ensure_target(width, height);
 
         let view_proj = self.camera.0.view_proj(width as f32 / height as f32);
-        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&Uniforms { view_proj: view_proj.to_cols_array(), light_dir: [0.4, 0.8, 0.5, 0.0], base_color: [0.75, 0.76, 0.8, 1.0] }));
+        self.queue.write_buffer(
+            &self.uniform_buffer,
+            0,
+            bytemuck::bytes_of(&Uniforms {
+                view_proj: view_proj.to_cols_array(),
+                light_dir: [0.4, 0.8, 0.5, 0.0],
+                base_color: [0.75, 0.76, 0.8, 1.0],
+            }),
+        );
 
         let color_texture = self.color_texture.as_ref().unwrap();
         let depth_texture = self.depth_texture.as_ref().unwrap();
         let color_view = color_texture.create_view(&wgpu::TextureViewDescriptor::default());
         let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("prefab_encoder") });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("prefab_encoder") });
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("prefab_pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment { view: &color_view, resolve_target: None, ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.08, g: 0.08, b: 0.09, a: 1.0 }), store: wgpu::StoreOp::Store } })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment { view: &depth_view, depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(1.0), store: wgpu::StoreOp::Store }), stencil_ops: None }),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &color_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.025, g: 0.025, b: 0.028, a: 1.0 }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
+
+            pass.set_pipeline(&self.grid_pipeline);
+            pass.set_bind_group(0, &self.bind_group, &[]);
+            pass.set_vertex_buffer(0, self.grid_vertex_buffer.slice(..));
+            pass.draw(0..self.grid_vertex_count, 0..1);
+
             if let (Some(vb), Some(ib)) = (&self.vertex_buffer, &self.index_buffer) {
                 pass.set_pipeline(&self.pipeline);
                 pass.set_bind_group(0, &self.bind_group, &[]);

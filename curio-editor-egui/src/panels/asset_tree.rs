@@ -46,6 +46,48 @@ pub fn show(ui: &mut Ui, asset: &mut AssetState, project_root: &str) {
     });
     ui.separator();
 
+    let root_path = fs_ops::assets_root(project_root);
+
+    // Root drop bar — shown for the whole duration of a drag, right below
+    // the toolbar (so it's always on screen, not dependent on there being
+    // blank space left over below a short tree, which is why dropping past
+    // the last item into root never worked before: on a tree tall enough to
+    // fill the panel — the common case — there was no blank space to hover
+    // at all). Also doubles as live "where is this going" feedback: its
+    // label tracks `drop_target` every frame, whether that's root itself or
+    // whatever row is currently hovered.
+    if let Some(drag_name) = asset
+        .drag_path
+        .as_deref()
+        .map(|p| p.rsplit('/').next().unwrap_or(p).to_string())
+    {
+        let is_root_target = asset.drop_target.as_deref() == Some(root_path.as_str());
+        let dest = match asset.drop_target.as_deref() {
+            Some(t) if t == root_path => "Assets (root)".to_string(),
+            Some(t) => t.rsplit('/').next().unwrap_or(t).to_string(),
+            None => "…".to_string(),
+        };
+        let bar_resp = egui::Frame::NONE
+            .fill(if is_root_target { theme::BG_HOVER } else { theme::BG_TERTIARY })
+            .inner_margin(egui::Margin::symmetric(8, 6))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new("⬆").color(theme::TEXT_MUTED));
+                    ui.label(RichText::new(format!("Move \"{drag_name}\" to {dest}")).color(theme::TEXT_SECONDARY));
+                });
+            })
+            .response;
+
+        if bar_resp.hovered() {
+            actions.push(TreeAction::DragOver(Some(root_path.clone())));
+            if ui.input(|i| i.pointer.any_released()) {
+                actions.push(TreeAction::Drop(root_path.clone()));
+            }
+        }
+        ui.separator();
+    }
+
     egui::ScrollArea::vertical()
         .auto_shrink([false, false])
         .show(ui, |ui| {
@@ -75,6 +117,26 @@ pub fn show(ui: &mut Ui, asset: &mut AssetState, project_root: &str) {
                 row(ui, node, 0, &selected_path, &drag_path, &drop_target, &renaming_path, &asset.rename_draft, &confirming_delete_path, &mut actions);
             }
         });
+
+    // If the pointer is over neither the root bar nor any row this frame
+    // (e.g. it's over the toolbar, or the gap between the bar and the
+    // tree), clear the target rather than leaving it stuck on whatever was
+    // last hovered — otherwise the bar's "Move X to ..." label could show a
+    // destination the pointer isn't actually over anymore.
+    if asset.drag_path.is_some() && !actions.iter().any(|a| matches!(a, TreeAction::DragOver(_))) {
+        actions.push(TreeAction::DragOver(None));
+    }
+
+    // `DragEnd` (from the dragged row's own widget noticing the release)
+    // and `Drop` (from whichever row/bar the pointer was actually over)
+    // often both land in this frame's batch, and normally `actions` is in
+    // tree-traversal order — so whichever one's row happened to be walked
+    // first wins the race. If that was the dragged item itself, `DragEnd`
+    // would clear `drag_path` before `Drop` got a chance to use it,
+    // silently no-op'ing the move. Applying every `Drop` before any
+    // `DragEnd` makes the move succeed regardless of where the source and
+    // target happen to sit in the tree.
+    actions.sort_by_key(|a| matches!(a, TreeAction::DragEnd));
 
     for action in actions {
         asset.apply(action, project_root);
@@ -133,7 +195,17 @@ fn row(ui: &mut Ui, node: &TreeNode, depth: usize, selected_path: &Option<String
                     }
                 }
 
-                ui.label(file_icon(entry));
+                let icon_resp = ui.add(
+                    egui::Label::new(file_icon(entry))
+                        .selectable(false)
+                        .sense(egui::Sense::click_and_drag()),
+                );
+                if icon_resp.drag_started() {
+                    actions.push(TreeAction::DragStart(entry.path.clone()));
+                }
+                if icon_resp.drag_stopped() {
+                    actions.push(TreeAction::DragEnd);
+                }
 
                 if is_renaming {
                     let mut draft = rename_draft.to_string();
@@ -163,7 +235,11 @@ fn row(ui: &mut Ui, node: &TreeNode, depth: usize, selected_path: &Option<String
                     } else {
                         theme::TEXT_MUTED
                     };
-                    let name_resp = ui.add(egui::Label::new(RichText::new(&entry.name).color(name_color)).sense(egui::Sense::click()));
+                    let name_resp = ui.add(
+                        egui::Label::new(RichText::new(&entry.name).color(name_color))
+                            .selectable(false)
+                            .sense(egui::Sense::click_and_drag()),
+                    );
 
                     if name_resp.clicked() {
                         if entry.is_dir {
@@ -202,10 +278,20 @@ fn row(ui: &mut Ui, node: &TreeNode, depth: usize, selected_path: &Option<String
             });
         });
 
+    // A folder can't be dropped into itself or one of its own descendants
+    // (asset_state.rs's `Drop` handler already rejects this at the
+    // filesystem-move level, but leaving these rows eligible as *hover*
+    // targets meant the cursor's path from the dragged row to any real
+    // target often crossed the dragged folder's own children first, and
+    // those still lit up as a valid-looking target right up until release).
+    let is_invalid_target = drag_path
+        .as_deref()
+        .is_some_and(|dp| entry.path == dp || entry.path.starts_with(&format!("{dp}/")));
+
     // Drop target — hovering a drag over this row while something's being
     // dragged marks it (folder) or its parent dir (file) as the target;
     // releasing over it fires the actual move.
-    if drag_path.is_some() && row_resp.response.hovered() {
+    if drag_path.is_some() && !is_invalid_target && row_resp.response.hovered() {
         let target = if entry.is_dir { entry.path.clone() } else { entry.path[..entry.path.rfind('/').unwrap_or(0)].to_string() };
         actions.push(TreeAction::DragOver(Some(target.clone())));
         if ui.input(|i| i.pointer.any_released()) {

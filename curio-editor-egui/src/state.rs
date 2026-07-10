@@ -315,6 +315,18 @@ impl EditorState {
         self.compile_error.clear();
         self.clear_logs();
         self.game_texture_handle = None;
+        // Left panel (object tree), inspector, and the status bar's object/
+        // instance counts all key off `tab_group_state` — clearing it (and
+        // the selection state that pointed into it) is what makes them go
+        // empty on stop instead of showing the last frame's data. Paired
+        // with the `mode != Stopped` guard in `refresh_tab_group`'s caller
+        // below, so it doesn't immediately get refilled with stale data
+        // still sitting in `SHARED_DATA` from the run that just ended.
+        self.tab_group_state = None;
+        self.selected_instance.clear();
+        self.active_left_tab = 0;
+        self.selected_object_path = None;
+        self.expanded_nodes.clear();
     }
 
     pub fn pause(&mut self) {
@@ -346,7 +358,9 @@ impl EditorState {
     pub fn tick(&mut self) {
         self.poll_compile();
         self.poll_logs();
-        self.refresh_tab_group();
+        if self.mode != EditorMode::Stopped {
+            self.refresh_tab_group();
+        }
     }
 
     fn poll_compile(&mut self) {

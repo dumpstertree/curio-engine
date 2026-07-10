@@ -1,40 +1,113 @@
-// use proc_macro::TokenStream;
-// use quote::{format_ident, quote};
-// use syn::{parse_macro_input, parse_quote, ItemStruct};
+use proc_macro::TokenStream;
+use quote::{format_ident, quote};
+use syn::{parse_macro_input, parse_quote, ItemStruct};
 
-// #[proc_macro_attribute]
-// pub fn record(_attr: TokenStream, item: TokenStream) -> TokenStream {
-//     let mut input = parse_macro_input!(item as ItemStruct);
-//     let name = &input.ident;
+#[proc_macro_attribute]
+pub fn record(attr: TokenStream, item: TokenStream) -> TokenStream {
+    let mut ownership_val = None;
+    let mut serializable = false;
+    let mut custom_name: Option<String> = None;
 
-//     // Append derives if not already present
-//     input
-//         .attrs
-//         .push(parse_quote!(#[derive(Default, Clone, PartialEq)]));
+    {
+        let parser = syn::meta::parser(|meta| {
+            if meta.path.is_ident("ownership") {
+                ownership_val = Some(meta.value()?.parse::<syn::Path>()?);
+                Ok(())
+            } else if meta.path.is_ident("name") {
+                let lit: syn::LitStr = meta.value()?.parse()?;
+                custom_name = Some(lit.value());
+                Ok(())
+            } else if meta.path.is_ident("serializable") {
+                serializable = true;
+                Ok(())
+            } else {
+                Err(meta.error("unsupported argument — expected `ownership`, `name`, or `serializable`"))
+            }
+        });
 
-//     // Implement Send + Sync + IState for the struct automatically
-//     let register_fn = format_ident!("global_state_{}", name);
+        parse_macro_input!(attr with parser);
+    }
 
-//     let expanded = quote! {
-//         #input
+    let ownership = match ownership_val {
+        Some(path) => quote! { #path },
+        None => quote! { curio_core::RecordScope::Instance },
+    };
 
-//         // Automatically implement IState for this type
-//         // impl core::collections::ledger::IState for #name {
-//         //     fn clone_box(&self) -> Box<dyn core::collections::ledger::IState> {
-//         //         Box::new(self.clone())
-//         //     }
-//         // }
+    let mut input = parse_macro_input!(item as ItemStruct);
 
-//         unsafe impl Send for #name {}
-//         unsafe impl Sync for #name {}
+    let struct_name = &input.ident;
 
-//         #[ctor::ctor]
-//         #[allow(non_snake_case)]
-//         fn #register_fn() {
-//             // core::collections::ledger::GameState::register_global_states::<#name>();
-//            curio_core::static_data::global_states::register_global_state::<#name>();
-//         }
-//     };
+    let record_name = match custom_name {
+        Some(v) => v,
+        None => struct_name.to_string(),
+    };
 
-//     TokenStream::from(expanded)
-// }
+    // Always derived
+    input.attrs.push(parse_quote!(#[derive(Default)]));
+    input.attrs.push(parse_quote!(#[derive(Clone)]));
+
+    // Only derived when serializable
+    if serializable {
+        input.attrs.push(parse_quote!(#[derive(serde::Serialize)]));
+        input
+            .attrs
+            .push(parse_quote!(#[derive(serde::Deserialize)]));
+    }
+
+    let register_fn = format_ident!("__global_state_register_{}", struct_name);
+    let static_id = format_ident!("__RECORD_ID_{}", struct_name);
+
+    // Pick the correct registration call
+    let register_call = if serializable {
+        quote! {
+            curio_core::GlobalRecords::register_serializable::<#struct_name>();
+        }
+    } else {
+        quote! {
+            curio_core::GlobalRecords::register::<#struct_name>();
+        }
+    };
+
+    let expanded = quote! {
+        #input
+
+        #[allow(non_upper_case_globals)]
+        static #static_id: std::sync::OnceLock<i32> = std::sync::OnceLock::new();
+
+        impl curio_core::RecordCommon for #struct_name {
+            #[allow(non_snake_case)]
+            fn id() -> i32
+            where
+                Self: Sized + 'static,
+            {
+                *#static_id.get_or_init(|| {
+                    curio_core::SequentialRecordUIDs::of::<#struct_name>()
+                })
+            }
+
+            #[allow(non_snake_case)]
+            fn ownership() -> curio_core::RecordScope
+            where
+                Self: Sized + 'static,
+            {
+                #ownership
+            }
+
+            #[allow(non_snake_case)]
+            fn name(&self) -> String
+            where
+                Self: Sized + 'static,
+            {
+                #record_name.to_string()
+            }
+        }
+
+        #[ctor::ctor]
+        #[allow(non_snake_case)]
+        fn #register_fn() {
+            #register_call
+        }
+    };
+
+    TokenStream::from(expanded)
+}

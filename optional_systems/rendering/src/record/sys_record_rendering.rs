@@ -1,8 +1,8 @@
 use crate::DrawCall;
 use curio_core::{FieldState, RecordOverride, RecordScope};
-use record_serializable::record_serializable;
+use record::record;
 
-#[record_serializable(name = "Rendering", ownership = RecordScope::Instance)]
+#[record(name = "Rendering", ownership = RecordScope::Instance)]
 pub struct SysRecordRendering {
     pub draw_calls: Vec<DrawCall>,
 }

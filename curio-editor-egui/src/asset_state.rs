@@ -27,11 +27,21 @@ pub struct TreeNode {
 
 impl TreeNode {
     fn new(entry: DirEntry) -> Self {
-        Self { entry, expanded: false, loaded: false, children: Vec::new(), meta: None }
+        Self {
+            entry,
+            expanded: false,
+            loaded: false,
+            children: Vec::new(),
+            meta: None,
+        }
     }
 
     fn load_children(&mut self) {
-        self.children = fs_ops::list_dir(&self.entry.path).unwrap_or_default().into_iter().map(TreeNode::new).collect();
+        self.children = fs_ops::list_dir(&self.entry.path)
+            .unwrap_or_default()
+            .into_iter()
+            .map(TreeNode::new)
+            .collect();
         self.loaded = true;
     }
 
@@ -220,7 +230,12 @@ impl AssetState {
             TreeAction::Drop(target_dir) => {
                 self.drop_target = None;
                 let Some(drag_path) = self.drag_path.take() else { return };
-                if drag_path == target_dir || target_dir.starts_with(&format!("{drag_path}/")) {
+                let src_dir = drag_path[..drag_path.rfind('/').unwrap_or(0)].to_string();
+                // Also covers "dropped it back into the folder it's already
+                // in" — without this, `resolve_conflict` sees the item's
+                // own current path as an "existing" file at the target and
+                // renames it out from under itself with a `_1` suffix.
+                if drag_path == target_dir || src_dir == target_dir || target_dir.starts_with(&format!("{drag_path}/")) {
                     return;
                 }
                 let name = drag_path.rsplit('/').next().unwrap_or_default().to_string();
@@ -228,7 +243,6 @@ impl AssetState {
                 if fs_ops::move_path(&drag_path, &dst).is_ok() {
                     let _ = fs_ops::move_path(&format!("{drag_path}.meta"), &format!("{dst}.meta"));
                     self.refresh_dir(&target_dir);
-                    let src_dir = drag_path[..drag_path.rfind('/').unwrap_or(0)].to_string();
                     self.refresh_dir(&src_dir);
                     let _ = fs_ops::rebuild_manifest(project_root);
                 }

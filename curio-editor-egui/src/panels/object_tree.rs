@@ -36,6 +36,11 @@ fn node_row(ui: &mut Ui, obj: &ObjectState, path: &str, depth: usize, index_path
         .fill(fill)
         .inner_margin(egui::Margin::symmetric(0, 1))
         .show(ui, |ui| {
+            // Without this, the frame (and its `fill`) only ever grows as
+            // wide as the row's actual content (chevron/icon/name/count),
+            // so the highlight visibly stops right after the name instead
+            // of covering the rest of the row out to the panel's edge.
+            ui.set_min_width(ui.available_width());
             ui.horizontal(|ui| {
                 ui.add_space(depth as f32 * 16.0 + 2.0);
 

@@ -33,9 +33,17 @@ pub fn show(ui: &mut Ui, state: &mut EditorState) {
         viewport_toolbar(ui, state);
         ui.add_space(4.0);
 
-        let viewport_height = ui.available_height() - 44.0; // leave room for play bar
+        let viewport_height = (ui.available_height() - 44.0).max(120.0); // leave room for play bar
         egui::Frame::NONE.fill(theme::BG_TERTIARY).show(ui, |ui| {
-            ui.set_min_size(egui::vec2(ui.available_width(), viewport_height.max(120.0)));
+            // Both min *and* max are pinned here so this frame can never grow
+            // past the space we budgeted for it — without the max bound,
+            // `centered_and_justified` calls inside `viewport()` (used for
+            // both the "Press Play" placeholder and the game texture) would
+            // happily expand to fill *all* remaining vertical space in the
+            // outer vertical layout, pushing `play_bar` below the visible
+            // area the moment its content changed shape (e.g. on Play).
+            ui.set_min_size(egui::vec2(ui.available_width(), viewport_height));
+            ui.set_max_height(viewport_height);
             viewport(ui, state);
         });
 
@@ -50,15 +58,27 @@ pub fn show(ui: &mut Ui, state: &mut EditorState) {
 
 fn viewport_toolbar(ui: &mut Ui, state: &mut EditorState) {
     ui.horizontal(|ui| {
-        ui.label(RichText::new("Resolution").small().color(theme::TEXT_SECONDARY));
-        egui::ComboBox::from_id_salt("resolution_dropdown").selected_text(RESOLUTIONS[0]).show_ui(ui, |ui| {
-            for r in RESOLUTIONS {
-                ui.selectable_label(false, *r);
-            }
-        });
+        ui.label(
+            RichText::new("Resolution")
+                .small()
+                .color(theme::TEXT_SECONDARY),
+        );
+        egui::ComboBox::from_id_salt("resolution_dropdown")
+            .selected_text(RESOLUTIONS[0])
+            .show_ui(ui, |ui| {
+                for r in RESOLUTIONS {
+                    ui.selectable_label(false, *r);
+                }
+            });
 
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let label = if state.console_open { "Console (open)".to_string() } else if state.unread_logs > 0 { format!("Console ({})", state.unread_logs.min(99)) } else { "Console".to_string() };
+            let label = if state.console_open {
+                "Console (open)".to_string()
+            } else if state.unread_logs > 0 {
+                format!("Console ({})", state.unread_logs.min(99))
+            } else {
+                "Console".to_string()
+            };
             let btn = egui::Button::new(label).fill(if state.console_open { theme::BG_ACTIVE } else { theme::BG_TERTIARY });
             if ui.add(btn).clicked() {
                 state.toggle_console();
@@ -70,18 +90,28 @@ fn viewport_toolbar(ui: &mut Ui, state: &mut EditorState) {
 // ── Viewport body ───────────────────────────────────────────────────────────
 
 fn viewport(ui: &mut Ui, state: &mut EditorState) {
+    // Captured before any content is added: `show()` already pinned this
+    // ui's min *and* max size to the viewport's budgeted rect, so this is
+    // exactly the center-viewport area (not the whole window) — used below
+    // to confine the console overlay to it instead of the full screen.
+    let viewport_rect = ui.max_rect();
+
     if state.mode == EditorMode::Stopped {
-        ui.centered_and_justified(|ui| {
+        // `centered_and_justified` + a nested `vertical_centered` wasn't
+        // reliably centering this block vertically (nesting a real
+        // vertical layout inside a "center a single child" layout is
+        // fragile). Instead, compute the block's own rect directly and
+        // place a child ui exactly there — guaranteed correct regardless
+        // of layout nesting.
+        let block_size = egui::vec2(viewport_rect.width(), 66.0);
+        let block_rect = egui::Rect::from_center_size(viewport_rect.center(), block_size);
+        ui.allocate_new_ui(egui::UiBuilder::new().max_rect(block_rect), |ui| {
             ui.vertical_centered(|ui| {
                 let (rect, _) = ui.allocate_exact_size(egui::vec2(40.0, 40.0), egui::Sense::hover());
                 let painter = ui.painter_at(rect);
                 painter.circle_stroke(rect.center(), 17.0, egui::Stroke::new(1.2, theme::TEXT_MUTED));
                 let c = rect.center();
-                painter.add(egui::Shape::convex_polygon(
-                    vec![c + egui::vec2(-4.0, -7.0), c + egui::vec2(10.0, 0.0), c + egui::vec2(-4.0, 7.0)],
-                    theme::TEXT_MUTED,
-                    egui::Stroke::NONE,
-                ));
+                painter.add(egui::Shape::convex_polygon(vec![c + egui::vec2(-4.0, -7.0), c + egui::vec2(10.0, 0.0), c + egui::vec2(-4.0, 7.0)], theme::TEXT_MUTED, egui::Stroke::NONE));
                 ui.add_space(6.0);
                 ui.label(RichText::new("Press Play to launch").color(theme::TEXT_MUTED));
             });
@@ -90,15 +120,7 @@ fn viewport(ui: &mut Ui, state: &mut EditorState) {
         game_texture(ui, state);
     }
 
-    if state.compile_status == CompileStatus::Compiling {
-        egui::Area::new("compile_indicator".into()).anchor(egui::Align2::LEFT_TOP, egui::vec2(10.0, 10.0)).show(ui.ctx(), |ui| {
-            egui::Frame::NONE.fill(theme::BG_SECONDARY).inner_margin(6).corner_radius(3).show(ui, |ui| {
-                ui.label(RichText::new("Compiling...").color(theme::ACCENT));
-            });
-        });
-    }
-
-    console_overlay(ui, state);
+    console_overlay(ui, state, viewport_rect);
 }
 
 /// Displays the live game frame. **Uses CPU-readback frames, not the
@@ -119,7 +141,12 @@ fn game_texture(ui: &mut Ui, state: &mut EditorState) {
         let color_image = egui::ColorImage::from_rgba_unmultiplied([frame.width as usize, frame.height as usize], &frame.rgba);
         match &mut state.game_texture_handle {
             Some(handle) => handle.set(color_image, egui::TextureOptions::LINEAR),
-            None => state.game_texture_handle = Some(ui.ctx().load_texture("game_viewport", color_image, egui::TextureOptions::LINEAR)),
+            None => {
+                state.game_texture_handle = Some(
+                    ui.ctx()
+                        .load_texture("game_viewport", color_image, egui::TextureOptions::LINEAR),
+                )
+            }
         }
     }
 
@@ -142,17 +169,10 @@ fn game_texture(ui: &mut Ui, state: &mut EditorState) {
 
     ui.centered_and_justified(|ui| {
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
-        ui.painter().image(handle.id(), rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+        ui.painter()
+            .image(handle.id(), rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
         forward_input(ui, state, &response, rect);
     });
-
-    if state.mode == EditorMode::Paused {
-        egui::Area::new("paused_indicator".into()).anchor(egui::Align2::CENTER_BOTTOM, egui::vec2(0.0, -12.0)).show(ui.ctx(), |ui| {
-            egui::Frame::NONE.fill(theme::BG_SECONDARY.gamma_multiply(0.9)).inner_margin(egui::Margin::symmetric(10, 4)).corner_radius(3).show(ui, |ui| {
-                ui.label(RichText::new("Paused").color(theme::PAUSE));
-            });
-        });
-    }
 }
 
 /// Mirrors `ViewportCanvas.tsx`'s onPointerMove/onPointerDown/onPointerUp/
@@ -200,32 +220,55 @@ fn forward_input(ui: &mut Ui, state: &mut EditorState, response: &egui::Response
 
 // ── Console overlay ─────────────────────────────────────────────────────────
 
-fn console_overlay(ui: &mut Ui, state: &EditorState) {
+fn console_overlay(ui: &mut Ui, state: &EditorState, viewport_rect: egui::Rect) {
     if !state.console_open {
         return;
     }
-    egui::Area::new("console_overlay".into()).anchor(egui::Align2::LEFT_BOTTOM, egui::vec2(0.0, 0.0)).show(ui.ctx(), |ui| {
-        egui::Frame::NONE.fill(theme::BG_PRIMARY.gamma_multiply(0.96)).inner_margin(8).show(ui, |ui| {
-            ui.set_width(ui.ctx().screen_rect().width());
-            ui.set_max_height(220.0);
-            egui::ScrollArea::vertical().stick_to_bottom(true).auto_shrink([false, false]).show(ui, |ui| {
-                if state.logs.is_empty() {
-                    ui.weak("No output yet");
-                }
-                for line in &state.logs {
-                    let color = match line.level {
-                        LogLevel::Error => theme::RED,
-                        LogLevel::Warn => theme::YELLOW,
-                        LogLevel::Info => theme::BLUE,
-                    };
-                    ui.horizontal(|ui| {
-                        ui.label(RichText::new(&line.time).monospace().small().color(theme::TEXT_MUTED));
-                        ui.label(RichText::new(strip_ansi(&line.message)).monospace().small().color(color));
-                    });
-                }
-            });
+    // Anchored to the viewport's own bottom-left corner (not the screen's),
+    // and clamped to stay within it, so the console sits inside the center
+    // viewport instead of spilling over the side panels/status bar.
+    egui::Area::new("console_overlay".into())
+        .fixed_pos(viewport_rect.left_bottom())
+        .pivot(egui::Align2::LEFT_BOTTOM)
+        .constrain_to(viewport_rect)
+        .show(ui.ctx(), |ui| {
+            egui::Frame::NONE
+                .fill(theme::BG_PRIMARY.gamma_multiply(0.96))
+                .inner_margin(8)
+                .show(ui, |ui| {
+                    ui.set_width(viewport_rect.width());
+                    ui.set_max_height(220.0_f32.min(viewport_rect.height()));
+                    egui::ScrollArea::vertical()
+                        .stick_to_bottom(true)
+                        .auto_shrink([false, false])
+                        .show(ui, |ui| {
+                            if state.logs.is_empty() {
+                                ui.weak("No output yet");
+                            }
+                            for line in &state.logs {
+                                let color = match line.level {
+                                    LogLevel::Error => theme::RED,
+                                    LogLevel::Warn => theme::YELLOW,
+                                    LogLevel::Info => theme::BLUE,
+                                };
+                                ui.horizontal(|ui| {
+                                    ui.label(
+                                        RichText::new(&line.time)
+                                            .monospace()
+                                            .small()
+                                            .color(theme::TEXT_MUTED),
+                                    );
+                                    ui.label(
+                                        RichText::new(strip_ansi(&line.message))
+                                            .monospace()
+                                            .small()
+                                            .color(color),
+                                    );
+                                });
+                            }
+                        });
+                });
         });
-    });
 }
 
 // ── Compile error modal ─────────────────────────────────────────────────────
@@ -235,11 +278,21 @@ fn compile_error_modal(ui: &mut Ui, state: &mut EditorState) {
         return;
     }
     let mut open = true;
-    egui::Window::new("Compile Failed").collapsible(false).resizable(true).open(&mut open).show(ui.ctx(), |ui| {
-        egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
-            ui.label(RichText::new(&state.compile_error).monospace().color(theme::RED));
+    egui::Window::new("Compile Failed")
+        .collapsible(false)
+        .resizable(true)
+        .open(&mut open)
+        .show(ui.ctx(), |ui| {
+            egui::ScrollArea::vertical()
+                .max_height(300.0)
+                .show(ui, |ui| {
+                    ui.label(
+                        RichText::new(&state.compile_error)
+                            .monospace()
+                            .color(theme::RED),
+                    );
+                });
         });
-    });
     if !open {
         state.compile_error.clear();
     }
@@ -248,27 +301,37 @@ fn compile_error_modal(ui: &mut Ui, state: &mut EditorState) {
 // ── Play bar ─────────────────────────────────────────────────────────────────
 
 fn play_bar(ui: &mut Ui, state: &mut EditorState) {
-    ui.horizontal(|ui| {
-        let playing = state.mode == EditorMode::Playing;
-        let stopped = state.mode == EditorMode::Stopped;
+    ui.vertical_centered(|ui| {
+        ui.horizontal(|ui| {
+            let playing = state.mode == EditorMode::Playing;
+            let paused = state.mode == EditorMode::Paused;
+            let stopped = state.mode == EditorMode::Stopped;
 
-        if ui.add_enabled(!playing, egui::Button::new(RichText::new("Play").color(if playing { theme::PLAY } else { theme::TEXT_PRIMARY }))).clicked() {
-            state.play();
-        }
-        if ui.add_enabled(!stopped, egui::Button::new("Pause")).clicked() {
-            state.pause();
-        }
-        if ui.add_enabled(!stopped, egui::Button::new("Stop")).clicked() {
-            state.stop();
-        }
-
-        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let (text, color) = match state.mode {
-                EditorMode::Playing => ("Playing", theme::PLAY),
-                EditorMode::Paused => ("Paused", theme::PAUSE),
-                EditorMode::Stopped => ("Stopped", theme::TEXT_SECONDARY),
-            };
-            ui.label(RichText::new(text).color(color));
+            // `play()` always recompiles and starts a fresh run, so it must
+            // only be clickable when actually stopped. It used to also be
+            // enabled while Paused — clicking it there triggered a full
+            // recompile instead of the resume the button visually implied.
+            // Resuming from Paused is the Pause/Resume button's job below.
+            if ui
+                .add_enabled(stopped, egui::Button::new(RichText::new("Play").color(if playing { theme::PLAY } else { theme::TEXT_PRIMARY })))
+                .clicked()
+            {
+                state.play();
+            }
+            if ui
+                .add_enabled(!stopped, egui::Button::new(if paused { "Resume" } else { "Pause" }))
+                .clicked()
+            {
+                state.pause();
+            }
+            if ui
+                .add_enabled(!stopped, egui::Button::new("Stop"))
+                .clicked()
+            {
+                state.stop();
+            }
+            // Playing/Paused/Stopped mode is already surfaced in the global
+            // status bar (see `status_bar.rs`) — no need to duplicate it here.
         });
     });
 }

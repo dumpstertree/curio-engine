@@ -1,8 +1,8 @@
 use crate::DrawCallLight;
 use curio_core::{FieldState, RecordOverride, RecordScope};
-use record_serializable::record_serializable;
+use record::record;
 
-#[record_serializable(name = "Lights", ownership = RecordScope::Instance)]
+#[record(name = "Lights", ownership = RecordScope::Instance)]
 pub struct SysRecordLights {
     pub all_lights: Vec<DrawCallLight>,
 }

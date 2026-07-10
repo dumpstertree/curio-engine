@@ -9,7 +9,7 @@ habit = { workspace = true }
 facet = { workspace = true }
 gameplay = { workspace = true }
 curio_core = { workspace = true }
-record_serializable = { workspace = true }
+record = { workspace = true }
 serde = { version = "1.0.104", features = ["derive"] }
 bytemuck = { version = "1.16", features = ["derive"] }
 egui-wgpu = { version = "0.31.1", features = ["winit"] }

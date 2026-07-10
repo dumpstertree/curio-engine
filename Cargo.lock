@@ -100,13 +100,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "animation"
-version = "0.1.0"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -481,7 +474,7 @@ dependencies = [
  "facet",
  "gameplay",
  "habit",
- "record_serializable",
+ "record",
  "serde",
 ]
 
@@ -573,7 +566,7 @@ dependencies = [
  "gameplay",
  "gltf",
  "habit",
- "record_serializable",
+ "record",
  "serde",
 ]
 
@@ -1297,7 +1290,7 @@ dependencies = [
  "egui-wgpu",
  "facet",
  "gameplay",
- "record_serializable",
+ "record",
  "serde",
  "serde_json",
 ]
@@ -2158,7 +2151,7 @@ version = "0.1.0"
 dependencies = [
  "ctor",
  "curio_core",
- "record_serializable",
+ "record",
 ]
 
 [[package]]
@@ -2348,7 +2341,7 @@ dependencies = [
  "facet",
  "gameplay",
  "habit",
- "record_serializable",
+ "record",
  "serde",
 ]
 
@@ -3658,14 +3651,6 @@ name = "record"
 version = "0.1.0"
 dependencies = [
  "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "record_serializable"
-version = "0.1.0"
-dependencies = [
- "quote",
  "serde",
  "syn 2.0.117",
 ]
@@ -3735,7 +3720,7 @@ dependencies = [
  "image 0.24.9",
  "libc",
  "rayon",
- "record_serializable",
+ "record",
  "rendering_static",
  "rusty_spine",
  "serde",
@@ -3760,7 +3745,7 @@ dependencies = [
  "gameplay",
  "gltf",
  "habit",
- "record_serializable",
+ "record",
  "rendering_static",
  "serde",
 ]
@@ -3778,7 +3763,7 @@ dependencies = [
  "gameplay",
  "gltf",
  "habit",
- "record_serializable",
+ "record",
  "serde",
 ]
 
@@ -3795,7 +3780,7 @@ dependencies = [
  "gameplay",
  "gltf",
  "habit",
- "record_serializable",
+ "record",
  "rendering_static",
  "serde",
  "serde_json",
@@ -4273,7 +4258,7 @@ dependencies = [
  "gameplay",
  "gltf",
  "habit",
- "record_serializable",
+ "record",
  "serde",
 ]
 
@@ -4650,7 +4635,7 @@ version = "0.1.0"
 dependencies = [
  "ctor",
  "curio_core",
- "record_serializable",
+ "record",
 ]
 
 [[package]]
@@ -4918,7 +4903,7 @@ dependencies = [
  "gameplay",
  "gltf",
  "habit",
- "record_serializable",
+ "record",
  "serde",
  "time 0.1.0",
 ]

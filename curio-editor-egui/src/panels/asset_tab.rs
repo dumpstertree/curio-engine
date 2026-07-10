@@ -14,7 +14,7 @@ use eframe::egui::{self, RichText, Ui};
 
 pub fn show_tree(ui: &mut Ui, state: &mut EditorState) {
     ui.vertical(|ui| {
-        ui.label(RichText::new("Assets").strong().color(theme::TEXT_PRIMARY));
+        theme::section_title(ui, "Assets");
         ui.separator();
         let project_path = state.project_path.clone();
         crate::panels::asset_tree::show(ui, &mut state.asset, &project_path);
@@ -124,7 +124,8 @@ fn glb_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
         let (texture_id, size) = preview.render(&render_shared.render_state, width, height);
 
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
-        ui.painter().image(texture_id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+        ui.painter()
+            .image(texture_id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
 
         if response.dragged() {
             preview.handle_input(response.drag_delta(), 0.0);
@@ -169,16 +170,23 @@ fn anim_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
         // playback controls/live status, not static asset info.
         ui.horizontal(|ui| {
             let current = preview.current_animation.clone();
-            egui::ComboBox::from_id_salt("anim_selector").selected_text(if current.is_empty() { "(none)".to_string() } else { current.clone() }).show_ui(ui, |ui| {
-                for name in preview.animations.clone() {
-                    if ui.selectable_label(name == current, &name).clicked() {
-                        preview.set_animation(&name);
+            egui::ComboBox::from_id_salt("anim_selector")
+                .selected_text(if current.is_empty() { "(none)".to_string() } else { current.clone() })
+                .show_ui(ui, |ui| {
+                    for name in preview.animations.clone() {
+                        if ui.selectable_label(name == current, &name).clicked() {
+                            preview.set_animation(&name);
+                        }
                     }
-                }
-            });
+                });
 
             ui.separator();
-            ui.label(RichText::new(format!("{:.2}s / {:.2}s", preview.elapsed, preview.duration)).small().monospace().color(theme::TEXT_MUTED));
+            ui.label(
+                RichText::new(format!("{:.2}s / {:.2}s", preview.elapsed, preview.duration))
+                    .small()
+                    .monospace()
+                    .color(theme::TEXT_MUTED),
+            );
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui.small_button("Reset camera").clicked() {
@@ -195,7 +203,8 @@ fn anim_viewport(ui: &mut Ui, state: &mut EditorState, path: &str) {
         let (texture_id, size) = preview.render(&render_shared.render_state, width, height);
 
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
-        ui.painter().image(texture_id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+        ui.painter()
+            .image(texture_id, rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
 
         if response.dragged() {
             preview.handle_input(response.drag_delta(), 0.0, aspect);
@@ -241,7 +250,7 @@ fn unsupported_placeholder(ui: &mut Ui, name: &str) {
 /// already loaded (which it will be, every frame after the first).
 pub fn show_inspector(ui: &mut Ui, state: &mut EditorState) {
     ui.vertical(|ui| {
-        ui.label(RichText::new("Inspector").strong().color(theme::TEXT_PRIMARY));
+        theme::section_title(ui, "Inspector");
         ui.separator();
 
         let Some(path) = state.asset.selected_path.clone() else {
@@ -250,21 +259,28 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState) {
         };
 
         let name = path.rsplit('/').next().unwrap_or(&path).to_string();
-        ui.label(RichText::new(&name).strong());
-        ui.label(RichText::new(path.as_str()).small().color(theme::TEXT_MUTED));
+        theme::strong_label(ui, &name, theme::TEXT_PRIMARY);
+        ui.label(
+            RichText::new(path.as_str())
+                .small()
+                .color(theme::TEXT_MUTED),
+        );
         ui.add_space(6.0);
 
         // Meta info, if it's been loaded by the tree yet — mirrors what
         // AssetInspectorView.tsx showed above the type-specific fields.
         if let Some(meta) = find_meta(&state.asset.roots, &path) {
-            egui::Grid::new("asset_meta_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
-                ui.label(RichText::new("ID").color(theme::TEXT_SECONDARY));
-                ui.label(RichText::new(meta.id.to_string()).monospace());
-                ui.end_row();
-                ui.label(RichText::new("Included").color(theme::TEXT_SECONDARY));
-                ui.label(RichText::new(meta.included.to_string()).monospace());
-                ui.end_row();
-            });
+            egui::Grid::new("asset_meta_grid")
+                .num_columns(2)
+                .spacing([12.0, 3.0])
+                .show(ui, |ui| {
+                    ui.label(RichText::new("ID").color(theme::TEXT_SECONDARY));
+                    ui.label(RichText::new(meta.id.to_string()).monospace());
+                    ui.end_row();
+                    ui.label(RichText::new("Included").color(theme::TEXT_SECONDARY));
+                    ui.label(RichText::new(meta.included.to_string()).monospace());
+                    ui.end_row();
+                });
             ui.add_space(6.0);
         }
 
@@ -274,12 +290,15 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState) {
                 if let Some(preview) = &state.png_preview {
                     if preview.path == path {
                         ui.separator();
-                        ui.label(RichText::new("Image").strong().color(theme::TEXT_SECONDARY));
-                        egui::Grid::new("png_info_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
-                            ui.label(RichText::new("Dimensions").color(theme::TEXT_SECONDARY));
-                            ui.label(RichText::new(format!("{} x {} px", preview.width, preview.height)).monospace());
-                            ui.end_row();
-                        });
+                        theme::strong_label(ui, "Image", theme::TEXT_SECONDARY);
+                        egui::Grid::new("png_info_grid")
+                            .num_columns(2)
+                            .spacing([12.0, 3.0])
+                            .show(ui, |ui| {
+                                ui.label(RichText::new("Dimensions").color(theme::TEXT_SECONDARY));
+                                ui.label(RichText::new(format!("{} x {} px", preview.width, preview.height)).monospace());
+                                ui.end_row();
+                            });
                     }
                 }
             }
@@ -288,15 +307,18 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState) {
                 if let Some(preview) = &state.glb_preview {
                     if preview.path == path {
                         ui.separator();
-                        ui.label(RichText::new("Mesh").strong().color(theme::TEXT_SECONDARY));
-                        egui::Grid::new("glb_info_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
-                            ui.label(RichText::new("Meshes").color(theme::TEXT_SECONDARY));
-                            ui.label(RichText::new(preview.mesh_count.to_string()).monospace());
-                            ui.end_row();
-                            ui.label(RichText::new("Triangles").color(theme::TEXT_SECONDARY));
-                            ui.label(RichText::new(preview.triangle_count.to_string()).monospace());
-                            ui.end_row();
-                        });
+                        theme::strong_label(ui, "Mesh", theme::TEXT_SECONDARY);
+                        egui::Grid::new("glb_info_grid")
+                            .num_columns(2)
+                            .spacing([12.0, 3.0])
+                            .show(ui, |ui| {
+                                ui.label(RichText::new("Meshes").color(theme::TEXT_SECONDARY));
+                                ui.label(RichText::new(preview.mesh_count.to_string()).monospace());
+                                ui.end_row();
+                                ui.label(RichText::new("Triangles").color(theme::TEXT_SECONDARY));
+                                ui.label(RichText::new(preview.triangle_count.to_string()).monospace());
+                                ui.end_row();
+                            });
                     }
                 }
             }
@@ -305,18 +327,21 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState) {
                 if let Some(preview) = &state.anim_preview {
                     if preview.path == path {
                         ui.separator();
-                        ui.label(RichText::new("Skeleton").strong().color(theme::TEXT_SECONDARY));
-                        egui::Grid::new("anim_info_grid").num_columns(2).spacing([12.0, 3.0]).show(ui, |ui| {
-                            ui.label(RichText::new("Bones").color(theme::TEXT_SECONDARY));
-                            ui.label(RichText::new(preview.bone_count.to_string()).monospace());
-                            ui.end_row();
-                            ui.label(RichText::new("Slots").color(theme::TEXT_SECONDARY));
-                            ui.label(RichText::new(preview.slot_count.to_string()).monospace());
-                            ui.end_row();
-                            ui.label(RichText::new("Animations").color(theme::TEXT_SECONDARY));
-                            ui.label(RichText::new(preview.animations.len().to_string()).monospace());
-                            ui.end_row();
-                        });
+                        theme::strong_label(ui, "Skeleton", theme::TEXT_SECONDARY);
+                        egui::Grid::new("anim_info_grid")
+                            .num_columns(2)
+                            .spacing([12.0, 3.0])
+                            .show(ui, |ui| {
+                                ui.label(RichText::new("Bones").color(theme::TEXT_SECONDARY));
+                                ui.label(RichText::new(preview.bone_count.to_string()).monospace());
+                                ui.end_row();
+                                ui.label(RichText::new("Slots").color(theme::TEXT_SECONDARY));
+                                ui.label(RichText::new(preview.slot_count.to_string()).monospace());
+                                ui.end_row();
+                                ui.label(RichText::new("Animations").color(theme::TEXT_SECONDARY));
+                                ui.label(RichText::new(preview.animations.len().to_string()).monospace());
+                                ui.end_row();
+                            });
                     }
                 }
             }

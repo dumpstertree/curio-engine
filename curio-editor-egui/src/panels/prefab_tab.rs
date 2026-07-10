@@ -330,11 +330,7 @@ pub fn show_inspector(ui: &mut Ui, state: &mut EditorState, path: &str) {
     state.prefab.ensure_loaded(&project_root, path);
 
     ui.horizontal(|ui| {
-        ui.label(
-            RichText::new("Inspector")
-                .strong()
-                .color(theme::TEXT_PRIMARY),
-        );
+        theme::section_title(ui, "Inspector");
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             if ui
                 .small_button("Refresh")

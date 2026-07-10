@@ -35,6 +35,13 @@ struct Vertex {
 
 #[repr(C)]
 #[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct GridVertex {
+    position: [f32; 3],
+    color: [f32; 4],
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
 struct Uniforms {
     view_proj: [f32; 16],
     light_dir: [f32; 4],
@@ -67,7 +74,10 @@ fn collect_geometry(document: &gltf::Document, buffers: &[gltf::buffer::Data]) -
                 let reader = primitive.reader(|b| Some(&buffers[b.index()]));
                 let Some(positions) = reader.read_positions() else { continue };
                 let positions: Vec<[f32; 3]> = positions.collect();
-                let normals: Vec<[f32; 3]> = reader.read_normals().map(|it| it.collect()).unwrap_or_default();
+                let normals: Vec<[f32; 3]> = reader
+                    .read_normals()
+                    .map(|it| it.collect())
+                    .unwrap_or_default();
 
                 let base_index = vertices.len() as u32;
                 for (i, p) in positions.iter().enumerate() {
@@ -80,9 +90,14 @@ fn collect_geometry(document: &gltf::Document, buffers: &[gltf::buffer::Data]) -
                     // for actual flat-shaded rendering (no per-face normal
                     // recompute here).
                     let local_normal = normals.get(i).copied().unwrap_or([0.0, 1.0, 0.0]);
-                    let world_normal = world.transform_vector3(Vec3::from(local_normal)).normalize_or_zero();
+                    let world_normal = world
+                        .transform_vector3(Vec3::from(local_normal))
+                        .normalize_or_zero();
 
-                    vertices.push(Vertex { position: world_pos.into(), normal: world_normal.into() });
+                    vertices.push(Vertex {
+                        position: world_pos.into(),
+                        normal: world_normal.into(),
+                    });
                 }
 
                 if let Some(read_indices) = reader.read_indices() {
@@ -114,9 +129,38 @@ fn collect_geometry(document: &gltf::Document, buffers: &[gltf::buffer::Data]) -
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Orbit camera — mirrors the mouse-drag-to-rotate / scroll-to-zoom controls
-// the three.js `OrbitControls` gave the original viewport
+// XZ reference grid — scaled to the loaded model so it's a useful reference
+// regardless of the asset's actual size, with the X/Z axis lines picked out
+// in red/blue (the usual engine convention) so orientation is obvious at a
+// glance.
 // ─────────────────────────────────────────────────────────────────────────────
+
+fn build_grid(bounds: &Bounds) -> Vec<GridVertex> {
+    let extent = (bounds.radius * 2.5).max(5.0);
+    let step = (extent / 10.0).max(0.25);
+    let n = (extent / step).round() as i32;
+
+    const MINOR: [f32; 4] = [0.30, 0.30, 0.33, 1.0];
+    const AXIS_X: [f32; 4] = [0.75, 0.32, 0.36, 1.0]; // line where z = 0
+    const AXIS_Z: [f32; 4] = [0.32, 0.45, 0.75, 1.0]; // line where x = 0
+
+    let mut verts = Vec::with_capacity(((2 * n + 1) * 4) as usize);
+    for i in -n..=n {
+        let offset = i as f32 * step;
+        let is_center = i == 0;
+
+        // Constant-x line, running along Z — the center one *is* the Z axis.
+        let color = if is_center { AXIS_Z } else { MINOR };
+        verts.push(GridVertex { position: [offset, 0.0, -extent], color });
+        verts.push(GridVertex { position: [offset, 0.0, extent], color });
+
+        // Constant-z line, running along X — the center one *is* the X axis.
+        let color = if is_center { AXIS_X } else { MINOR };
+        verts.push(GridVertex { position: [-extent, 0.0, offset], color });
+        verts.push(GridVertex { position: [extent, 0.0, offset], color });
+    }
+    verts
+}
 
 struct OrbitCamera {
     yaw: f32,
@@ -127,7 +171,12 @@ struct OrbitCamera {
 
 impl OrbitCamera {
     fn framing(bounds: &Bounds) -> Self {
-        Self { yaw: 0.6, pitch: 0.35, distance: bounds.radius * 2.6, target: bounds.center }
+        Self {
+            yaw: 0.6,
+            pitch: 0.35,
+            distance: bounds.radius * 2.6,
+            target: bounds.center,
+        }
     }
 
     fn eye(&self) -> Vec3 {
@@ -177,6 +226,10 @@ pub struct GlbPreview {
     camera: OrbitCamera,
     bounds: Bounds,
 
+    grid_vertex_buffer: wgpu::Buffer,
+    grid_vertex_count: u32,
+    grid_pipeline: wgpu::RenderPipeline,
+
     texture_id: Option<egui::TextureId>,
 }
 
@@ -211,6 +264,39 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 }
 "#;
 
+// Separate shader (rather than branching the mesh one) since the grid needs
+// no lighting at all — just per-vertex color straight through. Reuses the
+// same `Uniforms` struct/binding as the mesh shader purely so both pipelines
+// can share one bind group layout (and the same uniform buffer, already
+// holding `view_proj` each frame); `light_dir`/`base_color` are simply
+// unused here.
+const GRID_SHADER_SRC: &str = r#"
+struct Uniforms {
+    view_proj: mat4x4<f32>,
+    light_dir: vec4<f32>,
+    base_color: vec4<f32>,
+};
+@group(0) @binding(0) var<uniform> u: Uniforms;
+
+struct VertexOut {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) color: vec4<f32>,
+};
+
+@vertex
+fn vs_main(@location(0) position: vec3<f32>, @location(1) color: vec4<f32>) -> VertexOut {
+    var out: VertexOut;
+    out.clip_position = u.view_proj * vec4<f32>(position, 1.0);
+    out.color = color;
+    return out;
+}
+
+@fragment
+fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
+    return in.color;
+}
+"#;
+
 impl GlbPreview {
     /// Parses `bytes` as a GLB and builds all GPU resources for it. Returns
     /// `Err` with a human-readable message (shown in the preview panel) on
@@ -223,8 +309,16 @@ impl GlbPreview {
         let mesh_count = document.meshes().count();
         let triangle_count = indices.len() / 3;
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("glb_vertex_buffer"), contents: bytemuck::cast_slice(&vertices), usage: wgpu::BufferUsages::VERTEX });
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("glb_index_buffer"), contents: bytemuck::cast_slice(&indices), usage: wgpu::BufferUsages::INDEX });
+        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("glb_vertex_buffer"),
+            contents: bytemuck::cast_slice(&vertices),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("glb_index_buffer"),
+            contents: bytemuck::cast_slice(&indices),
+            usage: wgpu::BufferUsages::INDEX,
+        });
 
         let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("glb_uniforms"),
@@ -238,18 +332,32 @@ impl GlbPreview {
             entries: &[wgpu::BindGroupLayoutEntry {
                 binding: 0,
                 visibility: wgpu::ShaderStages::VERTEX_FRAGMENT,
-                ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
                 count: None,
             }],
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("glb_bind_group"),
             layout: &bind_group_layout,
-            entries: &[wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() }],
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
         });
 
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("glb_shader"), source: wgpu::ShaderSource::Wgsl(SHADER_SRC.into()) });
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some("glb_pipeline_layout"), bind_group_layouts: &[&bind_group_layout], push_constant_ranges: &[] });
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("glb_shader"),
+            source: wgpu::ShaderSource::Wgsl(SHADER_SRC.into()),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("glb_pipeline_layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
 
         let vertex_layout = wgpu::VertexBufferLayout {
             array_stride: std::mem::size_of::<Vertex>() as u64,
@@ -260,21 +368,98 @@ impl GlbPreview {
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("glb_pipeline"),
             layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState { module: &shader, entry_point: Some("vs_main"), buffers: &[vertex_layout], compilation_options: Default::default() },
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[vertex_layout],
+                compilation_options: Default::default(),
+            },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState { format: wgpu::TextureFormat::Rgba8UnormSrgb, blend: Some(wgpu::BlendState::REPLACE), write_mask: wgpu::ColorWrites::ALL })],
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
                 compilation_options: Default::default(),
             }),
-            primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, cull_mode: None, ..Default::default() },
-            depth_stencil: Some(wgpu::DepthStencilState { format: wgpu::TextureFormat::Depth32Float, depth_write_enabled: true, depth_compare: wgpu::CompareFunction::Less, stencil: Default::default(), bias: Default::default() }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
             cache: None,
         });
 
         let camera = OrbitCamera::framing(&bounds);
+
+        let grid_verts = build_grid(&bounds);
+        let grid_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("glb_grid_vertex_buffer"),
+            contents: bytemuck::cast_slice(&grid_verts),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
+
+        let grid_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("glb_grid_shader"),
+            source: wgpu::ShaderSource::Wgsl(GRID_SHADER_SRC.into()),
+        });
+        let grid_vertex_layout = wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<GridVertex>() as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![0 => Float32x3, 1 => Float32x4],
+        };
+        // Reuses `pipeline_layout` (and so `bind_group`) from the mesh
+        // pipeline above — the grid shader only reads `view_proj` out of
+        // the same `Uniforms` binding, so there's no need for a second
+        // bind group layout/buffer just for this.
+        let grid_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("glb_grid_pipeline"),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &grid_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[grid_vertex_layout],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &grid_shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                cull_mode: None,
+                ..Default::default()
+            },
+            // Same depth format/test as the mesh so the two correctly
+            // occlude each other regardless of draw order.
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: true,
+                depth_compare: wgpu::CompareFunction::Less,
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
 
         Ok(Self {
             path,
@@ -293,6 +478,9 @@ impl GlbPreview {
             output_size: (0, 0),
             camera,
             bounds,
+            grid_vertex_buffer,
+            grid_vertex_count: grid_verts.len() as u32,
+            grid_pipeline,
             texture_id: None,
         })
     }
@@ -344,26 +532,53 @@ impl GlbPreview {
             light_dir: [0.4, 0.8, 0.5, 0.0],
             base_color: [0.75, 0.76, 0.8, 1.0],
         };
-        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
+        self.queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&uniforms));
 
         let color_texture = self.color_texture.as_ref().unwrap();
         let depth_texture = self.depth_texture.as_ref().unwrap();
         let color_view = color_texture.create_view(&wgpu::TextureViewDescriptor::default());
         let depth_view = depth_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("glb_preview_encoder") });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("glb_preview_encoder") });
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("glb_preview_pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                     view: &color_view,
                     resolve_target: None,
-                    ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.11, g: 0.11, b: 0.12, a: 1.0 }), store: wgpu::StoreOp::Store },
+                    // Darker than the UI's own darkest panel background
+                    // (theme::BG_PRIMARY, 0x0B0B0C) so the viewport reads as
+                    // a distinct "scene" rather than blending into the rest
+                    // of the editor chrome.
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.025, g: 0.025, b: 0.028, a: 1.0 }),
+                        store: wgpu::StoreOp::Store,
+                    },
                 })],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment { view: &depth_view, depth_ops: Some(wgpu::Operations { load: wgpu::LoadOp::Clear(1.0), store: wgpu::StoreOp::Store }), stencil_ops: None }),
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &depth_view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
+
+            // Grid first, mesh on top — draw order doesn't actually matter
+            // for correctness (both write/test depth), but this way the
+            // mesh's own depth values are what the grid gets tested against
+            // when there's overlap, which is the more intuitive one to read.
+            pass.set_pipeline(&self.grid_pipeline);
+            pass.set_bind_group(0, &self.bind_group, &[]);
+            pass.set_vertex_buffer(0, self.grid_vertex_buffer.slice(..));
+            pass.draw(0..self.grid_vertex_count, 0..1);
+
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.bind_group, &[]);
             pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));

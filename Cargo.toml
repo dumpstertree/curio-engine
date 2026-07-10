@@ -10,14 +10,14 @@ members = [
     "system_component_default/gameplay_macros/habit",
     "system_component_default/gameplay_macros/stimulant",
     "system_component_default/gameplay_macros/facet",
+    # "system_component_default/gameplay_macros/record",
     "system_component_default/gameplay_macros/record",
-    "system_component_default/gameplay_macros/record_serializable",
     "system_component_default/rendering",
     "system_component_default/rendering_macros/macro_render_feature_driver",
     "system_component_default/time",
     "system_component_default/physics",
     "system_component_default/networking",
-    "system_component_default/animation",
+    # "system_component_default/animation",
     "system_component_default/input",
     # "curio-editor/src-tauri",
     "curio-editor-egui",
@@ -38,8 +38,8 @@ members = [
 curio_engine = { path = "curio_engine" }
 curio_core = { path = "curio_core" }
 curio_core_tests = { path = "curio_core_tests" }
+# record = { path = "system_component_default/gameplay_macros/record" }
 record = { path = "system_component_default/gameplay_macros/record" }
-record_serializable = { path = "system_component_default/gameplay_macros/record_serializable" }
 stimulant = { path = "system_component_default/gameplay_macros/stimulant" }
 impulse = { path = "system_component_default/gameplay_macros/impulse" }
 habit = { path = "system_component_default/gameplay_macros/habit" }
@@ -50,7 +50,7 @@ networking = { path = "system_component_default/networking" }
 physics = { path = "system_component_default/physics" }
 input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
-animation = { path = "system_component_default/animation" }
+# animation = { path = "system_component_default/animation" }
 # curio_editor = { path = "curio-editor/src-tauri" }
 camera = { path = "optional_systems/camera" }
 ext_rendering = { path = "optional_systems/rendering" }

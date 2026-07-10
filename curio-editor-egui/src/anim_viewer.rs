@@ -73,6 +73,68 @@ struct Uniforms {
     view_proj: [f32; 16],
 }
 
+#[repr(C)]
+#[derive(Clone, Copy, bytemuck::Pod, bytemuck::Zeroable)]
+struct GridVertex {
+    position: [f32; 2],
+    color: [f32; 4],
+}
+
+/// XZ-plane-equivalent reference grid for this 2D (XY, orthographic)
+/// preview — same visual language as `glb_viewer.rs`'s 3D grid (gray minor
+/// lines, X axis red, Y axis blue), sized to the loaded skeleton's bounds.
+/// There's no depth buffer here (`depth_stencil: None` below, same as the
+/// rest of this preview), so unlike the 3D grids this one is only ever
+/// correct if it's drawn *before* the skeleton each frame.
+fn build_grid(min: glam::Vec2, max: glam::Vec2) -> Vec<GridVertex> {
+    let size = (max - min).max_element().max(20.0);
+    let extent = size * 1.5;
+    let step = (extent / 10.0).max(1.0);
+    let n = (extent / step).round() as i32;
+
+    const MINOR: [f32; 4] = [0.30, 0.30, 0.33, 1.0];
+    const AXIS_X: [f32; 4] = [0.75, 0.32, 0.36, 1.0]; // line where y = 0
+    const AXIS_Y: [f32; 4] = [0.32, 0.45, 0.75, 1.0]; // line where x = 0
+
+    let mut verts = Vec::with_capacity(((2 * n + 1) * 4) as usize);
+    for i in -n..=n {
+        let offset = i as f32 * step;
+        let is_center = i == 0;
+
+        let color = if is_center { AXIS_Y } else { MINOR };
+        verts.push(GridVertex { position: [offset, -extent], color });
+        verts.push(GridVertex { position: [offset, extent], color });
+
+        let color = if is_center { AXIS_X } else { MINOR };
+        verts.push(GridVertex { position: [-extent, offset], color });
+        verts.push(GridVertex { position: [extent, offset], color });
+    }
+    verts
+}
+
+const GRID_SHADER_SRC: &str = r#"
+struct Uniforms { view_proj: mat4x4<f32> };
+@group(0) @binding(0) var<uniform> u: Uniforms;
+
+struct VertexOut {
+    @builtin(position) clip_position: vec4<f32>,
+    @location(0) color: vec4<f32>,
+};
+
+@vertex
+fn vs_main(@location(0) position: vec2<f32>, @location(1) color: vec4<f32>) -> VertexOut {
+    var out: VertexOut;
+    out.clip_position = u.view_proj * vec4<f32>(position, 0.0, 1.0);
+    out.color = color;
+    return out;
+}
+
+@fragment
+fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
+    return in.color;
+}
+"#;
+
 const SHADER_SRC: &str = r#"
 struct Uniforms { view_proj: mat4x4<f32> };
 @group(0) @binding(0) var<uniform> u: Uniforms;
@@ -143,10 +205,16 @@ struct AnimArchive {
 fn unpack_anim_zip(bytes: &[u8]) -> Result<AnimArchive, String> {
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes)).map_err(|e| format!("Failed to open .anim as a zip: {e}"))?;
 
-    let names: Vec<String> = (0..zip.len()).filter_map(|i| zip.by_index(i).ok().map(|f| f.name().to_string())).collect();
+    let names: Vec<String> = (0..zip.len())
+        .filter_map(|i| zip.by_index(i).ok().map(|f| f.name().to_string()))
+        .collect();
 
     let find_and_read = |zip: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>, suffix: &str| -> Result<Vec<u8>, String> {
-        let name = names.iter().find(|n| n.ends_with(suffix)).ok_or_else(|| format!("Missing {suffix} in .anim. Found: {}", names.join(", ")))?.clone();
+        let name = names
+            .iter()
+            .find(|n| n.ends_with(suffix))
+            .ok_or_else(|| format!("Missing {suffix} in .anim. Found: {}", names.join(", ")))?
+            .clone();
         let mut file = zip.by_name(&name).map_err(|e| e.to_string())?;
         let mut buf = Vec::new();
         std::io::Read::read_to_end(&mut file, &mut buf).map_err(|e| e.to_string())?;
@@ -216,6 +284,11 @@ pub struct AnimPreview {
     bind_group: wgpu::BindGroup,
     uniform_buffer: wgpu::Buffer,
 
+    grid_vertex_buffer: wgpu::Buffer,
+    grid_vertex_count: u32,
+    grid_pipeline: wgpu::RenderPipeline,
+    grid_bind_group: wgpu::BindGroup,
+
     color_texture: Option<wgpu::Texture>,
     output_size: (u32, u32),
     texture_id: Option<egui::TextureId>,
@@ -231,23 +304,39 @@ impl AnimPreview {
 
         let archive = unpack_anim_zip(bytes)?;
 
-        let decoded_png = image::load_from_memory(&archive.png_bytes).map_err(|e| format!("Failed to decode skeleton.png: {e}"))?.to_rgba8();
+        let decoded_png = image::load_from_memory(&archive.png_bytes)
+            .map_err(|e| format!("Failed to decode skeleton.png: {e}"))?
+            .to_rgba8();
         let (tex_w, tex_h) = decoded_png.dimensions();
 
         let atlas = Arc::new(Atlas::new(archive.atlas_text.as_bytes(), "").map_err(|e| format!("Failed to parse skeleton.atlas: {e}"))?);
         let skeleton_json = SkeletonJson::new(atlas);
-        let skeleton_data = Arc::new(skeleton_json.read_skeleton_data(archive.json_text.as_bytes()).map_err(|e| format!("Failed to parse skeleton.json: {e}"))?);
+        let skeleton_data = Arc::new(
+            skeleton_json
+                .read_skeleton_data(archive.json_text.as_bytes())
+                .map_err(|e| format!("Failed to parse skeleton.json: {e}"))?,
+        );
 
-        let animations: Vec<String> = skeleton_data.animations().map(|a| a.name().to_string()).collect();
+        let animations: Vec<String> = skeleton_data
+            .animations()
+            .map(|a| a.name().to_string())
+            .collect();
         let bone_count = skeleton_data.bones().count();
         let slot_count = skeleton_data.slots().count();
 
         let animation_state_data = Arc::new(AnimationStateData::new(skeleton_data.clone()));
-        let mut controller = SkeletonController::new(skeleton_data, animation_state_data).with_settings(SkeletonControllerSettings { premultiplied_alpha: false, cull_direction: CullDirection::CounterClockwise, color_space: ColorSpace::SRGB });
+        let mut controller = SkeletonController::new(skeleton_data, animation_state_data).with_settings(SkeletonControllerSettings {
+            premultiplied_alpha: false,
+            cull_direction: CullDirection::CounterClockwise,
+            color_space: ColorSpace::SRGB,
+        });
 
         let current_animation = animations.first().cloned().unwrap_or_default();
         if !current_animation.is_empty() {
-            controller.animation_state.set_animation_by_name(0, &current_animation, true).map_err(|e| format!("Failed to start animation '{current_animation}': {e}"))?;
+            controller
+                .animation_state
+                .set_animation_by_name(0, &current_animation, true)
+                .map_err(|e| format!("Failed to start animation '{current_animation}': {e}"))?;
         }
 
         // One pose update so there's real vertex data to frame the camera
@@ -273,48 +362,192 @@ impl AnimPreview {
             decoded_png.as_raw(),
         );
         let texture_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor { mag_filter: wgpu::FilterMode::Linear, min_filter: wgpu::FilterMode::Linear, address_mode_u: wgpu::AddressMode::ClampToEdge, address_mode_v: wgpu::AddressMode::ClampToEdge, ..Default::default() });
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            ..Default::default()
+        });
 
-        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor { label: Some("anim_uniforms"), size: std::mem::size_of::<Uniforms>() as u64, usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST, mapped_at_creation: false });
+        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("anim_uniforms"),
+            size: std::mem::size_of::<Uniforms>() as u64,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("anim_bind_group_layout"),
             entries: &[
-                wgpu::BindGroupLayoutEntry { binding: 0, visibility: wgpu::ShaderStages::VERTEX, ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None }, count: None },
-                wgpu::BindGroupLayoutEntry { binding: 1, visibility: wgpu::ShaderStages::FRAGMENT, ty: wgpu::BindingType::Texture { sample_type: wgpu::TextureSampleType::Float { filterable: true }, view_dimension: wgpu::TextureViewDimension::D2, multisampled: false }, count: None },
-                wgpu::BindGroupLayoutEntry { binding: 2, visibility: wgpu::ShaderStages::FRAGMENT, ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering), count: None },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
             ],
         });
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("anim_bind_group"),
             layout: &bind_group_layout,
             entries: &[
-                wgpu::BindGroupEntry { binding: 0, resource: uniform_buffer.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::TextureView(&texture_view) },
-                wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&sampler) },
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(&texture_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&sampler),
+                },
             ],
         });
 
-        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("anim_shader"), source: wgpu::ShaderSource::Wgsl(SHADER_SRC.into()) });
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some("anim_pipeline_layout"), bind_group_layouts: &[&bind_group_layout], push_constant_ranges: &[] });
+        let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("anim_shader"),
+            source: wgpu::ShaderSource::Wgsl(SHADER_SRC.into()),
+        });
+        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("anim_pipeline_layout"),
+            bind_group_layouts: &[&bind_group_layout],
+            push_constant_ranges: &[],
+        });
 
-        let vertex_layout = wgpu::VertexBufferLayout { array_stride: std::mem::size_of::<Vertex>() as u64, step_mode: wgpu::VertexStepMode::Vertex, attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2, 2 => Float32x4] };
+        let vertex_layout = wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<Vertex>() as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x2, 2 => Float32x4],
+        };
 
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("anim_pipeline"),
             layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState { module: &shader, entry_point: Some("vs_main"), buffers: &[vertex_layout], compilation_options: Default::default() },
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some("vs_main"),
+                buffers: &[vertex_layout],
+                compilation_options: Default::default(),
+            },
             fragment: Some(wgpu::FragmentState {
                 module: &shader,
                 entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState { format: wgpu::TextureFormat::Rgba8UnormSrgb, blend: Some(wgpu::BlendState::ALPHA_BLENDING), write_mask: wgpu::ColorWrites::ALL })],
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
                 compilation_options: Default::default(),
             }),
-            primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, cull_mode: None, ..Default::default() },
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                cull_mode: None,
+                ..Default::default()
+            },
             depth_stencil: None,
             multisample: wgpu::MultisampleState::default(),
             multiview: None,
             cache: None,
+        });
+
+        // Grid: this preview has no depth buffer (unlike the 3D previews),
+        // so it's drawn first each frame and just relies on draw order for
+        // the skeleton to paint over it. Its own small bind group layout —
+        // the sprite pipeline's layout above requires a texture+sampler the
+        // grid has no use for — but it points at the *same* `uniform_buffer`
+        // (already updated with `view_proj` every frame).
+        let grid_bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("anim_grid_bind_group_layout"),
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::VERTEX,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        });
+        let grid_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("anim_grid_bind_group"),
+            layout: &grid_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: uniform_buffer.as_entire_binding(),
+            }],
+        });
+        let grid_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("anim_grid_shader"),
+            source: wgpu::ShaderSource::Wgsl(GRID_SHADER_SRC.into()),
+        });
+        let grid_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("anim_grid_pipeline_layout"),
+            bind_group_layouts: &[&grid_bind_group_layout],
+            push_constant_ranges: &[],
+        });
+        let grid_vertex_layout = wgpu::VertexBufferLayout {
+            array_stride: std::mem::size_of::<GridVertex>() as u64,
+            step_mode: wgpu::VertexStepMode::Vertex,
+            attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x4],
+        };
+        let grid_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("anim_grid_pipeline"),
+            layout: Some(&grid_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &grid_shader,
+                entry_point: Some("vs_main"),
+                buffers: &[grid_vertex_layout],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &grid_shader,
+                entry_point: Some("fs_main"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: wgpu::TextureFormat::Rgba8UnormSrgb,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::LineList,
+                cull_mode: None,
+                ..Default::default()
+            },
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+        let grid_verts = build_grid(bounds_min, bounds_max);
+        let grid_vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("anim_grid_vertex_buffer"),
+            contents: bytemuck::cast_slice(&grid_verts),
+            usage: wgpu::BufferUsages::VERTEX,
         });
 
         Ok(Self {
@@ -332,6 +565,10 @@ impl AnimPreview {
             pipeline,
             bind_group,
             uniform_buffer,
+            grid_vertex_buffer,
+            grid_vertex_count: grid_verts.len() as u32,
+            grid_pipeline,
+            grid_bind_group,
             color_texture: None,
             output_size: (0, 0),
             texture_id: None,
@@ -342,7 +579,12 @@ impl AnimPreview {
     }
 
     pub fn set_animation(&mut self, name: &str) {
-        if self.controller.animation_state.set_animation_by_name(0, name, true).is_ok() {
+        if self
+            .controller
+            .animation_state
+            .set_animation_by_name(0, name, true)
+            .is_ok()
+        {
             self.current_animation = name.to_string();
         }
     }
@@ -392,31 +634,62 @@ impl AnimPreview {
             let base = vertices.len() as u32;
             for i in 0..renderable.vertices.len() {
                 let uv = renderable.uvs.get(i).copied().unwrap_or([0.0, 0.0]);
-                let c = renderable.colors.get(i).copied().unwrap_or([1.0, 1.0, 1.0, 1.0]);
+                let c = renderable
+                    .colors
+                    .get(i)
+                    .copied()
+                    .unwrap_or([1.0, 1.0, 1.0, 1.0]);
                 vertices.push(Vertex { position: renderable.vertices[i], uv, color: c });
             }
             indices.extend(renderable.indices.iter().map(|&i| base + i as u32));
         }
 
         let view_proj = self.camera.view_proj(width as f32 / height as f32);
-        self.queue.write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&Uniforms { view_proj: view_proj.to_cols_array() }));
+        self.queue
+            .write_buffer(&self.uniform_buffer, 0, bytemuck::bytes_of(&Uniforms { view_proj: view_proj.to_cols_array() }));
 
         let color_texture = self.color_texture.as_ref().unwrap();
         let color_view = color_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anim_preview_encoder") });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("anim_preview_encoder") });
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("anim_preview_pass"),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment { view: &color_view, resolve_target: None, ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.08, g: 0.08, b: 0.09, a: 1.0 }), store: wgpu::StoreOp::Store } })],
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: &color_view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.025, g: 0.025, b: 0.028, a: 1.0 }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
                 depth_stencil_attachment: None,
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
 
+            pass.set_pipeline(&self.grid_pipeline);
+            pass.set_bind_group(0, &self.grid_bind_group, &[]);
+            pass.set_vertex_buffer(0, self.grid_vertex_buffer.slice(..));
+            pass.draw(0..self.grid_vertex_count, 0..1);
+
             if !indices.is_empty() {
-                let vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("anim_vertex_buffer"), contents: bytemuck::cast_slice(&vertices), usage: wgpu::BufferUsages::VERTEX });
-                let index_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some("anim_index_buffer"), contents: bytemuck::cast_slice(&indices), usage: wgpu::BufferUsages::INDEX });
+                let vertex_buffer = self
+                    .device
+                    .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("anim_vertex_buffer"),
+                        contents: bytemuck::cast_slice(&vertices),
+                        usage: wgpu::BufferUsages::VERTEX,
+                    });
+                let index_buffer = self
+                    .device
+                    .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                        label: Some("anim_index_buffer"),
+                        contents: bytemuck::cast_slice(&indices),
+                        usage: wgpu::BufferUsages::INDEX,
+                    });
 
                 pass.set_pipeline(&self.pipeline);
                 pass.set_bind_group(0, &self.bind_group, &[]);

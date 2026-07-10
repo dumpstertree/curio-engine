@@ -94,6 +94,25 @@ pub fn apply(ctx: &egui::Context) {
     ctx.set_style(style);
 }
 
+/// A bold, explicitly-colored label. Use this instead of
+/// `RichText::new(text).strong().color(color)` — with `apply()`'s global
+/// `override_text_color` already set, that specific combination renders as
+/// the default (black) text color instead of the intended one. Forcing it
+/// through a local `override_text_color` (the same mechanism the rest of
+/// the theme uses) sidesteps that, for any color, not just headings.
+pub fn strong_label(ui: &mut egui::Ui, text: &str, color: egui::Color32) {
+    ui.scope(|ui| {
+        ui.visuals_mut().override_text_color = Some(color);
+        ui.label(egui::RichText::new(text).strong());
+    });
+}
+
+/// A bold panel/section heading (e.g. "Inspector", "Assets") — `strong_label`
+/// pinned to the standard heading color.
+pub fn section_title(ui: &mut egui::Ui, text: &str) {
+    strong_label(ui, text, TEXT_PRIMARY);
+}
+
 use eframe::egui::{FontData, FontDefinitions, FontFamily};
 
 pub fn install_fonts(ctx: &egui::Context) {
