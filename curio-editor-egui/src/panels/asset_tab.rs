@@ -14,9 +14,19 @@ use eframe::egui::{self, RichText, Ui};
 
 pub fn show_tree(ui: &mut Ui, state: &mut EditorState) {
     ui.vertical(|ui| {
-        theme::section_title(ui, "Assets");
-        ui.separator();
+        // Built manually (rather than via `theme::section_title`) because
+        // it needs to sense clicks for `context_menu` to work at all —
+        // `Response::context_menu` is a no-op on responses that don't
+        // sense clicks, which plain labels don't by default.
+        let title = ui
+            .scope(|ui| {
+                ui.visuals_mut().override_text_color = Some(theme::TEXT_PRIMARY);
+                ui.add(egui::Label::new(RichText::new("Assets").strong()).sense(egui::Sense::click()))
+            })
+            .inner;
         let project_path = state.project_path.clone();
+        crate::panels::asset_tree::attach_root_context_menu(title, &mut state.asset, &project_path);
+        ui.separator();
         crate::panels::asset_tree::show(ui, &mut state.asset, &project_path);
     });
 }

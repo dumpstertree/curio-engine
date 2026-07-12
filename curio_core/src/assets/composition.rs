@@ -12,7 +12,7 @@ pub struct Composition {
 }
 impl AssetCommon<Composition> for Composition {
     fn from_bits(bits: &Vec<u8>) -> Composition {
-        let string = String::from_utf8(bits.to_vec()).unwrap();
-        return serde_yaml::from_str::<Composition>(&string).unwrap();
+        let string = String::from_utf8(bits.to_vec()).expect("Failed to convert bits to String for Composition::from_bits");
+        return serde_yaml::from_str::<Composition>(&string).expect("Failed to cast Composition from bits");
     }
 }

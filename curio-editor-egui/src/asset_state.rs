@@ -11,6 +11,7 @@
 //! tree while also reading it mid-traversal.
 
 use crate::fs_ops::{self, DirEntry, MetaFile};
+use std::sync::mpsc::{Receiver, TryRecvError};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tree node
@@ -74,15 +75,29 @@ pub struct AssetState {
     pub load_error: Option<String>,
 
     pub selected_path: Option<String>,
-    pub focused_dir: String,
 
-    pub drag_path: Option<String>,
+    // Note: there's no `drag_path` field anymore — which item is being
+    // dragged is now tracked by egui's own `DragAndDrop` plugin (queried
+    // live via `egui::DragAndDrop::payload` each frame in `asset_tree.rs`)
+    // instead of hand-rolled state here. `drop_target` still lives here
+    // since it's used to decide a row's highlight *before* that row is
+    // drawn each frame, which needs last-frame's value the same way
+    // `selected_path` does.
     pub drop_target: Option<String>,
 
     pub renaming_path: Option<String>,
     pub rename_draft: String,
 
     pub confirming_delete_path: Option<String>,
+
+    // The native file picker (`fs_ops::pick_file`) blocks the calling
+    // thread until the user closes the dialog. Calling it directly on the
+    // main/UI thread stalls the whole event loop for as long as the dialog
+    // is open — long enough that the window manager decides the app has
+    // hung and offers to force-quit it. Running it on a background thread
+    // and polling this channel each frame (see `poll_import`) keeps the UI
+    // thread — and so the window's responsiveness — unaffected.
+    pending_import: Option<(String, Receiver<Option<String>>)>,
 }
 
 impl AssetState {
@@ -92,12 +107,11 @@ impl AssetState {
             roots_loaded: false,
             load_error: None,
             selected_path: None,
-            focused_dir: String::new(),
-            drag_path: None,
             drop_target: None,
             renaming_path: None,
             rename_draft: String::new(),
             confirming_delete_path: None,
+            pending_import: None,
         }
     }
 
@@ -108,7 +122,6 @@ impl AssetState {
             return;
         }
         let root = fs_ops::assets_root(project_root);
-        self.focused_dir = root.clone();
         match fs_ops::list_dir(&root) {
             Ok(entries) => {
                 self.roots = entries.into_iter().map(TreeNode::new).collect();
@@ -130,6 +143,37 @@ impl AssetState {
         self.roots_loaded = false;
     }
 
+    /// Call once per frame — completes an in-flight `Import` once the
+    /// background thread the file picker is running on (see `apply`'s
+    /// `Import` handler) reports back that the user picked a file or
+    /// cancelled the dialog.
+    pub fn poll_import(&mut self, project_root: &str) {
+        // Borrows `self.pending_import` only within this expression — the
+        // result is fully owned, so there's no lingering borrow stopping
+        // `self` from being mutated below.
+        let polled = self
+            .pending_import
+            .as_ref()
+            .map(|(dir, rx)| (dir.clone(), rx.try_recv()));
+        let Some((target_dir, poll_result)) = polled else { return };
+
+        match poll_result {
+            Ok(picked) => {
+                self.pending_import = None;
+                let Some(src) = picked else { return }; // user cancelled the dialog
+                let name = src.rsplit('/').next().unwrap_or(&src).to_string();
+                let dst = fs_ops::resolve_conflict(&target_dir, &name);
+                if fs_ops::copy_file(&src, &dst).is_ok() {
+                    fs_ops::get_or_create_meta(&dst);
+                    self.refresh_dir(&target_dir);
+                    let _ = fs_ops::rebuild_manifest(project_root);
+                }
+            }
+            Err(TryRecvError::Empty) => {} // still picking
+            Err(TryRecvError::Disconnected) => self.pending_import = None,
+        }
+    }
+
     pub fn apply(&mut self, action: TreeAction, project_root: &str) {
         match action {
             TreeAction::ToggleExpand(path) => {
@@ -139,17 +183,12 @@ impl AssetState {
                             node.load_children();
                         }
                         node.expanded = !node.expanded;
-                        if node.entry.is_dir {
-                            self.focused_dir = node.entry.path.clone();
-                        }
                         break;
                     }
                 }
             }
 
             TreeAction::Select(path) => self.selected_path = Some(path),
-
-            TreeAction::SetFocusedDir(path) => self.focused_dir = path,
 
             TreeAction::EnsureMeta(path) => {
                 for root in &mut self.roots {
@@ -221,59 +260,50 @@ impl AssetState {
                 }
             }
 
-            TreeAction::DragStart(path) => self.drag_path = Some(path),
             TreeAction::DragOver(target) => self.drop_target = target,
-            TreeAction::DragEnd => {
-                self.drag_path = None;
+
+            TreeAction::Drop { source, target } => {
                 self.drop_target = None;
-            }
-            TreeAction::Drop(target_dir) => {
-                self.drop_target = None;
-                let Some(drag_path) = self.drag_path.take() else { return };
-                let src_dir = drag_path[..drag_path.rfind('/').unwrap_or(0)].to_string();
+                let src_dir = source[..source.rfind('/').unwrap_or(0)].to_string();
                 // Also covers "dropped it back into the folder it's already
                 // in" — without this, `resolve_conflict` sees the item's
                 // own current path as an "existing" file at the target and
                 // renames it out from under itself with a `_1` suffix.
-                if drag_path == target_dir || src_dir == target_dir || target_dir.starts_with(&format!("{drag_path}/")) {
+                if source == target || src_dir == target || target.starts_with(&format!("{source}/")) {
                     return;
                 }
-                let name = drag_path.rsplit('/').next().unwrap_or_default().to_string();
-                let dst = fs_ops::resolve_conflict(&target_dir, &name);
-                if fs_ops::move_path(&drag_path, &dst).is_ok() {
-                    let _ = fs_ops::move_path(&format!("{drag_path}.meta"), &format!("{dst}.meta"));
-                    self.refresh_dir(&target_dir);
+                let name = source.rsplit('/').next().unwrap_or_default().to_string();
+                let dst = fs_ops::resolve_conflict(&target, &name);
+                if fs_ops::move_path(&source, &dst).is_ok() {
+                    let _ = fs_ops::move_path(&format!("{source}.meta"), &format!("{dst}.meta"));
+                    self.refresh_dir(&target);
                     self.refresh_dir(&src_dir);
                     let _ = fs_ops::rebuild_manifest(project_root);
                 }
             }
 
-            TreeAction::Import => {
-                let Some(src) = fs_ops::pick_file() else { return };
-                let name = src.rsplit('/').next().unwrap_or(&src).to_string();
-                let focused_dir = self.focused_dir.clone();
-                let dst = fs_ops::resolve_conflict(&focused_dir, &name);
-                if fs_ops::copy_file(&src, &dst).is_ok() {
-                    fs_ops::get_or_create_meta(&dst);
-                    self.refresh_dir(&focused_dir);
-                    let _ = fs_ops::rebuild_manifest(project_root);
+            TreeAction::Import(target_dir) => {
+                if self.pending_import.is_none() {
+                    let (tx, rx) = std::sync::mpsc::channel();
+                    std::thread::spawn(move || {
+                        let _ = tx.send(fs_ops::pick_file());
+                    });
+                    self.pending_import = Some((target_dir, rx));
                 }
             }
 
-            TreeAction::NewFolder => {
-                let focused_dir = self.focused_dir.clone();
-                let dst = fs_ops::resolve_conflict(&focused_dir, "new_folder");
+            TreeAction::NewFolder(target_dir) => {
+                let dst = fs_ops::resolve_conflict(&target_dir, "new_folder");
                 if fs_ops::create_folder(&dst).is_ok() {
-                    self.refresh_dir(&focused_dir);
+                    self.refresh_dir(&target_dir);
                 }
             }
 
-            TreeAction::NewComp => {
-                let focused_dir = self.focused_dir.clone();
-                let dst = fs_ops::resolve_conflict(&focused_dir, "new_prefab.comp");
+            TreeAction::NewComp(target_dir) => {
+                let dst = fs_ops::resolve_conflict(&target_dir, "new_prefab.comp");
                 if fs_ops::create_comp_file(&dst).is_ok() {
                     fs_ops::get_or_create_meta(&dst);
-                    self.refresh_dir(&focused_dir);
+                    self.refresh_dir(&target_dir);
                     let _ = fs_ops::rebuild_manifest(project_root);
                 }
             }
@@ -288,7 +318,6 @@ impl AssetState {
 pub enum TreeAction {
     ToggleExpand(String),
     Select(String),
-    SetFocusedDir(String),
     EnsureMeta(String),
     ToggleIncluded(String),
 
@@ -300,12 +329,24 @@ pub enum TreeAction {
     CancelDelete,
     ConfirmDelete(String),
 
-    DragStart(String),
+    // Drag-and-drop uses egui's own `DragAndDrop` plugin (see
+    // `Response::dnd_set_drag_payload`/`dnd_hover_payload`/
+    // `dnd_release_payload` in asset_tree.rs) rather than hand-rolled
+    // start/end actions — it correctly tracks "what's under the pointer"
+    // via `contains_pointer()`, which (unlike `hovered()`) stays accurate
+    // for *other* widgets while a drag is in progress. `DragOver` is still
+    // an action purely for the row-highlight/status-bar caching describe
+    // in `AssetState::drop_target`'s doc comment; `Drop` carries the
+    // dragged item's path directly from the payload, rather than reading
+    // back some separately-tracked "currently dragged" state.
     DragOver(Option<String>),
-    DragEnd,
-    Drop(String),
+    Drop { source: String, target: String },
 
-    Import,
-    NewFolder,
-    NewComp,
+    // Triggered from a row's right-click menu now rather than a toolbar
+    // button — the target dir comes straight from which row was
+    // right-clicked (its own path if a folder, its parent if a file) rather
+    // than a separately-tracked "focused" directory.
+    Import(String),
+    NewFolder(String),
+    NewComp(String),
 }

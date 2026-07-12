@@ -32,6 +32,8 @@ members = [
     "optional_systems/lighting",
     "optional_systems/skybox",
     "optional_systems/tween",
+    "optional_systems/cards",
+
 ]
 
 [workspace.dependencies]
@@ -50,6 +52,8 @@ networking = { path = "system_component_default/networking" }
 physics = { path = "system_component_default/physics" }
 input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
+cards = { path = "system_component_default/cards" }
+
 # animation = { path = "system_component_default/animation" }
 # curio_editor = { path = "curio-editor/src-tauri" }
 camera = { path = "optional_systems/camera" }
