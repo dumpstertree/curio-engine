@@ -12,22 +12,28 @@ impl AssetDatabase {
     }
     /// Add a single listing to be referenced during a fetch
     pub fn append_listing(&mut self, name: String, uid: i16, listing: AssetDatabaseListing) {
-        self.lookup.insert(name, uid);
+        if let Some(prev_uid) = self.lookup.insert(name.clone(), uid) {
+            println!("AssetDatabase Warning: uid {} is already registered under name '{}'. The name now points to {}.", prev_uid, name, uid);
+        }
+        if self.listings.contains_key(&uid) {
+            println!("AssetDatabase Warning: an asset with uid {} is already registered and will be overwritten.", uid);
+        }
         self.listings.insert(uid, listing);
     }
     /// Add a group of listings to be referenced during a fetch
     pub fn append_listing_group(&mut self, listings: Vec<(String, i16, AssetDatabaseListing)>) {
-        for x in &listings {
-            self.lookup.insert(x.0.clone(), x.1);
-        }
         for x in listings {
-            self.listings.insert(x.1, x.2);
+            self.append_listing(x.0, x.1, x.2);
         }
     }
 
     /// Use the name to get a key. Will return None if name is not present
     pub fn try_lookup_key_for_name(&self, name: &str) -> Option<i16> {
         self.lookup.get(name).cloned()
+    }
+    /// Returns true if a listing is registered for `uid`, regardless of whether its data can be fetched.
+    pub fn contains(&self, uid: &i16) -> bool {
+        self.listings.contains_key(uid)
     }
     /// Fetch an asset for the `uid`. If uid is not mapped returns and empty Vec<u8>
     pub fn fetch_asset(&self, uid: &i16) -> Vec<u8> {

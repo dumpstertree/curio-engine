@@ -22,6 +22,7 @@ enum EntryType {
 }
 
 fn main() {
+    return;
     let manifest_path = Path::new("/home/dumpstertree/Git/Rust/system_test/asset.manifest");
 
     let yaml = fs::read_to_string(manifest_path).expect("failed to read asset.manifest");

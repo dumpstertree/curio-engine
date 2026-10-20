@@ -26,21 +26,68 @@ impl FieldOverride for RendererText {
     fn apply(&mut self, field: &str, value: &str) {
         match field {
             // "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
-            "asset" => self.font_asset = Some(Assets::load_asset::<FontAsset>(&Assets::try_lookup_key_for_name(value).unwrap())),
-            "contents" => self.contents = value.to_string(),
+            "asset" => {
+                self.font_asset = Some(Assets::load_asset::<FontAsset>(&Assets::try_lookup_key_for_name(value).unwrap()));
+                self.is_dirty = true;
+            }
+            "contents" => {
+                if self.contents != value {
+                    self.contents = value.to_string();
+                    self.is_dirty = true;
+                }
+            }
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
-            "font_size" => self.font_size = value.parse().unwrap_or_default(),
-            "bounds" => self.bounds = value.parse().unwrap_or_default(),
+            "font_size" => {
+                let font_size = value.trim().parse().unwrap_or_default();
+                if self.font_size != font_size {
+                    self.font_size = font_size;
+                    self.is_dirty = true;
+                }
+            }
+            "bounds" => {
+                let bounds = value.trim().parse().unwrap_or_default();
+                if self.bounds != bounds {
+                    self.bounds = bounds;
+                    self.is_dirty = true;
+                }
+            }
+            "tint" => self.tint = value.trim().parse().unwrap_or_default(),
+            "align_horizontal" => {
+                let align = match value.trim().to_ascii_lowercase().as_str() {
+                    "left" => AligmentHorizontal::Left,
+                    "right" => AligmentHorizontal::Right,
+                    _ => AligmentHorizontal::Center,
+                };
+                if self.align_horizontal != align {
+                    self.align_horizontal = align;
+                    self.is_dirty = true;
+                }
+            }
+            "align_vertical" => {
+                let align = match value.trim().to_ascii_lowercase().as_str() {
+                    "top" => AligmentVertical::Top,
+                    "bottom" => AligmentVertical::Bottom,
+                    _ => AligmentVertical::Center,
+                };
+                if self.align_vertical != align {
+                    self.align_vertical = align;
+                    self.is_dirty = true;
+                }
+            }
             _ => {}
         }
     }
     fn get_state(&self) -> Vec<FieldState> {
+        // NOTE: font_asset is intentionally not serialized here. A placeholder value would be
+        // fed back through apply() as a font name lookup and panic (see FormBuilder3D::facet).
         vec![
-            FieldState::new("asset", "TODO"), //
             FieldState::new("contents", self.contents.clone()),
             FieldState::new("enabled", self.enabled),
             FieldState::new("font_size", self.font_size),
             FieldState::new("bounds", self.bounds),
+            FieldState::new("tint", self.tint),
+            FieldState::new("align_horizontal", format!("{:?}", self.align_horizontal).to_lowercase()),
+            FieldState::new("align_vertical", format!("{:?}", self.align_vertical).to_lowercase()),
         ]
     }
 }
@@ -63,67 +110,86 @@ impl RendererText {
             owner: None,
         }
     }
-}
-impl RendererText {
-    pub fn set_enabled(mut self, enabled: bool) -> Self {
-        if self.enabled == enabled {
-            return self;
+    /// Create a builder for a RendererText. Follows the same pattern as Camera::builder() and
+    /// RendererStatic::builder(). A newly built RendererText is always rebuilt once by the
+    /// rendering habit, so no manual dirty flagging is needed at construction time.
+    pub fn builder() -> RendererTextBuilder {
+        RendererTextBuilder {
+            font_asset: None,
+            contents: String::from("Lorum ipsum..."),
+            align_horizontal: AligmentHorizontal::Center,
+            align_vertical: AligmentVertical::Center,
+            font_size: 0.05,
+            bounds: Vector2::new(1.0, 1.0),
+            enabled: true,
+            tint: Color::white(),
         }
+    }
+}
+
+pub struct RendererTextBuilder {
+    font_asset: Option<Arc<FontAsset>>,
+    contents: String,
+    align_horizontal: AligmentHorizontal,
+    align_vertical: AligmentVertical,
+    font_size: f32,
+    bounds: Vector2,
+    enabled: bool,
+    tint: Color,
+}
+impl RendererTextBuilder {
+    pub fn font_asset(mut self, font_asset: Option<Arc<FontAsset>>) -> Self {
+        self.font_asset = font_asset;
+        self
+    }
+    pub fn contents(mut self, contents: &str) -> Self {
+        self.contents = String::from(contents);
+        self
+    }
+    pub fn horizontal_alignment(mut self, align: AligmentHorizontal) -> Self {
+        self.align_horizontal = align;
+        self
+    }
+    pub fn vertical_alignment(mut self, align: AligmentVertical) -> Self {
+        self.align_vertical = align;
+        self
+    }
+    pub fn font_size(mut self, font_size: f32) -> Self {
+        self.font_size = font_size;
+        self
+    }
+    pub fn bounds(mut self, bounds: Vector2) -> Self {
+        self.bounds = bounds;
+        self
+    }
+    pub fn enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
         self
     }
-    pub fn set_font_asset(mut self, font_asset: Option<Arc<FontAsset>>) -> Self {
-        // if self.font_asset == font_asset {
-        //     return self;
-        // }
+    pub fn tint(mut self, tint: Color) -> Self {
+        self.tint = tint;
+        self
+    }
+    pub fn build(self) -> RendererText {
+        RendererText {
+            cached_enabled_in_hierachy: false,
+            cached_tint_in_hierachy: self.tint,
+            asset: Vec::new(),
+            font_asset: self.font_asset,
+            contents: self.contents,
+            align_horizontal: self.align_horizontal,
+            align_vertical: self.align_vertical,
+            font_size: self.font_size,
+            bounds: self.bounds,
+            is_dirty: true,
+            enabled: self.enabled,
+            tint: self.tint,
+            owner: None,
+        }
+    }
+}
 
-        self.font_asset = font_asset;
-        self.is_dirty = true;
-        self
-    }
-    pub fn set_contents(mut self, contents: &str) -> Self {
-        if self.contents == contents {
-            return self;
-        }
-
-        self.contents = String::from(contents);
-        self.is_dirty = true;
-        self
-    }
-    pub fn set_horizontal_alignment(mut self, align: AligmentHorizontal) -> Self {
-        if self.align_horizontal == align {
-            return self;
-        }
-        self.align_horizontal = align;
-        self.is_dirty = true;
-        self
-    }
-    pub fn set_vertical_alignment(mut self, align: AligmentVertical) -> Self {
-        if self.align_vertical == align {
-            return self;
-        }
-        self.align_vertical = align;
-        self.is_dirty = true;
-        self
-    }
-    pub fn set_font_size(mut self, font_size: f32) -> Self {
-        if self.font_size == font_size {
-            return self;
-        }
-        self.font_size = font_size;
-        self.is_dirty = true;
-        self
-    }
-    pub fn set_bounds(mut self, bounds: Vector2) -> Self {
-        if self.bounds == bounds {
-            return self;
-        }
-
-        self.bounds = bounds;
-        self.is_dirty = true;
-        self
-    }
-
+impl RendererText {
     pub fn rebuild(&mut self) {
         if !self.is_dirty {
             return;
@@ -247,14 +313,14 @@ impl RendererText {
     }
 }
 
-#[derive(Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AligmentHorizontal {
     Left,
     #[default]
     Center,
     Right,
 }
-#[derive(Default, Clone, Copy, PartialEq, Eq)]
+#[derive(Default, Clone, Copy, PartialEq, Eq, Debug)]
 pub enum AligmentVertical {
     Top,
     #[default]

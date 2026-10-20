@@ -49,11 +49,21 @@ impl AssetPipeline {
             return cached_asset;
         }
 
-        // was not in cache so pull the data from the listing. If we are given no bytes back we panic.
+        // was not in cache so pull the data from the listing. If we are given no bytes back we panic with the most specific reason we can determine.
         let data = {
             let bytes = self.asset_database.fetch_asset(uid);
             if bytes.is_empty() {
-                panic!("No data for {}!", uid);
+                if self.asset_database.contains(uid) {
+                    panic!(
+                        "Asset {} is registered in the AssetDatabase but its data is empty. The source file backing this asset is most likely an empty file - check the file referenced by your asset manifest.",
+                        uid
+                    );
+                } else {
+                    panic!(
+                        "Asset {} is not registered in the AssetDatabase. It was most likely removed from the asset manifest, the generated asset listing group was never appended, or a duplicate uid overwrote it.",
+                        uid
+                    );
+                }
             }
             bytes
         };

@@ -409,6 +409,7 @@ pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
 }
 
 pub fn load_curio(folder: &Path, gpu: *const Services) -> LoadedCurio {
+    println!("folder: {}", folder.as_os_str().to_str().unwrap());
     let entries = std::fs::read_dir(folder).expect("plugins folder not found");
     for entry in entries.flatten() {
         let path = entry.path();
