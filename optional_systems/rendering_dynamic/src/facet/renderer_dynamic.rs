@@ -1,7 +1,6 @@
 use curio_core::{Assets, Color, FieldState};
-// use ext_rendering::RendererCommon;
 use facet::facet;
-use gameplay::{form::Form, traits::field_override::FieldOverride};
+use gameplay::traits::field_override::FieldOverride;
 use rendering_static::ModelAsset;
 use std::sync::Arc;
 
@@ -9,13 +8,10 @@ use crate::asset::model_asset_animated::ModelAssetAnimated;
 
 #[facet]
 pub struct RendererDynamic {
-    cached_enabled_in_hierachy: bool,
-    cached_tint_in_hierachy: Color,
     pub asset: Option<Arc<ModelAssetAnimated>>,
     pub mesh: Vec<Arc<ModelAsset>>,
     animation: String,
-    parent: Option<Form>,
-    enabled: bool,
+    pub enabled: bool,
     pub tint: Color,
     looping: bool,
     last_anim: String,
@@ -24,12 +20,9 @@ pub struct RendererDynamic {
 impl RendererDynamic {
     pub fn default() -> RendererDynamic {
         Self {
-            cached_enabled_in_hierachy: Default::default(),
-            cached_tint_in_hierachy: Default::default(),
             asset: Default::default(),
             mesh: Default::default(),
             animation: Default::default(),
-            parent: Default::default(),
             enabled: true,
             tint: Color::white(),
             looping: Default::default(),
@@ -38,41 +31,39 @@ impl RendererDynamic {
             owner: None,
         }
     }
-}
-
-// override - clone
-impl RendererDynamic {
-    pub fn clone(&self) -> Self {
-        Self {
-            last_anim: String::new(),
-            last_frame_index: -1,
-            asset: self.asset.clone(),
-            mesh: self.mesh.clone(),
-            animation: self.animation.clone(),
-            parent: self.parent.clone(),
-            enabled: self.enabled.clone(),
-            tint: self.tint.clone(),
-            cached_enabled_in_hierachy: false,
-            cached_tint_in_hierachy: Color::white(),
+    pub fn builder() -> RendererDynamicBuilder {
+        RendererDynamicBuilder {
+            asset: None,
+            animation: String::new(),
             looping: false,
-            owner: self.owner.clone(),
+            enabled: true,
+            tint: Color::white(),
         }
     }
 }
 impl FieldOverride for RendererDynamic {
     fn apply(&mut self, field: &str, value: &str) {
+        let value = value.trim();
         match field {
-            "asset" => self.asset = Some(Assets::load_asset::<ModelAssetAnimated>(&Assets::try_lookup_key_for_name(value).unwrap())),
+            "asset" => {
+                // ignore unknown names rather than panicking on the lookup
+                if let Some(uid) = Assets::try_lookup_key_for_name(value) {
+                    self.asset = Some(Assets::load_asset::<ModelAssetAnimated>(&uid));
+                }
+            }
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
-            "tint" => self.tint = value.parse().unwrap_or_default(),
+            "tint" => self.tint = value.parse().unwrap_or(self.tint),
             "animation" => self.animation = value.to_string(),
             "looping" => self.looping = value.parse().unwrap_or_default(),
             _ => {}
         }
     }
     fn get_state(&self) -> Vec<FieldState> {
+        // NOTE: asset is intentionally not serialized. Compositions reference the asset by name
+        // ("asset: <name>"), but no name is stored on the loaded asset, so a placeholder here would
+        // be fed back through apply() and fail the lookup (see FormBuilder3D::facet re-applying
+        // state onto an existing facet).
         vec![
-            FieldState::new("asset", "TODO"), //
             FieldState::new("enabled", self.enabled),
             FieldState::new("tint", self.tint),
             FieldState::new("animation", self.animation.clone()),
@@ -81,20 +72,6 @@ impl FieldOverride for RendererDynamic {
     }
 }
 impl RendererDynamic {
-    /// Set the current playing animation
-    pub fn set_animation(mut self, name: &str, looping: bool) -> Self {
-        self.looping = looping;
-        self.animation = name.to_string();
-        self
-    }
-    /// Set the asset
-    pub fn set_asset(mut self, asset: Option<Arc<ModelAssetAnimated>>) -> Self {
-        // set the asset
-        self.asset = asset;
-
-        // return this
-        self
-    }
     /// Updates the mesh to match the current animation state. This should only be called ONCE per frame.
     pub fn update_mesh(&mut self, time: f64) {
         // guard - no asset
@@ -122,29 +99,44 @@ impl RendererDynamic {
         // assign anim
         self.mesh = frame_asset.mesh().to_vec();
     }
-    /// creates a model_asset taking into account tint
-    pub fn get_model_asset(asset: Option<Arc<ModelAssetAnimated>>, tint: Color) -> Option<Arc<ModelAssetAnimated>> {
-        // no asset
-        let Some(asset) = asset else {
-            return None;
-        };
+}
 
-        // no tint
-        if tint == Color::white() {
-            return Some(asset);
+pub struct RendererDynamicBuilder {
+    asset: Option<Arc<ModelAssetAnimated>>,
+    animation: String,
+    looping: bool,
+    enabled: bool,
+    tint: Color,
+}
+impl RendererDynamicBuilder {
+    pub fn asset(mut self, asset: Option<Arc<ModelAssetAnimated>>) -> Self {
+        self.asset = asset;
+        self
+    }
+    pub fn animation(mut self, name: &str, looping: bool) -> Self {
+        self.animation = name.to_string();
+        self.looping = looping;
+        self
+    }
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+    pub fn tint(mut self, tint: Color) -> Self {
+        self.tint = tint;
+        self
+    }
+    pub fn build(self) -> RendererDynamic {
+        RendererDynamic {
+            asset: self.asset,
+            mesh: Vec::new(),
+            animation: self.animation,
+            enabled: self.enabled,
+            tint: self.tint,
+            looping: self.looping,
+            last_anim: String::new(),
+            last_frame_index: -1,
+            owner: None,
         }
-
-        // edit material to include tint
-        let mut a = asset.instantiate();
-
-        let mut m = asset.material().instantiate("new");
-        m.set_color_with_label(tint, "tint");
-        m.finalize();
-        let m = Arc::new(m);
-        a.set_material(m);
-        a.finalize();
-
-        // return edited
-        Some(Arc::new(a))
     }
 }

@@ -30,7 +30,7 @@ impl Habit for Instance {
                     l.color = [light.color.as_r_01(), light.color.as_g_01(), light.color.as_b_01()];
                     l.direction = [light.direction.x, light.direction.y, light.direction.z];
                     l.intensity = light.intensity;
-                    l.light_type = light.asset;
+                    l.light_type = light.light_type;
                     l.radius = light.radius;
                     l.position = [transform.position.x, transform.position.y, transform.position.z];
 

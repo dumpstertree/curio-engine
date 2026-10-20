@@ -26,10 +26,10 @@ impl Habit for Instance {
             //
             world.edit::<(&mut RendererText, &Transform3D)>(|query| {
                 for (_, (renderer, transform)) in query {
-                    //
-                    // if !renderer.get_cached_enabled_in_hierarchy() {
-                    //     continue;
-                    // }
+                    // guard - disabled
+                    if !renderer.enabled {
+                        continue;
+                    }
 
                     renderer.rebuild();
                     for asset_for_matricies in &renderer.asset {

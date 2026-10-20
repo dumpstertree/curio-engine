@@ -17,7 +17,8 @@ impl Camera {
 impl FieldOverride for Camera {
     fn apply(&mut self, key: &str, value: &str) {
         match key {
-            "fov" => self.fov = value.parse().unwrap_or_default(),
+            // keep the current fov on a bad parse - a fov of 0 produces a degenerate projection
+            "fov" => self.fov = value.trim().parse().unwrap_or(self.fov),
             _ => {}
         }
     }

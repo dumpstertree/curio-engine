@@ -8,9 +8,6 @@ use crate::FontAsset;
 
 #[facet]
 pub struct RendererText {
-    cached_enabled_in_hierachy: bool,
-    cached_tint_in_hierachy: Color,
-
     pub asset: Vec<(Arc<ModelAsset>, Vec<Matrix4x4>)>,
     font_asset: Option<Arc<FontAsset>>,
     contents: String,
@@ -19,7 +16,7 @@ pub struct RendererText {
     font_size: f32,
     bounds: Vector2,
     is_dirty: bool,
-    enabled: bool,
+    pub enabled: bool,
     pub tint: Color,
 }
 impl FieldOverride for RendererText {
@@ -95,8 +92,6 @@ impl FieldOverride for RendererText {
 impl RendererText {
     pub fn default() -> RendererText {
         RendererText {
-            cached_enabled_in_hierachy: false,
-            cached_tint_in_hierachy: Color::white(),
             asset: Vec::new(),
             font_asset: None,
             contents: String::from("Lorum ipsum..."),
@@ -172,8 +167,6 @@ impl RendererTextBuilder {
     }
     pub fn build(self) -> RendererText {
         RendererText {
-            cached_enabled_in_hierachy: false,
-            cached_tint_in_hierachy: self.tint,
             asset: Vec::new(),
             font_asset: self.font_asset,
             contents: self.contents,

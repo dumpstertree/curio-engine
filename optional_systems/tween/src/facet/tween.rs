@@ -8,6 +8,8 @@ pub struct Tween {
 }
 
 impl FieldOverride for Tween {
+    // tweens are runtime constructs (closures over typed targets) and are intentionally not
+    // serializable to/from composition fields
     fn apply(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<curio_core::FieldState> {
         vec![]
