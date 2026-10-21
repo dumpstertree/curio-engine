@@ -100,6 +100,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "animators"
+version = "0.1.0"
+dependencies = [
+ "ctor",
+ "curio_core",
+ "facet",
+ "gameplay",
+ "habit",
+ "record",
+ "serde",
+ "time 0.1.0",
+]
+
+[[package]]
 name = "anyhow"
 version = "1.0.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -598,21 +612,6 @@ dependencies = [
 
 [[package]]
 name = "camera"
-version = "0.1.0"
-dependencies = [
- "bytemuck",
- "cgmath",
- "ctor",
- "curio_core",
- "facet",
- "gameplay",
- "habit",
- "record",
- "serde",
-]
-
-[[package]]
-name = "cards"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -3293,6 +3292,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "optional_systems-tests"
+version = "0.1.0"
+dependencies = [
+ "animators",
+ "camera",
+ "collision",
+ "curio_core",
+ "ext_rendering",
+ "gameplay",
+ "lighting",
+ "rendering_dynamic",
+ "rendering_image",
+ "rendering_static",
+ "rendering_text",
+ "serde_json",
+ "skybox",
+ "tween",
+]
+
+[[package]]
 name = "orbclient"
 version = "0.3.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3885,10 +3904,6 @@ dependencies = [
  "time 0.1.0",
  "zip 0.6.6",
 ]
-
-[[package]]
-name = "rendering_gizmos"
-version = "0.1.0"
 
 [[package]]
 name = "rendering_image"

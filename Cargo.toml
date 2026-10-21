@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "curio_core",
     "curio_core_tests",
+    "optional_systems_tests",
     "curio_engine",
     "system_component_default/gameplay",
     "system_component_default/gameplay_macros/curio_entry",
@@ -26,13 +27,12 @@ members = [
     "optional_systems/rendering_dynamic",
     "optional_systems/rendering_image",
     "optional_systems/rendering_text",
-    "optional_systems/rendering_gizmos",
     "optional_systems/rendering",
     "optional_systems/collision",
     "optional_systems/lighting",
     "optional_systems/skybox",
     "optional_systems/tween",
-    "optional_systems/cards",
+    "optional_systems/animators",
 
 ]
 
@@ -52,7 +52,6 @@ networking = { path = "system_component_default/networking" }
 physics = { path = "system_component_default/physics" }
 input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
-cards = { path = "system_component_default/cards" }
 
 # animation = { path = "system_component_default/animation" }
 # curio_editor = { path = "curio-editor/src-tauri" }
@@ -62,11 +61,11 @@ rendering_static = { path = "optional_systems/rendering_static" }
 rendering_dynamic = { path = "optional_systems/rendering_dynamic" }
 rendering_image = { path = "optional_systems/rendering_image" }
 rendering_text = { path = "optional_systems/rendering_text" }
-rendering_gizmos = { path = "optional_systems/rendering_gizmos" }
 lighting = { path = "optional_systems/lighting" }
 collision = { path = "optional_systems/collision" }
 skybox = { path = "optional_systems/skybox" }
 tween = { path = "optional_systems/tween" }
+animators = { path = "optional_systems/animators" }
 curio_editor_egui = { path = "curio-editor-egui" }
 
 

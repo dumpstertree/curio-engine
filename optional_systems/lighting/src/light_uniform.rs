@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{hash::Hash, num::NonZeroU64};
 
 // CPU-side light types for your ECS
-#[derive(Clone, Copy, Default, Hash, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default, Hash, PartialEq, Eq, Debug, Serialize, Deserialize)]
 pub enum LightType {
     #[default]
     Point, // uses position + radius/falloff in params

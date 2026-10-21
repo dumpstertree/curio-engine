@@ -14,7 +14,12 @@ impl FieldOverride for RendererStatic {
     fn apply(&mut self, field: &str, value: &str) {
         let value = value.trim();
         match field {
-            "asset" => self.asset = Some(Assets::load_asset::<ModelAsset>(&value.parse().unwrap_or_default())),
+            "asset" => {
+                // ignore unknown names rather than panicking on the lookup (matches RendererDynamic/RendererImage)
+                if let Some(uid) = Assets::try_lookup_key_for_name(value) {
+                    self.asset = Some(Assets::load_asset::<ModelAsset>(&uid));
+                }
+            }
             "tint" => self.tint = value.parse().unwrap_or(self.tint),
             _ => {}
         }

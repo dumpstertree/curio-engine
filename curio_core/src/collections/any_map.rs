@@ -10,6 +10,12 @@ impl<K: Hash + Eq> AnyMap<K> {
     pub fn insert_any(&mut self, key: K, value: Box<dyn Any>) {
         self.0.insert(key, value);
     }
+    pub fn remove<Q: ?Sized + Hash + Eq>(&mut self, key: &Q) -> bool
+    where
+        K: Borrow<Q>,
+    {
+        self.0.remove(key).is_some()
+    }
 
     pub fn get<T: Any, Q: ?Sized + Hash + Eq>(&self, key: &Q) -> Option<&T>
     where

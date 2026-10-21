@@ -1,0 +1,20 @@
+[package]
+name = "optional_systems-tests"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+curio_core = { workspace = true }
+animators = { workspace = true }
+camera = { workspace = true }
+collision = { workspace = true }
+gameplay = { workspace = true }
+ext_rendering = { workspace = true }
+lighting = { workspace = true }
+rendering_dynamic = { workspace = true }
+rendering_image = { workspace = true }
+rendering_static = { workspace = true }
+rendering_text = { workspace = true }
+skybox = { workspace = true }
+tween = { workspace = true }
+serde_json = "1"

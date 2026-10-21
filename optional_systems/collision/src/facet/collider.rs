@@ -132,7 +132,9 @@ impl Default for ColliderShapeDef {
 impl ColliderShapeDef {
     pub fn encode(&self) -> String {
         match self {
-            ColliderShapeDef::Box { size } => format!("box {}", size),
+            // Vector3's Display is "Vector3(x, y, z)" which its FromStr cannot re-read, so
+            // write the "(x,y,z)" form it parses
+            ColliderShapeDef::Box { size } => format!("box ({},{},{})", size.x, size.y, size.z),
             ColliderShapeDef::Sphere { diameter } => format!("sphere {}", diameter),
             ColliderShapeDef::Capsule { radius, height } => {
                 format!("capsule {} {}", radius, height)

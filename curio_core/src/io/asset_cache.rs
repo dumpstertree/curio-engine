@@ -45,12 +45,14 @@ impl AssetCache {
         // get now to reususe
         let now: Instant = Instant::now();
 
-        // prune old
-        while self.access.len() > self.max_cache_len {
+        // prune old until there is room for the new entry
+        while self.access.len() >= self.max_cache_len {
             // Find the key with the oldest Instant
             if let Some((&oldest_key, _)) = self.access.iter().min_by_key(|(_, &instant)| instant) {
                 // Remove the oldest entry
                 self.access.remove(&oldest_key);
+                // free the asset itself, not just its timestamp
+                self.cache.remove(&oldest_key);
             } else {
                 break;
             }

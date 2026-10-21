@@ -47,7 +47,7 @@ mod tests {
     #[test]
     fn magnitude_is_correct() {
         let v = Vector4::new(1.0, 2.0, 2.0, 1.0);
-        assert!(approx_eq(v.magnitude(), 3.0));
+        assert!(approx_eq(v.magnitude(), (10.0_f32).sqrt()));
     }
 
     // =========================================================

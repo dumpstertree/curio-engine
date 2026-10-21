@@ -24,8 +24,11 @@ impl FieldOverride for RendererText {
         match field {
             // "asset" => self.font_asset = Some(AssetLoader::load_font_asset(value)),
             "asset" => {
-                self.font_asset = Some(Assets::load_asset::<FontAsset>(&Assets::try_lookup_key_for_name(value).unwrap()));
-                self.is_dirty = true;
+                // ignore unknown names rather than panicking on the lookup (matches RendererDynamic/RendererImage)
+                if let Some(uid) = Assets::try_lookup_key_for_name(value) {
+                    self.font_asset = Some(Assets::load_asset::<FontAsset>(&uid));
+                    self.is_dirty = true;
+                }
             }
             "contents" => {
                 if self.contents != value {
@@ -34,21 +37,22 @@ impl FieldOverride for RendererText {
                 }
             }
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
+            // keep the current values on a bad parse - a font_size of 0 or zero bounds are degenerate
             "font_size" => {
-                let font_size = value.trim().parse().unwrap_or_default();
+                let font_size = value.trim().parse().unwrap_or(self.font_size);
                 if self.font_size != font_size {
                     self.font_size = font_size;
                     self.is_dirty = true;
                 }
             }
             "bounds" => {
-                let bounds = value.trim().parse().unwrap_or_default();
+                let bounds = value.trim().parse().unwrap_or(self.bounds);
                 if self.bounds != bounds {
                     self.bounds = bounds;
                     self.is_dirty = true;
                 }
             }
-            "tint" => self.tint = value.trim().parse().unwrap_or_default(),
+            "tint" => self.tint = value.trim().parse().unwrap_or(self.tint),
             "align_horizontal" => {
                 let align = match value.trim().to_ascii_lowercase().as_str() {
                     "left" => AligmentHorizontal::Left,

@@ -1,55 +1,45 @@
 use curio_core::{FieldState, Vector3};
+use facet::facet;
+use gameplay::traits::field_override::FieldOverride;
 
-use crate::{
-    form::Form,
-    traits::{facet_common::FacetCommon, field_override::FieldOverride},
-};
-
-#[derive(Clone)]
+#[facet]
 pub struct AnimatorPositionSin {
-    owner: Option<Form>,
-    enabled: bool,
-    min: Vector3,
-    max: Vector3,
-    speed: f32,
+    pub enabled: bool,
+    pub min: Vector3,
+    pub max: Vector3,
+    pub speed: f32,
 }
 impl AnimatorPositionSin {
-    pub fn enabled(&self) -> bool {
-        self.enabled
+    pub fn default() -> AnimatorPositionSin {
+        AnimatorPositionSin {
+            owner: None,
+            enabled: false,
+            min: Vector3::new(0.5, 0.5, 0.5),
+            max: Vector3::new(1.5, 1.5, 1.5),
+            speed: 1.0,
+        }
     }
-    pub fn min(&self) -> Vector3 {
-        self.min
-    }
-    pub fn max(&self) -> Vector3 {
-        self.max
-    }
-    pub fn speed(&self) -> f32 {
-        self.speed
-    }
-    pub fn set_enabled(&mut self, enabled: bool) {
-        self.enabled = enabled;
-    }
-    pub fn set_min(&mut self, min: Vector3) {
-        self.min = min;
-    }
-    pub fn set_max(&mut self, max: Vector3) {
-        self.max = max;
-    }
-    pub fn set_speed(&mut self, speed: f32) {
-        self.speed = speed;
+    pub fn builder() -> AnimatorPositionSinBuilder {
+        AnimatorPositionSinBuilder {
+            enabled: false,
+            min: Vector3::new(0.5, 0.5, 0.5),
+            max: Vector3::new(1.5, 1.5, 1.5),
+            speed: 1.0,
+        }
     }
 }
 impl FieldOverride for AnimatorPositionSin {
     fn apply(&mut self, key: &str, value: &str) {
         match key {
-            "min" => self.min = value.parse().unwrap_or_default(),
-            "max" => self.max = value.parse().unwrap_or_default(),
-            "speed" => self.speed = value.parse().unwrap_or_default(),
+            // keep the current values on a bad parse
+            "min" => self.min = value.trim().parse().unwrap_or(self.min),
+            "max" => self.max = value.trim().parse().unwrap_or(self.max),
+            "speed" => self.speed = value.trim().parse().unwrap_or(self.speed),
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             _ => {}
         }
     }
-    fn get_state(&self) -> Vec<curio_core::FieldState> {
+    fn get_state(&self) -> Vec<FieldState> {
         vec![
             FieldState::new("min", self.min), //
             FieldState::new("max", self.max),
@@ -58,25 +48,37 @@ impl FieldOverride for AnimatorPositionSin {
         ]
     }
 }
-impl Default for AnimatorPositionSin {
-    fn default() -> Self {
-        Self {
+
+pub struct AnimatorPositionSinBuilder {
+    enabled: bool,
+    min: Vector3,
+    max: Vector3,
+    speed: f32,
+}
+impl AnimatorPositionSinBuilder {
+    pub fn enabled(mut self, enabled: bool) -> Self {
+        self.enabled = enabled;
+        self
+    }
+    pub fn min(mut self, min: Vector3) -> Self {
+        self.min = min;
+        self
+    }
+    pub fn max(mut self, max: Vector3) -> Self {
+        self.max = max;
+        self
+    }
+    pub fn speed(mut self, speed: f32) -> Self {
+        self.speed = speed;
+        self
+    }
+    pub fn build(self) -> AnimatorPositionSin {
+        AnimatorPositionSin {
             owner: None,
-            enabled: false,
-            min: Vector3::new(0.5, 0.5, 0.5),
-            max: Vector3::new(1.5, 1.5, 1.5),
-            speed: 1.0,
+            enabled: self.enabled,
+            min: self.min,
+            max: self.max,
+            speed: self.speed,
         }
     }
 }
-impl FacetCommon for AnimatorPositionSin {
-    fn set_ownership(&mut self, owner: Form) {
-        self.owner = Some(owner);
-    }
-
-    fn form(&self) -> Form {
-        self.owner.clone().unwrap()
-    }
-}
-unsafe impl Send for AnimatorPositionSin {}
-unsafe impl Sync for AnimatorPositionSin {}
