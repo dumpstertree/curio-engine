@@ -3301,6 +3301,8 @@ dependencies = [
  "curio_core",
  "ext_rendering",
  "gameplay",
+ "impulse",
+ "input",
  "lighting",
  "rendering_dynamic",
  "rendering_image",

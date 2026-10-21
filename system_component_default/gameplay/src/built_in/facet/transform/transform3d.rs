@@ -160,3 +160,27 @@ pub fn update_transform3d(world: &mut Context3D) {
         });
     }
 }
+
+impl crate::traits::transform_common::TransformCommon for Transform3D {
+    fn position(&self) -> Vector3 {
+        self.position
+    }
+    fn set_position(&mut self, position: Vector3) {
+        self.position = position;
+    }
+    fn rotation(&self) -> Quaternion {
+        self.rotation
+    }
+    fn set_rotation(&mut self, rotation: Quaternion) {
+        self.rotation = rotation;
+    }
+    fn scale(&self) -> Vector3 {
+        self.scale
+    }
+    fn set_scale(&mut self, scale: Vector3) {
+        self.scale = scale;
+    }
+    fn local_matrix(&self) -> Matrix4x4 {
+        self.get_matrix()
+    }
+}

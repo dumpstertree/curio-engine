@@ -1,6 +1,8 @@
 pub mod animators;
 pub mod camera;
 pub mod collision;
+pub mod impulse;
+pub mod input;
 pub mod lighting;
 pub mod rendering;
 pub mod rendering_dynamic;
@@ -8,4 +10,5 @@ pub mod rendering_image;
 pub mod rendering_static;
 pub mod rendering_text;
 pub mod skybox;
+pub mod transform;
 pub mod tween;

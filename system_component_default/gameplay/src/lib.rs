@@ -58,6 +58,7 @@ pub mod traits {
     pub mod habit;
     pub mod impulse;
     pub mod scope;
+    pub mod transform_common;
     pub mod ui_dialog;
     pub mod ui_events;
     pub mod ui_hud;

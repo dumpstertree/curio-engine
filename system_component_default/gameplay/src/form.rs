@@ -1,8 +1,8 @@
 use crate::{
-    built_in::facet::transform::transform3d::Transform3D,
+    built_in::facet::transform::{transform2d::Transform2D, transform3d::Transform3D},
     form_ref::{FormRef, MutQuery},
     static_data::global_components::COMPONENT_REGISTRY,
-    traits::{facet_common::FacetCommon, field_override::FieldOverride},
+    traits::{facet_common::FacetCommon, field_override::FieldOverride, transform_common::TransformCommon},
     traits_internal::world_context_common::spawn_prefab_recursive_internal,
 };
 use curio_core::{Composition, ObjectState, Quaternion, Vector3};
@@ -142,6 +142,26 @@ impl Form {
     /// Has facet of type 'T'
     pub fn has_facet<T: FacetCommon + 'static>(&self) -> bool {
         self.form_ref.borrow().has_facet::<T>()
+    }
+    /// Edit whichever transform this form has (3D preferred over 2D) through the shared
+    /// [`TransformCommon`] interface. Does nothing if the form has neither transform.
+    pub fn with_transform(&self, edit_fn: impl FnOnce(&mut dyn TransformCommon)) {
+        if self.has_facet::<Transform3D>() {
+            self.edit_facet::<Transform3D>(|t| edit_fn(t));
+        } else if self.has_facet::<Transform2D>() {
+            self.edit_facet::<Transform2D>(|t| edit_fn(t));
+        }
+    }
+    /// The local position of whichever transform this form has. None if it has neither.
+    pub fn transform_position(&self) -> Option<Vector3> {
+        if let Some(t) = self.get_facet::<Transform3D>() {
+            return Some(t.position);
+        }
+        self.get_facet::<Transform2D>().map(|t| t.position.to_vector3(0.0))
+    }
+    /// Set the local position of whichever transform this form has (z is dropped for 2D).
+    pub fn set_transform_position(&self, position: Vector3) {
+        self.with_transform(|t| t.set_position(position));
     }
     /// Set the parent
     pub fn set_parent(&self, parent_form: Option<Form>) {

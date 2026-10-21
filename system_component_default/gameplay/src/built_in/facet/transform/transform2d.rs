@@ -83,26 +83,6 @@ impl Transform2D {
         )
     }
 
-    pub fn set_render_order(mut self, order: i32) -> Transform2D {
-        self.render_order = order;
-        self
-    }
-    pub fn set_position_01(mut self, position: Vector2) -> Transform2D {
-        self.position = position;
-        self
-    }
-    pub fn set_rotation(mut self, rotation: Quaternion) -> Transform2D {
-        self.rotation = rotation;
-        self
-    }
-    pub fn set_scale(mut self, scale: Vector3) -> Transform2D {
-        self.scale = scale;
-        self
-    }
-    pub fn set_parent(self, _parent: Option<Form>) -> Transform2D {
-        // self.parent = parent;
-        self
-    }
     pub fn update_recursive(&self, parent_matrix: Matrix4x4, output: &mut HashMap<Form, Matrix4x4>) {
         let my_matrix = self.get_matrix();
         let final_matrix = Matrix4x4::multiply(&parent_matrix, &my_matrix);
@@ -194,5 +174,30 @@ pub fn update_transform2d(world: &mut Context3D) {
         form.edit_facet::<Transform2D>(|x| {
             x.ws_matrix = *matrix;
         });
+    }
+}
+
+impl crate::traits::transform_common::TransformCommon for Transform2D {
+    fn position(&self) -> Vector3 {
+        self.position.to_vector3(0.0)
+    }
+    fn set_position(&mut self, position: Vector3) {
+        // a 2D transform lives on the z=0 plane
+        self.position = Vector2::new(position.x, position.y);
+    }
+    fn rotation(&self) -> Quaternion {
+        self.rotation
+    }
+    fn set_rotation(&mut self, rotation: Quaternion) {
+        self.rotation = rotation;
+    }
+    fn scale(&self) -> Vector3 {
+        self.scale
+    }
+    fn set_scale(&mut self, scale: Vector3) {
+        self.scale = scale;
+    }
+    fn local_matrix(&self) -> Matrix4x4 {
+        Matrix4x4::new(self.position.to_vector3(0.0), self.rotation, self.scale)
     }
 }

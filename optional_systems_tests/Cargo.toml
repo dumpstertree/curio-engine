@@ -9,6 +9,8 @@ animators = { workspace = true }
 camera = { workspace = true }
 collision = { workspace = true }
 gameplay = { workspace = true }
+impulse = { workspace = true }
+input = { workspace = true }
 ext_rendering = { workspace = true }
 lighting = { workspace = true }
 rendering_dynamic = { workspace = true }

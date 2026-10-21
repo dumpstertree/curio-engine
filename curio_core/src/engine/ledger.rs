@@ -128,9 +128,10 @@ impl Ledger {
             .unwrap_or_else(|_| panic!("[{}] read: downcast failed for '{}' — this should never happen", self.network.me().guid, type_name::<TRecord>()))
     }
 
-    /// Edit the TRecord.This will fail if TRecord is not registered with GlobalRecords
+    /// Edit the TRecord.This will fail if TRecord is not registered with GlobalRecords.
+    /// Takes `FnOnce` so the closure may consume captured values in a single call.
     #[inline]
-    pub fn write<TRecord>(&mut self, edit_fn: impl Fn(&mut TRecord))
+    pub fn write<TRecord>(&mut self, edit_fn: impl FnOnce(&mut TRecord))
     where
         TRecord: RecordCommon + 'static,
     {

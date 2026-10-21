@@ -60,7 +60,7 @@ pub use crate::engine::curio_common::CurioCommon;
 pub use crate::engine::curio_network::CurioNetwork;
 pub use crate::engine::curio_network_participant::CurioNetworkParticipant;
 pub use crate::engine::impulse_clone::ImpulseClone;
-pub use crate::engine::impulse_common::ImpulseCommon;
+pub use crate::engine::impulse_common::{next_impulse_id, ImpulseCommon};
 pub use crate::engine::impulse_network_capabilities::ImpulseNetworkCapabilities;
 pub use crate::engine::impulse_scope::ImpulseScope;
 pub use crate::engine::impulse_synchronizer::ImpulseSynchronizer;

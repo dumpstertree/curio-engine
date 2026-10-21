@@ -1,4 +1,13 @@
+use std::sync::atomic::{AtomicI32, Ordering};
+
 use crate::{AsAny, ImpulseClone, ImpulseScope};
+
+/// Returns a process-unique id for each impulse type. The `#[curio_impulse]` macro uses this so
+/// game-defined impulse enums never collide on `ImpulseCommon::id()`.
+pub fn next_impulse_id() -> i32 {
+    static NEXT: AtomicI32 = AtomicI32::new(1);
+    NEXT.fetch_add(1, Ordering::SeqCst)
+}
 
 /// Trait required to use an object as an Impulse
 pub trait ImpulseCommon: AsAny + ImpulseClone + Sync {

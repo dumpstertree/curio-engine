@@ -103,7 +103,43 @@ impl SysRecordInput {
     pub fn default() -> SysRecordInput {
         SysRecordInput { mapped: Vec::new(), raw: InputRaw::new() }
     }
+    /// The active mapped input (first entry). None until the input plugin has produced one.
+    #[inline]
+    pub fn first_mapped(&self) -> Option<&InputMapped> {
+        self.mapped.first()
+    }
+    /// Is the mapped action currently held down? False when unmapped.
+    #[inline]
+    pub fn is_down(&self, action: &str) -> bool {
+        self.first_mapped().is_some_and(|m| m.get_button_or_default(action).is_down)
+    }
+    /// Did the mapped action transition to down this frame? False when unmapped.
+    #[inline]
+    pub fn is_pressed(&self, action: &str) -> bool {
+        self.first_mapped().is_some_and(|m| m.get_button_or_default(action).went_down)
+    }
+    /// Did the mapped action transition to up this frame? False when unmapped.
+    #[inline]
+    pub fn is_released(&self, action: &str) -> bool {
+        self.first_mapped().is_some_and(|m| m.get_button_or_default(action).went_up)
+    }
+    /// The mapped axis value. Zero when unmapped.
+    #[inline]
+    pub fn axis(&self, action: &str) -> Vector2 {
+        self.first_mapped().map(|m| m.get_axis_or_default(action).position).unwrap_or_default()
+    }
 }
+
+/// Read the input record off the ledger: `ledger.input().is_down("jump")`
+pub trait ExtensionsLedger {
+    fn input(&self) -> std::rc::Rc<SysRecordInput>;
+}
+impl ExtensionsLedger for Ledger {
+    fn input(&self) -> std::rc::Rc<SysRecordInput> {
+        self.read::<SysRecordInput>()
+    }
+}
+
 impl RecordOverride for SysRecordInput {
     fn set_state(&mut self, _field: &str, _val: &str) {}
     fn get_state(&self) -> Vec<crate::FieldState> {
