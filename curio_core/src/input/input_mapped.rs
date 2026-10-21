@@ -43,7 +43,7 @@ impl InputMapped {
             map_button.insert(map.0.clone(), ButtonState::default());
         }
         let mut map_axis = HashMap::new();
-        for map in &mapping.mapping_button {
+        for map in &mapping.mapping_axis {
             map_axis.insert(map.0.clone(), AxisState::default());
         }
 

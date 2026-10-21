@@ -50,8 +50,10 @@ impl PluginCommon for SystemComponentDefaultInput {
                     x.mapped.clear();
 
                     // create new
-                    for mapping in &self.active_mappings[cur_state] {
-                        x.mapped.push(InputMapped::new(mapping.clone()));
+                    if let Some(mappings) = self.active_mappings.get(cur_state) {
+                        for mapping in mappings {
+                            x.mapped.push(InputMapped::new(mapping.clone()));
+                        }
                     }
                 }
 

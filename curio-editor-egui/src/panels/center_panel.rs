@@ -1,5 +1,6 @@
 use crate::state::{CompileStatus, EditorMode, EditorState, LogLevel};
 use crate::theme;
+use curio_core::{AxisCode, ButtonCode};
 use eframe::egui::{self, RichText, Ui};
 
 const RESOLUTIONS: &[&str] = &["1280x720", "1920x1080", "2560x1440"];
@@ -175,29 +176,33 @@ fn game_texture(ui: &mut Ui, state: &mut EditorState) {
     });
 }
 
-/// Mirrors `ViewportCanvas.tsx`'s onPointerMove/onPointerDown/onPointerUp/
-/// onKeyDown/onKeyUp handlers — forwards raw input to the running game via
-/// `EditorState::send_input` (a no-op unless `mode == Playing`, same guard
-/// the old `api.sendInput` callers had).
+/// Forwards pointer/keyboard events from the viewport widget to the running
+/// game via `EditorState::send_input` (a no-op unless `mode == Playing`, same
+/// guard the old `api.sendInput` callers had). Codes are translated to curio's
+/// own `ButtonCode`/`AxisCode` space here, at the egui boundary.
 fn forward_input(ui: &mut Ui, state: &mut EditorState, response: &egui::Response, rect: egui::Rect) {
+    use crate::input_codes::egui_key_to_button_code;
     use crate::runner::InputEvent;
 
     if let Some(pos) = response.hover_pos() {
         let local = pos - rect.min;
-        state.send_input(InputEvent::Axis { code: 0, x: local.x, y: local.y });
+        state.send_input(InputEvent::Axis { code: AxisCode::Cursor, x: local.x, y: local.y });
     }
 
-    for &button in &[egui::PointerButton::Primary, egui::PointerButton::Secondary, egui::PointerButton::Middle] {
-        let code = match button {
-            egui::PointerButton::Primary => 0,
-            egui::PointerButton::Secondary => 2,
-            egui::PointerButton::Middle => 1,
-            _ => continue,
-        };
-        if response.drag_started_by(button) || (response.clicked_by(button)) {
+    // press/release per pointer button. egui reports these globally, so a
+    // press is only forwarded when it started inside the viewport; releases
+    // are always forwarded so the game can never get a stuck button from a
+    // drag-release outside the viewport. (`clicked_by` fires on release, so
+    // the old version that used it as "press" never released the button.)
+    for (button, code) in [
+        (egui::PointerButton::Primary, ButtonCode::MousePrimary),
+        (egui::PointerButton::Secondary, ButtonCode::MouseSecondary),
+    ] {
+        let (pressed, released, press_origin) = ui.input(|i| (i.pointer.button_pressed(button), i.pointer.button_released(button), i.pointer.press_origin()));
+        if pressed && press_origin.is_some_and(|p| rect.contains(p)) {
             state.send_input(InputEvent::Button { code, pressed: true });
         }
-        if response.drag_stopped_by(button) {
+        if released {
             state.send_input(InputEvent::Button { code, pressed: false });
         }
     }
@@ -210,7 +215,9 @@ fn forward_input(ui: &mut Ui, state: &mut EditorState, response: &egui::Response
             for event in &i.events {
                 if let egui::Event::Key { physical_key, pressed, .. } = event {
                     if let Some(key) = physical_key {
-                        state.send_input(InputEvent::Button { code: *key as u32, pressed: *pressed });
+                        if let Some(code) = egui_key_to_button_code(*key) {
+                            state.send_input(InputEvent::Button { code, pressed: *pressed });
+                        }
                     }
                 }
             }

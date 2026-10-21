@@ -2,6 +2,7 @@ pub fn main() {}
 
 pub use crate::asset::model_asset::ModelAsset;
 pub use crate::facet::renderer_static::RendererStatic;
+pub use crate::primitives::{PrimitiveResolution, PrimitiveType, Primitives};
 
 pub mod habit {
     pub(crate) mod habit_update;
@@ -14,3 +15,5 @@ pub mod facet {
 pub mod asset {
     pub(crate) mod model_asset;
 }
+
+pub mod primitives;

@@ -36,6 +36,7 @@ use crate::runner::{
 use curio_core::AssetDatabase;
 use curio_core::AssetPipeline;
 use curio_core::{AssetCache, Severity};
+use curio_core::{ButtonCode, AxisCode, ButtonPressed, Vector3};
 use curio_core::{ComponentState, Curio, CurioCommon, Gpu, Logger, PluginGroupState, Services};
 
 use egui_wgpu::wgpu::{Adapter, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
@@ -68,11 +69,18 @@ pub static SHARED_DATA: Lazy<Mutex<SharedGameData>> = Lazy::new(|| Mutex::new(Sh
 // Input event
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// A game input event forwarded from the viewport to the running Curio.
+///
+/// Carries curio's own typed codes (not raw widget/OS codes) so there is no
+/// ambiguous numeric space where e.g. mouse buttons and keyboard keys could
+/// collide. The viewport produces these via
+/// [`crate::input_codes::egui_key_to_button_code`] and egui's pointer API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum InputEvent {
-    Button { code: u32, pressed: bool },
-    Axis { code: u32, x: f32, y: f32 },
+    /// Keyboard key or mouse button (`ButtonCode::MousePrimary` / `MouseSecondary`).
+    Button { code: ButtonCode, pressed: bool },
+    Axis { code: AxisCode, x: f32, y: f32 },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,13 +123,15 @@ impl AppInstance {
         Self { app_instance: curio }
     }
 
-    pub fn forward_input(&mut self, _event: InputEvent) {
-        match _event {
-            InputEvent::Button { code: _, pressed: _ } => {
-                // Wire up to curio_core's input API once it's finalized —
-                // left as a no-op in the original Tauri build too.
+    pub fn forward_input(&mut self, event: InputEvent) {
+        match event {
+            InputEvent::Button { code, pressed } => {
+                let state = if pressed { ButtonPressed::Down } else { ButtonPressed::Up };
+                self.app_instance.curio.input_button(code, state);
             }
-            InputEvent::Axis { code: _, x: _, y: _ } => {}
+            InputEvent::Axis { code, x, y } => {
+                self.app_instance.curio.input_axis(code, Vector3::new(x, y, 0.0));
+            }
         }
     }
 }

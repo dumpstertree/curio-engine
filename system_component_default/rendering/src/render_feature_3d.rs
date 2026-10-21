@@ -98,7 +98,7 @@ impl RenderFeature3DHelper {
                 b: c.as_b_01() as f64,
                 a: c.as_a_01() as f64,
             },
-            _ => egui_wgpu::wgpu::Color { r: 1.0, g: 0.1, b: 0.1, a: 1.0 },
+            _ => egui_wgpu::wgpu::Color { r: 0.2, g: 0.2, b: 0.2, a: 1.0 },
         };
 
         // let clear_color =
