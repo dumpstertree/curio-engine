@@ -7,3 +7,7 @@ edition = "2024"
 rapier3d = "0.25.1"
 curio_core = { workspace = true }
 collision = { workspace = true }
+gameplay = { workspace = true }
+
+[dev-dependencies]
+hecs = "0.10.5"

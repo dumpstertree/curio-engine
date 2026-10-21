@@ -11,6 +11,9 @@ use std::{
     sync::{Mutex, OnceLock},
 };
 
+pub mod query;
+pub use query::PhysicsQuery;
+
 use collision::{CollisionPair, ColliderShapeDef, ColliderSnapshot, Contact, SysRecordCollider, SysRecordCollision};
 use curio_core::{Ledger, Matrix4x4, Nerve, PluginCommon, Vector3};
 use rapier3d::{
@@ -588,5 +591,42 @@ mod tests {
         let mut snapshot = snapshot(1, Vector3::new(0.0, 0.0, 0.0), ColliderShapeDef::Box { size: Vector3::new(1.0, 1.0, 1.0) });
         snapshot.matrix = Matrix4x4::new(Vector3::zero(), Quaternion::identity(), Vector3::zero());
         assert!(prepare_colliders(&[snapshot]).is_empty());
+    }
+
+    #[test]
+    fn physics_query_reflects_same_frame_movement() {
+        use collision::Collider;
+        use gameplay::{built_in::facet::transform::transform3d::Transform3D, context_3d::Context3D};
+
+        let world = std::rc::Rc::new(std::cell::RefCell::new(hecs::World::new()));
+        let mut context = Context3D::new(world.clone());
+        let left = context
+            .spawner("left")
+            .position(-5.0, 0.0, 0.0)
+            .facet(Collider::builder().box_shape(Vector3::one()).build())
+            .spawn();
+        let right = context
+            .spawner("right")
+            .position(5.0, 0.0, 0.0)
+            .facet(Collider::builder().box_shape(Vector3::one()).build())
+            .spawn();
+
+        // far apart to start with
+        let query = PhysicsQuery::new(&context);
+        assert_eq!(query.collider_count(), 2);
+        assert!(query.overlaps_form(&left).is_empty());
+
+        // move right next to left this frame: the query must see it immediately,
+        // even though no did_tick has run to refresh the cached ws matrices
+        right.edit_facet::<Transform3D>(|t| t.position = Vector3::new(-4.4, 0.0, 0.0));
+        let hits = PhysicsQuery::new(&context).overlaps_form(&left);
+        assert_eq!(hits.len(), 1);
+        assert!(hits[0].involves(right.instance_id()));
+
+        // raycasts answer against the live transforms too
+        let hit = PhysicsQuery::new(&context)
+            .raycast_first(&RayQuery::new(Vector3::new(-20.0, 0.0, 0.0), Vector3::new(1.0, 0.0, 0.0)))
+            .expect("ray should hit the left box");
+        assert_eq!(hit.guid, left.instance_id());
     }
 }
