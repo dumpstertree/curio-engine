@@ -5,6 +5,5 @@ edition = "2024"
 
 [dependencies]
 rapier3d = "0.25.1"
-
-[lib]
-crate-type = ["cdylib"]
+curio_core = { workspace = true }
+collision = { workspace = true }

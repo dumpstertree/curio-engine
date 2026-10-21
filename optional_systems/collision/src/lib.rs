@@ -1,21 +1,21 @@
-pub use facet::component_collider::BoxColliderDef;
-pub use facet::component_collider::ColliderShape;
-pub use facet::component_collider::ColliderSnapshot;
-pub use facet::component_collider::MeshColliderDef;
-pub use facet::component_collider::SphereColliderDef;
-pub use record::sys_record_colliders::SysRecordCollider;
-pub use record::sys_record_collision::SysRecordCollision;
+pub use facet::collider::Collider;
+pub use facet::collider::ColliderBuilder;
+pub use facet::collider::ColliderShapeDef;
+pub use facet::collider::CollisionPair;
+pub use facet::collider::ColliderSnapshot;
+pub use facet::collider::Contact;
+pub use facet::collider::filters_match;
+pub use record::sys_record_physics::SysRecordCollider;
+pub use record::sys_record_physics::SysRecordCollision;
 
 pub(crate) mod facet {
-    pub(crate) mod collider_common;
-    pub(crate) mod component_collider;
-    pub(crate) mod collider {
-        pub(crate) mod collider_box;
-        pub(crate) mod collider_sphere;
-    }
+    pub(crate) mod collider;
+}
+
+pub(crate) mod habit {
+    pub(crate) mod collider_collector;
 }
 
 pub(crate) mod record {
-    pub(crate) mod sys_record_colliders;
-    pub(crate) mod sys_record_collision;
+    pub(crate) mod sys_record_physics;
 }

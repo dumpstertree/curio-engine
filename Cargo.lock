@@ -706,13 +706,10 @@ dependencies = [
 name = "collision"
 version = "0.1.0"
 dependencies = [
- "bytemuck",
- "camera",
  "ctor",
  "curio_core",
- "ext_rendering",
+ "facet",
  "gameplay",
- "gltf",
  "habit",
  "record",
  "serde",
@@ -3479,6 +3476,8 @@ dependencies = [
 name = "physics"
 version = "0.1.0"
 dependencies = [
+ "collision",
+ "curio_core",
  "rapier3d",
 ]
 
