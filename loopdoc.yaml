@@ -1,5 +1,5 @@
+Name: "curio_core"
 Requires: []
-
 Types:
     - vector2:
         - field: "x"
@@ -22,7 +22,5 @@ Types:
           type: "float" 
         - field: "w"
           type: "float" 
-
 Ledger: []
-
 Static: []
