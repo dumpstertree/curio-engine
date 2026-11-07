@@ -1,19 +1,19 @@
 Name: "curio_core"
 Requires: []
 Types:
-    - vector2:
+    - Vector2:
         - field: "x"
           type: "float" 
         - field: "y"
           type: "float" 
-    - vector3:
+    - Vector3:
         - field: "x"
           type: "float" 
         - field: "y"
           type: "float" 
         - field: "z"
           type: "float"
-    - vector4:
+    - Vector4:
         - field: "x"
           type: "float" 
         - field: "y"
