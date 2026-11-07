@@ -1,5 +1,4 @@
-Name: "curio_core"
-Requires: []
+Name: "CurioCore"
 Types:
     - Vector2:
         - field: "x"
