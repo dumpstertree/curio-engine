@@ -1,6 +1,15 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{FieldState, GlobalRecords, NetworkModes, RecordCommon, RecordOverride, RecordScope, RecordSynchronizer};
+    use curio_core::{
+        FieldState,
+        GlobalRecords,
+        NetworkModes,
+        RecordCommon,
+        RecordNetworkCapabilities,
+        RecordOverride,
+        RecordScope,
+        RecordSynchronizer,
+    };
     use crate::engine::services::ensure_services;
     use serde::Deserialize;
     use serde::Serialize;
@@ -63,8 +72,8 @@ mod tests {
 
         let mut caps = RecordNetworkCapabilities::new(NetworkModes::LocalHost);
 
-        let Some(first) = RecordSynchronizer::serialize::<CapProbe>(&CapProbe { value: 1 });
-        let Some(second) = RecordSynchronizer::serialize::<CapProbe>(&CapProbe { value: 2 });
+        let Some(first) = RecordSynchronizer::serialize::<CapProbe>(&CapProbe { value: 1 }) else { panic!("expected Some") };
+        let Some(second) = RecordSynchronizer::serialize::<CapProbe>(&CapProbe { value: 2 }) else { panic!("expected Some") };
         caps.enqueue_synchronizer(first);
         caps.enqueue_synchronizer(second);
 
@@ -80,7 +89,7 @@ mod tests {
 
         let mut caps = RecordNetworkCapabilities::new(NetworkModes::LocalHost);
 
-        let Some(first) = RecordSynchronizer::serialize::<CapProbe>(&CapProbe { value: 1 });
+        let Some(first) = RecordSynchronizer::serialize::<CapProbe>(&CapProbe { value: 1 }) else { panic!("expected Some") };
         caps.enqueue_synchronizer(first);
 
         caps.drain_synchronizers();

@@ -114,11 +114,14 @@ impl LightSystem {
     /// Write lights to GPU buffer. Call each frame before drawing 3D.
     pub fn update(&self, sun: &DrawCallLight, lights: &[DrawCallLight]) {
         let queue = Services::get().gpu.queue();
-        let n = lights.len().min(MAX_LIGHTS);
+        // the buffer holds MAX_LIGHTS slots and the sun owns the first, so at
+        // most MAX_LIGHTS - 1 context lights fit
+        let n = lights.len().min(MAX_LIGHTS - 1);
 
-        // Header: first 16 bytes. First u32 = count
+        // Header: first 16 bytes. First u32 = count — the sun plus whatever
+        // lights this frame's context actually holds
         let mut bytes: Vec<u8> = Vec::new(); //Vec::with_capacity(16 + 64 * MAX_LIGHTS);
-        bytes.extend(&(3 as u32).to_le_bytes());
+        bytes.extend(&((1u32 + n as u32).to_le_bytes()));
         bytes.extend(&[0u8; 12]); // padding to 16 bytes
 
         Self::add_light(sun, &mut bytes);

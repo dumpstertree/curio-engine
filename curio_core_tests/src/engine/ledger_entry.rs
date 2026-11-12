@@ -36,7 +36,7 @@ mod tests {
     fn new_seeds_read_from_write() {
         let entry = LedgerEntry::new(boxed_probe(5));
 
-        let Some(read) = entry.read.downcast_ref::<EntryProbe>();
+        let Some(read) = entry.read.downcast_ref::<EntryProbe>() else { panic!("expected Some") };
         assert_eq!(read.value, 5);
     }
 
@@ -48,10 +48,10 @@ mod tests {
     fn write_edits_are_not_reflected_in_read_until_sync() {
         let mut entry = LedgerEntry::new(boxed_probe(1));
 
-        let Some(record) = entry.write.downcast_mut::<EntryProbe>();
+        let Some(record) = entry.write.downcast_mut::<EntryProbe>() else { panic!("expected Some") };
         record.value = 9;
 
-        let Some(read) = entry.read.downcast_ref::<EntryProbe>();
+        let Some(read) = entry.read.downcast_ref::<EntryProbe>() else { panic!("expected Some") };
         assert_eq!(read.value, 1, "read must lag behind write until sync_read");
     }
 
@@ -59,23 +59,23 @@ mod tests {
     fn sync_read_copies_write_into_read() {
         let mut entry = LedgerEntry::new(boxed_probe(1));
 
-        let Some(record) = entry.write.downcast_mut::<EntryProbe>();
+        let Some(record) = entry.write.downcast_mut::<EntryProbe>() else { panic!("expected Some") };
         record.value = 9;
 
         entry.sync_read();
 
-        let Some(read) = entry.read.downcast_ref::<EntryProbe>();
+        let Some(read) = entry.read.downcast_ref::<EntryProbe>() else { panic!("expected Some") };
         assert_eq!(read.value, 9, "read must match write after sync_read");
     }
 
     #[test]
     fn sync_read_replaces_previous_read_rc() {
         let mut entry = LedgerEntry::new(boxed_probe(2));
-        let first_read = entry.read;
+        let first_read = Rc::as_ptr(&entry.read);
 
         entry.sync_read();
 
-        assert!(Rc::as_ptr(&entry.read) != Rc::as_ptr(&first_read));
+        assert!(Rc::as_ptr(&entry.read) != first_read);
     }
 
     // =========================================================
@@ -86,15 +86,15 @@ mod tests {
     fn clone_reseeds_read_from_write() {
         let mut entry = LedgerEntry::new(boxed_probe(1));
 
-        let Some(record) = entry.write.downcast_mut::<EntryProbe>();
+        let Some(record) = entry.write.downcast_mut::<EntryProbe>() else { panic!("expected Some") };
         record.value = 8;
 
         let copy = entry.clone();
 
-        let Some(write) = copy.write.downcast_ref::<EntryProbe>();
+        let Some(write) = copy.write.downcast_ref::<EntryProbe>() else { panic!("expected Some") };
         assert_eq!(write.value, 8);
 
-        let Some(read) = copy.read.downcast_ref::<EntryProbe>();
+        let Some(read) = copy.read.downcast_ref::<EntryProbe>() else { panic!("expected Some") };
         assert_eq!(read.value, 8, "clone() must reseed read from write, not from the old read");
     }
 

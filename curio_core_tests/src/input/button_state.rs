@@ -8,7 +8,7 @@ mod tests {
 
     #[test]
     fn default_is_up_with_no_change_flags() {
-        let button_state = ButtonState::default();
+        let mut button_state = ButtonState::default();
         assert!(button_state.is_down == false);
         assert!(button_state.went_down == false);
         assert!(button_state.went_up == false, "fresh state reports no change");
@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn press_reports_went_down_once() {
-        let button_state = ButtonState::default();
+        let mut button_state = ButtonState::default();
 
         button_state.update(&true);
         assert!(button_state.is_down, "poll with down=true is down");
@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn release_reports_went_up_once() {
-        let button_state = ButtonState::default();
+        let mut button_state = ButtonState::default();
 
         button_state.update(&true);
 
@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn re_press_after_release_reports_went_down() {
-        let button_state = ButtonState::default();
+        let mut button_state = ButtonState::default();
 
         button_state.update(&true);
         button_state.update(&false);
@@ -66,7 +66,7 @@ mod tests {
     fn poll_down_then_poll_up_in_same_call_order_is_stable() {
         // went_down/went_up are computed from the OLD is_down, never from
         // each other, so a down poll can never also report went_up.
-        let button_state = ButtonState::default();
+        let mut button_state = ButtonState::default();
 
         button_state.update(&true);
         assert!(button_state.went_down && button_state.went_up == false);
@@ -79,7 +79,7 @@ mod tests {
     fn update_is_by_copy_not_reference() {
         // ButtonState is Copy: polling a stored copy must not move the
         // original, so the System Component keeps one owner.
-        let button_state = ButtonState::default();
+        let mut button_state = ButtonState::default();
         let copy = button_state;
 
         button_state.update(&true);

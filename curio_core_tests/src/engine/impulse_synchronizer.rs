@@ -45,9 +45,9 @@ mod tests {
         let sync = ImpulseSynchronizer::serialize::<SyncProbe>(&SyncProbe { value: 1 });
         assert!(sync.is_some(), "registered impulses must serialize");
 
-        let Some(stamped) = sync;
+        let Some(stamped) = sync else { panic!("expected Some") };
         assert_eq!(stamped.impulse_id, 9201);
-        assert_eq!(stamped.impulse_scope, ImpulseScope::ConnectedHost);
+        assert!(stamped.impulse_scope == ImpulseScope::ConnectedHost);
     }
 
     #[test]
@@ -67,12 +67,12 @@ mod tests {
         GlobalImpulses::register::<SyncProbe>();
 
         let sync = ImpulseSynchronizer::serialize::<SyncProbe>(&SyncProbe { value: 77 });
-        let Some(payload) = sync;
+        let Some(payload) = sync else { panic!("expected Some") };
 
         let boxed = payload.deserialize();
-        let Some(boxed) = boxed;
+        let Some(boxed) = boxed else { panic!("expected Some") };
 
-        let Ok(recovered) = boxed.downcast::<SyncProbe>();
+        let Ok(recovered) = boxed.downcast::<SyncProbe>() else { panic!("expected Ok") };
         assert_eq!(recovered.value, 77);
     }
 

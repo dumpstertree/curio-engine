@@ -20,7 +20,7 @@ mod tests {
         let mut map: AnyMap<i32> = AnyMap::default();
         map.insert(5, MapProbeA { value: 4 });
 
-        let Some(seen) = map.get<MapProbeA>(&5);
+        let Some(seen) = map.get::<MapProbeA, i32>(&5) else { panic!("expected Some") };
         assert_eq!(seen.value, 4);
     }
 
@@ -29,10 +29,10 @@ mod tests {
         let mut map: AnyMap<i32> = AnyMap::default();
         map.insert(5, MapProbeA { value: 4 });
 
-        let Some(seen) = map.get_mut<MapProbeA>(&5);
+        let Some(seen) = map.get_mut::<MapProbeA, i32>(&5) else { panic!("expected Some") };
         seen.value = 9;
 
-        let Some(again) = map.get<MapProbeA>(&5);
+        let Some(again) = map.get::<MapProbeA, i32>(&5) else { panic!("expected Some") };
         assert_eq!(again.value, 9);
     }
 
@@ -42,8 +42,11 @@ mod tests {
         map.insert(5, MapProbeA { value: 1 });
         map.insert(5, MapProbeB { value: 2 });
 
-        assert!(map.get<MapProbeA>(&5).is_none(), "old value must be replaced, not kept alongside");
-        let Some(seen) = map.get<MapProbeB>(&5);
+        assert!(
+            map.get::<MapProbeA, i32>(&5).is_none(),
+            "old value must be replaced, not kept alongside",
+        );
+        let Some(seen) = map.get::<MapProbeB, i32>(&5) else { panic!("expected Some") };
         assert_eq!(seen.value, 2);
     }
 
@@ -52,7 +55,7 @@ mod tests {
         let mut map: AnyMap<i32> = AnyMap::default();
         map.insert_any(7, Box::new(MapProbeA { value: 3 }));
 
-        let Some(seen) = map.get<MapProbeA>(&7);
+        let Some(seen) = map.get::<MapProbeA, i32>(&7) else { panic!("expected Some") };
         assert_eq!(seen.value, 3);
     }
 
@@ -65,8 +68,11 @@ mod tests {
         let mut map: AnyMap<i32> = AnyMap::default();
         map.insert(5, MapProbeA { value: 4 });
 
-        assert!(map.get<MapProbeA>(&77).is_none(), "missing key");
-        assert!(map.get<MapProbeB>(&5).is_none(), "wrong type under a present key");
+        assert!(map.get::<MapProbeA, i32>(&77).is_none(), "missing key");
+        assert!(
+            map.get::<MapProbeB, i32>(&5).is_none(),
+            "wrong type under a present key",
+        );
     }
 
     #[test]
@@ -74,9 +80,9 @@ mod tests {
         let mut map: AnyMap<i32> = AnyMap::default();
         map.insert(5, MapProbeA { value: 4 });
 
-        assert(map.get_result<MapProbeA>(&5).is_ok());
-        assert(map.get_result<MapProbeA>(&77).is_err());
-        assert(map.get_result<MapProbeB>(&5).is_err());
+        assert!(map.get_result::<MapProbeA, i32>(&5).is_ok());
+        assert!(map.get_result::<MapProbeA, i32>(&77).is_err());
+        assert!(map.get_result::<MapProbeB, i32>(&5).is_err());
 
         // Note: GetError::EmptyKey vs GetError::MismatchedType cannot be pinned
         // from outside the crate - the collections submodules are pub(crate)
@@ -92,7 +98,7 @@ mod tests {
         let mut map: AnyMap<String> = AnyMap::default();
         map.insert("hp".to_string(), MapProbeA { value: 8 });
 
-        let Some(seen) = map.get<MapProbeA>(&"hp");
+        let Some(seen) = map.get::<MapProbeA, str>(&"hp") else { panic!("expected Some") };
         assert_eq!(seen.value, 8, "K: Borrow<Q> lookup path must work");
     }
 

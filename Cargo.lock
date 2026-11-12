@@ -961,6 +961,7 @@ name = "curio_core-tests"
 version = "0.1.0"
 dependencies = [
  "curio_core",
+ "serde",
  "tempfile",
 ]
 

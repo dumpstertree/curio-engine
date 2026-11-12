@@ -113,7 +113,8 @@ impl TextureAsset {}
 // asset
 impl AssetCommon<TextureAsset> for TextureAsset {
     fn from_bits(bits: &Vec<u8>) -> TextureAsset {
-        let image: image::DynamicImage = image::load_from_memory(&bits).unwrap();
+        let image: image::DynamicImage = image::load_from_memory(bits)
+            .unwrap_or_else(|e| panic!("TextureAsset: failed to decode {} bytes of image data: {e}. The asset is corrupt, or its format is not enabled on curio_core's `image` dependency (png/jpeg).", bits.len()));
         let texture = TextureAsset::new_from_buffer(None, image.width(), image.height(), image.as_bytes());
         texture
     }

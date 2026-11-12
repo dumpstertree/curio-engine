@@ -330,7 +330,8 @@ impl GameRunner {
                     let project = self.project.lock().clone();
                     let services_ptr = self.services.as_deref().unwrap() as *const Services;
                     let path = format!("{}/target/release/", project.project_path);
-                    let loaded_curio = load_curio(Path::new(&path), services_ptr);
+                    let stem = expected_plugin_stem(&project.project_path);
+                    let loaded_curio = load_curio(Path::new(&path), services_ptr, stem.as_deref());
                     let mut app_instance = AppInstance::new(loaded_curio);
                     app_instance.app_instance.curio.window_opened();
                     self.loaded_app = Some(app_instance);
@@ -418,15 +419,37 @@ pub fn peek_curio(folder: &Path) -> Box<Vec<ComponentState>> {
     panic!("No curio plugin found");
 }
 
-pub fn load_curio(folder: &Path, gpu: *const Services) -> LoadedCurio {
-    println!("folder: {}", folder.as_os_str().to_str().unwrap());
-    let entries = std::fs::read_dir(folder).expect("plugins folder not found");
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let is_plugin = matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"));
-        if !is_plugin {
+/// Derive the plugin file stem the project's own crate produces
+/// (`package.name` with dashes as underscores, cargo's `lib` prefix).
+/// Returns None when the Cargo.toml is unreadable or has no package name.
+pub fn expected_plugin_stem(project_path: &str) -> Option<String> {
+    let manifest = std::fs::read_to_string(format!("{project_path}/Cargo.toml")).ok()?;
+    let mut in_package = false;
+    for line in manifest.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            in_package = line == "[package]";
             continue;
         }
+        if in_package && line.starts_with("name") {
+            let name = line.split('=').nth(1)?.trim().trim_matches(['"', '\'']);
+            return Some(format!("lib{}", name.replace('-', "_")));
+        }
+    }
+    None
+}
+
+pub fn load_curio(folder: &Path, gpu: *const Services, preferred_stem: Option<&str>) -> LoadedCurio {
+    println!("folder: {}", folder.as_os_str().to_str().unwrap());
+    let entries = std::fs::read_dir(folder).unwrap_or_else(|e| panic!("plugins folder not found at {:?}: {e}", folder));
+    let mut plugins: Vec<_> = entries.flatten().map(|e| e.path()).filter(|path| matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"))).collect();
+    // A build dir may hold plugins from other projects (shared targets,
+    // leftovers). Always try this project's own crate first, so 'first .so
+    // with a curio_init wins' can never boot somebody else's game.
+    if let Some(stem) = preferred_stem {
+        plugins.sort_by_key(|path| if path.file_stem().and_then(|s| s.to_str()) == Some(stem) { 0 } else { 1 });
+    }
+    for path in plugins {
         if let Err(e) = load_library(&path) {
             eprintln!("load_library failed for {:?}: {}", path, e);
             continue;
@@ -435,12 +458,24 @@ pub fn load_curio(folder: &Path, gpu: *const Services) -> LoadedCurio {
         let Some(lib) = lib.as_ref() else { continue };
         let curio = unsafe {
             let f: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
-            let raw = f(gpu);
-            if raw.is_null() {
-                eprintln!("curio_init null for {:?}", path);
-                continue;
+            // a plugin that panics in curio_init must not take the editor
+            // down with it — catch, report, and skip this library
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(gpu))) {
+                Ok(raw) if !raw.is_null() => Box::from_raw(raw),
+                Ok(_) => {
+                    eprintln!("curio_init null for {:?}", path);
+                    continue;
+                }
+                Err(payload) => {
+                    let msg = payload
+                        .downcast_ref::<String>()
+                        .cloned()
+                        .or_else(|| payload.downcast_ref::<&str>().map(|s| s.to_string()))
+                        .unwrap_or_else(|| "panic with no message".to_string());
+                    eprintln!("CURIO PLUGIN PANIC in {:?}:\n  {msg}\n  (the game crashed while initializing; fix the game and press play again)", path);
+                    continue;
+                }
             }
-            Box::from_raw(raw)
         };
         eprintln!("loaded: {}", curio.identity.name);
         return LoadedCurio { curio };

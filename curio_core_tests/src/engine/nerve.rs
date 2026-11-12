@@ -9,7 +9,7 @@ mod tests {
     use serde::Serialize;
     use std::{
         fmt::{Display, Formatter, Result},
-        time::sleep,
+        thread::sleep,
     };
 
     // All-owned impulse: must be shared across the network
@@ -137,7 +137,7 @@ mod tests {
         let syncs = nerve.try_drain_synchronizers();
         assert_eq!(syncs.len(), 1);
         assert_eq!(syncs[0].impulse_id, 9101);
-        assert_eq!(syncs[0].impulse_scope, ImpulseScope::All);
+        assert!(syncs[0].impulse_scope == ImpulseScope::All);
     }
 
     #[test]
@@ -188,7 +188,7 @@ mod tests {
         let mut nerve = Nerve::new(seat_network(NetworkModes::LocalHost));
 
         nerve.enqueue_event_delayed(NerveProbe { value: 4 }, 1.0);
-        sleep(std::time::Duration::milliseconds(1100));
+        sleep(std::time::Duration::from_millis(1100));
         nerve.update_timed_events();
 
         let drained = nerve.drain_queued_events::<NerveProbe>();
@@ -209,7 +209,7 @@ mod tests {
         let mut nerve = Nerve::new(seat_network(NetworkModes::LocalHost));
 
         nerve.enqueue_event_delayed(NerveProbe { value: 9 }, 30.0);
-        sleep(std::time::Duration::milliseconds(1100));
+        sleep(std::time::Duration::from_millis(1100));
         nerve.update_timed_events();
 
         let drained = nerve.drain_queued_events::<NerveProbe>();

@@ -214,15 +214,15 @@ impl CurioCommon for Curio {
                 Commands::Fullscreen(is_fullscreen) => {
                     // window mgmt settings are host owned - record the request for the host to apply
                     Curio::log(Severity::Info, &format!("Command: Fullscreen set to {}", is_fullscreen));
-                    self.portal.fullscreen = is_fullscreen;
+                    self.portal.fullscreen = *is_fullscreen;
                 }
                 Commands::Resizable(is_resizeable) => {
                     Curio::log(Severity::Info, &format!("Command: Resizable set to {}", is_resizeable));
-                    self.portal.resizeable = is_resizeable;
+                    self.portal.resizeable = *is_resizeable;
                 }
                 Commands::Cursor(is_visible) => {
                     Curio::log(Severity::Info, &format!("Command: Cursor visibility set to {}", is_visible));
-                    self.portal.show_cursor = is_visible;
+                    self.portal.show_cursor = *is_visible;
                 }
             }
         }

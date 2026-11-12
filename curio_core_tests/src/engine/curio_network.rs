@@ -26,7 +26,12 @@ mod tests {
         let seats = vec![CurioNetworkParticipant::new(111, NetworkModes::LocalHost)];
         let network = CurioNetwork::new(seats.clone(), 0);
 
-        assert_eq!(network.all(), &seats[0..]);
+        let all = network.all();
+        assert_eq!(all.len(), seats.len());
+        for i in 0..all.len() {
+            assert_eq!(all[i].guid, seats[i].guid);
+            assert_eq!(all[i].mode, seats[i].mode);
+        }
     }
 
     // =========================================================

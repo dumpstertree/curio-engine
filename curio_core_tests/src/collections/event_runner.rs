@@ -48,7 +48,7 @@ mod tests {
 
         runner.enqueue(&RunnerEvent { value: 1 });
         runner.enqueue(&RunnerEvent { value: 2 });
-        runner.post_and_drain(&data);
+        runner.post_and_drain(&mut data);
 
         assert_eq!(data.log, vec![1, 2]);
     }
@@ -58,7 +58,7 @@ mod tests {
         let mut runner = EventRunner::new(vec![reciever_log]);
         let mut data = RunnerData { log: vec![] };
 
-        runner.post_and_drain(&data);
+        runner.post_and_drain(&mut data);
         assert_eq!(data.log.len(), 0);
     }
 
@@ -71,7 +71,7 @@ mod tests {
         runner.enqueue(&original);
         original.value = 99;
 
-        runner.post_and_drain(&data);
+        runner.post_and_drain(&mut data);
         assert_eq!(data.log, vec![5], "the queued copy must be independent of the original");
     }
 
@@ -85,7 +85,7 @@ mod tests {
         let mut data = RunnerData { log: vec![] };
 
         runner.enqueue(&RunnerEvent { value: 3 });
-        runner.post_and_drain(&data);
+        runner.post_and_drain(&mut data);
 
         assert_eq!(data.log, vec![3, 2, 1, 0], "children are appended to the queue tail and each is visited once");
     }
@@ -101,7 +101,7 @@ mod tests {
 
         runner.enqueue(&RunnerEvent { value: 7 });
         runner.enqueue(&RunnerEvent { value: 9 });
-        runner.post_and_drain(&data);
+        runner.post_and_drain(&mut data);
 
         assert_eq!(
             data.log,

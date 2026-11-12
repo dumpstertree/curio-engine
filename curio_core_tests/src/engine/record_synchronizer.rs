@@ -95,7 +95,7 @@ mod tests {
         let sync = RecordSynchronizer::serialize::<RecordSyncProbe>(&RecordSyncProbe { value: 42 });
         assert!(sync.is_some(), "registered serializable records must serialize");
 
-        let Some(stamped) = sync;
+        let Some(stamped) = sync else { panic!("expected Some") };
         assert_eq!(stamped.record_id, 9003);
         assert_eq!(stamped.record_scope, RecordScope::Host);
     }
@@ -128,12 +128,12 @@ mod tests {
         GlobalRecords::register_serializable::<RecordSyncProbe>();
 
         let sync = RecordSynchronizer::serialize::<RecordSyncProbe>(&RecordSyncProbe { value: 42 });
-        let Some(payload) = sync;
+        let Some(payload) = sync else { panic!("expected Some") };
 
         let boxed = payload.deserialize();
-        let Some(boxed) = boxed;
+        let Some(boxed) = boxed else { panic!("expected Some") };
 
-        let Ok(recovered) = boxed.downcast::<RecordSyncProbe>();
+        let Ok(recovered) = boxed.downcast::<RecordSyncProbe>() else { panic!("expected Ok") };
         assert_eq!(recovered.value, 42);
     }
 

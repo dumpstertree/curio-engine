@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn first_update_sets_position_and_delta_from_zero() {
-        let axis_state = AxisState::default();
+        let mut axis_state = AxisState::default();
 
         axis_state.update(Vector2::new(1.0, 0.0));
         assert_eq!(axis_state.position, Vector2::new(1.0, 0.0));
@@ -29,7 +29,7 @@ mod tests {
 
     #[test]
     fn delta_is_the_motion_since_last_poll() {
-        let axis_state = AxisState::default();
+        let mut axis_state = AxisState::default();
 
         axis_state.update(Vector2::new(1.0, 0.0));
         axis_state.update(Vector2::new(1.0, 2.0));
@@ -43,7 +43,7 @@ mod tests {
 
     #[test]
     fn holding_position_reports_zero_delta() {
-        let axis_state = AxisState::default();
+        let mut axis_state = AxisState::default();
 
         axis_state.update(Vector2::new(0.5, -0.5));
         axis_state.update(Vector2::new(0.5, -0.5));
@@ -54,7 +54,7 @@ mod tests {
     fn update_is_by_copy_not_reference() {
         // AxisState is Copy (its Vector2 is Copy): polling a stored copy
         // must not move the original.
-        let axis_state = AxisState::default();
+        let mut axis_state = AxisState::default();
         let copy = axis_state;
 
         axis_state.update(Vector2::new(1.0, 0.0));

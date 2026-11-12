@@ -30,6 +30,7 @@ pub fn ensure_services() {
         Services::set(services);
         true
     });
+    assert!(*KEEP_SERVICES, "EngineServices must initialise on first access");
 }
 
 #[cfg(test)]

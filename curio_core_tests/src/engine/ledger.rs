@@ -221,7 +221,7 @@ mod tests {
         assert_eq!(report.1.tab_name, "Ledger");
 
         let found = report.1.objects.iter().any(|obj| obj.object_name == "LedgerProbeLocal");
-        assert(found);
+        assert!(found);
     }
 
     // =========================================================

@@ -59,7 +59,7 @@ mod tests {
 
         let mut caps = ImpulseNetworkCapabilities::new(NetworkModes::LocalHost);
 
-        let Some(first) = ImpulseSynchronizer::serialize::<CapImpulse>(&CapImpulse { value: 1 });
+        let Some(first) = ImpulseSynchronizer::serialize::<CapImpulse>(&CapImpulse { value: 1 }) else { panic!("expected Some") };
         caps.enqueue_synchronizer(first);
 
         let drained = caps.drain_synchronizers();
@@ -74,7 +74,7 @@ mod tests {
 
         let mut caps = ImpulseNetworkCapabilities::new(NetworkModes::LocalHost);
 
-        let Some(first) = ImpulseSynchronizer::serialize::<CapImpulse>(&CapImpulse { value: 1 });
+        let Some(first) = ImpulseSynchronizer::serialize::<CapImpulse>(&CapImpulse { value: 1 }) else { panic!("expected Some") };
         caps.enqueue_synchronizer(first);
 
         caps.drain_synchronizers();

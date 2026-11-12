@@ -1,6 +1,6 @@
 {
-  "texture_path": "font2.png",
-  "shader_path": "shader/unlit_shader.shader",
+  "texture_path": "built_in/texture/font_black.png",
+  "shader_path": "built_in/shader/unlit.shader",
   "char_spacing": -0.1,
   "line_spacing": 0.1,
   "padding_left": 1,
