@@ -124,7 +124,7 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
   (still WIP; drop-in compatible with the mesh pipeline is the new modules).
 - API-affecting change from fixes: `Curio::portal` is now a public field (only breaking surface).
 
-## E. Test-plan groups (1-3 done, 4-7 pending; validation of groups 2-3 still open)
+## E. Test-plan groups (1-3 committed in `560a4a6`, 4-7 pending)
 
 1. `[done, uncommitted]` engine state & sync layer — 34 tests across 9 files
    (ledger, ledger_entry, nerve, record/impulse synchronizers, both capabilities, curio_network,
@@ -228,8 +228,9 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
 
 ## F. Git state snapshot
 
-- Tip: `51ea929` on `main`; pushed over SSH remote `git@github.com:dumpstertree/curio-engine.git`;
-  repo-local author `dumpstertree <dumpstertree@gmail.com>`.
-- **Group 1-3 test files are new/uncommitted** (`curio_core_tests/src/{engine,collections,input}/*`,
-  this findings file + modified `lib.rs`/`Cargo.toml`); commit only after the user validates
-  each group.
+- Tip: `560a4a6` on `main` (pushed to `git@github.com:dumpstertree/curio-engine.git`, author
+  `dumpstertree <dumpstertree@gmail.com>`); previous tips: `51ea929` shaders, `ae59b43`
+  window cmds/hooks + command-handler fixes.
+- `560a4a6` = **groups 1-3 test files + this findings file + `lib.rs`/`Cargo.toml`** (22 files,
+  2192 insertions). Tests still need a real build (`RUST_TEST_THREADS=1`); failures land here
+  as `[open]` items rather than reverting the commit.
