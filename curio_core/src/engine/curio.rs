@@ -5,7 +5,7 @@ use crate::{engine::metadata::identity::Identity, ButtonCode, ButtonPressed, Com
 use crate::{
     engine::{curio_common::CurioCommon, serialization::plugin_group_state::CurioState},
     input::axis_code::AxisCode,
-    Formation, Ledger, PluginCommon, Severity, Vector3, Version,
+    Formation, Ledger, PluginCommon, Portal, Severity, Vector3, Version,
 };
 use egui_wgpu::wgpu::{Texture, TextureView};
 use std::collections::HashMap;
@@ -18,6 +18,8 @@ pub struct Curio {
     pub nerves: Vec<Nerve>,
     pub ledgers: Vec<Ledger>,
     pub formation: Formation,
+    /// The current view into this Curio. Updated when Plugins issue window management Commands
+    pub portal: Portal,
     command_buffer: Vec<Commands>,
 }
 
@@ -73,6 +75,7 @@ impl Curio {
             ledgers: all_ledgers,
             nerves: all_nerves,
             formation: builder.gamemode,
+            portal: Portal::fullscreen_1080(),
         }
     }
 }
@@ -98,7 +101,6 @@ impl Curio {
 // impl -Private fns
 impl Curio {
     fn log_ledger() {
-        println!("THIS IS WRONG");
         // get all being added
         let all = GlobalRecords::get_all_registrations();
 
@@ -193,11 +195,35 @@ impl CurioCommon for Curio {
                         c.tick(&mut self.ledgers, &mut self.nerves);
                     }
                 }
-                Commands::Exit => todo!(),
-                Commands::Resize(_) => todo!(),
-                Commands::Fullscreen(_) => todo!(),
-                Commands::Resizable(_) => todo!(),
-                Commands::Cursor(_) => todo!(),
+                Commands::Exit => {
+                    // alert each component that the application should exit
+                    Curio::log(Severity::Info, "Command: Exit - alerting plugins");
+                    for c in &mut self.plugins {
+                        c.application_quit();
+                    }
+                }
+                Commands::Resize(size) => {
+                    // alert each component that the application should resize
+                    Curio::log(Severity::Info, &format!("Command: Resize to {}", size));
+                    self.portal.width = size.x as i32;
+                    self.portal.height = size.y as i32;
+                    for c in &mut self.plugins {
+                        c.application_resize(size.x, size.y);
+                    }
+                }
+                Commands::Fullscreen(is_fullscreen) => {
+                    // window mgmt settings are host owned - record the request for the host to apply
+                    Curio::log(Severity::Info, &format!("Command: Fullscreen set to {}", is_fullscreen));
+                    self.portal.fullscreen = is_fullscreen;
+                }
+                Commands::Resizable(is_resizeable) => {
+                    Curio::log(Severity::Info, &format!("Command: Resizable set to {}", is_resizeable));
+                    self.portal.resizeable = is_resizeable;
+                }
+                Commands::Cursor(is_visible) => {
+                    Curio::log(Severity::Info, &format!("Command: Cursor visibility set to {}", is_visible));
+                    self.portal.show_cursor = is_visible;
+                }
             }
         }
     }
@@ -249,9 +275,15 @@ impl CurioCommon for Curio {
         }
     }
     fn window_resized(&mut self) {
-        Curio::log(Severity::Warning, "Window: Resized - Not yet implemented");
+        Curio::log(Severity::Info, "Window: Resized");
     }
     fn window_moved(&mut self) {
-        Curio::log(Severity::Warning, "Window: Moved - Not yet implemented");
+        Curio::log(Severity::Info, "Window: Moved");
+    }
+    fn window_focused(&mut self, is_focused: bool) {
+        Curio::log(Severity::Info, &format!("Window: Focused set to {}", is_focused));
+    }
+    fn window_occluded(&mut self, is_occluded: bool) {
+        Curio::log(Severity::Info, &format!("Window: Occluded set to {}", is_occluded));
     }
 }

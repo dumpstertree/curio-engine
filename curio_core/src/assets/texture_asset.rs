@@ -52,10 +52,10 @@ impl TextureAsset {
         let queue = s.gpu.queue();
         let device = s.gpu.device();
 
-        if width % 2 != 0 {
+        if width == 0 || width & (width - 1) != 0 {
             panic!("texture width not power of 2")
         }
-        if height % 2 != 0 {
+        if height == 0 || height & (height - 1) != 0 {
             panic!("texture height not power of 2")
         }
         let size = egui_wgpu::wgpu::Extent3d { width: width, height: height, depth_or_array_layers: 1 };
@@ -71,15 +71,6 @@ impl TextureAsset {
             size,
         });
 
-        // let rgba = texture();
-
-        println!("width: {}", width);
-        println!("height: {}", height);
-        // println!("bytes: {}", rgba.len);
-        println!("will writing");
-
-        println!("expected: {}", width * height * 4);
-        println!("writing");
         queue.write_texture(
             egui_wgpu::wgpu::TexelCopyTextureInfo {
                 aspect: egui_wgpu::wgpu::TextureAspect::All,
@@ -96,9 +87,7 @@ impl TextureAsset {
             size,
         );
 
-        println!("0");
         let view = texture.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
-        println!("1");
         let sampler = device.create_sampler(&egui_wgpu::wgpu::SamplerDescriptor {
             address_mode_u: egui_wgpu::wgpu::AddressMode::ClampToEdge,
             address_mode_v: egui_wgpu::wgpu::AddressMode::ClampToEdge,
@@ -108,8 +97,6 @@ impl TextureAsset {
             mipmap_filter: egui_wgpu::wgpu::FilterMode::Nearest,
             ..Default::default()
         });
-
-        println!("created tx");
 
         // return
         TextureAsset {

@@ -1,7 +1,7 @@
 use serde::{de::DeserializeOwned, Serialize};
 use std::{any::Any, collections::HashMap, fmt::Display, time::Instant};
 
-use crate::{engine::curio_network::CurioNetwork, AnyQueue, ImpulseCommon, ImpulseNetworkCapabilities, ImpulseSynchronizer};
+use crate::{engine::curio_network::CurioNetwork, AnyQueue, Curio, ImpulseCommon, ImpulseNetworkCapabilities, ImpulseSynchronizer, Severity};
 /// A Nerve is used to transmit Impulses. Impulses can be passed between different nerves by using the Sync event functions.
 pub struct Nerve {
     cache: HashMap<i32, AnyQueue>,
@@ -108,7 +108,7 @@ impl Nerve {
     pub fn try_apply_synchronizers(&mut self, sync_events: Vec<ImpulseSynchronizer>) {
         for sync in sync_events {
             let Some(payload) = sync.deserialize() else {
-                println!("failed deserialize");
+                Curio::log(Severity::Warning, &format!("Nerve: failed to deserialize sync for impulse {}", sync.impulse_id));
                 continue;
             };
 

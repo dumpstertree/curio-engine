@@ -40,5 +40,25 @@ static UNLIT: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| {
             }),
     )
 });
-static VEGETATION: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| panic!());
-static PARTICLE: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| panic!());
+static VEGETATION: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| {
+    Arc::new(
+        Services::get()
+            .gpu
+            .device()
+            .create_shader_module(ShaderModuleDescriptor {
+                label: Some("Vegetation Shader"),
+                source: ShaderSource::Wgsl(include_str!("../../../assets/built_in/shader_module/vegetation.wgsl").into()),
+            }),
+    )
+});
+static PARTICLE: LazyLock<Arc<ShaderModule>> = LazyLock::new(|| {
+    Arc::new(
+        Services::get()
+            .gpu
+            .device()
+            .create_shader_module(ShaderModuleDescriptor {
+                label: Some("Particle Shader"),
+                source: ShaderSource::Wgsl(include_str!("../../../assets/built_in/shader_module/particle.wgsl").into()),
+            }),
+    )
+});
