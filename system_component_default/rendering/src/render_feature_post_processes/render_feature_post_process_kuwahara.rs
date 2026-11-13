@@ -27,7 +27,7 @@ pub struct KuwaharaUniform {
     dither_mode: f32, // 0 = interleaved gradient noise, >= 1 = hashed blue noise
     dither_amount: f32, // 0 = hard decisions (no dithering), 1 = fully stochastic
     seed: f32, // shifts the hash lattice (also usable for temporal dithering)
-    pad: f32, // keeps the struct at a 32-byte multiple, matching the WGSL layout
+    depth_strength: f32, // 0 = depth-ignorant; > 0 window weights fall off across depth jumps
 }
 
 pub struct RenderFeaturePostProcessKuwahara {
@@ -57,7 +57,7 @@ impl RenderFeaturePostProcessKuwahara {
             dither_mode: 0.0,
             dither_amount: 0.0,
             seed: 0.0,
-            pad: 0.0,
+            depth_strength: 40.0,
         };
 
         // sampler
@@ -279,6 +279,7 @@ impl RenderFeaturePostProcessKuwahara {
         dither_mode: f32,
         dither_amount: f32,
         seed: f32,
+        depth_strength: f32,
     ) {
         let radius = radius.max(1.0);
         let strength = strength.clamp(0.0, 1.0);
@@ -287,6 +288,7 @@ impl RenderFeaturePostProcessKuwahara {
         let dither_mode = dither_mode.max(0.0);
         let dither_amount = dither_amount.clamp(0.0, 1.0);
         let seed = seed % 1024.0; // keep the hash lattice small
+        let depth_strength = depth_strength.max(0.0);
 
         if self.params_uniform.radius == radius
             && self.params_uniform.strength == strength
@@ -295,6 +297,7 @@ impl RenderFeaturePostProcessKuwahara {
             && self.params_uniform.dither_mode == dither_mode
             && self.params_uniform.dither_amount == dither_amount
             && self.params_uniform.seed == seed
+            && self.params_uniform.depth_strength == depth_strength
         {
             return;
         }
@@ -307,7 +310,7 @@ impl RenderFeaturePostProcessKuwahara {
             dither_mode,
             dither_amount,
             seed,
-            pad: 0.0,
+            depth_strength,
         };
 
         let s = Services::get();

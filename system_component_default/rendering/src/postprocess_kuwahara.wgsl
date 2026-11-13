@@ -12,6 +12,7 @@ struct KuwaharaParams {
     dither_mode: f32, // 0 = interleaved gradient noise, >= 1 = hashed blue noise
     dither_amount: f32, // 0 = hard decisions (old behavior), 1 = fully stochastic
     seed: f32, // shifts the hash lattice (and could drive temporal dithering)
+    depth_strength: f32, // 0 = depth-ignorant; > 0 falloff of window weights across depth jumps
 };
 
 struct Tensor2 {
@@ -25,6 +26,9 @@ var mySampler: sampler;
 
 @group(0) @binding(1)
 var myTexture: texture_2d<f32>;
+
+@group(0) @binding(2)
+var myDepth: texture_2d<f32>;
 
 @group(0) @binding(3)
 var<uniform> kuwahara_params: KuwaharaParams;
@@ -66,6 +70,21 @@ fn gaussWeight(u: f32, v: f32, sigma: f32, tau: f32) -> f32 {
     let a = 0.5 * (u * u) / (sigma * sigma);
     let b = 0.5 * (v * v) / (tau * tau);
     return exp(-(a + b));
+}
+
+// raw window-space depth at uv (0..1 for geometry, cleared to 1.0 = far plane)
+fn depthAt(uv: vec2<f32>) -> f32 {
+    return textureSample(myDepth, mySampler, uv).x;
+}
+
+// multiplicative falloff for depth discontinuities: a sample whose depth
+// differs from the window center by dz gets exp(-strength * dz); strength = 0
+// keeps the filter fully depth-ignorant
+fn depthWeight(dz: f32, strength: f32) -> f32 {
+    if (strength <= 0.0) {
+        return 1.0;
+    }
+    return exp(-strength * abs(dz));
 }
 
 // luminance-weighted 2x2 structure tensor of the full window, centered on the
@@ -156,6 +175,11 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     let dims = vec2<f32>(textureDimensions(myTexture));
     let texel = 1.0 / dims;
 
+    // depth of the window center: sub-windows straddle a depth silhouette when
+    // their samples fall off by depthWeight, so they end up covering one
+    // depth layer only
+    let dCenter = depthAt(uv);
+
     // sample the four sub-windows in the rotated frame
     for (var q: i32 = 0; q < 4; q = q + 1) {
         let su = select(-1.0, 1.0, q == 1 || q == 3);
@@ -164,11 +188,13 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
             for (var iv: i32 = 0; iv <= radius; iv = iv + 1) {
                 let lu = f32(iu) * su;
                 let lv = f32(iv) * sv;
-                let w = gaussWeight(lu, lv, sigma, tau);
                 // rotate the local offset into texture space
                 let rx = c * lu - s * lv;
                 let ry = s * lu + c * lv;
-                let col = textureSample(myTexture, mySampler, uv + vec2<f32>(rx, ry) * texel).rgb;
+                let sample_uv = uv + vec2<f32>(rx, ry) * texel;
+                let w = gaussWeight(lu, lv, sigma, tau)
+                    * depthWeight(depthAt(sample_uv) - dCenter, kuwahara_params.depth_strength);
+                let col = textureSample(myTexture, mySampler, sample_uv).rgb;
                 let lum = max(dot(col, vec3<f32>(0.2126, 0.7152, 0.0722)), 0.0001);
                 let lw = lum * w;
 
@@ -241,7 +267,24 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let dims = vec2<f32>(textureDimensions(myTexture));
     let noise = ditherNoise(in.uv * dims, kuwahara_params.dither_mode, kuwahara_params.seed);
     let amount = max(0.0, kuwahara_params.dither_amount);
-    let strength = clamp(kuwahara_params.strength + (noise - 0.5) * amount, 0.0, 1.0);
+    var strength = clamp(kuwahara_params.strength + (noise - 0.5) * amount, 0.0, 1.0);
+    // depth-edge awareness: where the depth changes sharply between neighbouring
+    // pixels, keep more of the original so silhouettes stay crisp
+    if (kuwahara_params.depth_strength > 0.0) {
+        let texel = 1.0 / dims;
+        let d0 = depthAt(in.uv);
+        let offs = array<vec2<f32>, 4>(
+            vec2<f32>(1.0, 0.0), vec2<f32>(-1.0, 0.0),
+            vec2<f32>(0.0, 1.0), vec2<f32>(0.0, -1.0),
+        );
+        var maxDelta = 0.0;
+        for (var o: i32 = 0; o < 4; o = o + 1) {
+            maxDelta = max(maxDelta, abs(depthAt(in.uv + offs[o] * texel) - d0));
+        }
+        // 0.02 = depth jump that counts as a full silhouette (normalised depth)
+        let depthEdge = clamp(maxDelta / 0.02, 0.0, 1.0);
+        strength = strength * (1.0 - 0.65 * depthEdge);
+    }
     let color = mix(original, painterly, strength);
     return vec4<f32>(color, 1.0);
 }
