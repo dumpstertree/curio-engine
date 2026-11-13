@@ -45,16 +45,37 @@ fn vs_fullscreen(@builtin(vertex_index) i: u32) -> VSOut {
     return out;
 }
 
-// --- Kuwahara filter ---
-// radius comes from the uniform so the host can drive it per frame
-fn Kuwahara(uv: vec2<f32>, radius: i32) -> vec3<f32> {
+// --- Kuwahara filter, contrast-invariant via structure tensor ---
+// For each of the four quadrant windows we accumulate the 2x2 structure tensor
+//     S = sum( lum * w * w^T )
+// over the sample offsets w inside the window, weighted by luminance.
+// Eigen-decomposing S gives the window's dominant direction and how much
+// variation runs ACROSS it:
+//     lambda1 >= lambda2;  lambda2 is the variation across the dominant axis.
+// Picking the window with the SMALLEST lambda2 keeps windows that run ALONG
+// an edge rather than across it (Fuyama, Schuippel, Kuwahara 2007). Unlike the
+// classic mean/variance rule this is invariant to region brightness, so it
+// survives soft gradients, speculars and shading boundaries.
+
+fn Kuahawara(uv: vec2<f32>, radius: i32) -> vec3<f32> {
     var mean: array<vec3<f32>, 4>;
-    var varSum: array<f32, 4>;
     var count: array<f32, 4>;
+    var sl: array<f32, 4>; // sum of the luminance weights
+    var slx: array<f32, 4>; // first moments of the sample offsets
+    var sly: array<f32, 4>;
+    var sxx: array<f32, 4>; // second moments: the structure tensor entries
+    var syy: array<f32, 4>;
+    var sxy: array<f32, 4>;
+
     for (var i: i32 = 0; i < 4; i = i + 1) {
         mean[i] = vec3<f32>(0.0);
-        varSum[i] = 0.0;
         count[i] = 0.0;
+        sl[i] = 0.0;
+        slx[i] = 0.0;
+        sly[i] = 0.0;
+        sxx[i] = 0.0;
+        syy[i] = 0.0;
+        sxy[i] = 0.0;
     }
 
     let dims = vec2<f32>(textureDimensions(myTexture));
@@ -64,43 +85,48 @@ fn Kuwahara(uv: vec2<f32>, radius: i32) -> vec3<f32> {
         for (var yi: i32 = -radius; yi <= radius; yi = yi + 1) {
             let offset = vec2<f32>(f32(xi), f32(yi)) * texel;
             let c = textureSample(myTexture, mySampler, uv + offset).rgb;
+            let lum = max(dot(c, vec3<f32>(0.2126, 0.7152, 0.0722)), 0.001);
+            let wx = f32(xi);
+            let wy = f32(yi);
 
-            if (xi <= 0 && yi <= 0) {
-                mean[0] = mean[0] + c;
-                varSum[0] = varSum[0] + dot(c, c);
-                count[0] = count[0] + 1.0;
-            }
-            if (xi > 0 && yi <= 0) {
-                mean[1] = mean[1] + c;
-                varSum[1] = varSum[1] + dot(c, c);
-                count[1] = count[1] + 1.0;
-            }
-            if (xi <= 0 && yi > 0) {
-                mean[2] = mean[2] + c;
-                varSum[2] = varSum[2] + dot(c, c);
-                count[2] = count[2] + 1.0;
-            }
-            if (xi > 0 && yi > 0) {
-                mean[3] = mean[3] + c;
-                varSum[3] = varSum[3] + dot(c, c);
-                count[3] = count[3] + 1.0;
-            }
+            // 0:(-x,-y) 1:(+x,-y) 2:(-x,+y) 3:(+x,+y)
+            let sx = select(0, 1, xi > 0);
+            let sy = select(0, 1, yi > 0);
+            let q = sx + 2 * sy;
+
+            mean[q] = mean[q] + c;
+            count[q] = count[q] + 1.0;
+            sl[q] = sl[q] + lum;
+            slx[q] = slx[q] + lum * wx;
+            sly[q] = sly[q] + lum * wy;
+            sxx[q] = sxx[q] + lum * wx * wx;
+            syy[q] = syy[q] + lum * wy * wy;
+            sxy[q] = sxy[q] + lum * wx * wy;
         }
     }
 
-    var final_col: vec3<f32> = mean[0] / count[0];
-    var minVar: f32 = varSum[0] / count[0] - dot(final_col, final_col);
-
-    for (var i: i32 = 1; i < 4; i = i + 1) {
-        let m = mean[i] / count[i];
-        let v = varSum[i] / count[i] - dot(m, m);
-        if (v < minVar) {
-            final_col = m;
-            minVar = v;
+    // pick the quadrant whose structure tensor has the smallest minor eigenvalue
+    var best: i32 = 0;
+    var bestLambda2: f32 = 1000000.0;
+    for (var q: i32 = 0; q < 4; q = q + 1) {
+        let lw = max(sl[q], 0.001);
+        let mx = slx[q] / lw;
+        let my = sly[q] / lw;
+        // central second moments: the tensor covariance of the window
+        let cxx = max(sxx[q] / lw - mx * mx, 0.0);
+        let cyy = max(syy[q] / lw - my * my, 0.0);
+        let cxy = sxy[q] / lw - mx * my;
+        // eigenvalues of the 2x2 tensor
+        let halfTrace = 0.5 * (cxx + cyy);
+        let disc = sqrt(0.25 * (cxx - cyy) * (cxx - cyy) + cxy * cxy);
+        let lambda2 = max(halfTrace - disc, 0.0);
+        if (lambda2 < bestLambda2) {
+            bestLambda2 = lambda2;
+            best = q;
         }
     }
 
-    return final_col;
+    return mean[best] / max(count[best], 1.0);
 }
 
 // --- fragment shader ---
@@ -108,7 +134,7 @@ fn Kuwahara(uv: vec2<f32>, radius: i32) -> vec3<f32> {
 fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let radius = max(1, i32(round(kuwahara_params.radius)));
     let original = textureSample(myTexture, mySampler, in.uv).rgb;
-    let painterly = Kuwahara(in.uv, radius);
+    let painterly = Kuahawara(in.uv, radius);
     let color = mix(original, painterly, clamp(kuwahara_params.strength, 0.0, 1.0));
     return vec4<f32>(color, 1.0);
 }
