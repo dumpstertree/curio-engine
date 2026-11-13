@@ -106,9 +106,10 @@ impl RenderFeaturePostProcessHelper {
 }
 
 pub struct PostProcessResources {
-    // pub texture_a: egui_wgpu::wgpu::Texture,
+    // owned: the views are bound every frame by the post-process features
+    pub texture_a: egui_wgpu::wgpu::Texture,
     pub view_a: TextureView,
-    // pub texture_b: egui_wgpu::wgpu::Texture,
+    pub texture_b: egui_wgpu::wgpu::Texture,
     pub view_b: TextureView,
 }
 
@@ -131,7 +132,6 @@ impl PostProcessResources {
         let texture_b = device.create_texture(&desc("post B"));
         let view_b = texture_b.create_view(&TextureViewDescriptor::default());
 
-        Self { view_a, view_b }
-        // Self { texture_a, view_a, texture_b, view_b }
+        Self { texture_a, view_a, texture_b, view_b }
     }
 }

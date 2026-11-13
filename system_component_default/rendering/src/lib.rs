@@ -33,7 +33,7 @@ use winit::event::WindowEvent;
 
 pub struct SystemComponentDefaultGraphics {
     shadow_system: ShadowSystem,
-    // offscreen_texture: Texture,
+    offscreen_texture: Texture, // owner: the view stays bound by 3D/post features
     offscreen_view: TextureView,
     // render_feature_2d_helper: RenderFeature2DHelper,
     render_feature_3d_helper: RenderFeature3DHelper,
@@ -197,7 +197,7 @@ impl SystemComponentDefaultGraphics {
     // construction
     pub fn new() -> Box<SystemComponentDefaultGraphics> {
         // generate a texture to pass between RenderDrivers that can be written to
-        let (_offscreen_texture, offscreen_view) = Self::generate_render_texture();
+        let (offscreen_texture, offscreen_view) = Self::generate_render_texture();
         let x = Box::new(SystemComponentDefaultGraphics {
             is_dirty: true,
             graphics_mappings: Vec::new(),
@@ -205,7 +205,7 @@ impl SystemComponentDefaultGraphics {
             // render_feature_2d_helper: RenderFeature2DHelper::new(),
             render_feature_3d_helper: RenderFeature3DHelper::new(),
             render_feature_pp_helper: RenderFeaturePostProcessHelper::new(&offscreen_view),
-            // offscreen_texture,
+            offscreen_texture,
             offscreen_view,
         });
 
