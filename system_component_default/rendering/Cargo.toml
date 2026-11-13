@@ -12,6 +12,8 @@ edition = "2024"
 
 [dependencies]
 ext_rendering = { workspace = true }
+record = { workspace = true }
+ctor = "0.8.0"
 curio_core = { workspace = true }
 camera = { workspace = true }
 lighting = { workspace = true }

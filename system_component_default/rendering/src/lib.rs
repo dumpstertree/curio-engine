@@ -18,6 +18,10 @@ mod render_feature_post_processes {
     pub mod render_feature_post_process_kuwahara;
     pub mod render_feature_post_process_sobel_outline;
 }
+pub mod record {
+    // game-side tuning values for the post-process chain (auto-registered)
+    pub mod sys_record_post_process;
+}
 // use crate::render_feature_2d::RenderFeature2DHelper;
 use crate::render_feature_3d::RenderFeature3DHelper;
 use crate::render_feature_post_process::{PostProcessResources, RenderFeaturePostProcessHelper};
@@ -73,7 +77,7 @@ impl PluginCommon for SystemComponentDefaultGraphics {
 
         // post-process offscreen → swapchain
         self.render_feature_pp_helper
-            .draw_post_features(&mut encoder, &self.offscreen_view, &output_view);
+            .draw_post_features(&mut encoder, &self.offscreen_view, &output_view, ledger);
 
         // ── capture step ────────────────────────────────────────
         // capture AFTER post-processing and 2D — from swapchain, not offscreen

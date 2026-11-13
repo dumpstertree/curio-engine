@@ -1,4 +1,4 @@
-use curio_core::{Services, TextureAsset};
+use curio_core::{Ledger, Services, TextureAsset};
 use std::sync::Arc;
 
 use egui_wgpu::wgpu::{AddressMode, CompareFunction, Device, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor};
@@ -7,6 +7,9 @@ use crate::render_feature_post_processes::{render_feature_post_process_fog::Rend
 
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &TextureView, output_view: &TextureView, source: PostProcessSource);
+    // per-frame tuning hook: features that expose knobs read them from the
+    // ledger (SysRecordPostProcess); default = nothing to sync
+    fn update_params(&mut self, _ledger: &mut Vec<Ledger>) {}
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -79,7 +82,7 @@ impl RenderFeaturePostProcessHelper {
         TextureAsset { texture, view, sampler }
     }
 
-    pub fn draw_post_features(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &TextureView, output_view: &TextureView) {
+    pub fn draw_post_features(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &TextureView, output_view: &TextureView, ledger: &mut Vec<Ledger>) {
         let mut src = input_view;
         let mut ping = &self.pp_resource.view_a;
         let mut pong = &self.pp_resource.view_b;
@@ -89,6 +92,9 @@ impl RenderFeaturePostProcessHelper {
         for (i, feature) in self.features.iter_mut().enumerate() {
             let is_last = i == post_features_len - 1;
             let target = if is_last { output_view } else { ping };
+
+            // pick up tuning values the game wrote to the ledger this frame
+            feature.update_params(ledger);
 
             feature.render(encoder, src, target, current_source);
 

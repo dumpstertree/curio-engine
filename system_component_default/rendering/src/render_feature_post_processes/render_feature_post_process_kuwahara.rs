@@ -1,4 +1,4 @@
-use curio_core::Services;
+use curio_core::{Ledger, Services};
 use egui_wgpu::wgpu::{self, BindGroup};
 use egui_wgpu::wgpu::util::DeviceExt;
 use std::borrow::Cow;
@@ -8,6 +8,7 @@ use std::sync::Arc;
 use bytemuck::{Pod, Zeroable, cast_slice};
 
 use crate::PostProcessResources;
+use crate::record::sys_record_post_process::SysRecordPostProcess;
 use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostProcess};
 
 // NOTE: update include_str! path to your shader file
@@ -334,6 +335,26 @@ impl RenderFeaturePostProcessKuwahara {
 }
 
 impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
+    // per-frame pickup of the game's tuning record: the single post chain is
+    // driven by the first ledger instance; update() clamps and only rewrites
+    // the uniform when a value actually changed
+    fn update_params(&mut self, ledger: &mut Vec<Ledger>) {
+        let Some(ledger) = ledger.first() else { return };
+        let record = ledger.read::<SysRecordPostProcess>();
+        self.update(
+            record.radius,
+            record.strength,
+            record.sigma,
+            record.tau,
+            record.dither_mode,
+            record.dither_amount,
+            record.seed,
+            record.depth_strength,
+            record.temporal,
+            self.frame_index, // temporal clock stays internal to the feature
+        );
+    }
+
     fn render(&mut self, encoder: &mut wgpu::CommandEncoder, _input_view: &wgpu::TextureView, output_view: &wgpu::TextureView, postprocess_source: PostProcessSource) {
         // temporal dither: while enabled, advance the frame counter and re-
         // randomize the noise lattice every frame; disabled it costs nothing
