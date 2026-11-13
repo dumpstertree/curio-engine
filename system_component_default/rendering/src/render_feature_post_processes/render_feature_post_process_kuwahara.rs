@@ -1,6 +1,11 @@
+use curio_core::Services;
 use egui_wgpu::wgpu::{self, BindGroup};
+use egui_wgpu::wgpu::util::DeviceExt;
 use std::borrow::Cow;
+use std::num::NonZeroU64;
 use std::sync::Arc;
+
+use bytemuck::{Pod, Zeroable, cast_slice};
 
 use crate::PostProcessResources;
 use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostProcess};
@@ -8,14 +13,21 @@ use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostPro
 // NOTE: update include_str! path to your shader file
 // const FOG_WGSL_PATH: &str = "../postprocess_fog.wgsl";
 
+/// CPU-side mirror of the WGSL KuwaharaParams struct
+#[repr(C)]
+#[derive(Copy, Clone, Pod, Zeroable)]
+pub struct KuwaharaUniform {
+    radius: f32, // kernel radius in pixels
+    strength: f32, // mix between the original color and the painterly color
+}
+
 pub struct RenderFeaturePostProcessKuwahara {
     pipeline: wgpu::RenderPipeline,
     bind_group_input: wgpu::BindGroup, // samples the original offscreen_view
-    bind_group_a: wgpu::BindGroup,     // samples view_a
-    bind_group_b: wgpu::BindGroup,     // samples view_b
-                                       // bind_group_input_tex_id: usize,
-                                       // bind_group_a_tex_id: usize,
-                                       // bind_group_b_tex_id: usize,
+    bind_group_a: wgpu::BindGroup, // samples view_a
+    bind_group_b: wgpu::BindGroup, // samples view_b
+    params: wgpu::Buffer, // KuwaharaUniform, rewritten per frame
+    params_uniform: KuwaharaUniform,
 }
 
 impl RenderFeaturePostProcessKuwahara {
@@ -27,9 +39,12 @@ impl RenderFeaturePostProcessKuwahara {
         // add offscreen_view here so we can create the initial bind group
         offscreen_view: &wgpu::TextureView,
     ) -> Box<Self> {
+        // default parameters - the naive filter's radius of 4, fully painterly
+        let params_uniform = KuwaharaUniform { radius: 4.0, strength: 1.0 };
+
         // sampler
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("fog sampler"),
+            label: Some("kuwahara sampler"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             mag_filter: wgpu::FilterMode::Linear,
@@ -40,13 +55,20 @@ impl RenderFeaturePostProcessKuwahara {
 
         // shader
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some("fog shader"),
+            label: Some("kuwahara shader"),
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../postprocess_kuwahara.wgsl"))),
         });
 
-        // bind group layout (sampler, color texture, depth texture)
+        // params uniform buffer
+        let params = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("kuwahara params"),
+            contents: cast_slice(&[params_uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
+        // bind group layout (sampler, color texture, depth texture, params)
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: Some("fog bind group layout"),
+            label: Some("kuwahara bind group layout"),
             entries: &[
                 // sampler
                 wgpu::BindGroupLayoutEntry {
@@ -77,19 +99,30 @@ impl RenderFeaturePostProcessKuwahara {
                     },
                     count: None,
                 },
+                // kuwahara parameters
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: NonZeroU64::new(8),
+                    },
+                    count: None,
+                },
             ],
         });
 
         // pipeline layout
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: Some("fog pipeline layout"),
+            label: Some("kuwahara pipeline layout"),
             bind_group_layouts: &[&bind_group_layout],
             push_constant_ranges: &[],
         });
 
         // render pipeline
         let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("fog pipeline"),
+            label: Some("kuwahara pipeline"),
             layout: Some(&pipeline_layout),
             vertex: wgpu::VertexState {
                 module: &shader,
@@ -116,7 +149,7 @@ impl RenderFeaturePostProcessKuwahara {
 
         // bind_group_input: sample from offscreen_view (initial scene)
         let bind_group_input = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("fog bind group INPUT"),
+            label: Some("kuwahara bind group INPUT"),
             layout: &bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -131,12 +164,20 @@ impl RenderFeaturePostProcessKuwahara {
                     binding: 2,
                     resource: wgpu::BindingResource::TextureView(depth_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &params,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
             ],
         });
 
         // bind_group_a: sample from post_resources.view_a
         let bind_group_a = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("fog bind group A"),
+            label: Some("kuwahara bind group A"),
             layout: &bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -151,12 +192,20 @@ impl RenderFeaturePostProcessKuwahara {
                     binding: 2,
                     resource: wgpu::BindingResource::TextureView(depth_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &params,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
             ],
         });
 
         // bind_group_b: sample from post_resources.view_b
         let bind_group_b = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("fog bind group B"),
+            label: Some("kuwahara bind group B"),
             layout: &bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -171,6 +220,14 @@ impl RenderFeaturePostProcessKuwahara {
                     binding: 2,
                     resource: wgpu::BindingResource::TextureView(depth_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &params,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
             ],
         });
 
@@ -184,10 +241,28 @@ impl RenderFeaturePostProcessKuwahara {
             bind_group_input,
             bind_group_a,
             bind_group_b,
+            params,
+            params_uniform,
             // bind_group_input_tex_id,
             // bind_group_a_tex_id,
             // bind_group_b_tex_id,
         })
+    }
+
+    // rewrite the params uniform, only when something actually changed
+    pub fn update(&mut self, radius: f32, strength: f32) {
+        let radius = radius.max(1.0);
+        let strength = strength.clamp(0.0, 1.0);
+
+        if self.params_uniform.radius == radius && self.params_uniform.strength == strength {
+            return;
+        }
+
+        self.params_uniform = KuwaharaUniform { radius, strength };
+
+        let s = Services::get();
+        let queue = s.gpu.queue();
+        queue.write_buffer(&self.params, 0, cast_slice(&[self.params_uniform]));
     }
 }
 
@@ -201,7 +276,7 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
         }
 
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("fog pass"),
+            label: Some("kuwahara pass"),
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                 view: output_view,
                 resolve_target: None,

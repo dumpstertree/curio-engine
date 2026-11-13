@@ -1,12 +1,22 @@
 // === Bindings ===
 // group(0) binding(0): sampler
-// group(0) binding(1): texture2D
+// group(0) binding(1): texture2D (previous post-process stage)
+// group(0) binding(2): depth texture (reserved for the depth-aware stage)
+// group(0) binding(3): KuwaharaParams uniform
+
+struct KuwaharaParams {
+    radius: f32, // kernel radius in pixels
+    strength: f32, // mix between the original color and the painterly color
+};
 
 @group(0) @binding(0)
 var mySampler: sampler;
 
 @group(0) @binding(1)
 var myTexture: texture_2d<f32>;
+
+@group(0) @binding(3)
+var<uniform> kuwahara_params: KuwaharaParams;
 
 // --- vertex output ---
 struct VSOut {
@@ -36,9 +46,8 @@ fn vs_fullscreen(@builtin(vertex_index) i: u32) -> VSOut {
 }
 
 // --- Kuwahara filter ---
-const RADIUS: i32 = 4;
-
-fn Kuwahara(uv: vec2<f32>) -> vec3<f32> {
+// radius comes from the uniform so the host can drive it per frame
+fn Kuwahara(uv: vec2<f32>, radius: i32) -> vec3<f32> {
     var mean: array<vec3<f32>, 4>;
     var varSum: array<f32, 4>;
     var count: array<f32, 4>;
@@ -51,8 +60,8 @@ fn Kuwahara(uv: vec2<f32>) -> vec3<f32> {
     let dims = vec2<f32>(textureDimensions(myTexture));
     let texel = 1.0 / dims;
 
-    for (var xi: i32 = -RADIUS; xi <= RADIUS; xi = xi + 1) {
-        for (var yi: i32 = -RADIUS; yi <= RADIUS; yi = yi + 1) {
+    for (var xi: i32 = -radius; xi <= radius; xi = xi + 1) {
+        for (var yi: i32 = -radius; yi <= radius; yi = yi + 1) {
             let offset = vec2<f32>(f32(xi), f32(yi)) * texel;
             let c = textureSample(myTexture, mySampler, uv + offset).rgb;
 
@@ -97,6 +106,9 @@ fn Kuwahara(uv: vec2<f32>) -> vec3<f32> {
 // --- fragment shader ---
 @fragment
 fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
-    let color = Kuwahara(in.uv);
-    return vec4<f32>(color.rgb, 1.0);
+    let radius = max(1, i32(round(kuwahara_params.radius)));
+    let original = textureSample(myTexture, mySampler, in.uv).rgb;
+    let painterly = Kuwahara(in.uv, radius);
+    let color = mix(original, painterly, clamp(kuwahara_params.strength, 0.0, 1.0));
+    return vec4<f32>(color, 1.0);
 }
