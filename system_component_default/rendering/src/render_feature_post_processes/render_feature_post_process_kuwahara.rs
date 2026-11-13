@@ -19,6 +19,8 @@ use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostPro
 pub struct KuwaharaUniform {
     radius: f32, // kernel radius in pixels
     strength: f32, // mix between the original color and the painterly color
+    sigma: f32, // gaussian spread ACROSS the detected edge (px); 0 disables the weighting
+    tau: f32, // gaussian spread ALONG the detected edge (px); 0 disables the weighting
 }
 
 pub struct RenderFeaturePostProcessKuwahara {
@@ -40,7 +42,7 @@ impl RenderFeaturePostProcessKuwahara {
         offscreen_view: &wgpu::TextureView,
     ) -> Box<Self> {
         // default parameters - the naive filter's radius of 4, fully painterly
-        let params_uniform = KuwaharaUniform { radius: 4.0, strength: 1.0 };
+        let params_uniform = KuwaharaUniform { radius: 4.0, strength: 1.0, sigma: 1.5, tau: 3.0 };
 
         // sampler
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -106,7 +108,7 @@ impl RenderFeaturePostProcessKuwahara {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(8),
+                        min_binding_size: NonZeroU64::new(16),
                     },
                     count: None,
                 },
@@ -250,15 +252,21 @@ impl RenderFeaturePostProcessKuwahara {
     }
 
     // rewrite the params uniform, only when something actually changed
-    pub fn update(&mut self, radius: f32, strength: f32) {
+    pub fn update(&mut self, radius: f32, strength: f32, sigma: f32, tau: f32) {
         let radius = radius.max(1.0);
         let strength = strength.clamp(0.0, 1.0);
+        let sigma = sigma.max(0.0);
+        let tau = tau.max(0.0);
 
-        if self.params_uniform.radius == radius && self.params_uniform.strength == strength {
+        if self.params_uniform.radius == radius
+            && self.params_uniform.strength == strength
+            && self.params_uniform.sigma == sigma
+            && self.params_uniform.tau == tau
+        {
             return;
         }
 
-        self.params_uniform = KuwaharaUniform { radius, strength };
+        self.params_uniform = KuwaharaUniform { radius, strength, sigma, tau };
 
         let s = Services::get();
         let queue = s.gpu.queue();
