@@ -13,6 +13,8 @@ struct KuwaharaParams {
     dither_amount: f32, // 0 = hard decisions (old behavior), 1 = fully stochastic
     seed: f32, // shifts the hash lattice (and could drive temporal dithering)
     depth_strength: f32, // 0 = depth-ignorant; > 0 falloff of window weights across depth jumps
+    temporal: f32, // 0 = static spatial dither; > 0 re-randomizes the noise each frame
+    frame: f32, // CPU frame counter (wraps at 1024), drives the re-randomization
 };
 
 struct Tensor2 {
@@ -85,6 +87,28 @@ fn depthWeight(dz: f32, strength: f32) -> f32 {
         return 1.0;
     }
     return exp(-strength * abs(dz));
+}
+
+// temporal dither noise: with temporal > 0 the spatial dither noise is mixed
+// with a copy whose lattice (pixel jitter for IGN) and seed (for the hash)
+// change every frame. selection-boundary pixels then oscillate between the
+// candidate sub-windows frame to frame, so temporally averaged output
+// converges toward the weighted blend instead of a hard per-pixel decision
+fn painterlyNoise(uv: vec2<f32>) -> f32 {
+    let dims = vec2<f32>(textureDimensions(myTexture));
+    let base = ditherNoise(uv * dims, kuwahara_params.dither_mode, kuwahara_params.seed);
+    let amt = clamp(kuwahara_params.temporal, 0.0, 1.0);
+    if (amt <= 0.0) {
+        return base;
+    }
+    // irrational per-frame lattice offsets: never repeats on a short cycle
+    let j = fract(kuwahara_params.frame * vec2<f32>(1.61803398, 0.61803398));
+    let shifted = ditherNoise(
+        uv * dims + j * 32.0,
+        kuwahara_params.dither_mode,
+        kuwahara_params.seed + kuwahara_params.frame,
+    );
+    return mix(base, shifted, amt);
 }
 
 // luminance-weighted 2x2 structure tensor of the full window, centered on the
@@ -245,7 +269,7 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     // dither the selection: w1 = 1 - lambda2/lambda1 of the winning quadrant's
     // tensor is the confidence that it really wins. dither_amount scales the
     // noise jitter: 0 = hard decision (old behavior), 1 = fully stochastic
-    let noise = ditherNoise(uv * dims, kuwahara_params.dither_mode, kuwahara_params.seed);
+    let noise = painterlyNoise(uv);
     let amount = max(0.0, kuwahara_params.dither_amount);
     let w1 = clamp(1.0 - bestLambda2 / max(lam1Best, 0.0001), 0.0, 1.0);
     let wsel = clamp(w1 + (noise - 0.5) * amount, 0.0, 1.0);
@@ -265,7 +289,7 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     // same jitter budget on the strength blend as on the quadrant selection:
     // amount = 0 reproduces the old uniform mix, 1 = fully stochastic per pixel
     let dims = vec2<f32>(textureDimensions(myTexture));
-    let noise = ditherNoise(in.uv * dims, kuwahara_params.dither_mode, kuwahara_params.seed);
+    let noise = painterlyNoise(in.uv);
     let amount = max(0.0, kuwahara_params.dither_amount);
     var strength = clamp(kuwahara_params.strength + (noise - 0.5) * amount, 0.0, 1.0);
     // depth-edge awareness: where the depth changes sharply between neighbouring

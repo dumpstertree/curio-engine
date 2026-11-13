@@ -28,6 +28,8 @@ pub struct KuwaharaUniform {
     dither_amount: f32, // 0 = hard decisions (no dithering), 1 = fully stochastic
     seed: f32, // shifts the hash lattice (also usable for temporal dithering)
     depth_strength: f32, // 0 = depth-ignorant; > 0 window weights fall off across depth jumps
+    temporal: f32, // 0 = static spatial dither; > 0 re-randomizes the noise each frame
+    frame: f32, // CPU frame counter driving the re-randomization (wraps at 1024)
 }
 
 pub struct RenderFeaturePostProcessKuwahara {
@@ -37,6 +39,7 @@ pub struct RenderFeaturePostProcessKuwahara {
     bind_group_b: wgpu::BindGroup, // samples view_b
     params: wgpu::Buffer, // KuwaharaUniform, rewritten per frame
     params_uniform: KuwaharaUniform,
+    frame_index: f32, // internal temporal-dither counter (wraps at 1024)
 }
 
 impl RenderFeaturePostProcessKuwahara {
@@ -58,6 +61,8 @@ impl RenderFeaturePostProcessKuwahara {
             dither_amount: 0.0,
             seed: 0.0,
             depth_strength: 40.0,
+            temporal: 0.0,
+            frame: 0.0,
         };
 
         // sampler
@@ -126,7 +131,7 @@ impl RenderFeaturePostProcessKuwahara {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(32),
+                        min_binding_size: NonZeroU64::new(40),
                     },
                     count: None,
                 },
@@ -263,6 +268,7 @@ impl RenderFeaturePostProcessKuwahara {
             bind_group_b,
             params,
             params_uniform,
+            frame_index: 0.0,
             // bind_group_input_tex_id,
             // bind_group_a_tex_id,
             // bind_group_b_tex_id,
@@ -280,6 +286,8 @@ impl RenderFeaturePostProcessKuwahara {
         dither_amount: f32,
         seed: f32,
         depth_strength: f32,
+        temporal: f32,
+        frame: f32,
     ) {
         let radius = radius.max(1.0);
         let strength = strength.clamp(0.0, 1.0);
@@ -289,6 +297,8 @@ impl RenderFeaturePostProcessKuwahara {
         let dither_amount = dither_amount.clamp(0.0, 1.0);
         let seed = seed % 1024.0; // keep the hash lattice small
         let depth_strength = depth_strength.max(0.0);
+        let temporal = temporal.clamp(0.0, 1.0);
+        let frame = frame % 1024.0;
 
         if self.params_uniform.radius == radius
             && self.params_uniform.strength == strength
@@ -298,6 +308,8 @@ impl RenderFeaturePostProcessKuwahara {
             && self.params_uniform.dither_amount == dither_amount
             && self.params_uniform.seed == seed
             && self.params_uniform.depth_strength == depth_strength
+            && self.params_uniform.temporal == temporal
+            && self.params_uniform.frame == frame
         {
             return;
         }
@@ -311,6 +323,8 @@ impl RenderFeaturePostProcessKuwahara {
             dither_amount,
             seed,
             depth_strength,
+            temporal,
+            frame,
         };
 
         let s = Services::get();
@@ -321,6 +335,17 @@ impl RenderFeaturePostProcessKuwahara {
 
 impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
     fn render(&mut self, encoder: &mut wgpu::CommandEncoder, _input_view: &wgpu::TextureView, output_view: &wgpu::TextureView, postprocess_source: PostProcessSource) {
+        // temporal dither: while enabled, advance the frame counter and re-
+        // randomize the noise lattice every frame; disabled it costs nothing
+        if self.params_uniform.temporal > 0.0 {
+            self.frame_index = (self.frame_index + 1.0) % 1024.0;
+            self.params_uniform.frame = self.frame_index;
+
+            let s = Services::get();
+            let queue = s.gpu.queue();
+            queue.write_buffer(&self.params, 0, cast_slice(&[self.params_uniform]));
+        }
+
         let bind_group: &BindGroup;
         match postprocess_source {
             PostProcessSource::Offscreen => bind_group = &self.bind_group_input,
