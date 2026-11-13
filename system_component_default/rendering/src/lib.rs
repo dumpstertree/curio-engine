@@ -69,7 +69,7 @@ impl PluginCommon for SystemComponentDefaultGraphics {
         }
 
         self.render_feature_3d_helper
-            .draw_3d_features(&mut self.graphics_mappings, ledger, &mut encoder, &mut self.offscreen_view, &self.shadow_system);
+            .draw_3d_features(&mut self.graphics_mappings, ledger, &mut encoder, &mut self.offscreen_view, &self.shadow_system, &self.render_feature_pp_helper.depth_texture);
 
         // post-process offscreen → swapchain
         self.render_feature_pp_helper

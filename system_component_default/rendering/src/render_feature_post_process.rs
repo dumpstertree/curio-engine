@@ -20,7 +20,7 @@ pub struct RenderFeaturePostProcessHelper {
     pp_resource: PostProcessResources,
     features: Vec<Box<dyn RenderFeaturePostProcess>>,
     // Owned depth texture — written by 3D pass, read by post-process features
-    // pub depth_texture: TextureAsset,
+    pub depth_texture: TextureAsset,
 }
 
 impl RenderFeaturePostProcessHelper {
@@ -33,7 +33,8 @@ impl RenderFeaturePostProcessHelper {
         let height = s.gpu.capture_height;
         let format = TextureFormat::Rgba8UnormSrgb; // TextureFormat added to GpuHandle
 
-        // Generate depth texture locally — no longer pulled from services
+        // Generate the OWNED depth texture once — the 3D pass renders into it
+        // (shared via draw_3d_features), post-process features sample it
         let depth_texture = Self::create_depth_texture(&device, width, height);
         let depth_view = &depth_texture.view;
 
@@ -45,7 +46,7 @@ impl RenderFeaturePostProcessHelper {
             RenderFeaturePostProcessFog::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
         ];
 
-        RenderFeaturePostProcessHelper { pp_resource, features /*depth_texture*/ }
+        RenderFeaturePostProcessHelper { pp_resource, features, depth_texture }
     }
 
     fn create_depth_texture(device: &Device, width: u32, height: u32) -> TextureAsset {

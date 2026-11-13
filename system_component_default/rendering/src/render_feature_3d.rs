@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use camera::SysRecordCamera;
 use curio_core::{ASSET_UID_SHADER_UNLIT, Assets, Color, GraphicsMapping, Ledger, Matrix4x4, Quaternion, Services, TextureAsset, Vector2, Vector3};
-use egui_wgpu::wgpu::{AddressMode, BindGroup, BindGroupLayout, CompareFunction, Device, Extent3d, FilterMode, RenderPass, RenderPassDepthStencilAttachment, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureUsages, TextureViewDescriptor};
+use egui_wgpu::wgpu::{BindGroup, BindGroupLayout, RenderPass, RenderPassDepthStencilAttachment};
 use ext_rendering::{
     DrawCall, Material, Mesh, SysRecordRendering,
     data::{material::ShaderDesc, mesh::Vertex},
@@ -34,41 +34,12 @@ impl RenderFeature3DHelper {
     pub fn set_graphics_mappings(&mut self, graphics_mappings: &[GraphicsMapping]) {
         self.camera_rendering = CameraRenderingComponents::new(graphics_mappings.len());
     }
-    fn create_depth_texture(device: &Device, width: u32, height: u32) -> TextureAsset {
-        let texture = device.create_texture(&TextureDescriptor {
-            label: Some("depth_texture"),
-            size: Extent3d { width, height, depth_or_array_layers: 1 },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: TextureDimension::D2,
-            format: TextureAsset::DEPTH_FORMAT,
-            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
-
-        let view = texture.create_view(&TextureViewDescriptor::default());
-
-        let sampler = device.create_sampler(&SamplerDescriptor {
-            address_mode_u: AddressMode::ClampToEdge,
-            address_mode_v: AddressMode::ClampToEdge,
-            address_mode_w: AddressMode::ClampToEdge,
-            mag_filter: FilterMode::Linear,
-            min_filter: FilterMode::Linear,
-            mipmap_filter: FilterMode::Nearest,
-            compare: Some(CompareFunction::LessEqual),
-            lod_min_clamp: 0.0,
-            lod_max_clamp: 100.0,
-            ..Default::default()
-        });
-
-        TextureAsset { texture, view, sampler }
-    }
-    pub fn draw_3d_features(&mut self, graphics_mappings: &mut Vec<GraphicsMapping>, ledger: &mut Vec<Ledger>, encoder: &mut egui_wgpu::wgpu::CommandEncoder, target_view: &mut egui_wgpu::wgpu::TextureView, shadow_system: &ShadowSystem) {
-        let s = Services::get();
-        // generate a render pass for this instance
-        // let depth = s.gpu.depth();
-        let device = s.gpu.device();
-        let depth = Self::create_depth_texture(device, 1280, 720);
+    // depth textures are created once by RenderFeaturePostProcessHelper and
+    // shared in via draw_3d_features, so the 3D pass writes the very texture
+    // the post-process bind groups sample
+    pub fn draw_3d_features(&mut self, graphics_mappings: &mut Vec<GraphicsMapping>, ledger: &mut Vec<Ledger>, encoder: &mut egui_wgpu::wgpu::CommandEncoder, target_view: &mut egui_wgpu::wgpu::TextureView, shadow_system: &ShadowSystem, depth: &TextureAsset) {
+        // depth is the shared, owned post-process depth texture: the 3D pass
+        // writes it, the post-process features sample it
 
         //
         let state_skybox = ledger[0].read::<SysRecordSkybox>();
@@ -113,7 +84,7 @@ impl RenderFeature3DHelper {
                     store: egui_wgpu::wgpu::StoreOp::Store,
                 },
             })],
-            depth_stencil_attachment: Self::get_depth_attatchment(&depth),
+            depth_stencil_attachment: Self::get_depth_attatchment(depth),
             timestamp_writes: None,
             occlusion_query_set: None, // keep or add depth if you use it
         });
