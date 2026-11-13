@@ -1,7 +1,7 @@
 // === Bindings ===
 // group(0) binding(0): sampler
 // group(0) binding(1): texture2D (previous post-process stage)
-// group(0) binding(2): depth texture (reserved for the depth-aware stage)
+// group(0) binding(2): depth texture (depth2D, fetched with textureLoad)
 // group(0) binding(3): KuwaharaParams uniform
 
 struct KuwaharaParams {
@@ -30,7 +30,7 @@ var mySampler: sampler;
 var myTexture: texture_2d<f32>;
 
 @group(0) @binding(2)
-var myDepth: texture_2d<f32>;
+var myDepth: texture_depth_2d;
 
 @group(0) @binding(3)
 var<uniform> kuwahara_params: KuwaharaParams;
@@ -74,9 +74,16 @@ fn gaussWeight(u: f32, v: f32, sigma: f32, tau: f32) -> f32 {
     return exp(-(a + b));
 }
 
-// raw window-space depth at uv (0..1 for geometry, cleared to 1.0 = far plane)
+// raw window-space depth at uv (0..1 for geometry, cleared to 1.0 = far plane);
+// fetched with textureLoad: depth textures cannot be linear-filtered, and every
+// tap is texel-centered, so the fetch is exact (clamped like ClampToEdge)
 fn depthAt(uv: vec2<f32>) -> f32 {
-    return textureSample(myDepth, mySampler, uv).x;
+    let dims = textureDimensions(myDepth); // vec2<u32>
+    let coord = vec2<i32>(
+        clamp(i32(uv.x * f32(dims.x)), 0, i32(dims.x) - 1),
+        clamp(i32(uv.y * f32(dims.y)), 0, i32(dims.y) - 1),
+    );
+    return textureLoad(myDepth, coord, 0);
 }
 
 // multiplicative falloff for depth discontinuities: a sample whose depth
