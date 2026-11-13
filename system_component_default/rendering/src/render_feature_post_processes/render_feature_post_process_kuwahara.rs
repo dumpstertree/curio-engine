@@ -13,6 +13,9 @@ use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostPro
 // NOTE: update include_str! path to your shader file
 // const FOG_WGSL_PATH: &str = "../postprocess_fog.wgsl";
 
+const DITHER_COMMON_WGSL: &str = include_str!("../dither_common.wgsl");
+const KUWAHARA_WGSL: &str = include_str!("../postprocess_kuwahara.wgsl");
+
 /// CPU-side mirror of the WGSL KuwaharaParams struct
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
@@ -21,6 +24,10 @@ pub struct KuwaharaUniform {
     strength: f32, // mix between the original color and the painterly color
     sigma: f32, // gaussian spread ACROSS the detected edge (px); 0 disables the weighting
     tau: f32, // gaussian spread ALONG the detected edge (px); 0 disables the weighting
+    dither_mode: f32, // 0 = interleaved gradient noise, >= 1 = hashed blue noise
+    dither_amount: f32, // 0 = hard decisions (no dithering), 1 = fully stochastic
+    seed: f32, // shifts the hash lattice (also usable for temporal dithering)
+    pad: f32, // keeps the struct at a 32-byte multiple, matching the WGSL layout
 }
 
 pub struct RenderFeaturePostProcessKuwahara {
@@ -42,7 +49,16 @@ impl RenderFeaturePostProcessKuwahara {
         offscreen_view: &wgpu::TextureView,
     ) -> Box<Self> {
         // default parameters - the naive filter's radius of 4, fully painterly
-        let params_uniform = KuwaharaUniform { radius: 4.0, strength: 1.0, sigma: 1.5, tau: 3.0 };
+        let params_uniform = KuwaharaUniform {
+            radius: 4.0,
+            strength: 1.0,
+            sigma: 1.5,
+            tau: 3.0,
+            dither_mode: 0.0,
+            dither_amount: 0.0,
+            seed: 0.0,
+            pad: 0.0,
+        };
 
         // sampler
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -55,10 +71,12 @@ impl RenderFeaturePostProcessKuwahara {
             ..Default::default()
         });
 
-        // shader
+        // shader: shared dither helpers prepended to the pass source, so both
+        // compile as one module (the dither helpers are reused by other passes)
+        let shader_source = format!("{}\n{}", DITHER_COMMON_WGSL, KUWAHARA_WGSL);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("kuwahara shader"),
-            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("../postprocess_kuwahara.wgsl"))),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(shader_source.as_str())),
         });
 
         // params uniform buffer
@@ -108,7 +126,7 @@ impl RenderFeaturePostProcessKuwahara {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(16),
+                        min_binding_size: NonZeroU64::new(32),
                     },
                     count: None,
                 },
@@ -252,21 +270,45 @@ impl RenderFeaturePostProcessKuwahara {
     }
 
     // rewrite the params uniform, only when something actually changed
-    pub fn update(&mut self, radius: f32, strength: f32, sigma: f32, tau: f32) {
+    pub fn update(
+        &mut self,
+        radius: f32,
+        strength: f32,
+        sigma: f32,
+        tau: f32,
+        dither_mode: f32,
+        dither_amount: f32,
+        seed: f32,
+    ) {
         let radius = radius.max(1.0);
         let strength = strength.clamp(0.0, 1.0);
         let sigma = sigma.max(0.0);
         let tau = tau.max(0.0);
+        let dither_mode = dither_mode.max(0.0);
+        let dither_amount = dither_amount.clamp(0.0, 1.0);
+        let seed = seed % 1024.0; // keep the hash lattice small
 
         if self.params_uniform.radius == radius
             && self.params_uniform.strength == strength
             && self.params_uniform.sigma == sigma
             && self.params_uniform.tau == tau
+            && self.params_uniform.dither_mode == dither_mode
+            && self.params_uniform.dither_amount == dither_amount
+            && self.params_uniform.seed == seed
         {
             return;
         }
 
-        self.params_uniform = KuwaharaUniform { radius, strength, sigma, tau };
+        self.params_uniform = KuwaharaUniform {
+            radius,
+            strength,
+            sigma,
+            tau,
+            dither_mode,
+            dither_amount,
+            seed,
+            pad: 0.0,
+        };
 
         let s = Services::get();
         let queue = s.gpu.queue();

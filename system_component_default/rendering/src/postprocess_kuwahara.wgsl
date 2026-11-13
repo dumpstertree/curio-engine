@@ -9,6 +9,9 @@ struct KuwaharaParams {
     strength: f32, // mix between the original color and the painterly color
     sigma: f32, // gaussian spread ACROSS the edge (px); 0 = uniform weights
     tau: f32, // gaussian spread ALONG the edge (px); 0 = uniform weights
+    dither_mode: f32, // 0 = interleaved gradient noise, >= 1 = hashed blue noise
+    dither_amount: f32, // 0 = hard decisions (old behavior), 1 = fully stochastic
+    seed: f32, // shifts the hash lattice (and could drive temporal dithering)
 };
 
 struct Tensor2 {
@@ -183,8 +186,14 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
 
     // pick the sub-window whose structure tensor has the smallest minor
     // eigenvalue: least variation across the edge
+    // track the winner AND the runner-up so the selection can be dithered
+    // between the two most plausible sub-windows instead of always taking
+    // the argmin
     var best: i32 = 0;
+    var runner: i32 = 0;
     var bestLambda2: f32 = 1000000.0;
+    var runnerLambda2: f32 = 1000000.0;
+    var lam1Best: f32 = 0.0001;
     for (var q: i32 = 0; q < 4; q = q + 1) {
         let lw = max(sl[q], 0.0001);
         let mu = slu[q] / lw;
@@ -196,12 +205,27 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
         let d = sqrt(0.25 * (cuu - cvv) * (cuu - cvv) + cuv * cuv);
         let l2 = max(tr - d, 0.0);
         if (l2 < bestLambda2) {
+            runnerLambda2 = bestLambda2;
+            runner = best;
             bestLambda2 = l2;
+            lam1Best = tr + d;
             best = q;
+        } else if (l2 < runnerLambda2 && q != best) {
+            runnerLambda2 = l2;
+            runner = q;
         }
     }
 
-    return meanColor[best] / max(weight[best], 0.0001);
+    // dither the selection: w1 = 1 - lambda2/lambda1 of the winning quadrant's
+    // tensor is the confidence that it really wins. dither_amount scales the
+    // noise jitter: 0 = hard decision (old behavior), 1 = fully stochastic
+    let noise = ditherNoise(uv * dims, kuwahara_params.dither_mode, kuwahara_params.seed);
+    let amount = max(0.0, kuwahara_params.dither_amount);
+    let w1 = clamp(1.0 - bestLambda2 / max(lam1Best, 0.0001), 0.0, 1.0);
+    let wsel = clamp(w1 + (noise - 0.5) * amount, 0.0, 1.0);
+    let c0 = meanColor[best] / max(weight[best], 0.0001);
+    let c1 = meanColor[runner] / max(weight[runner], 0.0001);
+    return ditherPickVec3(c0, c1, wsel, noise);
 }
 
 // --- fragment shader ---
@@ -212,6 +236,12 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let tau = max(0.0, kuwahara_params.tau);
     let original = textureSample(myTexture, mySampler, in.uv).rgb;
     let painterly = Kuahara(in.uv, radius, sigma, tau);
-    let color = mix(original, painterly, clamp(kuwahara_params.strength, 0.0, 1.0));
+    // same jitter budget on the strength blend as on the quadrant selection:
+    // amount = 0 reproduces the old uniform mix, 1 = fully stochastic per pixel
+    let dims = vec2<f32>(textureDimensions(myTexture));
+    let noise = ditherNoise(in.uv * dims, kuwahara_params.dither_mode, kuwahara_params.seed);
+    let amount = max(0.0, kuwahara_params.dither_amount);
+    let strength = clamp(kuwahara_params.strength + (noise - 0.5) * amount, 0.0, 1.0);
+    let color = mix(original, painterly, strength);
     return vec4<f32>(color, 1.0);
 }
