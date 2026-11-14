@@ -126,6 +126,29 @@ fn depthWeight(dz: f32, strength: f32) -> f32 {
     return exp(-strength * abs(dz));
 }
 
+// deterministic scalar noise at an arbitrary pixel position, with the same
+// temporal re-randomization painterlyNoise applies
+fn noiseAtPxTemporal(px: vec2<f32>) -> f32 {
+    let base = ditherNoise(px, kuwahara_params.dither_mode, kuwahara_params.seed);
+    let amt = clamp(kuwahara_params.temporal, 0.0, 1.0);
+    if (amt <= 0.0) {
+        return base;
+    }
+    let j = fract(kuwahara_params.frame * vec2<f32>(1.61803398, 0.61803398));
+    let shifted = ditherNoise(
+        px + j * 32.0,
+        kuwahara_params.dither_mode,
+        kuwahara_params.seed + kuwahara_params.frame,
+    );
+    return mix(base, shifted, amt);
+}
+
+// per-cell stable hash for the stroke-lattice jitter (salt picks independent
+// streams: anchor x, anchor y, territory size)
+fn cellHash(px: vec2<f32>, salt: f32) -> f32 {
+    return ditherNoise(px, kuwahara_params.dither_mode, kuwahara_params.seed + salt);
+}
+
 // temporal dither noise: with temporal > 0 the spatial dither noise is mixed
 // with a copy whose lattice (pixel jitter for IGN) and seed (for the hash)
 // change every frame. selection-boundary pixels then oscillate between the
@@ -141,19 +164,7 @@ fn painterlyNoise(uv: vec2<f32>) -> f32 {
     let block = max(1.0, round(kuwahara_params.radius));
     let cell = floor((uv * dims) / block);
     let px = (cell + 0.5) * block; // sample at the cell centre
-    let base = ditherNoise(px, kuwahara_params.dither_mode, kuwahara_params.seed);
-    let amt = clamp(kuwahara_params.temporal, 0.0, 1.0);
-    if (amt <= 0.0) {
-        return base;
-    }
-    // irrational per-frame lattice offsets: never repeats on a short cycle
-    let j = fract(kuwahara_params.frame * vec2<f32>(1.61803398, 0.61803398));
-    let shifted = ditherNoise(
-        px + j * 32.0,
-        kuwahara_params.dither_mode,
-        kuwahara_params.seed + kuwahara_params.frame,
-    );
-    return mix(base, shifted, amt);
+    return noiseAtPxTemporal(px);
 }
 
 // sampling step inside the sub-windows: explicit stride if > 0, otherwise
@@ -187,15 +198,41 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     let dims = vec2<f32>(textureDimensions(myTexture));
     let texel = 1.0 / dims;
 
-    // cell of the coarse lattice (same one painterlyNoise steps on)
-    let block = max(1.0, round(kuwahara_params.radius));
-    let cell = floor((uv * dims) / block);
+    // stroke lattice v2: base cells of radius B, but each base cell gets a
+    // hash-jittered CENTRE and a hash-jittered TERRITORY WEIGHT; the pixel
+    // belongs to the nearest weighted centre (weighted Voronoi) -> irregular
+    // blob-shaped patches of varied size that interlock instead of a uniform
+    // grid, killing the pixel-art signature of an axis-aligned checkerboard.
+    // windows, orientation and selection noise all anchor on the winning blob
+    // centre, so a whole blob still shares one window mean (discrete patch)
+    let B = max(1.0, round(kuwahara_params.radius));
+    let pxF = uv * dims;
+    let cell0 = vec2<i32>(floor(pxF / B));
+    var bestScore = 1000000.0;
+    var anchorF = vec2<f32>(0.0);
+    for (var oy: i32 = -1; oy <= 1; oy = oy + 1) {
+        for (var ox: i32 = -1; ox <= 1; ox = ox + 1) {
+            let c = vec2<f32>(cell0 + vec2<i32>(ox, oy));
+            let cf = (c + vec2<f32>(0.5, 0.5)) * B; // base centre in px
+            let jx = cellHash(cf, 31.7) - 0.5;
+            let jy = cellHash(cf, 57.3) - 0.5;
+            let tw = 0.6 + 0.8 * cellHash(cf, 89.1); // territory weight
+            let ac = cf + vec2<f32>(jx, jy) * B * 0.7; // jittered anchor
+            let dx = pxF.x + 0.5 - ac.x;
+            let dy = pxF.y + 0.5 - ac.y;
+            let score = (dx * dx + dy * dy) / max(tw, 0.0001);
+            if (score < bestScore) {
+                bestScore = score;
+                anchorF = ac;
+            }
+        }
+    }
     let anchorPx = vec2<i32>(
-        clamp(i32(round((cell.x + 0.5) * block)), 0, i32(dims.x) - 1),
-        clamp(i32(round((cell.y + 0.5) * block)), 0, i32(dims.y) - 1),
+        clamp(i32(round(anchorF.x)), 0, i32(dims.x) - 1),
+        clamp(i32(round(anchorF.y)), 0, i32(dims.y) - 1),
     );
     let vpr = viewportForUv(uv);
-    let auv = clampToViewport((vec2<f32>(anchorPx) + vec2<f32>(0.5, 0.5)) * texel, vpr);
+    let auv = clampToViewport((anchorF + vec2<f32>(0.5, 0.5)) * texel, vpr);
 
     let tf = textureLoad(flowTex, anchorPx, 0);
     let t = Tensor2(tf.x, tf.z, tf.y);
@@ -320,8 +357,9 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
         total = total + scores[q];
     }
 
-    // weighted roulette on the cell's noise value
-    let noise = painterlyNoise(uv);
+    // weighted roulette on the winning blob's noise value (blob-coherent: the
+    // anchor is identical for every pixel of the blob)
+    let noise = noiseAtPxTemporal(anchorF);
     var picked: i32 = 3;
     var acc = 0.0;
     for (var q: i32 = 0; q < 4; q = q + 1) {
