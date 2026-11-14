@@ -1,4 +1,4 @@
-use curio_core::{Ledger, Services};
+use curio_core::{GraphicsMapping, Ledger, Services};
 use egui_wgpu::wgpu::{self, BindGroup};
 use egui_wgpu::wgpu::util::DeviceExt;
 use std::borrow::Cow;
@@ -34,6 +34,11 @@ pub struct KuwaharaUniform {
     frame: f32, // CPU frame counter driving the re-randomization (wraps at 1024)
     stroke: f32, // stretch sub-windows ALONG the edge (0 = square, 2 = 3x long)
     stride: f32, // sampling step inside windows; 0 = auto (2 once radius >= 8)
+    viewport_count: f32, // number of valid vp rects (1..4)
+    pad_x: f32, // uniform-space composites align to 16, so vp lands at offset
+    pad_y: f32, // 64 on the GPU; the #[repr(C)] mirror pads identically (total
+    pad_z: f32, // size 128, matching what naga computes for the WGSL struct)
+    vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
 }
 
 // CPU-side mirror of the WGSL FlowParams struct (16 bytes)
@@ -92,6 +97,11 @@ impl RenderFeaturePostProcessKuwahara {
             frame: 0.0,
             stroke: 0.0, // square windows until the game asks for strokes
             stride: 0.0, // auto stride
+            viewport_count: 1.0, // whole-texture rect until the helper syncs
+            pad_x: 0.0,
+            pad_y: 0.0,
+            pad_z: 0.0,
+            vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
         };
 
         // sampler
@@ -160,7 +170,7 @@ impl RenderFeaturePostProcessKuwahara {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(48),
+                        min_binding_size: NonZeroU64::new(128),
                     },
                     count: None,
                 },
@@ -619,6 +629,11 @@ impl RenderFeaturePostProcessKuwahara {
             frame,
             stroke,
             stride,
+            viewport_count: self.params_uniform.viewport_count, // synced separately
+            pad_x: 0.0,
+            pad_y: 0.0,
+            pad_z: 0.0,
+            vp: self.params_uniform.vp, // from the graphics mappings
         };
 
         let s = Services::get();
@@ -631,7 +646,31 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
     // per-frame pickup of the game's tuning record: the single post chain is
     // driven by the first ledger instance; update() clamps and only rewrites
     // the uniform when a value actually changed
-    fn update_params(&mut self, ledger: &mut Vec<Ledger>) {
+    fn update_params(&mut self, ledger: &mut Vec<Ledger>, mappings: &[GraphicsMapping]) {
+        // viewport sync first: these rects matter even with no ledger present.
+        // kernel taps clamp to them so sub-windows never read colour across
+        // the split-screen seam; up to four screens supported
+        let mut vp_new = self.params_uniform.vp;
+        for (i, mapping) in mappings.iter().take(4).enumerate() {
+            vp_new[i] = [
+                mapping.viewport_min.x,
+                mapping.viewport_min.y,
+                mapping.viewport_max.x,
+                mapping.viewport_max.y,
+            ];
+        }
+        let count_new = mappings.len().clamp(1, 4) as f32;
+        if self.params_uniform.viewport_count != count_new
+            || self.params_uniform.vp != vp_new
+        {
+            self.params_uniform.viewport_count = count_new;
+            self.params_uniform.vp = vp_new;
+
+            let s = Services::get();
+            let queue = s.gpu.queue();
+            queue.write_buffer(&self.params, 0, cast_slice(&[self.params_uniform]));
+        }
+
         let Some(ledger) = ledger.first() else { return };
         let record = ledger.read::<SysRecordPostProcess>();
         self.update(

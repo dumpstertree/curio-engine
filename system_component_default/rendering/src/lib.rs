@@ -77,7 +77,7 @@ impl PluginCommon for SystemComponentDefaultGraphics {
 
         // post-process offscreen → swapchain
         self.render_feature_pp_helper
-            .draw_post_features(&mut encoder, &self.offscreen_view, &output_view, ledger);
+            .draw_post_features(&mut encoder, &self.offscreen_view, &output_view, ledger, &self.graphics_mappings);
 
         // ── capture step ────────────────────────────────────────
         // capture AFTER post-processing and 2D — from swapchain, not offscreen

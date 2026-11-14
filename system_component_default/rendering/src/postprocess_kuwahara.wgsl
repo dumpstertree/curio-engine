@@ -19,6 +19,11 @@ struct KuwaharaParams {
     frame: f32, // CPU frame counter (wraps at 1024), drives the re-randomization
     stroke: f32, // stretch sub-windows ALONG the edge (0 = square, 2 = 3x long)
     stride: f32, // sampling step inside windows; 0 = auto (2 once radius >= 8)
+    viewport_count: f32, // number of valid vp rects (1..4)
+    pad_x: f32, // scalar pads: uniform-space composites align to 16, so vp
+    pad_y: f32, // lands at offset 64 on the GPU; the CPU mirror pads the same
+    pad_z: f32, // way to stay byte-identical
+    vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
 struct Tensor2 {
@@ -93,6 +98,24 @@ fn depthAt(uv: vec2<f32>) -> f32 {
     return textureLoad(myDepth, coord, 0);
 }
 
+// the viewport rect containing this uv (uv itself is inside a viewport);
+// taps are then clamped to it so sub-windows never read across the split-
+// screen seam. falls back to the full texture if nothing matches
+fn viewportForUv(uv: vec2<f32>) -> vec4<f32> {
+    let count = clamp(i32(round(kuwahara_params.viewport_count)), 1, 4);
+    for (var i: i32 = 0; i < count; i = i + 1) {
+        let r = kuwahara_params.vp[i];
+        if (uv.x >= r.x && uv.x <= r.z && uv.y >= r.y && uv.y <= r.w) {
+            return r;
+        }
+    }
+    return vec4<f32>(0.0, 0.0, 1.0, 1.0);
+}
+
+fn clampToViewport(uv: vec2<f32>, r: vec4<f32>) -> vec2<f32> {
+    return vec2<f32>(clamp(uv.x, r.x, r.z), clamp(uv.y, r.y, r.w));
+}
+
 // multiplicative falloff for depth discontinuities: a sample whose depth
 // differs from the window center by dz gets exp(-strength * dz); strength = 0
 // keeps the filter fully depth-ignorant
@@ -108,9 +131,17 @@ fn depthWeight(dz: f32, strength: f32) -> f32 {
 // change every frame. selection-boundary pixels then oscillate between the
 // candidate sub-windows frame to frame, so temporally averaged output
 // converges toward the weighted blend instead of a hard per-pixel decision
+//
+// the noise is sampled on a COARSE lattice (one value per radius-sized cell):
+// whole stroke regions then pick the same candidate sub-window, giving crisp
+// stroke-sized borders and stroke-scale overshoot at silhouettes instead of
+// 1-px sawtooth fringe
 fn painterlyNoise(uv: vec2<f32>) -> f32 {
     let dims = vec2<f32>(textureDimensions(myTexture));
-    let base = ditherNoise(uv * dims, kuwahara_params.dither_mode, kuwahara_params.seed);
+    let block = max(1.0, round(kuwahara_params.radius));
+    let cell = floor((uv * dims) / block);
+    let px = (cell + 0.5) * block; // sample at the cell centre
+    let base = ditherNoise(px, kuwahara_params.dither_mode, kuwahara_params.seed);
     let amt = clamp(kuwahara_params.temporal, 0.0, 1.0);
     if (amt <= 0.0) {
         return base;
@@ -118,7 +149,7 @@ fn painterlyNoise(uv: vec2<f32>) -> f32 {
     // irrational per-frame lattice offsets: never repeats on a short cycle
     let j = fract(kuwahara_params.frame * vec2<f32>(1.61803398, 0.61803398));
     let shifted = ditherNoise(
-        uv * dims + j * 32.0,
+        px + j * 32.0,
         kuwahara_params.dither_mode,
         kuwahara_params.seed + kuwahara_params.frame,
     );
@@ -195,6 +226,10 @@ fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> v
     // depth layer only
     let dCenter = depthAt(uv);
 
+    // viewport rect of the window centre: taps clamp to it so windows never
+    // bleed colour across the split-screen seam
+    let vpr = viewportForUv(uv);
+
     // elongated facets, gated on the SAME anisotropy factor as theta: ~1 =
     // isotropic variation (flat or blobby) -> square windows; ~0 = strong
     // edge -> long window. unstretched-flat is what keeps smooth areas clean
@@ -217,7 +252,7 @@ fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> v
                 // rotate the local offset into texture space
                 let rx = c * lu - s * lv;
                 let ry = s * lu + c * lv;
-                let sample_uv = uv + vec2<f32>(rx, ry) * texel;
+                let sample_uv = clampToViewport(uv + vec2<f32>(rx, ry) * texel, vpr);
                 let w = gaussWeight(lu, lv, sigma, tau)
                     * depthWeight(depthAt(sample_uv) - dCenter, kuwahara_params.depth_strength);
                 let col = textureSample(myTexture, mySampler, sample_uv).rgb;
