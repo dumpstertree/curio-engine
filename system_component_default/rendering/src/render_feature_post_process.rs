@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use egui_wgpu::wgpu::{AddressMode, CompareFunction, Device, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor};
 
-use crate::render_feature_post_processes::{render_feature_post_process_fog::RenderFeaturePostProcessFog, render_feature_post_process_kuwahara::RenderFeaturePostProcessKuwahara, render_feature_post_process_sobel_outline::RenderFeaturePostProcessOutline};
+use crate::render_feature_post_processes::{render_feature_post_process_fog::RenderFeaturePostProcessFog, render_feature_post_process_kuwahara::RenderFeaturePostProcessKuwahara, render_feature_post_process_painterly::RenderFeaturePostProcessPainterly, render_feature_post_process_sobel_outline::RenderFeaturePostProcessOutline};
 
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &TextureView, output_view: &TextureView, source: PostProcessSource);
@@ -46,6 +46,8 @@ impl RenderFeaturePostProcessHelper {
 
         let features: Vec<Box<dyn RenderFeaturePostProcess>> = vec![
             RenderFeaturePostProcessKuwahara::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
+            // hybrid: kuwahara is the colour guide, the stamps are laid over it
+            RenderFeaturePostProcessPainterly::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
             RenderFeaturePostProcessOutline::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
             RenderFeaturePostProcessFog::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
         ];
