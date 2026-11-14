@@ -4,7 +4,10 @@
 // All noise values are in [0, 1).
 
 // hash-based value noise, close to a blue-noise look when tiled; seed shifts
-// the lattice without changing the distribution
+// the lattice without changing the distribution. NOTE the output is the xor
+// of a pure-p.x term with a pure-p.y term: two calls that SHARE one input
+// coordinate produce outputs tied by a constant xor (a point set on one
+// digital line). calls meant to be independent must share NO component
 fn ditherHash(p: vec2<f32>, seed: f32) -> f32 {
     var v: vec2<u32> = vec2<u32>(p * vec2<f32>(1867.47, 1899.51))
         + vec2<u32>(u32(seed * 32767.0) + 11u, 2167263077u);

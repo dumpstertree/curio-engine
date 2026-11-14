@@ -49,11 +49,18 @@ fn lumAt(px: vec2<i32>) -> f32 {
     return dot(col, vec3<f32>(0.2126, 0.7152, 0.0722));
 }
 
+// srcTex is the half-res guide grid while srcDepth stays at full capture res:
+// raw guide coordinates would index the wrong quarter of the depth buffer and
+// halve its gradients, so the sobel's depth term fought the colour term out
+// of phase. map the guide texel through normalized uv into depth texels
 fn depthAtPx(px: vec2<i32>) -> f32 {
-    let d = vec2<u32>(textureDimensions(srcDepth));
+    let sd = textureDimensions(srcDepth);
+    let cd = textureDimensions(srcTex);
+    let sx = f32(sd.x) / f32(cd.x);
+    let sy = f32(sd.y) / f32(cd.y);
     let c = vec2<i32>(
-        clamp(px.x, 0, i32(d.x) - 1),
-        clamp(px.y, 0, i32(d.y) - 1),
+        clamp(i32((f32(px.x) + 0.5) * sx), 0, i32(sd.x) - 1),
+        clamp(i32((f32(px.y) + 0.5) * sy), 0, i32(sd.y) - 1),
     );
     return textureLoad(srcDepth, c, 0);
 }

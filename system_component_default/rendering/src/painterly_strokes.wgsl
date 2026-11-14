@@ -236,14 +236,20 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // pattern never depended on the scene, so no probe fix could ever
     // remove it. two independent per-slot hashes have no ordering
     // structure at all: evenness comes from the count and the keep test,
-    // clumping is fine and reads as grouped brushwork
+    // clumping is fine and reads as grouped brushwork. INDEPENDENT means
+    // NO SHARED INPUT COMPONENT: ditherHash returns hash(x) ^ hash(y), so
+    // feeding both anchors the same slot coordinate would tie anchor.y to
+    // anchor.x by one fixed xor - every point on one digital line, only
+    // 1/8 of any cell grid ever receiving a daub (the sparse-scatter bug)
     var anchor = vec2<f32>(
         ditherHash(vec2<f32>(s, 3.0 + seed), seed),
-        ditherHash(vec2<f32>(s, 97.0 + seed), seed),
+        ditherHash(vec2<f32>(97.0 + seed, s), seed),
     );
     let cell = 1.0 / sqrt(f32(SLOT_COUNT));
     let jx = ditherHash(vec2<f32>(s, 11.0 + seed), seed) - 0.5;
-    let jy = ditherHash(vec2<f32>(s, 71.0 + seed), seed) - 0.5;
+    let jy = ditherHash(vec2<f32>(71.0 + seed, s), seed) - 0.5; // inputs swapped:
+    // sharing p.x = s would tie jy to jx by a fixed xor again (sub-cell
+    // amplitude, so cosmetic, but the same structural trap)
     anchor = anchor + vec2<f32>(jx, jy) * paint_params.jitter * cell;
     anchor = anchor - floor(anchor); // wrap back into the texture
 
