@@ -12,6 +12,8 @@ pub struct SysRecordPostProcess {
     pub seed: f32,
     pub depth_strength: f32,
     pub temporal: f32,
+    pub stroke: f32,
+    pub stride: f32,
 }
 
 impl SysRecordPostProcess {
@@ -27,6 +29,8 @@ impl SysRecordPostProcess {
             seed: 0.0,
             depth_strength: 40.0,
             temporal: 0.0,
+            stroke: 0.0, // square windows: identical to the old kernel
+            stride: 0.0, // auto stride
         }
     }
 }
@@ -45,6 +49,8 @@ impl RecordOverride for SysRecordPostProcess {
             "seed" => { self.seed = val }
             "depth_strength" => { self.depth_strength = val }
             "temporal" => { self.temporal = val }
+            "stroke" => { self.stroke = val }
+            "stride" => { self.stride = val }
             _ => {}
         }
     }
@@ -59,6 +65,8 @@ impl RecordOverride for SysRecordPostProcess {
             FieldState::new("seed", self.seed),
             FieldState::new("depth_strength", self.depth_strength),
             FieldState::new("temporal", self.temporal),
+            FieldState::new("stroke", self.stroke),
+            FieldState::new("stride", self.stride),
         ]
     }
 }

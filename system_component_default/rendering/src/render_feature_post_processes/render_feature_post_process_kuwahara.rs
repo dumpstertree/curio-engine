@@ -31,6 +31,8 @@ pub struct KuwaharaUniform {
     depth_strength: f32, // 0 = depth-ignorant; > 0 window weights fall off across depth jumps
     temporal: f32, // 0 = static spatial dither; > 0 re-randomizes the noise each frame
     frame: f32, // CPU frame counter driving the re-randomization (wraps at 1024)
+    stroke: f32, // stretch sub-windows ALONG the edge (0 = square, 2 = 3x long)
+    stride: f32, // sampling step inside windows; 0 = auto (2 once radius >= 8)
 }
 
 pub struct RenderFeaturePostProcessKuwahara {
@@ -64,6 +66,8 @@ impl RenderFeaturePostProcessKuwahara {
             depth_strength: 40.0,
             temporal: 0.0,
             frame: 0.0,
+            stroke: 0.0, // square windows until the game asks for strokes
+            stride: 0.0, // auto stride
         };
 
         // sampler
@@ -132,7 +136,7 @@ impl RenderFeaturePostProcessKuwahara {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(40),
+                        min_binding_size: NonZeroU64::new(48),
                     },
                     count: None,
                 },
@@ -289,6 +293,8 @@ impl RenderFeaturePostProcessKuwahara {
         depth_strength: f32,
         temporal: f32,
         frame: f32,
+        stroke: f32,
+        stride: f32,
     ) {
         let radius = radius.max(1.0);
         let strength = strength.clamp(0.0, 1.0);
@@ -300,6 +306,8 @@ impl RenderFeaturePostProcessKuwahara {
         let depth_strength = depth_strength.max(0.0);
         let temporal = temporal.clamp(0.0, 1.0);
         let frame = frame % 1024.0;
+        let stroke = stroke.clamp(0.0, 2.0);
+        let stride = stride.clamp(0.0, 4.0);
 
         if self.params_uniform.radius == radius
             && self.params_uniform.strength == strength
@@ -311,6 +319,8 @@ impl RenderFeaturePostProcessKuwahara {
             && self.params_uniform.depth_strength == depth_strength
             && self.params_uniform.temporal == temporal
             && self.params_uniform.frame == frame
+            && self.params_uniform.stroke == stroke
+            && self.params_uniform.stride == stride
         {
             return;
         }
@@ -326,6 +336,8 @@ impl RenderFeaturePostProcessKuwahara {
             depth_strength,
             temporal,
             frame,
+            stroke,
+            stride,
         };
 
         let s = Services::get();
@@ -352,6 +364,8 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
             record.depth_strength,
             record.temporal,
             self.frame_index, // temporal clock stays internal to the feature
+            record.stroke,
+            record.stride,
         );
     }
 

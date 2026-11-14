@@ -15,6 +15,8 @@ struct KuwaharaParams {
     depth_strength: f32, // 0 = depth-ignorant; > 0 falloff of window weights across depth jumps
     temporal: f32, // 0 = static spatial dither; > 0 re-randomizes the noise each frame
     frame: f32, // CPU frame counter (wraps at 1024), drives the re-randomization
+    stroke: f32, // stretch sub-windows ALONG the edge (0 = square, 2 = 3x long)
+    stride: f32, // sampling step inside windows; 0 = auto (2 once radius >= 8)
 };
 
 struct Tensor2 {
@@ -118,6 +120,19 @@ fn painterlyNoise(uv: vec2<f32>) -> f32 {
     return mix(base, shifted, amt);
 }
 
+// sampling step inside the sub-windows: explicit stride if > 0, otherwise
+// auto — every-other sample once the kernel is big (radius >= 8), which keeps
+// the per-pixel tap count roughly flat for the large strokes the look wants
+fn subwindowStep(radius: i32) -> i32 {
+    if (kuwahara_params.stride > 0.0) {
+        return max(1, i32(round(kuwahara_params.stride)));
+    }
+    if (radius >= 8) {
+        return 2;
+    }
+    return 1;
+}
+
 // luminance-weighted 2x2 structure tensor of the full window, centered on the
 // luminance-weighted centroid; sigma gaussian-weights the window samples
 fn structureTensor(uv: vec2<f32>, radius: i32, sigma: f32) -> Tensor2 {
@@ -131,8 +146,9 @@ fn structureTensor(uv: vec2<f32>, radius: i32, sigma: f32) -> Tensor2 {
     let dims = vec2<f32>(textureDimensions(myTexture));
     let texel = 1.0 / dims;
 
-    for (var xi: i32 = -radius; xi <= radius; xi = xi + 1) {
-        for (var yi: i32 = -radius; yi <= radius; yi = yi + 1) {
+    let step = subwindowStep(radius);
+    for (var xi: i32 = -radius; xi <= radius; xi = xi + step) {
+        for (var yi: i32 = -radius; yi <= radius; yi = yi + step) {
             let wx = f32(xi);
             let wy = f32(yi);
             let w = gaussWeight(wx, wy, sigma, sigma);
@@ -211,12 +227,20 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     // depth layer only
     let dCenter = depthAt(uv);
 
+    // elongated facets: stretch each sub-window ALONG the edge (v) and
+    // compress it ACROSS (u), area-preserving so the tap count stays ~flat.
+    // stroke = 0 keeps square windows (old behavior)
+    let stretch = 1.0 + clamp(kuwahara_params.stroke, 0.0, 2.0);
+    let r_u = max(1, i32(round(f32(radius) / stretch))); // across the edge
+    let r_v = max(1, i32(round(f32(radius) * stretch))); // along the edge
+    let step = subwindowStep(radius);
+
     // sample the four sub-windows in the rotated frame
     for (var q: i32 = 0; q < 4; q = q + 1) {
         let su = select(-1.0, 1.0, q == 1 || q == 3);
         let sv = select(-1.0, 1.0, q == 2 || q == 3);
-        for (var iu: i32 = 0; iu <= radius; iu = iu + 1) {
-            for (var iv: i32 = 0; iv <= radius; iv = iv + 1) {
+        for (var iu: i32 = 0; iu <= r_u; iu = iu + step) {
+            for (var iv: i32 = 0; iv <= r_v; iv = iv + step) {
                 let lu = f32(iu) * su;
                 let lv = f32(iv) * sv;
                 // rotate the local offset into texture space
