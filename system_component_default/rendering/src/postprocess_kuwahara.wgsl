@@ -18,11 +18,13 @@ struct KuwaharaParams {
     temporal: f32, // 0 = static spatial dither; > 0 re-randomizes the noise each frame
     frame: f32, // CPU frame counter (wraps at 1024), drives the re-randomization
     stroke: f32, // stretch sub-windows ALONG the edge (0 = square, 2 = 3x long)
-    stride: f32, // sampling step inside windows; 0 = auto (2 once radius >= 8)
+    stride: f32, // sampling step inside windows; 0 = auto (grows with window)
+    detail: f32, // flow-driven detail-shrink sensitivity: 0 = OFF (every
+        // stroke keeps the full lattice size, which is what the references
+        // do: far/detail areas stay BIG daubs, they just carry contrast)
     viewport_count: f32, // number of valid vp rects (1..4)
     pad_x: f32, // scalar pads: uniform-space composites align to 16, so vp
     pad_y: f32, // lands at offset 64 on the GPU; the CPU mirror pads the same
-    pad_z: f32, // way to stay byte-identical
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
@@ -176,13 +178,24 @@ fn painterlyNoise(uv: vec2<f32>) -> f32 {
 }
 
 // sampling step inside the sub-windows: explicit stride if > 0, otherwise
-// auto — every-other sample once the kernel is big (radius >= 8), which keeps
-// the per-pixel tap count roughly flat for the large strokes the look wants
-fn subwindowStep(radius: i32) -> i32 {
+// auto and SCALED TO THE WINDOW. the long axis of a stretched window is what
+// dominates the tap count, so the step grows with it: this is what keeps the
+// per-pixel cost roughly flat when radius and stroke go up to reference
+// daub-scale (a 100px-long window at step 1 would be thousands of taps)
+fn subwindowStep(extent: i32) -> i32 {
     if (kuwahara_params.stride > 0.0) {
         return max(1, i32(round(kuwahara_params.stride)));
     }
-    if (radius >= 8) {
+    if (extent >= 96) {
+        return 5;
+    }
+    if (extent >= 48) {
+        return 4;
+    }
+    if (extent >= 24) {
+        return 3;
+    }
+    if (extent >= 8) {
         return 2;
     }
     return 1;
@@ -192,9 +205,9 @@ fn subwindowStep(radius: i32) -> i32 {
 // detail-shrink). theta is folded into [-45, 45] degrees (the four-quadrant
 // kernel is symmetric under 90-degree rotation) and bucketed to four
 // directions so a whole region shares one blob orientation. detail-shrink
-// f = 1/(1 + lam1*40): where local variation is dense (distant trees, plank
-// stacks, albedo detail) windows AND blob territories shrink together, so
-// detail stays crisp small strokes instead of dissolving at full stroke size
+// f = 1/(1 + lam1*detail), floor 0.5: where local variation is dense windows
+// AND blob territories shrink together, but detail = 0 keeps every stroke at
+// the full lattice size
 fn flowFrame(tf: vec4<f32>) -> vec3<f32> {
     let t = Tensor2(tf.x, tf.z, tf.y);
     let halfTrace = 0.5 * (t.xx + t.yy);
@@ -214,12 +227,20 @@ fn flowFrame(tf: vec4<f32>) -> vec3<f32> {
     }
     let thetaBucket = round(theta / 0.3926991) * 0.3926991;
     let stretch = 1.0 + kuwahara_params.stroke * (1.0 - anisotropy);
-    let f = 1.0 / (1.0 + max(lam1, 0.0) * 40.0);
+    // detail-shrink is a KNOB now: f = 1/(1 + lam1*detail) with detail = 0
+    // meaning no shrink at all, which is what the references do: distant or
+    // busy areas keep FULL-SIZE daubs and stay readable through the colour
+    // contrast between neighbouring strokes, not through shrinking. raise
+    // detail only if far features genuinely dissolve; floor 0.5 so shrink can
+    // never collapse strokes into confetti (the old hard 40.0 sensitivity and
+    // 0.2 floor fired on albedo texture and on every depth silhouette, which
+    // is why the whole frame read fine-grained)
+    let f = 1.0 / (1.0 + max(lam1, 0.0) * max(kuwahara_params.detail, 0.0));
     // the fold swaps which axis carries the long radius; stash that parity in
     // the sign of stretch so the blob territory follows the SAME axis as the
     // window (mismatched axes were the comb-tooth fringe bug)
     let s = select(stretch, -stretch, fold > 0.5);
-    return vec3<f32>(thetaBucket, s, max(f, 0.2));
+    return vec3<f32>(thetaBucket, s, max(f, 0.5));
 }
 
 // --- Kuahara filter, anisotropic ---
@@ -358,7 +379,7 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     // territory, so dense-variation areas sample fine and stay crisp
     let r_u = max(2, i32(round(f32(radius) * winF / stretch))); // across the edge
     let r_v = max(2, i32(round(f32(radius) * winF * stretch))); // along the edge
-    let step = subwindowStep(radius);
+    let step = subwindowStep(max(r_u, r_v));
 
     // sample the four sub-windows in the rotated frame
     for (var q: i32 = 0; q < 4; q = q + 1) {
@@ -368,6 +389,16 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
             for (var iv: i32 = 0; iv <= r_v; iv = iv + step) {
                 let lu = f32(iu) * su;
                 let lv = f32(iv) * sv;
+                // tap-cost guard: a stretched window reaches far beyond the
+                // gaussian spread, and a tap past ~3 combined sigmas weighs
+                // under 3e-4, so the rest of the row can be skipped outright.
+                // this is what keeps radius 24+ and stroke 2+ playable
+                if (sigma > 0.0 && tau > 0.0) {
+                    let g = (lu * lu) / (sigma * sigma) + (lv * lv) / (tau * tau);
+                    if (g > 16.0) {
+                        break;
+                    }
+                }
                 // rotate the local offset into texture space
                 let rx = c * lu - s * lv;
                 let ry = s * lu + c * lv;

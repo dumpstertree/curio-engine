@@ -14,6 +14,7 @@ pub struct SysRecordPostProcess {
     pub temporal: f32,
     pub stroke: f32,
     pub stride: f32,
+    pub detail: f32,
 }
 
 impl SysRecordPostProcess {
@@ -31,6 +32,7 @@ impl SysRecordPostProcess {
             temporal: 0.0,
             stroke: 0.0, // square windows: identical to the old kernel
             stride: 0.0, // auto stride
+            detail: 0.0, // detail-shrink off: strokes keep the full lattice size
         }
     }
 }
@@ -51,6 +53,7 @@ impl RecordOverride for SysRecordPostProcess {
             "temporal" => { self.temporal = val }
             "stroke" => { self.stroke = val }
             "stride" => { self.stride = val }
+            "detail" => { self.detail = val }
             _ => {}
         }
     }
@@ -67,6 +70,7 @@ impl RecordOverride for SysRecordPostProcess {
             FieldState::new("temporal", self.temporal),
             FieldState::new("stroke", self.stroke),
             FieldState::new("stride", self.stride),
+            FieldState::new("detail", self.detail),
         ]
     }
 }

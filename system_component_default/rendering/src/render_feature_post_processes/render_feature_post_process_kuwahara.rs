@@ -33,11 +33,12 @@ pub struct KuwaharaUniform {
     temporal: f32, // 0 = static spatial dither; > 0 re-randomizes the noise each frame
     frame: f32, // CPU frame counter driving the re-randomization (wraps at 1024)
     stroke: f32, // stretch sub-windows ALONG the edge (0 = square, 2 = 3x long)
-    stride: f32, // sampling step inside windows; 0 = auto (2 once radius >= 8)
+    stride: f32, // sampling step inside windows; 0 = auto (grows with window)
+    detail: f32, // flow detail-shrink sensitivity; 0 = OFF, strokes keep full
+        // lattice size everywhere (what the references do)
     viewport_count: f32, // number of valid vp rects (1..4)
-    pad_x: f32, // uniform-space composites align to 16, so vp lands at offset
-    pad_y: f32, // 64 on the GPU; the #[repr(C)] mirror pads identically (total
-    pad_z: f32, // size 128, matching what naga computes for the WGSL struct)
+    pad_x: f32, // scalar pads: uniform-space composites align to 16, so vp lands
+    pad_y: f32, // at offset 64 on the GPU; the #[repr(C)] mirror pads identically
     vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
 }
 
@@ -97,10 +98,10 @@ impl RenderFeaturePostProcessKuwahara {
             frame: 0.0,
             stroke: 0.0, // square windows until the game asks for strokes
             stride: 0.0, // auto stride
+            detail: 0.0, // detail-shrink off: strokes keep the full lattice size
             viewport_count: 1.0, // whole-texture rect until the helper syncs
             pad_x: 0.0,
             pad_y: 0.0,
-            pad_z: 0.0,
             vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
         };
 
@@ -586,6 +587,7 @@ impl RenderFeaturePostProcessKuwahara {
         frame: f32,
         stroke: f32,
         stride: f32,
+        detail: f32,
     ) {
         let radius = radius.max(1.0);
         let strength = strength.clamp(0.0, 1.0);
@@ -597,8 +599,10 @@ impl RenderFeaturePostProcessKuwahara {
         let depth_strength = depth_strength.max(0.0);
         let temporal = temporal.clamp(0.0, 1.0);
         let frame = frame % 1024.0;
-        let stroke = stroke.clamp(0.0, 2.0);
-        let stride = stride.clamp(0.0, 4.0);
+        // headroom for reference-scale daubs: stroke 4 = 5x-long windows
+        let stroke = stroke.clamp(0.0, 4.0);
+        let stride = stride.clamp(0.0, 8.0);
+        let detail = detail.max(0.0);
 
         if self.params_uniform.radius == radius
             && self.params_uniform.strength == strength
@@ -612,6 +616,7 @@ impl RenderFeaturePostProcessKuwahara {
             && self.params_uniform.frame == frame
             && self.params_uniform.stroke == stroke
             && self.params_uniform.stride == stride
+            && self.params_uniform.detail == detail
         {
             return;
         }
@@ -629,10 +634,10 @@ impl RenderFeaturePostProcessKuwahara {
             frame,
             stroke,
             stride,
+            detail,
             viewport_count: self.params_uniform.viewport_count, // synced separately
             pad_x: 0.0,
             pad_y: 0.0,
-            pad_z: 0.0,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
 
@@ -686,6 +691,7 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
             self.frame_index, // temporal clock stays internal to the feature
             record.stroke,
             record.stride,
+            record.detail,
         );
     }
 
