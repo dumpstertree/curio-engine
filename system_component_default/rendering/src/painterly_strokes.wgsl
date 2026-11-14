@@ -343,23 +343,31 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     );
     out.local = c;
     out.rect = paintViewportForUv(anchor);
-    // coverage depends on the stamp being VISIBLE where it lands, and a flat
-    // centre colour equals the guide exactly over its own colour region, which
-    // is why flat areas used to read as bare kuwahara with its dither
-    // artefacts still showing. per-channel multiplicative noise shifts hue and
-    // lightness per stamp, making the painted layer read as paint over flat
-    // areas instead of a clearcoat; color_jitter = 0 is the exact guide colour
+    // the painted layer MUST deviate from the guide or coverage is invisible
+    // by construction: inside a kuwahara block the guide is constant, so a
+    // stamp carrying that exact centre colour paints nothing and the flat
+    // areas of every earlier build read as bare guide with the kuahara dither
+    // artefacts showing through - the coverage was there geometrically, it
+    // simply could not be seen. so the deviation is FORCED, not sampled from a
+    // range that contains zero: each channel moves by at least 0.6 * amplitude
+    // (sign from the hash, magnitude floored) which removes the near-zero
+    // samples the earlier uniform spread wasted half its range on. an
+    // additive term rides the same sign so the shift survives near-black and
+    // near-white regions where a pure multiply collapses to nothing;
+    // color_jitter = 0 still reproduces the exact guide colour
     var col = colorAtGuide(pxi);
     let cj = paint_params.color_jitter;
     if (cj > 0.0) {
-        let jh = ditherHash(vec2<f32>(s, 541.0 + seed), seed) - 0.5;
-        let jl = ditherHash(vec2<f32>(s, 613.0 + seed), seed) - 0.5;
-        let js = ditherHash(vec2<f32>(s, 727.0 + seed), seed) - 0.5;
-        col = col * vec3<f32>(
-            1.0 + jh * 2.0 * cj,
-            1.0 + jl * 2.0 * cj,
-            1.0 + js * 2.0 * cj,
-        );
+        let hr = ditherHash(vec2<f32>(s, 541.0 + seed), seed) * 2.0 - 1.0;
+        let hl = ditherHash(vec2<f32>(s, 613.0 + seed), seed) * 2.0 - 1.0;
+        let hs = ditherHash(vec2<f32>(s, 727.0 + seed), seed) * 2.0 - 1.0;
+        // select not sign: sign(0.0) is 0, which would let a rare slot land on
+        // the guide colour exactly
+        let dr = select(-1.0, 1.0, hr >= 0.0) * (0.6 + 0.4 * abs(hr));
+        let dl = select(-1.0, 1.0, hl >= 0.0) * (0.6 + 0.4 * abs(hl));
+        let ds = select(-1.0, 1.0, hs >= 0.0) * (0.6 + 0.4 * abs(hs));
+        col = col * vec3<f32>(1.0 + cj * dr, 1.0 + cj * dl, 1.0 + cj * ds)
+            + vec3<f32>(dr * cj * 0.25, dl * cj * 0.25, ds * cj * 0.25);
     }
     out.color = col;
 

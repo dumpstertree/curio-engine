@@ -38,7 +38,7 @@ impl SysRecordStrokePaint {
             seed: 0.0,
             flow: 1.0, // daub shape follows the tensor's anisotropy
             bristle: 0.75, // brush mask drives the stamp alpha
-            color_jitter: 0.08, // per-stamp hue/lightness amplitude: 0 leaves flat areas the bare kuwahara guide (a jitter-free stamp equals its own background colour), so this is what makes coverage read as paint
+            color_jitter: 0.16, // forced per-channel deviation from the guide colour (minimum 0.6 * this), so stamps are distinguishable inside flat kuwahara blocks
         }
     }
 }

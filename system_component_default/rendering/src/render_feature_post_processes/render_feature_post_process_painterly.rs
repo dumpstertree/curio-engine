@@ -79,7 +79,7 @@ fn build_brush_mask() -> Vec<u8> {
     return bytes;
 }
 
-/// CPU-side mirror of the WGSL StrokeParams struct: 14 scalars then 2 pads so
+/// CPU-side mirror of the WGSL StrokeParams struct: 15 scalars then 1 pad so
 /// the vp composite lands on offset 64 exactly as naga lays it out (128 bytes)
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
@@ -143,7 +143,7 @@ impl RenderFeaturePostProcessPainterly {
             viewport_count: 1.0, // whole-texture rect until the helper syncs
             flow: 1.0, // daub SHAPE follows the tensor's anisotropy
             bristle: 0.75, // brush mask drives the stamp alpha
-            color_jitter: 0.08, // flat areas read as bare kuwahara with a jitter-free stamp: the centre colour equals the guide exactly over its own region, so per-stamp hue/lightness noise is what makes the coverage read as paint
+            color_jitter: 0.16, // forced per-stamp deviation from the guide (each channel moves by at least 0.6 * this), which is what makes coverage read as paint
             pad_x: 0.0,
             vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
         };
