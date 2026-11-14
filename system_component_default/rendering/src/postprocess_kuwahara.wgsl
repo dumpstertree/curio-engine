@@ -326,23 +326,11 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let noise = painterlyNoise(in.uv);
     let amount = max(0.0, kuwahara_params.dither_amount);
     var strength = clamp(kuwahara_params.strength + (noise - 0.5) * amount, 0.0, 1.0);
-    // depth-edge awareness: where the depth changes sharply between neighbouring
-    // pixels, keep more of the original so silhouettes stay crisp
-    if (kuwahara_params.depth_strength > 0.0) {
-        let texel = 1.0 / dims;
-        let d0 = depthAt(in.uv);
-        let offs = array<vec2<f32>, 4>(
-            vec2<f32>(1.0, 0.0), vec2<f32>(-1.0, 0.0),
-            vec2<f32>(0.0, 1.0), vec2<f32>(0.0, -1.0),
-        );
-        var maxDelta = 0.0;
-        for (var o: i32 = 0; o < 4; o = o + 1) {
-            maxDelta = max(maxDelta, abs(depthAt(in.uv + offs[o] * texel) - d0));
-        }
-        // 0.02 = depth jump that counts as a full silhouette (normalised depth)
-        let depthEdge = clamp(maxDelta / 0.02, 0.0, 1.0);
-        strength = strength * (1.0 - 0.65 * depthEdge);
-    }
+    // depth-edge strength restoration removed: it painted a 1-px dotted
+    // "original" border along every silhouette (per-pixel mix of painted and
+    // raw pixels). the reference look wants painterly edges with slight
+    // stroke OVERSHOOT instead, and depthWeight inside the kernel already
+    // keeps sub-windows from averaging across depth silhouettes
     let color = mix(original, painterly, strength);
     return vec4<f32>(color, 1.0);
 }
