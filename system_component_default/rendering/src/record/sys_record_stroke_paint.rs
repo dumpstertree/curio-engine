@@ -16,6 +16,8 @@ pub struct SysRecordStrokePaint {
     pub jitter: f32,
     pub wobble: f32,
     pub seed: f32,
+    pub flow: f32,
+    pub bristle: f32,
 }
 
 impl SysRecordStrokePaint {
@@ -25,14 +27,16 @@ impl SysRecordStrokePaint {
             size: 22.0, // long-axis daub in flat areas
             size_min: 0.35, // busiest areas keep ~a third of that length
             mag_scale: 14.0, // contrast sensitivity against the smoothed guide (raised from 10: the orientation is now read from window-mean differences, which damp magnitudes slightly)
-            elongation: 2.2, // flat areas: long daubs held along edges
-            aspect_min: 1.4, // busy areas: rounder small daubs
+            elongation: 2.6, // anisotropic neighbourhoods (a real edge) carry the full stretch
+            aspect_min: 1.2, // no edge to follow: near-round daub
             alpha: 1.0,
             feather: 0.45, // soft edge fraction of the analytic brush
             keep: 1.0, // every slot draws; lower it thins the paint
             jitter: 0.45,
             wobble: 0.25,
             seed: 0.0,
+            flow: 1.0, // daub shape follows the tensor's anisotropy
+            bristle: 0.75, // brush mask drives the stamp alpha
         }
     }
 }
@@ -52,6 +56,8 @@ impl RecordOverride for SysRecordStrokePaint {
             "jitter" => { self.jitter = val }
             "wobble" => { self.wobble = val }
             "seed" => { self.seed = val }
+            "flow" => { self.flow = val }
+            "bristle" => { self.bristle = val }
             _ => {}
         }
     }
@@ -68,6 +74,8 @@ impl RecordOverride for SysRecordStrokePaint {
             FieldState::new("jitter", self.jitter),
             FieldState::new("wobble", self.wobble),
             FieldState::new("seed", self.seed),
+            FieldState::new("flow", self.flow),
+            FieldState::new("bristle", self.bristle),
         ]
     }
 }

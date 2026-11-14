@@ -20,17 +20,75 @@ const PAINTERLY_WGSL: &str = include_str!("../painterly_strokes.wgsl");
 // R2 low-discrepancy sequence, so the only CPU state is the uniform below
 const STAMP_SLOTS: u32 = 1024; // must match SLOT_COUNT in the WGSL
 const STAMP_VERTICES: u32 = 6 * STAMP_SLOTS; // two triangles per slot
+const BRUSH_SIZE: u32 = 64; // procedural bristle mask (power of two, rows pad to 4)
 
-/// CPU-side mirror of the WGSL StrokeParams struct: 12 scalars then 4 pads so
+// hash for the procedural mask: integer mix, no noise asset needed. wrapping
+// arithmetic so a debug build never traps on the overflow
+fn mask_hash(x: u32, y: u32, salt: u32) -> f32 {
+    let mut v: u32 = x.wrapping_mul(18674711).wrapping_add(y.wrapping_mul(20081977).wrapping_add(salt.wrapping_mul(28714933)));
+    v ^= v >> 15;
+    v = v.wrapping_mul(2246822519);
+    v ^= v >> 13;
+    v = v.wrapping_mul(3261131959);
+    v ^= v >> 16;
+    return (v as f32) / 4294967295.0;
+}
+
+fn mask_smoothstep(e0: f32, e1: f32, x: f32) -> f32 {
+    let t = ((x - e0) / (e1 - e0)).clamp(0.0, 1.0);
+    return t * t * (3.0 - 2.0 * t);
+}
+
+// one bristle mask for every daub. the stamp fragment samples it in the
+// daub's OWN space (u runs along the long axis, v across the short one), so
+// the comb bands depend on v only and the bristles trail the stroke instead
+// of cutting across it. the rim is noise-cut for a ragged silhouette and the
+// body is speckled so a dry drag lets the guide show through, which is what
+// real brush alpha buys over an analytic ellipse
+fn build_brush_mask() -> Vec<u8> {
+    let size = BRUSH_SIZE as f32;
+    let half = size * 0.5;
+    let mut bytes: Vec<u8> = Vec::new();
+    for y in 0..BRUSH_SIZE {
+        for x in 0..BRUSH_SIZE {
+            // quad [-1,1] with texel centres, matching the shader's local space
+            let u = (x as f32 + 0.5 - half) / half;
+            let v = (y as f32 + 0.5 - half) / half;
+            let r = (u * u + v * v).sqrt();
+
+            // ragged rim: the same noise nudges the silhouette in and out
+            let rim = 0.82 + 0.22 * (mask_hash(x, y, 7) - 0.5) * 2.0;
+            let mut alpha = 1.0 - mask_smoothstep(rim - 0.42, rim, r);
+
+            // bristle comb: bands stacked along v, each with its own phase and
+            // width, so the gaps run the length of the daub
+            let band = (v * 0.5 + 0.5) * 11.0;
+            let bandId = band.floor() as u32;
+            let frac = band - band.floor();
+            let width = 0.42 + 0.44 * mask_hash(0, bandId, 11);
+            let phase = mask_hash(0, bandId, 3) * 0.45;
+            alpha *= 1.0 - mask_smoothstep(width, (width + 0.34).min(1.0), frac + phase);
+
+            // speckle: dry bristle leaves bare tracks
+            alpha *= 0.66 + 0.34 * mask_hash(x, y, 5);
+
+            alpha = alpha.clamp(0.0, 1.0);
+            bytes.push((alpha * 255.0) as u8);
+        }
+    }
+    return bytes;
+}
+
+/// CPU-side mirror of the WGSL StrokeParams struct: 14 scalars then 2 pads so
 /// the vp composite lands on offset 64 exactly as naga lays it out (128 bytes)
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 pub struct StrokeUniform {
-    size: f32, // long-axis daub length in flat areas, px
+    size: f32, // long-axis daub length, px
     size_min: f32, // fraction of size kept where local contrast is maxed
-    mag_scale: f32, // guide-contrast sensitivity: gradient * this -> 0..1
-    elongation: f32, // long/short aspect in flat areas
-    aspect_min: f32, // aspect floor in busy areas
+    mag_scale: f32, // slope (luminance per px) * this -> 0..1
+    elongation: f32, // aspect where the neighbourhood is anisotropic (a real edge)
+    aspect_min: f32, // aspect where there is no edge to follow
     alpha: f32, // stamp opacity
     feather: f32, // 0 = hard-edged stamp, 1 = gradient all the way in
     keep: f32, // keep probability per slot; failures degenerate
@@ -38,10 +96,10 @@ pub struct StrokeUniform {
     wobble: f32, // angle jitter amplitude in radians
     seed: f32, // shifts every hash
     viewport_count: f32, // number of valid vp rects (1..4)
+    flow: f32, // 0 = constant elongation, 1 = shape follows tensor anisotropy
+    bristle: f32, // 0 = analytic alpha, 1 = fully masked by the brush texture
     pad_x: f32,
     pad_y: f32,
-    pad_z: f32,
-    pad_w: f32,
     vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
 }
 
@@ -53,6 +111,8 @@ pub struct RenderFeaturePostProcessPainterly {
     bind_group_b: wgpu::BindGroup, // guide = view_b
     params: wgpu::Buffer, // StrokeUniform, rewritten per frame
     params_uniform: StrokeUniform,
+    brush_texture: wgpu::Texture, // procedural bristle alpha mask (R8Unorm)
+    brush_view: wgpu::TextureView, // bound as binding(3) for the stamp fragment
 }
 
 impl RenderFeaturePostProcessPainterly {
@@ -72,9 +132,8 @@ impl RenderFeaturePostProcessPainterly {
             size: 22.0,
             size_min: 0.35,
             mag_scale: 14.0, // window-mean gradients damp a touch below 1-tap sobels, so sensitivity is a little higher than the old 10
-
-            elongation: 2.2,
-            aspect_min: 1.4,
+            elongation: 2.6, // real edges carry the full stretch now
+            aspect_min: 1.2, // no edge to follow: near-round daub
             alpha: 1.0,
             feather: 0.45,
             keep: 1.0, // every slot draws: coverage is the first thing to see
@@ -82,10 +141,10 @@ impl RenderFeaturePostProcessPainterly {
             wobble: 0.25,
             seed: 0.0,
             viewport_count: 1.0, // whole-texture rect until the helper syncs
+            flow: 1.0, // daub SHAPE follows the tensor's anisotropy
+            bristle: 0.75, // brush mask drives the stamp alpha
             pad_x: 0.0,
             pad_y: 0.0,
-            pad_z: 0.0,
-            pad_w: 0.0,
             vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
         };
 
@@ -98,6 +157,44 @@ impl RenderFeaturePostProcessPainterly {
             mipmap_filter: wgpu::FilterMode::Linear,
             ..Default::default()
         });
+
+        // one procedural bristle mask for every daub, uploaded once at
+        // construction: the mask is sampled in the DAUB's space, so the
+        // streaks trail the stroke instead of cutting across it, and swapping
+        // in the game's real brush art later is a texture, not a shader edit
+        let brush_size = wgpu::Extent3d {
+            width: BRUSH_SIZE,
+            height: BRUSH_SIZE,
+            depth_or_array_layers: 1,
+        };
+        let brush_texture = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("painterly brush mask"),
+            size: brush_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::R8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let brush_bytes = build_brush_mask();
+        let s = Services::get();
+        s.gpu.queue().write_texture(
+            wgpu::TexelCopyTextureInfo {
+                aspect: wgpu::TextureAspect::All,
+                texture: &brush_texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+            },
+            &brush_bytes,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(BRUSH_SIZE), // R8: one byte per texel, and 64 already pads to 4
+                rows_per_image: Some(BRUSH_SIZE),
+            },
+            brush_size,
+        );
+        let brush_view = brush_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
         let shader_source = format!("{}\n{}", DITHER_COMMON_WGSL, PAINTERLY_WGSL);
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -144,6 +241,17 @@ impl RenderFeaturePostProcessPainterly {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
                         min_binding_size: NonZeroU64::new(128),
+                    },
+                    count: None,
+                },
+                // bristle alpha mask (stamp FRAGMENT only)
+                wgpu::BindGroupLayoutEntry {
+                    binding: 3,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
                     },
                     count: None,
                 },
@@ -236,6 +344,10 @@ impl RenderFeaturePostProcessPainterly {
                         size: None,
                     }),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&brush_view),
+                },
             ],
         });
 
@@ -258,6 +370,10 @@ impl RenderFeaturePostProcessPainterly {
                         offset: 0,
                         size: None,
                     }),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&brush_view),
                 },
             ],
         });
@@ -282,6 +398,10 @@ impl RenderFeaturePostProcessPainterly {
                         size: None,
                     }),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: wgpu::BindingResource::TextureView(&brush_view),
+                },
             ],
         });
 
@@ -293,6 +413,8 @@ impl RenderFeaturePostProcessPainterly {
             bind_group_b,
             params,
             params_uniform,
+            brush_texture,
+            brush_view,
         })
     }
 
@@ -310,6 +432,8 @@ impl RenderFeaturePostProcessPainterly {
         jitter: f32,
         wobble: f32,
         seed: f32,
+        flow: f32,
+        bristle: f32,
     ) {
         // headroom up to 128 px so the stamps can be compared against the
         // reference daub scale without re-touching the WGSL
@@ -324,6 +448,8 @@ impl RenderFeaturePostProcessPainterly {
         let jitter = jitter.clamp(0.0, 1.0);
         let wobble = wobble.clamp(0.0, 3.1415927);
         let seed = seed % 1024.0;
+        let flow = flow.clamp(0.0, 1.0);
+        let bristle = bristle.clamp(0.0, 1.0);
 
         if self.params_uniform.size == size
             && self.params_uniform.size_min == size_min
@@ -336,6 +462,8 @@ impl RenderFeaturePostProcessPainterly {
             && self.params_uniform.jitter == jitter
             && self.params_uniform.wobble == wobble
             && self.params_uniform.seed == seed
+            && self.params_uniform.flow == flow
+            && self.params_uniform.bristle == bristle
         {
             return;
         }
@@ -353,10 +481,10 @@ impl RenderFeaturePostProcessPainterly {
             wobble,
             seed,
             viewport_count: self.params_uniform.viewport_count, // synced separately
+            flow,
+            bristle,
             pad_x: 0.0,
             pad_y: 0.0,
-            pad_z: 0.0,
-            pad_w: 0.0,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
 
@@ -405,6 +533,8 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
             record.jitter,
             record.wobble,
             record.seed,
+            record.flow,
+            record.bristle,
         );
     }
 

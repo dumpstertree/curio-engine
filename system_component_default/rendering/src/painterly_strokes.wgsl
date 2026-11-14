@@ -14,16 +14,18 @@
 // group(0) binding(1): guide texture (previous stage; the STAMP VERTEX stage
 //                       window-differences it for size and angle, so this
 //                       binding is visible to both stages)
-// group(0) binding(2): StrokeParams uniform (12 scalars + 4 pads puts vp on
+// group(0) binding(2): StrokeParams uniform (14 scalars + 2 pads puts vp on
 //                       offset 64, matching the #[repr(C)] CPU mirror; total
 //                       128 bytes)
+// group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
+//                       procedural bristle mask shared by every daub)
 
 struct StrokeParams {
     size: f32, // long-axis daub length in the FLAT-area case, px
     size_min: f32, // fraction of size kept where local contrast is maxed
-    mag_scale: f32, // contrast sensitivity: gradient magnitude * this -> 0..1
-    elongation: f32, // long/short aspect in flat areas (1 = round daub)
-    aspect_min: f32, // aspect floor in busy areas (refs round small daubs)
+    mag_scale: f32, // contrast sensitivity: SLOPE (luminance per px) * this -> 0..1
+    elongation: f32, // long/short aspect where the neighbourhood is anisotropic
+    aspect_min: f32, // aspect where the neighbourhood has no edge to follow
     alpha: f32, // stamp opacity
     feather: f32, // 0 = hard-edged stamp, 1 = gradient all the way in
     keep: f32, // keep probability per slot (0..1); failures degenerate
@@ -31,10 +33,10 @@ struct StrokeParams {
     wobble: f32, // angle jitter amplitude in radians
     seed: f32, // shifts every hash (moves the whole daub layout)
     viewport_count: f32, // number of valid vp rects (1..4)
+    flow: f32, // how much the daub SHAPE follows the tensor's anisotropy
+    bristle: f32, // how much the brush art drives the stamp alpha
     pad_x: f32, // scalar pads: uniform-space composites align to 16
-    pad_y: f32, // vp is a composite, so it must land on offset 64
-    pad_z: f32, // the CPU mirror pads identically
-    pad_w: f32,
+    pad_y: f32, // vp is a composite, so it must land on offset 64; 14 scalars
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
@@ -50,6 +52,9 @@ var guideTex: texture_2d<f32>;
 
 @group(0) @binding(2)
 var<uniform> paint_params: StrokeParams;
+
+@group(0) @binding(3)
+var brushTex: texture_2d<f32>;
 
 // --- blit pass: guide copied through untouched, so the daubs read as an
 // overlay on a coherent painterly palette instead of raw scene colour ---
@@ -125,34 +130,34 @@ fn lumBoxGuide(cx: f32, cy: f32) -> f32 {
     return sum * (1.0 / 9.0);
 }
 
-// gradient of the WINDOW-smoothed guide at a fractional pixel: this is the
-// same second moment (E, F, G) the kuwahara reads off its blurred flow
-// textures, estimated on the guide itself so the pass stays self-contained.
-// WHY THE OLD CODE BROKE: the guide out of the kuwahara is piecewise CONSTANT,
-// so a +-1 central difference can only straddle a colour region along an axis
-// or along a staircase step, which leaves eight possible gradient directions
-// and snaps every visible daub to a handful of diagonals (the chevron fringe
-// down the grout lines). box differences taken at the daub's own extent
-// measure how far each window straddles a region, which varies CONTINUOUSLY
-// with the edge angle, so stamps follow a perspective edge instead of
-// stacking into chevrons. two radii keep hairline cracks legible while
-// holding the orientation steady across the body of a wide region
-fn guideGradient(px: vec2<f32>, radius: f32) -> vec2<f32> {
-    var gx = 0.0;
-    var gy = 0.0;
-    var wsum = 0.0;
-    for (var k: i32 = 0; k < 2; k = k + 1) {
-        var r = radius;
-        var w = 1.0;
-        if (k == 0) {
-            r = radius * 0.5;
-            w = 0.6;
-        }
-        gx = gx + w * (lumBoxGuide(px.x + r, px.y) - lumBoxGuide(px.x - r, px.y));
-        gy = gy + w * (lumBoxGuide(px.x, px.y + r) - lumBoxGuide(px.x, px.y - r));
-        wsum = wsum + w;
-    }
-    return vec2<f32>(gx, gy) / max(wsum, 0.0001);
+// window-mean derivative of the guide along ONE unit direction: central
+// difference of two 3x3 tap boxes divided by the displacement, so the result
+// is a slope (luminance per pixel) instead of a raw jump and stays
+// comparable across daub sizes
+fn dirDeriv(px: vec2<f32>, d: vec2<f32>, r: f32) -> f32 {
+    let a = lumBoxGuide(px.x + d.x * r, px.y + d.y * r);
+    let b = lumBoxGuide(px.x - d.x * r, px.y - d.y * r);
+    return (a - b) / max(2.0 * r, 0.0001);
+}
+
+// the guide's local second moment (E, F, G) of its gradient, recovered from
+// FOUR directional probes at 0/45/90/135 degrees. that quartet is a tight
+// frame, so the squared slopes pin the tensor exactly: E = q(0), G = q(90)
+// and F = (q(45) - q(135)) / 2, since q(t) = E cos^2 + 2F cos sin + G sin^2.
+// this is the SAME covariance the kuwahara reads off its blurred flow
+// textures, estimated here on the guide so the pass still owns no kuwahara
+// resources; taken at the daub's own extent, which is what made the old
+// one-pixel central difference snap every stamp to eight directions
+fn guideTensor(px: vec2<f32>, radius: f32) -> vec3<f32> {
+    var q0 = dirDeriv(px, vec2<f32>(1.0, 0.0), radius);
+    q0 = q0 * q0;
+    var q90 = dirDeriv(px, vec2<f32>(0.0, 1.0), radius);
+    q90 = q90 * q90;
+    var q45 = dirDeriv(px, vec2<f32>(0.7071068, 0.7071068), radius);
+    q45 = q45 * q45;
+    var q135 = dirDeriv(px, vec2<f32>(-0.7071068, 0.7071068), radius);
+    q135 = q135 * q135;
+    return vec3<f32>(q0, 0.5 * (q45 - q135), q90);
 }
 
 // the viewport rect owning an anchor: stamps never spill across a split-screen
@@ -223,31 +228,43 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let center = anchor * dims; // texture pixels
     let pxi = vec2<i32>(i32(center.x), i32(center.y));
 
-    // local contrast decides BOTH scale and shape, which is the reference
-    // behaviour: a flat area gets a big long daub, a busy area gets a small
-    // round one. the guide is already smoothed, so these magnitudes are much
-    // gentler than raw-scene sobel magnitudes would be, and the gradient is
-    // read over the extent the stamp covers so a daub always lies along the
-    // edge it belongs to
+    // local contrast AND local anisotropy drive the stamp: the guide is
+    // already smoothed so these magnitudes are gentler than raw-scene sobels,
+    // and the tensor is read over the extent the stamp covers, so a daub
+    // always belongs to the edge it sits on
     let gradRadius = clamp(paint_params.size * 0.35, 1.5, 24.0);
-    let grad = guideGradient(center + vec2<f32>(0.5, 0.5), gradRadius);
-    let e = dot(grad, grad);
-    let contrast = clamp(sqrt(e) * paint_params.mag_scale, 0.0, 1.0);
+    let tf = guideTensor(center + vec2<f32>(0.5, 0.5), gradRadius);
+
+    // eigen decomposition of [[E, F], [F, G]], the same form the kuwahara's
+    // flowFrame uses: lam1 is the dominant variance (how STEEP the change is,
+    // in luminance per pixel now that dirDeriv divides out the displacement)
+    // and lam2/lam1 says how much of it is directional
+    let halfTrace = 0.5 * (tf.x + tf.z);
+    let disc = sqrt(0.25 * (tf.x - tf.z) * (tf.x - tf.z) + tf.y * tf.y);
+    let lam1 = halfTrace + disc;
+    let lam2 = max(halfTrace - disc, 0.0);
+    let anisotropy = clamp(lam2 / max(lam1, 0.000001), 0.0, 1.0); // 1 = isotropic
+    let contrast = clamp(sqrt(lam1) * paint_params.mag_scale, 0.0, 1.0);
 
     let longPx = mix(paint_params.size, paint_params.size * paint_params.size_min, contrast);
-    let aspect = max(mix(paint_params.elongation, paint_params.aspect_min, contrast), 1.0);
+    // SHAPE follows the flow: a strongly directional neighbourhood (a real
+    // edge, anisotropy near 0) carries the full elongation, a near-isotropic
+    // one falls back to aspect_min. flow = 0 keeps one constant elongation
+    // for every stamp, flow = 1 makes daubs round wherever there is no edge
+    let tensorAspect = paint_params.aspect_min + (paint_params.elongation - paint_params.aspect_min) * (1.0 - anisotropy);
+    let aspect = max(mix(paint_params.elongation, tensorAspect, paint_params.flow), 1.0);
     let halfLong = longPx * 0.5;
     let halfShort = halfLong / aspect;
 
-    // draw ALONG the edge: the window gradient points across the fastest
-    // change, so the tangent is its perpendicular; a near-flat neighbourhood
-    // has no meaningful tangent, and hashed angle there keeps flat areas
-    // varied. the threshold still fires exactly on flat regions because the
-    // guide is piecewise constant: every tap box inside one region is
-    // bit-identical, so the difference is exactly zero
+    // theta = 0.5*atan2(2F, E - G) is the direction of MAXIMUM variance, i.e.
+    // ACROSS the edge, so the long axis is theta + 90 degrees. a near-flat
+    // neighbourhood has a null tensor and no tangent, and hashed angle there
+    // keeps flat areas varied; that test fires exactly there because the guide
+    // is piecewise constant, so every tap box inside one colour region is
+    // bit-identical and the difference is exactly zero
     var angle = (ditherHash(vec2<f32>(s, 211.0 + seed), seed) - 0.5) * 6.2831853;
-    if (e > 0.000001) {
-        angle = atan2(grad.x, -grad.y);
+    if (lam1 > 0.000001) {
+        angle = 0.5 * atan2(2.0 * tf.y, tf.x - tf.z) + 1.5707963;
     }
     angle = angle + (ditherHash(vec2<f32>(s, 307.0 + seed), seed) - 0.5) * paint_params.wobble;
 
@@ -293,11 +310,19 @@ fn fs_stamp(in: StampOut) -> @location(0) vec4<f32> {
         discard;
     }
 
-    // feathered elliptical brush alpha: analytic for now, and this is the one
-    // slot where the game can later swap in real brush art
+    // brush alpha: the analytic falloff carries the SILHOUETTE, then the
+    // procedural bristle mask breaks that silhouette and hollows the body, so
+    // the daub reads as the drag of real bristles instead of a clean gradient.
+    // bristle = 0 reproduces the old analytic stamp exactly
     let d = sqrt(dot(in.local, in.local));
     let soft = clamp(1.0 - paint_params.feather, 0.0, 0.999);
-    let cover = 1.0 - smoothstep(soft, 1.0, d);
+    var cover = 1.0 - smoothstep(soft, 1.0, d);
+
+    // local is the axis-aligned quad, so the mask stretches along the daub's
+    // long axis: the bristle streaks run WITH the stroke instead of across it
+    let mask = textureSample(brushTex, paintSampler, (in.local + vec2<f32>(1.0, 1.0)) * 0.5).r;
+    cover = cover * mix(1.0, mask, paint_params.bristle);
+
     if (cover <= 0.0) {
         discard;
     }
