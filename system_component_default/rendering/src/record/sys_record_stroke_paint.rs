@@ -24,7 +24,7 @@ impl SysRecordStrokePaint {
         SysRecordStrokePaint {
             size: 22.0, // long-axis daub in flat areas
             size_min: 0.35, // busiest areas keep ~a third of that length
-            mag_scale: 10.0, // contrast sensitivity against the smoothed guide
+            mag_scale: 14.0, // contrast sensitivity against the smoothed guide (raised from 10: the orientation is now read from window-mean differences, which damp magnitudes slightly)
             elongation: 2.2, // flat areas: long daubs held along edges
             aspect_min: 1.4, // busy areas: rounder small daubs
             alpha: 1.0,

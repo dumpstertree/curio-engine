@@ -71,7 +71,8 @@ impl RenderFeaturePostProcessPainterly {
             // the busiest ones, held along edges at 2.2:1
             size: 22.0,
             size_min: 0.35,
-            mag_scale: 10.0,
+            mag_scale: 14.0, // window-mean gradients damp a touch below 1-tap sobels, so sensitivity is a little higher than the old 10
+
             elongation: 2.2,
             aspect_min: 1.4,
             alpha: 1.0,

@@ -3876,12 +3876,14 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "camera",
+ "ctor",
  "curio_core",
  "egui",
  "egui-wgpu",
  "egui-winit",
  "ext_rendering",
  "lighting",
+ "record",
  "skybox",
  "winit",
 ]
