@@ -15,7 +15,7 @@
 // group(0) binding(1): guide texture (the COLOUR source; only the stamp
 //                       VERTEX samples it, plus the blit FRAGMENT, so this
 //                       binding is visible to both stages)
-// group(0) binding(2): StrokeParams uniform (14 scalars + 2 pads puts vp on
+// group(0) binding(2): StrokeParams uniform (15 scalars + 1 pad puts vp on
 //                       offset 64, matching the #[repr(C)] CPU mirror; total
 //                       128 bytes)
 // group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
@@ -42,14 +42,17 @@ struct StrokeParams {
     viewport_count: f32, // number of valid vp rects (1..4)
     flow: f32, // how much the daub SHAPE follows the tensor's anisotropy
     bristle: f32, // how much the brush art drives the stamp alpha
-    pad_x: f32, // scalar pads: uniform-space composites align to 16
-    pad_y: f32, // vp is a composite, so it must land on offset 64; 14 scalars
+    color_jitter: f32, // per-stamp colour jitter amplitude (0 = guide colour)
+    pad_x: f32, // one pad only: 15 scalars now, vp is a composite and must
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
 // the slot grid is compile-time because it sizes the draw range: one draw
-// covers every slot, six vertices each (two triangles, no vertex buffer)
-const SLOT_COUNT: i32 = 1024;
+// covers every slot, six vertices each (two triangles, no vertex buffer).
+// 1024 slots left the picture under-painted: mean spacing was ~45 px at a
+// 1920x1080 capture against a 22 px daub, so only busy edges caught any
+// paint. 4096 puts mean spacing at ~22 px, i.e. one daub per coverage cell
+const SLOT_COUNT: i32 = 4096;
 
 @group(0) @binding(0)
 var paintSampler: sampler;
@@ -340,7 +343,25 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     );
     out.local = c;
     out.rect = paintViewportForUv(anchor);
-    out.color = colorAtGuide(pxi);
+    // coverage depends on the stamp being VISIBLE where it lands, and a flat
+    // centre colour equals the guide exactly over its own colour region, which
+    // is why flat areas used to read as bare kuwahara with its dither
+    // artefacts still showing. per-channel multiplicative noise shifts hue and
+    // lightness per stamp, making the painted layer read as paint over flat
+    // areas instead of a clearcoat; color_jitter = 0 is the exact guide colour
+    var col = colorAtGuide(pxi);
+    let cj = paint_params.color_jitter;
+    if (cj > 0.0) {
+        let jh = ditherHash(vec2<f32>(s, 541.0 + seed), seed) - 0.5;
+        let jl = ditherHash(vec2<f32>(s, 613.0 + seed), seed) - 0.5;
+        let js = ditherHash(vec2<f32>(s, 727.0 + seed), seed) - 0.5;
+        col = col * vec3<f32>(
+            1.0 + jh * 2.0 * cj,
+            1.0 + jl * 2.0 * cj,
+            1.0 + js * 2.0 * cj,
+        );
+    }
+    out.color = col;
 
     return out;
 }

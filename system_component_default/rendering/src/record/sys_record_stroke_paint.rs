@@ -18,6 +18,7 @@ pub struct SysRecordStrokePaint {
     pub seed: f32,
     pub flow: f32,
     pub bristle: f32,
+    pub color_jitter: f32,
 }
 
 impl SysRecordStrokePaint {
@@ -37,6 +38,7 @@ impl SysRecordStrokePaint {
             seed: 0.0,
             flow: 1.0, // daub shape follows the tensor's anisotropy
             bristle: 0.75, // brush mask drives the stamp alpha
+            color_jitter: 0.08, // per-stamp hue/lightness amplitude: 0 leaves flat areas the bare kuwahara guide (a jitter-free stamp equals its own background colour), so this is what makes coverage read as paint
         }
     }
 }
@@ -58,6 +60,7 @@ impl RecordOverride for SysRecordStrokePaint {
             "seed" => { self.seed = val }
             "flow" => { self.flow = val }
             "bristle" => { self.bristle = val }
+            "color_jitter" => { self.color_jitter = val }
             _ => {}
         }
     }
@@ -76,6 +79,7 @@ impl RecordOverride for SysRecordStrokePaint {
             FieldState::new("seed", self.seed),
             FieldState::new("flow", self.flow),
             FieldState::new("bristle", self.bristle),
+            FieldState::new("color_jitter", self.color_jitter),
         ]
     }
 }

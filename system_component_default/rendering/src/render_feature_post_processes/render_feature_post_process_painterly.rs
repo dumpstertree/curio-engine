@@ -18,7 +18,7 @@ const PAINTERLY_WGSL: &str = include_str!("../painterly_strokes.wgsl");
 // GUIDE. pass 1 blits it, pass 2 stamps daubs over it. there is no stroke list
 // to keep in sync: slot parameters are regenerated in the vertex stage from an
 // R2 low-discrepancy sequence, so the only CPU state is the uniform below
-const STAMP_SLOTS: u32 = 1024; // must match SLOT_COUNT in the WGSL
+const STAMP_SLOTS: u32 = 4096; // must match SLOT_COUNT in the WGSL
 const STAMP_VERTICES: u32 = 6 * STAMP_SLOTS; // two triangles per slot
 const BRUSH_SIZE: u32 = 64; // procedural bristle mask (power of two, rows pad to 4)
 
@@ -98,8 +98,8 @@ pub struct StrokeUniform {
     viewport_count: f32, // number of valid vp rects (1..4)
     flow: f32, // 0 = constant elongation, 1 = shape follows tensor anisotropy
     bristle: f32, // 0 = analytic alpha, 1 = fully masked by the brush texture
-    pad_x: f32,
-    pad_y: f32,
+    color_jitter: f32, // 0 = exact guide colour, per-stamp hue/lightness shift
+    pad_x: f32, // one pad only: 15 scalars now, vp is a composite and must
     vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
 }
 
@@ -143,8 +143,8 @@ impl RenderFeaturePostProcessPainterly {
             viewport_count: 1.0, // whole-texture rect until the helper syncs
             flow: 1.0, // daub SHAPE follows the tensor's anisotropy
             bristle: 0.75, // brush mask drives the stamp alpha
+            color_jitter: 0.08, // flat areas read as bare kuwahara with a jitter-free stamp: the centre colour equals the guide exactly over its own region, so per-stamp hue/lightness noise is what makes the coverage read as paint
             pad_x: 0.0,
-            pad_y: 0.0,
             vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
         };
 
@@ -459,6 +459,7 @@ impl RenderFeaturePostProcessPainterly {
         seed: f32,
         flow: f32,
         bristle: f32,
+        color_jitter: f32,
     ) {
         // headroom up to 128 px so the stamps can be compared against the
         // reference daub scale without re-touching the WGSL
@@ -475,6 +476,7 @@ impl RenderFeaturePostProcessPainterly {
         let seed = seed % 1024.0;
         let flow = flow.clamp(0.0, 1.0);
         let bristle = bristle.clamp(0.0, 1.0);
+        let color_jitter = color_jitter.clamp(0.0, 0.3);
 
         if self.params_uniform.size == size
             && self.params_uniform.size_min == size_min
@@ -489,6 +491,7 @@ impl RenderFeaturePostProcessPainterly {
             && self.params_uniform.seed == seed
             && self.params_uniform.flow == flow
             && self.params_uniform.bristle == bristle
+            && self.params_uniform.color_jitter == color_jitter
         {
             return;
         }
@@ -508,8 +511,8 @@ impl RenderFeaturePostProcessPainterly {
             viewport_count: self.params_uniform.viewport_count, // synced separately
             flow,
             bristle,
+            color_jitter,
             pad_x: 0.0,
-            pad_y: 0.0,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
 
@@ -560,6 +563,7 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
             record.seed,
             record.flow,
             record.bristle,
+            record.color_jitter,
         );
     }
 
