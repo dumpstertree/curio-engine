@@ -177,8 +177,27 @@ fn subwindowStep(radius: i32) -> i32 {
 // (no (1-A) fade needed: flat areas have near-null tensors AND square windows
 // because stretch is gated by anisotropy below). in the rotated frame u is
 // across the edge and v runs along it
-fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
-    let tf = textureLoad(flowTex, px, 0);
+//
+// STROKE LATTICE: windows, orientation and the selection noise all anchor on
+// the centre of the same radius-sized cell, so every pixel in a cell shares
+// ONE window mean and ONE candidate: the stroke is a discrete flat patch with
+// a hard border, like the reference paint, instead of a gradient that varies
+// continuously from pixel to pixel
+fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
+    let dims = vec2<f32>(textureDimensions(myTexture));
+    let texel = 1.0 / dims;
+
+    // cell of the coarse lattice (same one painterlyNoise steps on)
+    let block = max(1.0, round(kuwahara_params.radius));
+    let cell = floor((uv * dims) / block);
+    let anchorPx = vec2<i32>(
+        clamp(i32(round((cell.x + 0.5) * block)), 0, i32(dims.x) - 1),
+        clamp(i32(round((cell.y + 0.5) * block)), 0, i32(dims.y) - 1),
+    );
+    let vpr = viewportForUv(uv);
+    let auv = clampToViewport((vec2<f32>(anchorPx) + vec2<f32>(0.5, 0.5)) * texel, vpr);
+
+    let tf = textureLoad(flowTex, anchorPx, 0);
     let t = Tensor2(tf.x, tf.z, tf.y);
     let halfTrace = 0.5 * (t.xx + t.yy);
     let disc = sqrt(0.25 * (t.xx - t.yy) * (t.xx - t.yy) + t.xy * t.xy);
@@ -218,17 +237,10 @@ fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> v
         suv[q] = 0.0;
     }
 
-    let dims = vec2<f32>(textureDimensions(myTexture));
-    let texel = 1.0 / dims;
-
-    // depth of the window center: sub-windows straddle a depth silhouette when
+    // depth of the window anchor: sub-windows straddle a depth silhouette when
     // their samples fall off by depthWeight, so they end up covering one
     // depth layer only
-    let dCenter = depthAt(uv);
-
-    // viewport rect of the window centre: taps clamp to it so windows never
-    // bleed colour across the split-screen seam
-    let vpr = viewportForUv(uv);
+    let dCenter = depthAt(auv);
 
     // elongated facets, gated on the SAME anisotropy factor as theta: ~1 =
     // isotropic variation (flat or blobby) -> square windows; ~0 = strong
@@ -252,7 +264,7 @@ fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> v
                 // rotate the local offset into texture space
                 let rx = c * lu - s * lv;
                 let ry = s * lu + c * lv;
-                let sample_uv = clampToViewport(uv + vec2<f32>(rx, ry) * texel, vpr);
+                let sample_uv = clampToViewport(auv + vec2<f32>(rx, ry) * texel, vpr);
                 let w = gaussWeight(lu, lv, sigma, tau)
                     * depthWeight(depthAt(sample_uv) - dCenter, kuwahara_params.depth_strength);
                 let col = textureSample(myTexture, mySampler, sample_uv).rgb;
@@ -271,16 +283,18 @@ fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> v
         }
     }
 
-    // pick the sub-window whose structure tensor has the smallest minor
-    // eigenvalue: least variation across the edge
-    // track the winner AND the runner-up so the selection can be dithered
-    // between the two most plausible sub-windows instead of always taking
-    // the argmin
-    var best: i32 = 0;
-    var runner: i32 = 0;
-    var bestLambda2: f32 = 1000000.0;
-    var runnerLambda2: f32 = 1000000.0;
-    var lam1Best: f32 = 0.0001;
+    // variance-weighted selection over all four windows: score = 1/(1+(k*
+    // relative variance)^8) with relative variance = the window's minor
+    // eigenvalue over the mean of the four. a window straddling an edge or
+    // silhouette blows its variance up and its share collapses toward zero,
+    // so the pick is DETERMINISTIC there and silhouettes get clean stroke-
+    // sized borders instead of speckle fringe; in flat areas the windows are
+    // near-equivalent and the cell noise decides, so neighbouring cells
+    // commit to different windows: the patchwork the references get their
+    // variation from. dither_amount blends scores toward uniform (0 = pure
+    // variance preference, 1 = fully stochastic roulette)
+    var l2s: array<f32, 4>;
+    var meanL2 = 0.0;
     for (var q: i32 = 0; q < 4; q = q + 1) {
         let lw = max(sl[q], 0.0001);
         let mu = slu[q] / lw;
@@ -290,29 +304,35 @@ fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> v
         let cuv = suv[q] / lw - mu * mv;
         let tr = 0.5 * (cuu + cvv);
         let d = sqrt(0.25 * (cuu - cvv) * (cuu - cvv) + cuv * cuv);
-        let l2 = max(tr - d, 0.0);
-        if (l2 < bestLambda2) {
-            runnerLambda2 = bestLambda2;
-            runner = best;
-            bestLambda2 = l2;
-            lam1Best = tr + d;
-            best = q;
-        } else if (l2 < runnerLambda2 && q != best) {
-            runnerLambda2 = l2;
-            runner = q;
+        l2s[q] = max(tr - d, 0.0);
+        meanL2 = meanL2 + l2s[q];
+    }
+    meanL2 = meanL2 * 0.25;
+
+    let amount = max(0.0, kuwahara_params.dither_amount);
+    var scores: array<f32, 4>;
+    var total = 0.0;
+    for (var q: i32 = 0; q < 4; q = q + 1) {
+        let rel = l2s[q] / max(meanL2, 0.0001);
+        let rel2 = rel * rel;
+        let rel8 = rel2 * rel2 * rel2 * rel2;
+        scores[q] = mix(1.0 / (1.0 + rel8), 1.0, amount);
+        total = total + scores[q];
+    }
+
+    // weighted roulette on the cell's noise value
+    let noise = painterlyNoise(uv);
+    var picked: i32 = 3;
+    var acc = 0.0;
+    for (var q: i32 = 0; q < 4; q = q + 1) {
+        acc = acc + scores[q] / max(total, 0.0001);
+        if (noise < acc) {
+            picked = q;
+            break;
         }
     }
 
-    // dither the selection: w1 = 1 - lambda2/lambda1 of the winning quadrant's
-    // tensor is the confidence that it really wins. dither_amount scales the
-    // noise jitter: 0 = hard decision (old behavior), 1 = fully stochastic
-    let noise = painterlyNoise(uv);
-    let amount = max(0.0, kuwahara_params.dither_amount);
-    let w1 = clamp(1.0 - bestLambda2 / max(lam1Best, 0.0001), 0.0, 1.0);
-    let wsel = clamp(w1 + (noise - 0.5) * amount, 0.0, 1.0);
-    let c0 = meanColor[best] / max(weight[best], 0.0001);
-    let c1 = meanColor[runner] / max(weight[runner], 0.0001);
-    return ditherPickVec3(c0, c1, wsel, noise);
+    return meanColor[picked] / max(weight[picked], 0.0001);
 }
 
 // --- fragment shader ---
@@ -322,13 +342,7 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let sigma = max(0.0, kuwahara_params.sigma);
     let tau = max(0.0, kuwahara_params.tau);
     let original = textureSample(myTexture, mySampler, in.uv).rgb;
-    let painterly = Kuahara(
-        in.uv,
-        vec2<i32>(i32(in.pos.x), i32(in.pos.y)),
-        radius,
-        sigma,
-        tau,
-    );
+    let painterly = Kuahara(in.uv, radius, sigma, tau);
     // same jitter budget on the strength blend as on the quadrant selection:
     // amount = 0 reproduces the old uniform mix, 1 = fully stochastic per pixel
     let dims = vec2<f32>(textureDimensions(myTexture));
