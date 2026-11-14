@@ -3,6 +3,8 @@
 // group(0) binding(1): texture2D (previous post-process stage)
 // group(0) binding(2): depth texture (depth2D, fetched with textureLoad)
 // group(0) binding(3): KuwaharaParams uniform
+// group(0) binding(4): flow field texture (smoothed E,F,G tensor from the
+//                      sobel+blur passes, fetched with textureLoad)
 
 struct KuwaharaParams {
     radius: f32, // kernel radius in pixels
@@ -36,6 +38,9 @@ var myDepth: texture_depth_2d;
 
 @group(0) @binding(3)
 var<uniform> kuwahara_params: KuwaharaParams;
+
+@group(0) @binding(4)
+var flowTex: texture_2d<f32>;
 
 // --- vertex output ---
 struct VSOut {
@@ -133,54 +138,17 @@ fn subwindowStep(radius: i32) -> i32 {
     return 1;
 }
 
-// luminance-weighted 2x2 structure tensor of the full window, centered on the
-// luminance-weighted centroid; sigma gaussian-weights the window samples
-fn structureTensor(uv: vec2<f32>, radius: i32, sigma: f32) -> Tensor2 {
-    var sw = 0.0;
-    var mx = 0.0;
-    var my = 0.0;
-    var sxx = 0.0;
-    var syy = 0.0;
-    var sxy = 0.0;
-
-    let dims = vec2<f32>(textureDimensions(myTexture));
-    let texel = 1.0 / dims;
-
-    let step = subwindowStep(radius);
-    for (var xi: i32 = -radius; xi <= radius; xi = xi + step) {
-        for (var yi: i32 = -radius; yi <= radius; yi = yi + step) {
-            let wx = f32(xi);
-            let wy = f32(yi);
-            let w = gaussWeight(wx, wy, sigma, sigma);
-            let lum = max(dot(textureSample(myTexture, mySampler, uv + vec2<f32>(wx, wy) * texel).rgb, vec3<f32>(0.2126, 0.7152, 0.0722)), 0.0001);
-            let lw = lum * w;
-            sw = sw + lw;
-            mx = mx + lw * wx;
-            my = my + lw * wy;
-            sxx = sxx + lw * wx * wx;
-            syy = syy + lw * wy * wy;
-            sxy = sxy + lw * wx * wy;
-        }
-    }
-
-    let inv = 1.0 / max(sw, 0.0001);
-    mx = mx * inv;
-    my = my * inv;
-    let cxx = max(sxx * inv - mx * mx, 0.0);
-    let cyy = max(syy * inv - my * my, 0.0);
-    let cxy = sxy * inv - mx * my;
-    return Tensor2(cxx, cyy, cxy);
-}
-
 // --- Kuahara filter, anisotropic ---
-// the structure tensor gives the local orientation of maximum variation (theta,
-// the gradient ACROSS an edge) and anisotropy A = lambda2/lambda1. the
-// axis-aligned quadrant kernel is rotated by theta * (1 - A) into that frame,
-// so it stays classic in isotropic blobs and hugs strong edges. in the rotated
-// frame u is across the edge (tight, sigma) and v runs along the edge (wide,
-// tau), which keeps each sub-window on one side of the edge
-fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
-    let t = structureTensor(uv, radius, sigma);
+// orientation comes from the smoothed flow field (E,F,G blurred gradient
+// covariance of luminance + k*depth), so stroke direction is coherent across
+// large areas instead of jittering with each pixel's own window. theta is the
+// gradient direction ACROSS the edge; the kernel frame is rotated fully by it
+// (no (1-A) fade needed: flat areas have near-null tensors AND square windows
+// because stretch is gated by anisotropy below). in the rotated frame u is
+// across the edge and v runs along it
+fn Kuahara(uv: vec2<f32>, px: vec2<i32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
+    let tf = textureLoad(flowTex, px, 0);
+    let t = Tensor2(tf.x, tf.z, tf.y);
     let halfTrace = 0.5 * (t.xx + t.yy);
     let disc = sqrt(0.25 * (t.xx - t.yy) * (t.xx - t.yy) + t.xy * t.xy);
     let lam1 = halfTrace + disc;
@@ -189,7 +157,7 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
 
     // fold the kernel rotation into [-45, 45] degrees: the four-quadrant
     // kernel is symmetric under a 90-degree rotation
-    var theta = 0.5 * atan2(2.0 * t.xy, t.xx - t.yy) * (1.0 - anisotropy);
+    var theta = 0.5 * atan2(2.0 * t.xy, t.xx - t.yy);
     if (theta > 0.7853981) {
         theta = theta - 1.5707962;
     }
@@ -319,7 +287,13 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     let sigma = max(0.0, kuwahara_params.sigma);
     let tau = max(0.0, kuwahara_params.tau);
     let original = textureSample(myTexture, mySampler, in.uv).rgb;
-    let painterly = Kuahara(in.uv, radius, sigma, tau);
+    let painterly = Kuahara(
+        in.uv,
+        vec2<i32>(i32(in.pos.x), i32(in.pos.y)),
+        radius,
+        sigma,
+        tau,
+    );
     // same jitter budget on the strength blend as on the quadrant selection:
     // amount = 0 reproduces the old uniform mix, 1 = fully stochastic per pixel
     let dims = vec2<f32>(textureDimensions(myTexture));

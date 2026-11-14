@@ -16,6 +16,7 @@ use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostPro
 
 const DITHER_COMMON_WGSL: &str = include_str!("../dither_common.wgsl");
 const KUWAHARA_WGSL: &str = include_str!("../postprocess_kuwahara.wgsl");
+const FLOW_FIELD_WGSL: &str = include_str!("../flow_field.wgsl");
 
 /// CPU-side mirror of the WGSL KuwaharaParams struct
 #[repr(C)]
@@ -35,6 +36,16 @@ pub struct KuwaharaUniform {
     stride: f32, // sampling step inside windows; 0 = auto (2 once radius >= 8)
 }
 
+// CPU-side mirror of the WGSL FlowParams struct (16 bytes)
+#[repr(C)]
+#[derive(Copy, Clone, Pod, Zeroable)]
+pub struct FlowUniform {
+    dx: f32, // blur axis x component
+    dy: f32, // blur axis y component
+    k_depth: f32, // weight of the depth-gradient tensor in the flow field
+    pad: f32,
+}
+
 pub struct RenderFeaturePostProcessKuwahara {
     pipeline: wgpu::RenderPipeline,
     bind_group_input: wgpu::BindGroup, // samples the original offscreen_view
@@ -43,6 +54,19 @@ pub struct RenderFeaturePostProcessKuwahara {
     params: wgpu::Buffer, // KuwaharaUniform, rewritten per frame
     params_uniform: KuwaharaUniform,
     frame_index: f32, // internal temporal-dither counter (wraps at 1024)
+    // flow field: sobel gradients + separable blur, computed once per frame
+    // from the original frame; the kernel reads it with one textureLoad
+    flow_pipeline: wgpu::RenderPipeline, // sobel pass
+    blur_pipeline: wgpu::RenderPipeline, // separable blur, run h then v
+    flow_texture_src: wgpu::Texture, // (E,F,G) tensor, Rgba16Float
+    flow_texture_tmp: wgpu::Texture, // intermediate for the second blur leg
+    flow_view_src: wgpu::TextureView,
+    flow_view_tmp: wgpu::TextureView,
+    flow_params_h: wgpu::Buffer, // dir (1,0), also bound to the sobel pass
+    flow_params_v: wgpu::Buffer, // dir (0,1)
+    flow_bg_sobel: wgpu::BindGroup, // original color + depth -> flow_texture_src
+    flow_bg_h: wgpu::BindGroup, // flow_texture_src -> flow_texture_tmp
+    flow_bg_v: wgpu::BindGroup, // flow_texture_tmp -> flow_texture_src
 }
 
 impl RenderFeaturePostProcessKuwahara {
@@ -140,6 +164,17 @@ impl RenderFeaturePostProcessKuwahara {
                     },
                     count: None,
                 },
+                // smoothed flow-field tensor (E,F,G) written by the flow passes
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
             ],
         });
 
@@ -177,6 +212,226 @@ impl RenderFeaturePostProcessKuwahara {
             cache: None,
         });
 
+        // ── flow field resources ──────────────────────────────────────
+        // sobel gradient tensor (luminance + k * depth) of the original frame,
+        // separable-blurred h then v; size follows the offscreen target
+        let s = Services::get();
+        let flow_size = wgpu::Extent3d {
+            width: s.gpu.capture_width,
+            height: s.gpu.capture_height,
+            depth_or_array_layers: 1,
+        };
+        let flow_format = wgpu::TextureFormat::Rgba16Float;
+        let flow_usage = wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING;
+
+        let flow_texture_src = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("flow tensor"),
+            size: flow_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: flow_format,
+            usage: flow_usage,
+            view_formats: &[],
+        });
+        let flow_view_src = flow_texture_src.create_view(&wgpu::TextureViewDescriptor::default());
+
+        let flow_texture_tmp = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("flow tensor tmp"),
+            size: flow_size,
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: flow_format,
+            usage: flow_usage,
+            view_formats: &[],
+        });
+        let flow_view_tmp = flow_texture_tmp.create_view(&wgpu::TextureViewDescriptor::default());
+
+        let flow_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("flow field shader"),
+            source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(FLOW_FIELD_WGSL)),
+        });
+
+        // blur axes are static: two small buffers, depth tensor weight k is a
+        // constant here (raise it to make strokes follow geometry harder)
+        let flow_params_h = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("flow params h"),
+            contents: cast_slice(&[FlowUniform { dx: 1.0, dy: 0.0, k_depth: 2.0, pad: 0.0 }]),
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
+        let flow_params_v = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("flow params v"),
+            contents: cast_slice(&[FlowUniform { dx: 0.0, dy: 1.0, k_depth: 2.0, pad: 0.0 }]),
+            usage: wgpu::BufferUsages::UNIFORM,
+        });
+
+        let flow_bind_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("flow field bind group layout"),
+            entries: &[
+                // source: original color (sobel) or blurred tensor (blur)
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                // depth (sobel only; blur binds it for layout parity)
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Depth,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                // flow parameters
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: NonZeroU64::new(16),
+                    },
+                    count: None,
+                },
+            ],
+        });
+
+        let flow_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("flow field pipeline layout"),
+            bind_group_layouts: &[&flow_bind_layout],
+            push_constant_ranges: &[],
+        });
+
+        let flow_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("flow sobel pipeline"),
+            layout: Some(&flow_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &flow_shader,
+                entry_point: Some("vs_flow"),
+                buffers: &[],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &flow_shader,
+                entry_point: Some("fs_sobel"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: flow_format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        let blur_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("flow blur pipeline"),
+            layout: Some(&flow_pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &flow_shader,
+                entry_point: Some("vs_flow"),
+                buffers: &[],
+                compilation_options: Default::default(),
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &flow_shader,
+                entry_point: Some("fs_blur"),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: flow_format,
+                    blend: Some(wgpu::BlendState::REPLACE),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+                compilation_options: Default::default(),
+            }),
+            primitive: wgpu::PrimitiveState::default(),
+            depth_stencil: None,
+            multisample: wgpu::MultisampleState::default(),
+            multiview: None,
+            cache: None,
+        });
+
+        let flow_bg_sobel = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("flow sobel bind group"),
+            layout: &flow_bind_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(offscreen_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(depth_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &flow_params_h,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+            ],
+        });
+
+        let flow_bg_h = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("flow blur h bind group"),
+            layout: &flow_bind_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&flow_view_src),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(depth_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &flow_params_h,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+            ],
+        });
+
+        let flow_bg_v = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("flow blur v bind group"),
+            layout: &flow_bind_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&flow_view_tmp),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::TextureView(depth_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &flow_params_v,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
+            ],
+        });
+
         // bind_group_input: sample from offscreen_view (initial scene)
         let bind_group_input = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("kuwahara bind group INPUT"),
@@ -201,6 +456,11 @@ impl RenderFeaturePostProcessKuwahara {
                         offset: 0,
                         size: None,
                     }),
+                },
+                // smoothed flow-field tensor (E,F,G)
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(&flow_view_src),
                 },
             ],
         });
@@ -230,6 +490,11 @@ impl RenderFeaturePostProcessKuwahara {
                         size: None,
                     }),
                 },
+                // smoothed flow-field tensor (E,F,G)
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(&flow_view_src),
+                },
             ],
         });
 
@@ -258,6 +523,11 @@ impl RenderFeaturePostProcessKuwahara {
                         size: None,
                     }),
                 },
+                // smoothed flow-field tensor (E,F,G)
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(&flow_view_src),
+                },
             ],
         });
 
@@ -274,6 +544,17 @@ impl RenderFeaturePostProcessKuwahara {
             params,
             params_uniform,
             frame_index: 0.0,
+            flow_pipeline,
+            blur_pipeline,
+            flow_texture_src,
+            flow_texture_tmp,
+            flow_view_src,
+            flow_view_tmp,
+            flow_params_h,
+            flow_params_v,
+            flow_bg_sobel,
+            flow_bg_h,
+            flow_bg_v,
             // bind_group_input_tex_id,
             // bind_group_a_tex_id,
             // bind_group_b_tex_id,
@@ -379,6 +660,34 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessKuwahara {
             let s = Services::get();
             let queue = s.gpu.queue();
             queue.write_buffer(&self.params, 0, cast_slice(&[self.params_uniform]));
+        }
+
+        // flow field first: sobel the original frame into (E,F,G) gradient
+        // covariance, then blur it h and v; the painterly kernel below reads
+        // the smoothed orientation with a single textureLoad per pixel
+        for (pipeline, bg, target) in [
+            (&self.flow_pipeline, &self.flow_bg_sobel, &self.flow_view_src),
+            (&self.blur_pipeline, &self.flow_bg_h, &self.flow_view_tmp),
+            (&self.blur_pipeline, &self.flow_bg_v, &self.flow_view_src),
+        ] {
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("flow field pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view: target,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(egui_wgpu::wgpu::Color { r: 0.0, g: 0.0, b: 0.0, a: 0.0 }),
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+
+            pass.set_pipeline(pipeline);
+            pass.set_bind_group(0, bg, &[]);
+            pass.draw(0..3, 0..1);
         }
 
         let bind_group: &BindGroup;
