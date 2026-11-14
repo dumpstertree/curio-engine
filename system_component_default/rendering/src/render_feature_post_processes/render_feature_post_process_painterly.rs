@@ -255,6 +255,19 @@ impl RenderFeaturePostProcessPainterly {
                     },
                     count: None,
                 },
+                // original frame: the stamp VERTEX probes continuous scene
+                // gradients for size and orientation; the guide is piecewise
+                // constant and nulls those probes over every flat block
+                wgpu::BindGroupLayoutEntry {
+                    binding: 4,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
             ],
         });
 
@@ -348,6 +361,10 @@ impl RenderFeaturePostProcessPainterly {
                     binding: 3,
                     resource: wgpu::BindingResource::TextureView(&brush_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(offscreen_view),
+                },
             ],
         });
 
@@ -375,6 +392,10 @@ impl RenderFeaturePostProcessPainterly {
                     binding: 3,
                     resource: wgpu::BindingResource::TextureView(&brush_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(offscreen_view),
+                },
             ],
         });
 
@@ -401,6 +422,10 @@ impl RenderFeaturePostProcessPainterly {
                 wgpu::BindGroupEntry {
                     binding: 3,
                     resource: wgpu::BindingResource::TextureView(&brush_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: wgpu::BindingResource::TextureView(offscreen_view),
                 },
             ],
         });

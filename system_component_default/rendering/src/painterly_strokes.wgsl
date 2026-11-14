@@ -11,14 +11,20 @@
 // degenerate quad (zero rasterised area).
 //
 // group(0) binding(0): sampler (blit pass only)
-// group(0) binding(1): guide texture (previous stage; the STAMP VERTEX stage
-//                       window-differences it for size and angle, so this
+// group(0) binding(1): guide texture (the COLOUR source; only the stamp
+//                       VERTEX samples it, plus the blit FRAGMENT, so this
 //                       binding is visible to both stages)
 // group(0) binding(2): StrokeParams uniform (14 scalars + 2 pads puts vp on
 //                       offset 64, matching the #[repr(C)] CPU mirror; total
 //                       128 bytes)
 // group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
 //                       procedural bristle mask shared by every daub)
+// group(0) binding(4): ORIGINAL FRAME (stamp VERTEX only; every size and
+//                       orientation probe runs on the continuous scene
+//                       gradients, never on the guide: the guide is
+//                       piecewise CONSTANT, so window differences over a
+//                       flat block read exactly null and the whole stamp
+//                       layer degenerates to a static screen-space lattice)
 
 struct StrokeParams {
     size: f32, // long-axis daub length in the FLAT-area case, px
@@ -56,6 +62,9 @@ var<uniform> paint_params: StrokeParams;
 @group(0) @binding(3)
 var brushTex: texture_2d<f32>;
 
+@group(0) @binding(4)
+var sceneTex: texture_2d<f32>;
+
 // --- blit pass: guide copied through untouched, so the daubs read as an
 // overlay on a coherent painterly palette instead of raw scene colour ---
 struct BlitOut {
@@ -88,25 +97,18 @@ fn fs_blit(in: BlitOut) -> @location(0) vec4<f32> {
 }
 
 // --- stamp pass helpers ---
-// the guide is read for BOTH scale and orientation by window differences
-// (not of a shared flow texture: the guide is what this feature is
-// guaranteed to own, which keeps the pass self-contained). textureSample is
-// fragment-only in WebGPU and the stamp vertex stage needs these taps, so
-// every read here is a textureLoad and the "smoothing" is done by averaging
-// tap boxes rather than by a filter
-fn lumAtGuide(px: vec2<i32>) -> f32 {
-    let d = textureDimensions(guideTex);
-    let c = vec2<i32>(
-        clamp(px.x, 0, i32(d.x) - 1),
-        clamp(px.y, 0, i32(d.y) - 1),
-    );
-    let col = textureLoad(guideTex, c, 0).rgb;
-    return dot(col, vec3<f32>(0.2126, 0.7152, 0.0722));
-}
-
-// daub colour is sampled once at the centre in the vertex stage: a FLAT
-// colour per stamp is what makes the result read as discrete paint instead of
-// a blur, which is the whole point of the stamp method
+// scale and orientation come from WINDOW DIFFERENCES ON THE ORIGINAL FRAME,
+// not on the guide (not from a shared flow texture either: the feature still
+// owns no kuwahara resources). WHY THE GUIDE CANNOT BE THE PROBE SOURCE:
+// the kuwahara output is piecewise constant, so a pair of tap windows
+// standing inside one colour block differences to exactly zero most of the
+// time, the tensor reads null, and every stamp falls back to the same
+// default shape at a hashed angle - a static screen-space lattice smeared
+// over the picture, which is what the earlier versions shipped. the RAW
+// frame is continuous: its gradient varies with where the window sits and
+// with the actual edge angle, so the tensor is meaningful everywhere the
+// scene has detail. textureSample is fragment-only in WebGPU and these
+// taps run in the VERTEX stage, so smoothing stays a tap-box average
 fn colorAtGuide(px: vec2<i32>) -> vec3<f32> {
     let d = textureDimensions(guideTex);
     let c = vec2<i32>(
@@ -116,39 +118,51 @@ fn colorAtGuide(px: vec2<i32>) -> vec3<f32> {
     return textureLoad(guideTex, c, 0).rgb;
 }
 
-// mean luminance over a 3x3 tap box, so the gradient varies with WHERE the
-// window sits instead of with which axis a single tap pair straddles
-fn lumBoxGuide(cx: f32, cy: f32) -> f32 {
+fn lumAtScene(px: vec2<i32>) -> f32 {
+    let d = textureDimensions(sceneTex);
+    let c = vec2<i32>(
+        clamp(px.x, 0, i32(d.x) - 1),
+        clamp(px.y, 0, i32(d.y) - 1),
+    );
+    let col = textureLoad(sceneTex, c, 0).rgb;
+    return dot(col, vec3<f32>(0.2126, 0.7152, 0.0722));
+}
+
+// mean luminance over a 3x3 tap box on the original frame, so the
+// gradient varies with WHERE the window sits instead of with which axis
+// a single tap pair straddles
+fn lumBoxScene(cx: f32, cy: f32) -> f32 {
     let bx = i32(round(cx));
     let by = i32(round(cy));
     var sum = 0.0;
     for (var oy: i32 = -1; oy <= 1; oy = oy + 1) {
         for (var ox: i32 = -1; ox <= 1; ox = ox + 1) {
-            sum = sum + lumAtGuide(vec2<i32>(bx + ox, by + oy));
+            sum = sum + lumAtScene(vec2<i32>(bx + ox, by + oy));
         }
     }
     return sum * (1.0 / 9.0);
 }
 
-// window-mean derivative of the guide along ONE unit direction: central
-// difference of two 3x3 tap boxes divided by the displacement, so the result
-// is a slope (luminance per pixel) instead of a raw jump and stays
-// comparable across daub sizes
+// window-mean derivative of the ORIGINAL FRAME along ONE unit direction:
+// central difference of two 3x3 tap boxes divided by the displacement, so
+// the result is a slope (luminance per pixel) instead of a raw jump and
+// stays comparable across daub sizes
 fn dirDeriv(px: vec2<f32>, d: vec2<f32>, r: f32) -> f32 {
-    let a = lumBoxGuide(px.x + d.x * r, px.y + d.y * r);
-    let b = lumBoxGuide(px.x - d.x * r, px.y - d.y * r);
+    let a = lumBoxScene(px.x + d.x * r, px.y + d.y * r);
+    let b = lumBoxScene(px.x - d.x * r, px.y - d.y * r);
     return (a - b) / max(2.0 * r, 0.0001);
 }
 
-// the guide's local second moment (E, F, G) of its gradient, recovered from
+// the frame's local second moment (E, F, G) of its gradient, recovered from
 // FOUR directional probes at 0/45/90/135 degrees. that quartet is a tight
 // frame, so the squared slopes pin the tensor exactly: E = q(0), G = q(90)
 // and F = (q(45) - q(135)) / 2, since q(t) = E cos^2 + 2F cos sin + G sin^2.
-// this is the SAME covariance the kuwahara reads off its blurred flow
-// textures, estimated here on the guide so the pass still owns no kuwahara
-// resources; taken at the daub's own extent, which is what made the old
-// one-pixel central difference snap every stamp to eight directions
-fn guideTensor(px: vec2<f32>, radius: f32) -> vec3<f32> {
+// this is the SAME covariance the kuwahara accumulates per quad over its
+// sobel flow textures, estimated here at the daub's own extent with tap
+// boxes in place of its blur passes; taken at the extent the stamp covers,
+// so a daub always belongs to the edge it sits on, and continuous because
+// it probes the raw frame rather than the piecewise-constant guide
+fn sceneTensor(px: vec2<f32>, radius: f32) -> vec3<f32> {
     var q0 = dirDeriv(px, vec2<f32>(1.0, 0.0), radius);
     q0 = q0 * q0;
     var q90 = dirDeriv(px, vec2<f32>(0.0, 1.0), radius);
@@ -228,12 +242,14 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let center = anchor * dims; // texture pixels
     let pxi = vec2<i32>(i32(center.x), i32(center.y));
 
-    // local contrast AND local anisotropy drive the stamp: the guide is
-    // already smoothed so these magnitudes are gentler than raw-scene sobels,
-    // and the tensor is read over the extent the stamp covers, so a daub
-    // always belongs to the edge it sits on
+    // local contrast AND local anisotropy of the RAW FRAME drive the stamp:
+    // the frame is continuous where the guide is not, so these magnitudes
+    // vary with the real surface detail (cracks, grout, studs) instead of
+    // collapsing to zero over every kuwahara block, and the tensor is read
+    // over the extent the stamp covers, so a daub always belongs to the
+    // edge it sits on
     let gradRadius = clamp(paint_params.size * 0.35, 1.5, 24.0);
-    let tf = guideTensor(center + vec2<f32>(0.5, 0.5), gradRadius);
+    let tf = sceneTensor(center + vec2<f32>(0.5, 0.5), gradRadius);
 
     // eigen decomposition of [[E, F], [F, G]], the same form the kuwahara's
     // flowFrame uses: lam1 is the dominant variance (how STEEP the change is,
@@ -257,11 +273,11 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let halfShort = halfLong / aspect;
 
     // theta = 0.5*atan2(2F, E - G) is the direction of MAXIMUM variance, i.e.
-    // ACROSS the edge, so the long axis is theta + 90 degrees. a near-flat
-    // neighbourhood has a null tensor and no tangent, and hashed angle there
-    // keeps flat areas varied; that test fires exactly there because the guide
-    // is piecewise constant, so every tap box inside one colour region is
-    // bit-identical and the difference is exactly zero
+    // ACROSS the edge, so the long axis is theta + 90 degrees. the hashed
+    // fallback now fires only on genuinely empty regions (bare floor, fog),
+    // because the raw frame is never piecewise constant: over the walls the
+    // surface detail gives a real tangent for almost every stamp, which is
+    // what stops the paint from sitting as a fixed screen-space pattern
     var angle = (ditherHash(vec2<f32>(s, 211.0 + seed), seed) - 0.5) * 6.2831853;
     if (lam1 > 0.000001) {
         angle = 0.5 * atan2(2.0 * tf.y, tf.x - tf.z) + 1.5707963;
