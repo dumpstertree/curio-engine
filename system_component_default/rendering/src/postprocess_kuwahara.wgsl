@@ -203,16 +203,23 @@ fn flowFrame(tf: vec4<f32>) -> vec3<f32> {
     let lam2 = max(halfTrace - disc, 0.0);
     let anisotropy = clamp(lam2 / max(lam1, 0.0001), 0.0, 1.0);
     var theta = 0.5 * atan2(2.0 * t.xy, t.xx - t.yy);
+    var fold = 0.0;
     if (theta > 0.7853981) {
         theta = theta - 1.5707962;
+        fold = 1.0;
     }
     if (theta < -0.7853981) {
         theta = theta + 1.5707962;
+        fold = 1.0;
     }
     let thetaBucket = round(theta / 0.3926991) * 0.3926991;
     let stretch = 1.0 + kuwahara_params.stroke * (1.0 - anisotropy);
     let f = 1.0 / (1.0 + max(lam1, 0.0) * 40.0);
-    return vec3<f32>(thetaBucket, stretch, max(f, 0.2));
+    // the fold swaps which axis carries the long radius; stash that parity in
+    // the sign of stretch so the blob territory follows the SAME axis as the
+    // window (mismatched axes were the comb-tooth fringe bug)
+    let s = select(stretch, -stretch, fold > 0.5);
+    return vec3<f32>(thetaBucket, s, max(f, 0.2));
 }
 
 // --- Kuahara filter, anisotropic ---
@@ -266,12 +273,21 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
             let jxR = rc * jx - rs * jy;
             let jyR = rs * jx + rc * jy;
             let ac = cf + vec2<f32>(jxR, jyR) * B * 0.5;
-            // distance measured in the candidate's window metric: r_u across
-            // the edge, r_v along it, both scaled by the detail shrink
+            // distance measured in the candidate's window metric. flowFrame
+            // folded theta into its bucket and stashed the fold parity in the
+            // SIGN of stretch: a folded frame swaps which axis carries the
+            // long radius, so territory must follow the SAME axis as the
+            // window, or blobs stretch ACROSS horizontal edges (the comb-
+            // tooth fringe bug). st is the stretch magnitude, longV whether
+            // the long radius sits on the v (along-edge) axis of the bucket
+            let st = abs(frStretch);
+            let longV = frStretch > 0.0;
+            let rU = select(B * frF / st, B * frF * st, longV);
+            let rV = select(B * frF * st, B * frF / st, longV);
             let dxp = pxF.x + 0.5 - ac.x;
             let dyp = pxF.y + 0.5 - ac.y;
-            let du = (rc * dxp + rs * dyp) / max(B * frF / frStretch, 1.0);
-            let dv = (rs * dxp - rc * dyp) / max(B * frF * frStretch, 1.0);
+            let du = (rc * dxp + rs * dyp) / max(rU, 1.0);
+            let dv = (rs * dxp - rc * dyp) / max(rV, 1.0);
             let score = (du * du + dv * dv) / max(tw, 0.0001);
             if (score < bestScore) {
                 bestScore = score;
@@ -295,15 +311,14 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     let lam2 = max(halfTrace - disc, 0.0);
     let anisotropy = clamp(lam2 / max(lam1, 0.0001), 0.0, 1.0);
 
-    // fold the kernel rotation into [-45, 45] degrees: the four-quadrant
-    // kernel is symmetric under a 90-degree rotation
-    var theta = 0.5 * atan2(2.0 * t.xy, t.xx - t.yy);
-    if (theta > 0.7853981) {
-        theta = theta - 1.5707962;
-    }
-    if (theta < -0.7853981) {
-        theta = theta + 1.5707962;
-    }
+    // no fold here: the four-quadrant window set {(+-u, +-v)} is invariant
+    // under 90-degree rotation, but the ANISOTROPIC radii (tight across the
+    // edge, long along it) are not fold-safe unless the radii are swapped too.
+    // using the full gradient direction keeps r_u ACROSS the edge and r_v
+    // ALONG it always; folding without swapping had stretched windows and
+    // territories across horizontal edges -> the comb-tooth fringe along
+    // floor silhouettes in the last renders
+    let theta = 0.5 * atan2(2.0 * t.xy, t.xx - t.yy);
 
     let c = cos(theta);
     let s = sin(theta);
