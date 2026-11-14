@@ -1,7 +1,11 @@
 // === flow field passes ===
 // written once per frame before the kuwahara pass; the painterly kernel then
 // reads the smoothed orientation with a single textureLoad instead of
-// estimating a tensor over its own window per pixel
+// estimating a tensor over its own window per pixel.
+// RUNS ON THE HALF-RES GUIDE GRID: the sobel reads the downsampled source
+// (bound by the CPU wrapper) so its taps span 2 capture px each, and the
+// fixed 7-tap blur widens accordingly on screen — quarter of the pixels for
+// an orientation field the kernel only samples once
 //
 // group(0) binding(0): source color texture (textureLoad; sobel pass)
 //                     / blurred tensor texture (blur pass, same slot)

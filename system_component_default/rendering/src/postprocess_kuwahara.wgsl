@@ -1,7 +1,19 @@
 // === Bindings ===
+// THE KERNEL RUNS ON A HALF-RES GUIDE GRID: the CPU wrapper blits the chain
+// source down into a half-resolution texture, runs this pass and the flow
+// field on it, then blits the finished guide back UP to the full-res post
+// target. The guide only carries flat patch colours, so the bilinear upscale
+// reads clean under the full-res stamp and outline layers and the whole
+// kernel costs a quarter of the pixels for the same look. Radius, sigma and
+// tau therefore speak HALF-RES texels: the CPU wrapper halves the ledger's
+// screen-px values so tuning numbers keep describing the on-screen picture.
+// Everything indexes by textureDimensions() of the bound textures and depths/
+// viewports go through normalized uv, so mixed resolutions are legal:
 // group(0) binding(0): sampler
-// group(0) binding(1): texture2D (previous post-process stage)
-// group(0) binding(2): depth texture (depth2D, fetched with textureLoad)
+// group(0) binding(1): texture2D (half-res guide grid once the chain runs)
+// group(0) binding(2): depth texture (depth2D, fetched with textureLoad;
+//                       stays at full capture res, sampled through uv * its
+//                       own dims)
 // group(0) binding(3): KuwaharaParams uniform
 // group(0) binding(4): flow field texture (smoothed E,F,G tensor from the
 //                      sobel+blur passes, fetched with textureLoad)
@@ -74,6 +86,16 @@ fn vs_fullscreen(@builtin(vertex_index) i: u32) -> VSOut {
     out.uv.y = 1.0 - out.uv.y;
 
     return out;
+}
+
+// --- linear copy for the half-res guide chain: run by the CPU wrapper first
+// to bring the full-res chain source DOWN onto the guide grid, and last to
+// hand the finished guide back UP to the full-res post target. The guide
+// carries only flat patch colours, the crispness lives in the full-res stamp
+// and outline layers on top, so bilinear both ways is artefact-free
+@fragment
+fn fs_blit(in: VSOut) -> @location(0) vec4<f32> {
+    return textureSample(myTexture, mySampler, in.uv);
 }
 
 // gaussian weight with axis scales in pixels; <=0 on either axis disables the
