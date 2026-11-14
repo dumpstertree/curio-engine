@@ -5,10 +5,11 @@
 //
 // no stroke list exists: every daub's parameters (anchor, size, angle, colour)
 // are recomputed in the vertex stage from its slot index, so there are no
-// atomics, no compaction and no storage buffer. slot anchors are points of the
-// R2 low-discrepancy sequence plus hash jitter, which is why the look has no
-// visible lattice at all; slots that fail the keep test collapse to a
-// degenerate quad (zero rasterised area).
+// atomics, no compaction and no storage buffer. slot anchors are two
+// independent hashes per slot; a low-discrepancy sequence was tried and its
+// point SET shows diagonal band structure at any fixed N, which reads as a
+// static screen-space lattice no probe fix can remove; slots that fail the
+// keep test collapse to a degenerate quad (zero rasterised area).
 //
 // group(0) binding(0): sampler (blit pass only)
 // group(0) binding(1): guide texture (the COLOUR source; only the stamp
@@ -224,12 +225,18 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         return out;
     }
 
-    // R2 low-discrepancy anchors: the pair (frac(i*phi), frac(i*psi)) has
-    // star-like distribution, so no cell structure exists to see; jitter then
-    // breaks the near-regular rows the sequence alone still shows
+    // hashed anchors, NOT a low-discrepancy sequence: R2 looked like it
+    // spread evenly, but its 1024-point SET has band structure (the
+    // three-distance theorem: consecutive points lie on three families of
+    // parallel lines, slope psi/phi), and that reads exactly as the
+    // "static screenspace diagonal lattice" seen in every build - the
+    // pattern never depended on the scene, so no probe fix could ever
+    // remove it. two independent per-slot hashes have no ordering
+    // structure at all: evenness comes from the count and the keep test,
+    // clumping is fine and reads as grouped brushwork
     var anchor = vec2<f32>(
-        fract(s * 1.61803399),
-        fract(s * 1.20606794),
+        ditherHash(vec2<f32>(s, 3.0 + seed), seed),
+        ditherHash(vec2<f32>(s, 97.0 + seed), seed),
     );
     let cell = 1.0 / sqrt(f32(SLOT_COUNT));
     let jx = ditherHash(vec2<f32>(s, 11.0 + seed), seed) - 0.5;
@@ -251,6 +258,27 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let gradRadius = clamp(paint_params.size * 0.35, 1.5, 24.0);
     let tf = sceneTensor(center + vec2<f32>(0.5, 0.5), gradRadius);
 
+    // a stamp sitting exactly on a grout or crack line straddles it
+    // SYMMETRICALLY, so every probe window pairs into matching blocks and
+    // the tensor reads near null - which used to mean "flat area, take the
+    // big daub", painting dark smoke blobs along every grout line. compare
+    // the centre against a ring of window boxes at half the probe radius:
+    // a dark centre with a lighter ring is a line, and a line is busy, so
+    // the stamp shrinks to roughly the line's width instead of blooming
+    let midR = gradRadius * 0.5;
+    let cx = center.x + 0.5;
+    let cy = center.y + 0.5;
+    let centerLum = lumBoxScene(cx, cy);
+    let ringMean = (
+        lumBoxScene(cx + midR, cy) +
+        lumBoxScene(cx - midR, cy) +
+        lumBoxScene(cx, cy + midR) +
+        lumBoxScene(cx, cy - midR)
+    ) * 0.25;
+    // signed on purpose: only DARK centres bloom (grout and cracks), a
+    // bright specular dot keeps the tensor's own verdict
+    let lineContrast = clamp((ringMean - centerLum) * 6.0, 0.0, 1.0);
+
     // eigen decomposition of [[E, F], [F, G]], the same form the kuwahara's
     // flowFrame uses: lam1 is the dominant variance (how STEEP the change is,
     // in luminance per pixel now that dirDeriv divides out the displacement)
@@ -260,7 +288,7 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let lam1 = halfTrace + disc;
     let lam2 = max(halfTrace - disc, 0.0);
     let anisotropy = clamp(lam2 / max(lam1, 0.000001), 0.0, 1.0); // 1 = isotropic
-    let contrast = clamp(sqrt(lam1) * paint_params.mag_scale, 0.0, 1.0);
+    let contrast = clamp(max(sqrt(lam1) * paint_params.mag_scale, lineContrast), 0.0, 1.0);
 
     let longPx = mix(paint_params.size, paint_params.size * paint_params.size_min, contrast);
     // SHAPE follows the flow: a strongly directional neighbourhood (a real
