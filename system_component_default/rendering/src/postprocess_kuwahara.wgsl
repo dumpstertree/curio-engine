@@ -227,10 +227,13 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     // depth layer only
     let dCenter = depthAt(uv);
 
-    // elongated facets: stretch each sub-window ALONG the edge (v) and
-    // compress it ACROSS (u), area-preserving so the tap count stays ~flat.
-    // stroke = 0 keeps square windows (old behavior)
-    let stretch = 1.0 + clamp(kuwahara_params.stroke, 0.0, 2.0);
+    // elongated facets, gated on the SAME anisotropy factor as theta: ~1 =
+    // isotropic variation (flat or blobby) -> square windows; ~0 = strong
+    // edge -> long window. unstretched-flat is what keeps smooth areas clean
+    // big facets instead of stamping axis-aligned checkerboard rectangles
+    // whose quadrant means differ whenever a shadow or silhouette falls
+    // inside the window
+    let stretch = 1.0 + kuwahara_params.stroke * (1.0 - anisotropy);
     let r_u = max(1, i32(round(f32(radius) / stretch))); // across the edge
     let r_v = max(1, i32(round(f32(radius) * stretch))); // along the edge
     let step = subwindowStep(radius);
