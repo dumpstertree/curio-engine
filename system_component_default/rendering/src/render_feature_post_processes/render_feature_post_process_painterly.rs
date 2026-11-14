@@ -131,7 +131,7 @@ impl RenderFeaturePostProcessPainterly {
             // the busiest ones, held along edges at 2.2:1
             size: 22.0,
             size_min: 0.35,
-            mag_scale: 14.0, // window-mean gradients damp a touch below 1-tap sobels, so sensitivity is a little higher than the old 10
+            mag_scale: 45.0, // SLOPE sensitivity now that dirDeriv divides out the 2r displacement: a 0.4-lumi grout jump over ~15px probe stands at ~0.026 per px, and 45 pins that at full contrast (small round daub), while faint interior crack detail (~0.007 slope) stays near 0.3 for long flat daubs
             elongation: 2.6, // real edges carry the full stretch now
             aspect_min: 1.2, // no edge to follow: near-round daub
             alpha: 1.0,

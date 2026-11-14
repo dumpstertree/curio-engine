@@ -26,7 +26,7 @@ impl SysRecordStrokePaint {
         SysRecordStrokePaint {
             size: 22.0, // long-axis daub in flat areas
             size_min: 0.35, // busiest areas keep ~a third of that length
-            mag_scale: 14.0, // contrast sensitivity against the smoothed guide (raised from 10: the orientation is now read from window-mean differences, which damp magnitudes slightly)
+            mag_scale: 45.0, // slope (luminance per px) sensitivity: dirDeriv divides out the probe displacement, so a grout jump of ~0.4 over 15px stands at ~0.026/px and this pins it at full contrast
             elongation: 2.6, // anisotropic neighbourhoods (a real edge) carry the full stretch
             aspect_min: 1.2, // no edge to follow: near-round daub
             alpha: 1.0,
