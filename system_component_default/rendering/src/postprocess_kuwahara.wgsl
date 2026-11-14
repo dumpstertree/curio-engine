@@ -123,7 +123,15 @@ fn depthWeight(dz: f32, strength: f32) -> f32 {
     if (strength <= 0.0) {
         return 1.0;
     }
-    return exp(-strength * abs(dz));
+    // HARD chop now: samples jumping past 1/strength contribute nothing, so a
+    // window mean never carries a blended grey halo across a silhouette (the
+    // soft exp falloff bled a 1-cell smear along the canopy edges). windows
+    // falling entirely on another depth layer are made unselectable in the
+    // selection pass below
+    if (abs(dz) * strength < 1.0) {
+        return 1.0;
+    }
+    return 0.0;
 }
 
 // deterministic scalar noise at an arbitrary pixel position, with the same
@@ -180,6 +188,33 @@ fn subwindowStep(radius: i32) -> i32 {
     return 1;
 }
 
+// shared frame computation from a raw flow tensor: (theta bucket, stretch,
+// detail-shrink). theta is folded into [-45, 45] degrees (the four-quadrant
+// kernel is symmetric under 90-degree rotation) and bucketed to four
+// directions so a whole region shares one blob orientation. detail-shrink
+// f = 1/(1 + lam1*40): where local variation is dense (distant trees, plank
+// stacks, albedo detail) windows AND blob territories shrink together, so
+// detail stays crisp small strokes instead of dissolving at full stroke size
+fn flowFrame(tf: vec4<f32>) -> vec3<f32> {
+    let t = Tensor2(tf.x, tf.z, tf.y);
+    let halfTrace = 0.5 * (t.xx + t.yy);
+    let disc = sqrt(0.25 * (t.xx - t.yy) * (t.xx - t.yy) + t.xy * t.xy);
+    let lam1 = halfTrace + disc;
+    let lam2 = max(halfTrace - disc, 0.0);
+    let anisotropy = clamp(lam2 / max(lam1, 0.0001), 0.0, 1.0);
+    var theta = 0.5 * atan2(2.0 * t.xy, t.xx - t.yy);
+    if (theta > 0.7853981) {
+        theta = theta - 1.5707962;
+    }
+    if (theta < -0.7853981) {
+        theta = theta + 1.5707962;
+    }
+    let thetaBucket = round(theta / 0.3926991) * 0.3926991;
+    let stretch = 1.0 + kuwahara_params.stroke * (1.0 - anisotropy);
+    let f = 1.0 / (1.0 + max(lam1, 0.0) * 40.0);
+    return vec3<f32>(thetaBucket, stretch, max(f, 0.2));
+}
+
 // --- Kuahara filter, anisotropic ---
 // orientation comes from the smoothed flow field (E,F,G blurred gradient
 // covariance of luminance + k*depth), so stroke direction is coherent across
@@ -198,32 +233,50 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     let dims = vec2<f32>(textureDimensions(myTexture));
     let texel = 1.0 / dims;
 
-    // stroke lattice v2: base cells of radius B, but each base cell gets a
-    // hash-jittered CENTRE and a hash-jittered TERRITORY WEIGHT; the pixel
-    // belongs to the nearest weighted centre (weighted Voronoi) -> irregular
-    // blob-shaped patches of varied size that interlock instead of a uniform
-    // grid, killing the pixel-art signature of an axis-aligned checkerboard.
-    // windows, orientation and selection noise all anchor on the winning blob
-    // centre, so a whole blob still shares one window mean (discrete patch)
+    // stroke lattice v3: jittered blobs in the STROKE frame. each base cell
+    // hashes a jittered centre (rotated into its own theta-bucket frame) and
+    // owns territory under ANISOTROPIC distance measured in its window
+    // metric (across-edge tight, along-edge long) -> blobs become ellipses
+    // stretched along the local edge, so patch borders run along strokes and
+    // contours stop stair-stepping across them. the detail-shrink of dense
+    // areas scales both blob and window, keeping far/detail features crisp
     let B = max(1.0, round(kuwahara_params.radius));
     let pxF = uv * dims;
     let cell0 = vec2<i32>(floor(pxF / B));
     var bestScore = 1000000.0;
     var anchorF = vec2<f32>(0.0);
+    var winF = 1.0; // winning blob's detail-shrink: kernel windows follow it
     for (var oy: i32 = -1; oy <= 1; oy = oy + 1) {
         for (var ox: i32 = -1; ox <= 1; ox = ox + 1) {
-            let c = vec2<f32>(cell0 + vec2<i32>(ox, oy));
-            let cf = (c + vec2<f32>(0.5, 0.5)) * B; // base centre in px
+            let c = cell0 + vec2<i32>(ox, oy);
+            let cf = (vec2<f32>(c) + vec2<f32>(0.5, 0.5)) * B; // base centre px
+            let cfPx = vec2<i32>(
+                clamp(i32(round(cf.x)), 0, i32(dims.x) - 1),
+                clamp(i32(round(cf.y)), 0, i32(dims.y) - 1),
+            );
+            let fr = flowFrame(textureLoad(flowTex, cfPx, 0));
+            let frT = fr.x;
+            let frStretch = fr.y;
+            let frF = fr.z;
             let jx = cellHash(cf, 31.7) - 0.5;
             let jy = cellHash(cf, 57.3) - 0.5;
-            let tw = 0.6 + 0.8 * cellHash(cf, 89.1); // territory weight
-            let ac = cf + vec2<f32>(jx, jy) * B * 0.7; // jittered anchor
-            let dx = pxF.x + 0.5 - ac.x;
-            let dy = pxF.y + 0.5 - ac.y;
-            let score = (dx * dx + dy * dy) / max(tw, 0.0001);
+            let tw = 0.6 + 0.8 * cellHash(cf, 89.1);
+            let rc = cos(frT);
+            let rs = sin(frT);
+            let jxR = rc * jx - rs * jy;
+            let jyR = rs * jx + rc * jy;
+            let ac = cf + vec2<f32>(jxR, jyR) * B * 0.5;
+            // distance measured in the candidate's window metric: r_u across
+            // the edge, r_v along it, both scaled by the detail shrink
+            let dxp = pxF.x + 0.5 - ac.x;
+            let dyp = pxF.y + 0.5 - ac.y;
+            let du = (rc * dxp + rs * dyp) / max(B * frF / frStretch, 1.0);
+            let dv = (rs * dxp - rc * dyp) / max(B * frF * frStretch, 1.0);
+            let score = (du * du + dv * dv) / max(tw, 0.0001);
             if (score < bestScore) {
                 bestScore = score;
                 anchorF = ac;
+                winF = frF;
             }
         }
     }
@@ -286,8 +339,10 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     // whose quadrant means differ whenever a shadow or silhouette falls
     // inside the window
     let stretch = 1.0 + kuwahara_params.stroke * (1.0 - anisotropy);
-    let r_u = max(1, i32(round(f32(radius) / stretch))); // across the edge
-    let r_v = max(1, i32(round(f32(radius) * stretch))); // along the edge
+    // detail-aware: the winning blob's shrink scales the window with its
+    // territory, so dense-variation areas sample fine and stay crisp
+    let r_u = max(2, i32(round(f32(radius) * winF / stretch))); // across the edge
+    let r_v = max(2, i32(round(f32(radius) * winF * stretch))); // along the edge
     let step = subwindowStep(radius);
 
     // sample the four sub-windows in the rotated frame
@@ -332,7 +387,13 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
     // variance preference, 1 = fully stochastic roulette)
     var l2s: array<f32, 4>;
     var meanL2 = 0.0;
+    var nValid = 0.0;
     for (var q: i32 = 0; q < 4; q = q + 1) {
+        if (weight[q] < 0.0005) {
+            // hard-chopped window: entirely another depth layer, unselectable
+            l2s[q] = 1000000.0;
+            continue;
+        }
         let lw = max(sl[q], 0.0001);
         let mu = slu[q] / lw;
         let mv = slv[q] / lw;
@@ -343,18 +404,28 @@ fn Kuahara(uv: vec2<f32>, radius: i32, sigma: f32, tau: f32) -> vec3<f32> {
         let d = sqrt(0.25 * (cuu - cvv) * (cuu - cvv) + cuv * cuv);
         l2s[q] = max(tr - d, 0.0);
         meanL2 = meanL2 + l2s[q];
+        nValid = nValid + 1.0;
     }
-    meanL2 = meanL2 * 0.25;
+    meanL2 = meanL2 / max(nValid, 1.0);
 
     let amount = max(0.0, kuwahara_params.dither_amount);
     var scores: array<f32, 4>;
     var total = 0.0;
     for (var q: i32 = 0; q < 4; q = q + 1) {
-        let rel = l2s[q] / max(meanL2, 0.0001);
-        let rel2 = rel * rel;
-        let rel8 = rel2 * rel2 * rel2 * rel2;
-        scores[q] = mix(1.0 / (1.0 + rel8), 1.0, amount);
+        scores[q] = 0.0;
+        if (weight[q] >= 0.0005) {
+            let rel = l2s[q] / max(meanL2, 0.0001);
+            let rel2 = rel * rel;
+            let rel8 = rel2 * rel2 * rel2 * rel2;
+            scores[q] = mix(1.0 / (1.0 + rel8), 1.0, amount);
+        }
         total = total + scores[q];
+    }
+
+    // degenerate: every window chopped out (anchor sits on a lone texel of
+    // its own depth layer) -> fall back to the raw texel, never a black patch
+    if (total < 0.0001) {
+        return textureSample(myTexture, mySampler, auv).rgb;
     }
 
     // weighted roulette on the winning blob's noise value (blob-coherent: the
