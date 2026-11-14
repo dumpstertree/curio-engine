@@ -20,6 +20,12 @@ const CAMERA_NEAR: f32       = 0.1;  // must match your camera near
 const CAMERA_FAR: f32        = 512.0; // must match your camera far
 const DEPTH_EPSILON: f32     = 0.999; // threshold for "no object" (far plane)
 
+// --- Continuous grade (fog is the last pass, so this sits on the painted
+// frame) --- warm shift + slight desaturation. NOT a palette quantise:
+// hues stay continuous, only global colour temperature and chroma move
+const GRADE_SATURATION: f32 = 0.85; // 1 = scene chroma untouched
+const GRADE_WARMTH: vec3<f32> = vec3<f32>(1.06, 1.0, 0.92); // warm multiply
+
 // --- Vertex output ---
 struct VSOut {
     @builtin(position) pos: vec4<f32>,
@@ -77,7 +83,13 @@ fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
     // mix scene color with fog color
     let finalColor: vec3<f32> = mix(color.rgb, FOG_COLOR, fogFactor);
 
-    return vec4<f32>(finalColor, color.a);
+    // continuous grade: desaturate toward the luminance then warm-shift,
+    // pulling the painterly masses toward the reference colour temperature
+    // without constraining the palette
+    let luma: f32 = dot(finalColor, vec3<f32>(0.2126, 0.7152, 0.0722));
+    let graded: vec3<f32> = mix(vec3<f32>(luma), finalColor, GRADE_SATURATION) * GRADE_WARMTH;
+
+    return vec4<f32>(graded, color.a);
 }
 // @fragment
 // fn fs_fullscreen(in: VSOut) -> @location(0) vec4<f32> {
