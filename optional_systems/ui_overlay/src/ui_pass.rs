@@ -144,6 +144,18 @@ impl UiOverlayPass {
             None => {}
         }
 
+        // BISECT (temporary): throw away the computed boxes and upload one
+        // hardcoded full-screen green quad through the SAME pipeline/buffer/
+        // pass. Green scene area => pipeline is fine, bug is in the geometry
+        // maths. No green + no error => the pipeline itself is dead.
+        vertices.clear();
+        vertices.push(UiVertex::new([-1.0, -1.0], [0.0, 1.0, 0.0, 1.0]));
+        vertices.push(UiVertex::new([1.0, -1.0], [0.0, 1.0, 0.0, 1.0]));
+        vertices.push(UiVertex::new([-1.0, 1.0], [0.0, 1.0, 0.0, 1.0]));
+        vertices.push(UiVertex::new([-1.0, 1.0], [0.0, 1.0, 0.0, 1.0]));
+        vertices.push(UiVertex::new([1.0, -1.0], [0.0, 1.0, 0.0, 1.0]));
+        vertices.push(UiVertex::new([1.0, 1.0], [0.0, 1.0, 0.0, 1.0]));
+
         let device = Services::get().gpu.device();
         let queue = Services::get().gpu.queue();
 
