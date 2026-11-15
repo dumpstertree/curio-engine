@@ -550,28 +550,50 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // the probe covers the extent the stamp draws, so it scales with the
     // layer's long axis too
     let gradRadius = clamp(paint_params.size * L.x * 0.35, 1.5, 24.0);
-    let tf = sceneTensor(center + vec2<f32>(0.5, 0.5), gradRadius);
-
     // a stamp sitting exactly on a grout or crack line straddles it
     // SYMMETRICALLY, so every probe window pairs into matching blocks and
     // the tensor reads near null - which used to mean "flat area, take the
     // big daub", painting dark smoke blobs along every grout line. compare
-    // the centre against a ring of window boxes at half the probe radius:
-    // a dark centre with a lighter ring is a line, and a line is busy, so
-    // the stamp shrinks to roughly the line's width instead of blooming
-    let midR = gradRadius * 0.5;
+    // the centre against a ring of window boxes: a dark centre with a
+    // lighter ring is a line, and a line is busy, so the stamp shrinks to
+    // roughly the line's width instead of blooming.
+    // THE RING ALSO FEEDS THE SECOND MOMENT: the reference hands every
+    // stroke a SOBEL flow field that was smoothed over the image, so a
+    // stroke centred 10 px INSIDE the sphere still takes the sphere's edge
+    // tangent. A centre-only tensor misses that: only strokes centred
+    // exactly on an edge ever see it, and every other stroke near the
+    // edge is blind and hash-angles across it (the misaligned edge
+    // strokes). Summing the ring quartet's slopes into the same moment
+    // means an edge anywhere within the stamp's neighbourhood sets the
+    // orientation: the cheap local analogue of the reference's field
+    let ringR = gradRadius * 0.8;
     let cx = center.x + 0.5;
     let cy = center.y + 0.5;
     let centerLum = lumBoxScene(cx, cy);
-    let ringMean = (
-        lumBoxScene(cx + midR, cy) +
-        lumBoxScene(cx - midR, cy) +
-        lumBoxScene(cx, cy + midR) +
-        lumBoxScene(cx, cy - midR)
-    ) * 0.25;
+    let ringE = lumBoxScene(cx + ringR, cy);
+    let ringW = lumBoxScene(cx - ringR, cy);
+    let ringS = lumBoxScene(cx, cy + ringR);
+    let ringN = lumBoxScene(cx, cy - ringR);
+    let ringMean = (ringE + ringW + ringS + ringN) * 0.25;
     // signed on purpose: only DARK centres bloom (grout and cracks), a
     // bright specular dot keeps the tensor's own verdict
     let lineContrast = clamp((ringMean - centerLum) * 6.0, 0.0, 1.0);
+
+    // the ring quartet recovered as slopes over its own displacement (same
+    // luminance-per-px units and the same E/F/G quartet as the centre probes;
+    // diagonals at the same displacement, hence diagR = ringR / sqrt(2))
+    let diagR = ringR * 0.7071068;
+    let ringNE = lumBoxScene(cx + diagR, cy - diagR);
+    let ringSW = lumBoxScene(cx - diagR, cy + diagR);
+    let ringNW = lumBoxScene(cx - diagR, cy - diagR);
+    let ringSE = lumBoxScene(cx + diagR, cy + diagR);
+    let ringStep = max(2.0 * ringR, 0.0001);
+    let eR = (ringE - ringW) / ringStep;
+    let gR = (ringS - ringN) / ringStep;
+    let dqR = (ringSE - ringNW) / ringStep;
+    let dnR = (ringSW - ringNE) / ringStep;
+    var tf = sceneTensor(vec2<f32>(cx, cy), gradRadius) +
+        vec3<f32>(eR * eR, 0.5 * (dqR * dqR - dnR * dnR), gR * gR);
 
     // eigen decomposition of [[E, F], [F, G]], the same form the kuwahara's
     // flowFrame uses: lam1 is the dominant variance (how STEEP the change is,
@@ -632,13 +654,15 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
 
     // SHAPE follows the flow, gated by DIRECTIONAL CONFIDENCE: a strongly
     // directional neighbourhood (a real edge, anisotropy near 0) carries the
-    // full stretch, a near-isotropic one falls back to aspect_min. The raw
-    // window slopes are still noise-susceptible at weak magnitudes, so the
-    // tensor contributes to stretch only in proportion to how steep the
-    // window difference actually is (mag_scale pins a real 0.4-jump edge at
-    // 1 and dither-level slopes sit far below that): a weak tensor no longer
-    // paints random streaks per stroke in flat areas, it paints round daubs
-    let grad_confidence = smoothstep(0.1, 0.3, sqrt(lam1) * paint_params.mag_scale);
+    // full stretch, a near-isotropic one falls back to aspect_min. The
+    // confidence is the PHYSICAL slope magnitude (luminance per px),
+    // deliberately NOT scaled by mag_scale: dither/fog noise that survives
+    // the stride-2 box average sits under ~0.5 %/px, and any real edge - a
+    // soft sphere silhouette included - crosses 1-2 %/px. A weak signal
+    // therefore gets round hash-angle daubs and a real one gets the tensor
+    // tangent plus stretch, and no stale/zeroed knob in a persisted config
+    // can switch the alignment off; mag_scale stays the SIZE response only
+    let grad_confidence = smoothstep(0.005, 0.02, sqrt(lam1));
     let aniso_eff = mix(1.0, anisotropy, grad_confidence);
     let tensorAspect = paint_params.aspect_min + (paint_params.elongation - paint_params.aspect_min) * (1.0 - aniso_eff);
     let aspect = max(mix(paint_params.elongation, tensorAspect, paint_params.flow), 1.0);
