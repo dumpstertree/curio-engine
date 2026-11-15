@@ -21,7 +21,11 @@ const PAINTERLY_WGSL: &str = include_str!("../painterly_strokes.wgsl");
 // GUIDE. pass 1 blits it, pass 2 stamps daubs over it. there is no stroke list
 // to keep in sync: slot parameters are regenerated in the vertex stage from an
 // R2 low-discrepancy sequence, so the only CPU state is the uniform below
-const STAMP_SLOTS: u32 = 4096; // must match SLOT_COUNT in the WGSL
+const LAYER_SLOTS: u32 = 4096; // per-layer grid: must match SLOT_COUNT in the WGSL
+const STAMP_SLOTS: u32 = 3 * LAYER_SLOTS; // one FULL grid per layer (mass, mid, detail):
+//                        the contrast gate picks each region's SCALE, it must
+//                        never thin its coverage, so every layer gets the whole
+//                        lattice of rays, not a global slot fraction
 const STAMP_VERTICES: u32 = 6 * STAMP_SLOTS; // two triangles per slot
 const BRUSH_SIZE: u32 = 64; // procedural bristle mask (power of two, rows pad to 4)
 
@@ -111,7 +115,7 @@ pub struct StrokeUniform {
     life: f32, // birth/death cycle mean in seconds (0 = hard pops kept)
     layers: [[f32; 4]; 3], // per layer (mass, mid, detail): long-axis mult,
     //                        alpha mult, contrast gate lo, gate hi; slots
-    //                        [0,512), [512,1536), [1536,4096) stamp in this
+    //                        [0,4096), [4096,8192), [8192,12288) stamp in this
     //                        order, so mass sits UNDER the fine layer
     vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
 }
@@ -189,9 +193,11 @@ impl RenderFeaturePostProcessPainterly {
             // brush breathing rather than as the field sliding
             life: 4.0, // mean birth/death cycle: each stroke fades up and down
             //          on a phase of its own, so camera reveals land mid-fade
-            // three size-graded layers gated by contrast band: mass only in
-            // flat areas, detail only in busy ones, mid in between; alpha
-            // mult keeps the masses quiet so they read as an underpainting
+            // three contrast-gated layers over one draw: EACH layer gets its own
+            // full 4096-ray grid (mass [0,4096), mid [4096,8192), detail the rest)
+            // so the gate picks a region's stroke SCALE without ever thinning its
+            // coverage; mass only in flat areas, detail only in busy ones, mid in
+            // between; alpha mult keeps the masses quiet so they read as an underpainting
             layers: [
                 [3.0, 0.45, 0.0, 0.35], // mass: broad low-alpha value masses
                 [1.5, 0.8, 0.35, 0.7], // mid-tone strokes over the masses

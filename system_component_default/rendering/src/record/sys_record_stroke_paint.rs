@@ -55,7 +55,10 @@ impl SysRecordStrokePaint {
             world_cell: 0.25, // world-space lattice the unprojected ray hits snap to: the anchor's identity, ~25 cm cells at reference scale
             drift: 0.02, // sinusoidal sway inside a stroke's own lattice cell, as a fraction of that cell: a hair of motion so the paint breathes instead of sitting dead flat
             life: 4.0, // mean birth/death cycle in seconds (0 = hard pops kept): each stroke fades up and down on a phase keyed on its own identity, so what the camera reveals and retires lands mid-fade instead of popping at full alpha
-            // three contrast-gated layers over one draw: slots [0,512) are mass (long-axis mult x3 of the base size, lattice scaled to match, painted UNDER everything), [512,1536) mid, the rest detail
+            // three contrast-gated layers over one draw, each with its OWN full
+            // grid: slots [0,4096) are mass (long-axis mult x3 of the base size,
+            // lattice scaled to match, painted UNDER everything), [4096,8192) mid,
+            // the rest detail
             mass_mult: 3.0, // mass layer long axis as a mult of the base size
             mass_alpha: 0.45, // masses stay quiet so they read as underpainting
             mid_mult: 1.5, // mid-tone layer long-axis mult

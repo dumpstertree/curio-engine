@@ -97,8 +97,8 @@ const SLOT_COUNT: i32 = 4096;
 // submission order makes the ranges come back-to-front for free: mass is
 // stamped under mid is stamped under detail. coverage scales as length
 // squared, so the 3x-longer mass layer needs only ~1/9 the slots
-const SLOT_MASS_END: u32 = 512u;
-const SLOT_MID_END: u32 = 1536u;
+const SLOT_MASS_END: u32 = 4096u; // each layer gets a FULL SLOT_COUNT grid:
+const SLOT_MID_END: u32 = 8192u; // mass [0,4096), mid [4096,8192), detail the rest
 
 @group(0) @binding(0)
 var paintSampler: sampler;
