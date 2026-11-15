@@ -15,9 +15,9 @@
 // group(0) binding(1): guide texture (the COLOUR source; only the stamp
 //                       VERTEX samples it, plus the blit FRAGMENT, so this
 //                       binding is visible to both stages)
-// group(0) binding(2): StrokeParams uniform (19 scalars + 1 pad put vp on
-//                       offset 80, matching the #[repr(C)] CPU mirror; total
-//                       144 bytes)
+// group(0) binding(2): StrokeParams uniform (20 scalars, no pad: the count
+//                       itself puts vp on offset 80, matching the #[repr(C)]
+//                       CPU mirror; total 144 bytes)
 // group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
 //                       procedural bristle mask shared by every daub)
 // group(0) binding(4): ORIGINAL FRAME (stamp VERTEX only; every size and
@@ -39,6 +39,11 @@
 // phase sways each stroke in place, which reads as accumulation-style
 // breathing. hashing the time instead re-rolls the offset every frame, and a
 // daub that hops 60 times a second reads as the whole field still moving.
+// the same rolling clock drives birth/death: each stroke fades up and down
+// on a life cycle of its own (StrokeParams.life, 0 = off), so what the
+// camera reveals and retires lands mid-fade instead of popping at full
+// alpha (there is no stroke list to AGE, so the cycle is periodic: the
+// reference's brushwork accumulates and gets brushed out the same way)
 
 struct StrokeParams {
     size: f32, // long-axis daub length in the FLAT-area case, px
@@ -65,7 +70,10 @@ struct StrokeParams {
     drift: f32, // world-anchor breathing as a fraction of one lattice cell
     //                     (0 = strokes pinned dead still; the default is a
     //                     sub-pixel sway, not a hop)
-    pad_x: f32, // pads: 19 scalars now, one of them keeps vp 16-byte aligned
+    life: f32, // birth/death cycle mean in seconds (0 = hard pops kept):
+    //                     each stroke fades up and down on a phase keyed on
+    //                     its own identity, softening camera pop-in
+    //                     (20 scalars now: the count itself keeps vp aligned)
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
@@ -273,6 +281,7 @@ struct StampOut {
     @location(1) uv: vec2<f32>, // texture-space uv, for the seam discard
     @location(2) rect: vec4<f32>, // owning viewport rect (constant per stamp)
     @location(3) color: vec3<f32>, // flat guide colour at the daub centre
+    @location(4) fade: f32, // birth/death ramp, constant per stamp
 };
 
 @vertex
@@ -300,6 +309,7 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         out.uv = vec2<f32>(0.0, 0.0);
         out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
         out.color = vec3<f32>(0.0, 0.0, 0.0);
+        out.fade = 0.0;
         return out;
     }
 
@@ -380,6 +390,7 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
             out.uv = vec2<f32>(0.0, 0.0);
             out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
             out.color = vec3<f32>(0.0, 0.0, 0.0);
+            out.fade = 0.0;
             return out;
         }
         // depth-occlusion: the stored depth at the PROJECTED pixel against
@@ -393,6 +404,7 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
             out.uv = vec2<f32>(0.0, 0.0);
             out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
             out.color = vec3<f32>(0.0, 0.0, 0.0);
+            out.fade = 0.0;
             return out;
         }
         anchor = proj.xy;
@@ -401,6 +413,34 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         hashKey = hxy * 131.0 + hzx * 17.0 + hyz;
     }
     // sky / far: no surface to sit on, keep the plain screen anchor there
+
+    // birth/death: every stroke carries its own life cycle keyed on its
+    // identity (hashKey: the world cell, or the slot in the sky fallback), so
+    // what the camera reveals and retires lands mid-fade instead of popping
+    // at full alpha, and silhouette occlusion toggles blink less. there is no
+    // stroke list to age, so the cycle is periodic rather than a one-shot
+    // birth: the field breathes, which is how the reference's brushwork
+    // accumulates and gets brushed out anyway. life = 0 keeps hard pops.
+    // checked BEFORE the contrast probes so faded strokes pay no probe cost
+    var fade = 1.0;
+    if (paint_params.life > 0.0) {
+        // per-stroke cycle length around the mean (half to 1.5x) so the
+        // cycles never align into one global pulse
+        let life_len = max(paint_params.life * (0.5 + ditherHash(vec2<f32>(hashKey, 811.0 + seed), seed)), 0.05);
+        let cyc = fract(paint_params.time / life_len + ditherHash(vec2<f32>(hashKey, 977.0 + seed), seed));
+        // triangle ramp with a plateau: UP over the first 30 % of a cycle,
+        // full through the middle 40 %, DOWN over the last 30 %
+        fade = smoothstep(0.0, 0.3, cyc) * (1.0 - smoothstep(0.7, 1.0, cyc));
+        if (fade < 0.02) {
+            out.pos = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+            out.local = vec2<f32>(0.0, 0.0);
+            out.uv = vec2<f32>(0.0, 0.0);
+            out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+            out.color = vec3<f32>(0.0, 0.0, 0.0);
+            out.fade = 0.0;
+            return out;
+        }
+    }
 
     let center = anchor * dims; // texture pixels
     let pxi = vec2<i32>(i32(center.x), i32(center.y));
@@ -533,6 +573,7 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
             + vec3<f32>(dr * cj * 0.25, dl * cj * 0.25, ds * cj * 0.25);
     }
     out.color = col;
+    out.fade = fade;
 
     return out;
 }
@@ -563,5 +604,5 @@ fn fs_stamp(in: StampOut) -> @location(0) vec4<f32> {
         discard;
     }
 
-    return vec4<f32>(in.color, cover * paint_params.alpha);
+    return vec4<f32>(in.color, cover * paint_params.alpha * in.fade);
 }
