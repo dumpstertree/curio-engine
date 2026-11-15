@@ -259,15 +259,22 @@ fn lumAtScene(px: vec2<i32>) -> f32 {
     return dot(col, vec3<f32>(0.2126, 0.7152, 0.0722));
 }
 
-// mean luminance over a 3x3 tap box on the original frame, so the
-// gradient varies with WHERE the window sits instead of with which axis
-// a single tap pair straddles
+// mean luminance over a STRIDE-2 3x3 lattice (a 5x5 footprint, still 9 taps):
+// the fog dither and screen-space noise are period-2 in each axis (the
+// separable-xor hash repeats every 2 px per coordinate), so a contiguous
+// 3x3 box leans to one noise parity and leaks that noise into the window
+// difference - which made every flat region's tensor a per-stroke random
+// axis (the "strokes in random directions" starbursts). A stride-2 lattice
+// samples every parity equally, so the period-2 noise averages out and the
+// window difference measures the true continuous gradient: this is the
+// denoising the reference's sobel flow field does before it ever asks a
+// stroke for a direction
 fn lumBoxScene(cx: f32, cy: f32) -> f32 {
     let bx = i32(round(cx));
     let by = i32(round(cy));
     var sum = 0.0;
-    for (var oy: i32 = -1; oy <= 1; oy = oy + 1) {
-        for (var ox: i32 = -1; ox <= 1; ox = ox + 1) {
+    for (var oy: i32 = -2; oy <= 2; oy = oy + 2) {
+        for (var ox: i32 = -2; ox <= 2; ox = ox + 2) {
             sum = sum + lumAtScene(vec2<i32>(bx + ox, by + oy));
         }
     }
@@ -292,17 +299,23 @@ fn dirDeriv(px: vec2<f32>, d: vec2<f32>, r: f32) -> f32 {
 // sobel flow textures, estimated here at the daub's own extent with tap
 // boxes in place of its blur passes; taken at the extent the stamp covers,
 // so a daub always belongs to the edge it sits on, and continuous because
-// it probes the raw frame rather than the piecewise-constant guide
+// it probes the raw frame rather than the piecewise-constant guide. the
+// second moment is accumulated over THREE radii (r, 1.6r, 2.2r): that is
+// what a sobel flow field is, a STRUCTURE TENSOR - a gradient that is
+// real at every scale adds its slope squared at each radius, while noise
+// that survives the box average contributes only weak, differently-shaped
+// terms that cannot outvote a dominant structure at the full extent
 fn sceneTensor(px: vec2<f32>, radius: f32) -> vec3<f32> {
-    var q0 = dirDeriv(px, vec2<f32>(1.0, 0.0), radius);
-    q0 = q0 * q0;
-    var q90 = dirDeriv(px, vec2<f32>(0.0, 1.0), radius);
-    q90 = q90 * q90;
-    var q45 = dirDeriv(px, vec2<f32>(0.7071068, 0.7071068), radius);
-    q45 = q45 * q45;
-    var q135 = dirDeriv(px, vec2<f32>(-0.7071068, 0.7071068), radius);
-    q135 = q135 * q135;
-    return vec3<f32>(q0, 0.5 * (q45 - q135), q90);
+    var tf = vec3<f32>(0.0, 0.0, 0.0);
+    for (var i: i32 = 0; i < 3; i = i + 1) {
+        let r = radius * (1.0 + 0.6 * f32(i));
+        var q0 = dirDeriv(px, vec2<f32>(1.0, 0.0), r);
+        var q90 = dirDeriv(px, vec2<f32>(0.0, 1.0), r);
+        var q45 = dirDeriv(px, vec2<f32>(0.7071068, 0.7071068), r);
+        var q135 = dirDeriv(px, vec2<f32>(-0.7071068, 0.7071068), r);
+        tf = tf + vec3<f32>(q0 * q0, 0.5 * (q45 * q45 - q135 * q135), q90 * q90);
+    }
+    return tf;
 }
 
 // the viewport rect owning an anchor: stamps never spill across a split-screen
@@ -617,26 +630,44 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // in BOTH the px and the world-sized mode
     longPx = longPx * L.x;
 
-    // SHAPE follows the flow: a strongly directional neighbourhood (a real
-    // edge, anisotropy near 0) carries the full elongation, a near-isotropic
-    // one falls back to aspect_min. flow = 0 keeps one constant elongation
-    // for every stamp, flow = 1 makes daubs round wherever there is no edge
-    let tensorAspect = paint_params.aspect_min + (paint_params.elongation - paint_params.aspect_min) * (1.0 - anisotropy);
+    // SHAPE follows the flow, gated by DIRECTIONAL CONFIDENCE: a strongly
+    // directional neighbourhood (a real edge, anisotropy near 0) carries the
+    // full stretch, a near-isotropic one falls back to aspect_min. The raw
+    // window slopes are still noise-susceptible at weak magnitudes, so the
+    // tensor contributes to stretch only in proportion to how steep the
+    // window difference actually is (mag_scale pins a real 0.4-jump edge at
+    // 1 and dither-level slopes sit far below that): a weak tensor no longer
+    // paints random streaks per stroke in flat areas, it paints round daubs
+    let grad_confidence = smoothstep(0.1, 0.3, sqrt(lam1) * paint_params.mag_scale);
+    let aniso_eff = mix(1.0, anisotropy, grad_confidence);
+    let tensorAspect = paint_params.aspect_min + (paint_params.elongation - paint_params.aspect_min) * (1.0 - aniso_eff);
     let aspect = max(mix(paint_params.elongation, tensorAspect, paint_params.flow), 1.0);
     let halfLong = longPx * 0.5;
     let halfShort = halfLong / aspect;
 
     // theta = 0.5*atan2(2F, E - G) is the direction of MAXIMUM variance, i.e.
-    // ACROSS the edge, so the long axis is theta + 90 degrees. the hashed
-    // fallback now fires only on genuinely empty regions (bare floor, fog),
-    // because the raw frame is never piecewise constant: over the walls the
-    // surface detail gives a real tangent for almost every stamp, which is
-    // what stops the paint from sitting as a fixed screen-space pattern. the
-    // angle keys on the world CELL, so a stroke turns with the geometry
-    // instead of re-rolling per screen position
-    var angle = (ditherHash(vec2<f32>(hashKey, 211.0 + seed), seed) - 0.5) * 6.2831853;
-    if (lam1 > 0.000001) {
-        angle = 0.5 * atan2(2.0 * tf.y, tf.x - tf.z) + 1.5707963;
+    // ACROSS the edge, so the long axis is theta + 90 degrees. The window
+    // tensor now carries a real tangent wherever the scene has one (this is
+    // the sobel-style flow field the reference reads for line direction,
+    // estimated at the extent the stamp covers), and the hashed angle
+    // remains only as the weighted fallback for genuinely gradient-free
+    // regions. The two angles mix through UNIT VECTORS weighted by the
+    // directional confidence: interpolating raw angles would jump whenever
+    // the pair straddles ±pi, and the old hard lam1 > 0 test let noise pass
+    // everywhere, handing every flat-area stroke a random direction. The
+    // angle keys on the world CELL so a stroke turns with the geometry
+    let tensor_angle = 0.5 * atan2(2.0 * tf.y, tf.x - tf.z) + 1.5707963;
+    let hash_angle = (ditherHash(vec2<f32>(hashKey, 211.0 + seed), seed) - 0.5) * 6.2831853;
+    let ta = cos(tensor_angle);
+    let tb = sin(tensor_angle);
+    let ha = cos(hash_angle);
+    let hb = sin(hash_angle);
+    var dx2 = mix(ta, ha, 1.0 - grad_confidence);
+    var dy2 = mix(tb, hb, 1.0 - grad_confidence);
+    let dl = sqrt(dx2 * dx2 + dy2 * dy2);
+    var angle = hash_angle;
+    if (dl > 0.0001) {
+        angle = atan2(dy2, dx2);
     }
     angle = angle + (ditherHash(vec2<f32>(hashKey, 307.0 + seed), seed) - 0.5) * paint_params.wobble;
 
