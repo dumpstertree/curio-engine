@@ -35,6 +35,7 @@ use curio_core::{Ledger, PluginCommon};
 use egui_wgpu::wgpu::{Texture, TextureView};
 use ext_rendering::SysRecordRendering;
 use lighting::SysRecordSun;
+use ui_overlay::{SysRecordUi, UiOverlayPass};
 use winit::event::WindowEvent;
 
 pub struct SystemComponentDefaultGraphics {
@@ -44,6 +45,8 @@ pub struct SystemComponentDefaultGraphics {
     // render_feature_2d_helper: RenderFeature2DHelper,
     render_feature_3d_helper: RenderFeature3DHelper,
     render_feature_pp_helper: RenderFeaturePostProcessHelper,
+    // ECS UI boxes (taffy layout habit) drawn over the swapchain
+    ui_overlay_pass: UiOverlayPass,
     graphics_mappings: Vec<GraphicsMapping>,
     is_dirty: bool,
 }
@@ -80,6 +83,10 @@ impl PluginCommon for SystemComponentDefaultGraphics {
         // post-process offscreen → swapchain
         self.render_feature_pp_helper
             .draw_post_features(&mut encoder, &self.offscreen_view, &output_view, ledger, &self.graphics_mappings);
+
+        // UI overlay: taffy-resolved boxes over the finished frame
+        self.ui_overlay_pass
+            .draw_ui_overlays(ledger, &mut encoder, &output_view, &self.graphics_mappings);
 
         // ── capture step ────────────────────────────────────────
         // capture AFTER post-processing and 2D — from swapchain, not offscreen
@@ -211,6 +218,7 @@ impl SystemComponentDefaultGraphics {
             // render_feature_2d_helper: RenderFeature2DHelper::new(),
             render_feature_3d_helper: RenderFeature3DHelper::new(),
             render_feature_pp_helper: RenderFeaturePostProcessHelper::new(&offscreen_view),
+            ui_overlay_pass: UiOverlayPass::new(),
             offscreen_texture,
             offscreen_view,
         });

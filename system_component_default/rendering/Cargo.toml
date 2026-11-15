@@ -19,6 +19,7 @@ camera = { workspace = true }
 cgmath = "0.18"
 lighting = { workspace = true }
 skybox = { workspace = true }
+ui_overlay = { workspace = true }
 
 
 egui = "0.31.1"
