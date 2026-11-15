@@ -17,9 +17,11 @@ use crate::render_feature_post_process::{PostProcessSource, RenderFeaturePostPro
 const DITHER_COMMON_WGSL: &str = include_str!("../dither_common.wgsl");
 const PAINTERLY_WGSL: &str = include_str!("../painterly_strokes.wgsl");
 
-// the hybrid: the previous chain stage (flow-driven kuwahara) is the COLOUR
-// GUIDE. pass 1 blits it, pass 2 stamps daubs over it. there is no stroke list
-// to keep in sync: slot parameters are regenerated in the vertex stage from an
+// the hybrid: the previous chain stage is the COLOUR GUIDE (the raw frame:
+// the chain no longer runs kuwahara, the imprimatura blit below is what
+// gives the base its tonal structure). pass 1 blits the guide, pass 2
+// stamps daubs over it. there is no stroke list to keep in sync: slot
+// parameters are regenerated in the vertex stage from an
 // R2 low-discrepancy sequence, so the only CPU state is the uniform below
 const LAYER_SLOTS: u32 = 4096; // per-layer grid: must match SLOT_COUNT in the WGSL
 const STAMP_SLOTS: u32 = 3 * LAYER_SLOTS; // one FULL grid per layer (mass, mid, detail):

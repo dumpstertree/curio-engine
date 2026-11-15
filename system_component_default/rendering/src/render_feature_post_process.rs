@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use egui_wgpu::wgpu::{AddressMode, CompareFunction, Device, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureView, TextureViewDescriptor};
 
-use crate::render_feature_post_processes::{render_feature_post_process_fog::RenderFeaturePostProcessFog, render_feature_post_process_kuwahara::RenderFeaturePostProcessKuwahara, render_feature_post_process_painterly::RenderFeaturePostProcessPainterly, render_feature_post_process_sobel_outline::RenderFeaturePostProcessOutline};
+use crate::render_feature_post_processes::{render_feature_post_process_fog::RenderFeaturePostProcessFog, render_feature_post_process_painterly::RenderFeaturePostProcessPainterly, render_feature_post_process_sobel_outline::RenderFeaturePostProcessOutline};
 
 pub trait RenderFeaturePostProcess {
     fn render(&mut self, encoder: &mut egui_wgpu::wgpu::CommandEncoder, input_view: &TextureView, output_view: &TextureView, source: PostProcessSource);
@@ -45,8 +45,11 @@ impl RenderFeaturePostProcessHelper {
         let pp_resource = PostProcessResources::new(device.clone(), width, height, format);
 
         let features: Vec<Box<dyn RenderFeaturePostProcess>> = vec![
-            RenderFeaturePostProcessKuwahara::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
-            // hybrid: kuwahara is the colour guide, the stamps are laid over it
+            // no kuwahara stage: its piecewise-constant blocks sit UNDER the
+            // paint and fight readability, and nothing needs them any more -
+            // the painterly feature probes the raw offscreen itself for size
+            // and orientation, and its blit pass lays the guide down as the
+            // imprimatura, so the guide is now the raw frame
             RenderFeaturePostProcessPainterly::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
             RenderFeaturePostProcessOutline::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),
             RenderFeaturePostProcessFog::new(device.clone(), format, &pp_resource, depth_view, offscreen_view),

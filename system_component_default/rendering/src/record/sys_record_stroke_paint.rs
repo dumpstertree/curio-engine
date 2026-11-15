@@ -54,8 +54,8 @@ impl SysRecordStrokePaint {
             color_jitter: 0.16, // forced per-channel deviation from the guide colour (minimum 0.6 * this), so stamps are distinguishable inside flat kuwahara blocks
             world_size: 0.0, // 0 = daub long axis stays in px; > 0 = WORLD units through the focal length, so distant paint shrinks with the scene
             world_cell: 0.25, // world-space lattice the unprojected ray hits snap to: the anchor's identity, ~25 cm cells at reference scale
-            drift: 0.02, // sinusoidal sway inside a stroke's own lattice cell, as a fraction of that cell: a hair of motion so the paint breathes instead of sitting dead flat
-            life: 4.0, // mean birth/death cycle in seconds (0 = hard pops kept): each stroke fades up and down on a phase keyed on its own identity, so what the camera reveals and retires lands mid-fade instead of popping at full alpha
+            drift: 0.0, // 0 = strokes pinned to their lattice anchors: the reference pins its paint, temporal motion read as flicker; raise slightly (0.02) to let the paint breathe
+            life: 0.0, // 0 = no birth/death fade: every stroke sits at full alpha. the reference holds a stable field; the ramp read as flicker, but raise (10+) for softer reveals/retirements
             ground: 0.5, // imprimatura strength: the blit multiplies the guide toward a dark warm earth tint at this fraction, so gaps between daubs read as a toned ground carrying the picture's edge structure (the reference's readability WITHOUT outlines comes from this base, plus value-preserving stroke jitter and the CPU alpha cap that keeps the ground bleeding)
             // three contrast-gated layers over one draw, each with its OWN full
             // grid: slots [0,4096) are mass (long-axis mult x3 of the base size,
