@@ -12,15 +12,17 @@ use crate::{SysRecordUi, UiColor, UiDrawCall, UiKind, UiRect};
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable, PartialEq)]
 pub struct UiVertex {
     pub position: [f32; 2],
-    // Float32x4 needs 16-byte alignment — keep the tint on its own word
+    // two filler words so the tint starts at byte 16, where desc() reads it.
+    // repr(C) would have put it at 12, and the GPU reading tint at 16 got
+    // [g, b, a, pad] instead — alpha 0, so every box blended fully
+    // transparent and vanished without a single validation error
     pub pad: f32,
-    pub tint: [f32; 4],
-    // tint is 16 bytes at offset 16, so the stride is a third word short
     pub pad2: f32,
+    pub tint: [f32; 4],
 }
 impl UiVertex {
     pub const fn new(position: [f32; 2], tint: [f32; 4]) -> UiVertex {
-        UiVertex { position, pad: 0.0, tint, pad2: 0.0 }
+        UiVertex { position, pad: 0.0, pad2: 0.0, tint }
     }
     pub fn desc() -> VertexBufferLayout<'static> {
         egui_wgpu::wgpu::VertexBufferLayout {
@@ -34,7 +36,7 @@ impl UiVertex {
                     format: egui_wgpu::wgpu::VertexFormat::Float32x2,
                 },
                 egui_wgpu::wgpu::VertexAttribute {
-                    // tint. offset 16 — Float32x4 must be 16-byte aligned
+                    // tint at byte 16 — position (8) plus the two filler words
                     offset: std::mem::size_of::<[f32; 4]>() as BufferAddress,
                     shader_location: 1,
                     format: egui_wgpu::wgpu::VertexFormat::Float32x4,
@@ -143,18 +145,6 @@ impl UiOverlayPass {
             }
             None => {}
         }
-
-        // BISECT (temporary): throw away the computed boxes and upload one
-        // hardcoded full-screen green quad through the SAME pipeline/buffer/
-        // pass. Green scene area => pipeline is fine, bug is in the geometry
-        // maths. No green + no error => the pipeline itself is dead.
-        vertices.clear();
-        vertices.push(UiVertex::new([-1.0, -1.0], [0.0, 1.0, 0.0, 1.0]));
-        vertices.push(UiVertex::new([1.0, -1.0], [0.0, 1.0, 0.0, 1.0]));
-        vertices.push(UiVertex::new([-1.0, 1.0], [0.0, 1.0, 0.0, 1.0]));
-        vertices.push(UiVertex::new([-1.0, 1.0], [0.0, 1.0, 0.0, 1.0]));
-        vertices.push(UiVertex::new([1.0, -1.0], [0.0, 1.0, 0.0, 1.0]));
-        vertices.push(UiVertex::new([1.0, 1.0], [0.0, 1.0, 0.0, 1.0]));
 
         let device = Services::get().gpu.device();
         let queue = Services::get().gpu.queue();
