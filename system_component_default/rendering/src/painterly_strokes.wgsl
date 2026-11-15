@@ -80,8 +80,10 @@ struct StrokeParams {
     //                     order, so the mass layer sits UNDER the detail,
     //                     which is the reference structure: broad value
     //                     masses first, finer strokes on top, each layer
-    //                     gated to its own contrast band (the research
-    //                     fix for large daubs landing in detailed zones)
+    //                     weighted (softly feathered) by its own contrast
+    //                     band — never hard-culled, so no scene contrast
+    //                     distribution can uncover a whole region (the
+    //                     research fix for large daubs landing in detailed zones)
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
@@ -99,6 +101,10 @@ const SLOT_COUNT: i32 = 4096;
 // squared, so the 3x-longer mass layer needs only ~1/9 the slots
 const SLOT_MASS_END: u32 = 4096u; // each layer gets a FULL SLOT_COUNT grid:
 const SLOT_MID_END: u32 = 8192u; // mass [0,4096), mid [4096,8192), detail the rest
+const BAND_FEATHER: f32 = 0.15; // how wide the layer bands overlap: band
+//                        membership feathers the layer alpha instead of
+//                        hard-culling, so a scene whose contrast distribution
+//                        misses the split knobs still paints everywhere
 
 @group(0) @binding(0)
 var paintSampler: sampler;
@@ -522,11 +528,20 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let anisotropy = clamp(lam2 / max(lam1, 0.000001), 0.0, 1.0); // 1 = isotropic
     let contrast = clamp(max(sqrt(lam1) * paint_params.mag_scale, lineContrast), 0.0, 1.0);
 
-    // the layer's contrast band gate: mass paints only in FLAT neighbourhoods,
-    // detail only in busy ones, mid in between. this is the research paper's
-    // fix for "large strokes ending up in detailed zones even after
-    // rescaling", and it reuses the contrast the size mix already samples
-    if (contrast < L.z || contrast > L.w) {
+    // the layer's contrast band: a SOFT weight, not a hard reject. hard
+    // band-culls make the layer split discontinuous in knob space (a scene
+    // whose contrast lands in the wrong band paints NOTHING there, which is
+    // how walls came back raw), so band membership feathers the layer's
+    // alpha across a feather window instead: mass falls out on busy walls,
+    // detail falls out on flat floors, and no contrast value is ever
+    // uncovered by all three layers at once
+    let band_weight =
+        smoothstep(L.z - BAND_FEATHER, L.z + BAND_FEATHER, contrast) *
+        (1.0 - smoothstep(L.w - BAND_FEATHER, L.w + BAND_FEATHER, contrast));
+    fade = fade * band_weight;
+    // the band weight rides out.fade into the fragment, and a layer weighted
+    // to nothing degenerates its slots, keeping the culled layers free
+    if (fade < 0.02) {
         out.pos = vec4<f32>(0.0, 0.0, 0.0, 1.0);
         out.local = vec2<f32>(0.0, 0.0);
         out.uv = vec2<f32>(0.0, 0.0);
