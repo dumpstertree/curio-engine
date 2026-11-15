@@ -120,47 +120,48 @@ impl UiOverlayPass {
 
         // diagnostic while wiring is unconfirmed: what actually reaches the
         // swapchain. drop this once the overlay paints
-        if let screen = ledger.get(0) {
-            let first = vertices[0];
-            let mut min_x: f32 = 0.0;
-            let mut max_x: f32 = 0.0;
-            if mappings.len() > 0 {
-                min_x = mappings[0].viewport_min.x;
-                max_x = mappings[0].viewport_max.x;
+        match ledger.get(0) {
+            Some(screen) => {
+                let first = vertices[0];
+                let mut min_x: f32 = 0.0;
+                let mut max_x: f32 = 0.0;
+                if mappings.len() > 0 {
+                    min_x = mappings[0].viewport_min.x;
+                    max_x = mappings[0].viewport_max.x;
+                }
+                screen.log(
+                    Severity::Info,
+                    &format!(
+                        "ui pass: {} vertices; first ndc x {} y {}; map x {}..{}",
+                        vertices.len(),
+                        first.position[0],
+                        first.position[1],
+                        min_x,
+                        max_x,
+                    ),
+                );
             }
-            screen.log(
-                Severity::Notice,
-                &format!(
-                    "ui pass: {} vertices; first ndc x {} y {}; map x {}..{}",
-                    vertices.len(),
-                    first.position[0],
-                    first.position[1],
-                    min_x,
-                    max_x,
-                ),
-            );
+            None => {}
         }
 
         // TARGET TEST (temporary): a no-draw red clear of output_view. If the
         // window turns red, this encoder+view does reach presentation, and an
         // invisible pipeline means a pipeline/buffer problem; if nothing
         // changes, output_view is not what gets shown.
-        if let screen = ledger.get(0) {
-            let mut debug_pass = encoder.begin_render_pass(&RenderPassDescriptor {
-                label: Some("ui target test"),
-                color_attachments: &[Some(RenderPassColorAttachment {
-                    view: output_view,
-                    resolve_target: None,
-                    ops: Operations {
-                        load: LoadOp::Clear(Color::RED),
-                        store: StoreOp::Store,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
-        }
+        let debug_pass = encoder.begin_render_pass(&RenderPassDescriptor {
+            label: Some("ui target test"),
+            color_attachments: &[Some(RenderPassColorAttachment {
+                view: output_view,
+                resolve_target: None,
+                ops: Operations {
+                    load: LoadOp::Clear(Color::RED),
+                    store: StoreOp::Store,
+                },
+            })],
+            depth_stencil_attachment: None,
+            timestamp_writes: None,
+            occlusion_query_set: None,
+        });
         return;
 
         let device = Services::get().gpu.device();
