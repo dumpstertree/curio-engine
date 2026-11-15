@@ -144,31 +144,17 @@ impl UiOverlayPass {
             None => {}
         }
 
-        // TARGET TEST (temporary): a no-draw red clear of output_view. If the
-        // window turns red, this encoder+view does reach presentation, and an
-        // invisible pipeline means a pipeline/buffer problem; if nothing
-        // changes, output_view is not what gets shown.
-        let debug_pass = encoder.begin_render_pass(&RenderPassDescriptor {
-            label: Some("ui target test"),
-            color_attachments: &[Some(RenderPassColorAttachment {
-                view: output_view,
-                resolve_target: None,
-                ops: Operations {
-                    load: LoadOp::Clear(Color::RED),
-                    store: StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            timestamp_writes: None,
-            occlusion_query_set: None,
-        });
-        return;
-
         let device = Services::get().gpu.device();
         let queue = Services::get().gpu.queue();
 
         // lazy pipeline — first frame with boxes builds it
         if self.pipeline.is_none() {
+            // WebGPU's front face is defined in y-down framebuffer space,
+            // which is easy to get backwards for CPU-built NDC quads — UI
+            // quads are single-layer and flat, so cull nothing
+            let mut ui_primitive: PrimitiveState = PrimitiveState::default();
+            ui_primitive.cull_mode = None;
+
             let shader = device.create_shader_module(ShaderModuleDescriptor {
                 label: Some("ui overlay shader"),
                 source: ShaderSource::Wgsl(include_str!("ui_overlay.wgsl").into()),
@@ -193,8 +179,7 @@ impl UiOverlayPass {
                     })],
                     compilation_options: Default::default(),
                 }),
-                // TriangleList, no culling — exactly what the quads need
-                primitive: PrimitiveState::default(),
+                primitive: ui_primitive,
                 depth_stencil: None,
                 multisample: MultisampleState::default(),
                 multiview: None,
