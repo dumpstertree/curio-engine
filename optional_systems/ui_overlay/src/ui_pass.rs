@@ -129,7 +129,7 @@ impl UiOverlayPass {
                 max_x = mappings[0].viewport_max.x;
             }
             screen.log(
-                Severity::Debug,
+                Severity::Notice,
                 &format!(
                     "ui pass: {} vertices; first ndc x {} y {}; map x {}..{}",
                     vertices.len(),
