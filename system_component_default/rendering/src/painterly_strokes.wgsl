@@ -86,7 +86,11 @@ struct StrokeParams {
     //                     between daubs carry the picture's edge structure,
     //                     and with the alpha discipline a >= 25 % bleed
     //                     survives under every stroke
-    //                     (21 scalars then the two vec4 arrays: 208 bytes)
+    size_jitter: f32, // per-stroke size spread: the long axis is multiplied
+    //                     by 2^(hash * +-this), so 1.0 ranges 0.5x..2x and
+    //                     doubling and halving weigh alike (22 scalars then
+    //                     the two vec4 arrays: naga pads the vec4 array to
+    //                     16 either way, still 208 bytes)
     layers: array<vec4<f32>, 3>, // per layer (mass, mid, detail): long-axis
     //                     mult, alpha mult, contrast gate lo, gate hi; slot
     //                     index ranges draw mass..mid..detail in submission
@@ -651,6 +655,14 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // layer size mult: mass is a longer brush over the same contrast mix,
     // in BOTH the px and the world-sized mode
     longPx = longPx * L.x;
+    // PER-STROKE SIZE VARIATION: contrast alone picks size, and in a near-
+    // flat scene contrast is nearly constant, so every daub landed at exactly
+    // the same scale and the field read as a stencil. The reference's brush
+    // work varies each stroke's size even inside one surface, keyed on the
+    // stroke's own identity. Log-uniform so 2x and 0.5x weigh the same way
+    // (a 2x daub covers as much extra as a 0.5x one gives up)
+    let size_var = exp2((ditherHash(vec2<f32>(hashKey, 137.0 + seed), seed) * 2.0 - 1.0) * paint_params.size_jitter);
+    longPx = longPx * size_var;
 
     // SHAPE follows the flow, gated by DIRECTIONAL CONFIDENCE: a strongly
     // directional neighbourhood (a real edge, anisotropy near 0) carries the

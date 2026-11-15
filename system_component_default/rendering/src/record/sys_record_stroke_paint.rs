@@ -24,6 +24,7 @@ pub struct SysRecordStrokePaint {
     pub drift: f32,
     pub life: f32,
     pub ground: f32,
+    pub size_jitter: f32,
     pub mass_mult: f32,
     pub mass_alpha: f32,
     pub mid_mult: f32,
@@ -61,6 +62,7 @@ impl SysRecordStrokePaint {
             // grid: slots [0,4096) are mass (long-axis mult x3 of the base size,
             // lattice scaled to match, painted UNDER everything), [4096,8192) mid,
             // the rest detail
+            size_jitter: 0.7, // per-stroke size spread on the long axis: multiply by 2^(hash * +-this), so 0.7 spans ~0.6x..1.6x and doubling/halving weigh alike; keyed on the stroke's identity, this is what makes a flat wall carry a hand-painted range of daub sizes instead of one stencil size (0 = the old uniform field)
             mass_mult: 3.0, // mass layer long axis as a mult of the base size
             mass_alpha: 0.45, // masses stay quiet so they read as underpainting
             mid_mult: 1.5, // mid-tone layer long-axis mult
@@ -96,6 +98,7 @@ impl RecordOverride for SysRecordStrokePaint {
             "drift" => { self.drift = val }
             "life" => { self.life = val }
             "ground" => { self.ground = val }
+            "size_jitter" => { self.size_jitter = val }
             "mass_mult" => { self.mass_mult = val }
             "mass_alpha" => { self.mass_alpha = val }
             "mid_mult" => { self.mid_mult = val }
@@ -128,6 +131,7 @@ impl RecordOverride for SysRecordStrokePaint {
             FieldState::new("drift", self.drift),
             FieldState::new("life", self.life),
             FieldState::new("ground", self.ground),
+            FieldState::new("size_jitter", self.size_jitter),
             FieldState::new("mass_mult", self.mass_mult),
             FieldState::new("mass_alpha", self.mass_alpha),
             FieldState::new("mid_mult", self.mid_mult),

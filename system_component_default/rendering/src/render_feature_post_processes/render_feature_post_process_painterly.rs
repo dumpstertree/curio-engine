@@ -88,7 +88,7 @@ fn build_brush_mask() -> Vec<u8> {
     return bytes;
 }
 
-/// CPU-side mirror of the WGSL StrokeParams struct: 21 scalars plus three
+/// CPU-side mirror of the WGSL StrokeParams struct: 22 scalars plus two
 /// explicit padding floats, then the 3-vec4 layers array at offset 96 and the
 /// 4-vec4 vp at 144 exactly as naga lays it out (208 bytes total)
 #[repr(C)]
@@ -119,9 +119,9 @@ pub struct StrokeUniform {
     //                   the blit pass; gaps between daubs then read as a darker
     //                   ground carrying the picture structure, and the alpha
     //                   discipline keeps a >= 25 % bleed under every stroke
+    size_jitter: f32, // per-stroke size spread: long axis * 2^(hash * +-this)
     pad_x: f32,
     pad_y: f32,
-    pad_z: f32,
     layers: [[f32; 4]; 3], // per layer (mass, mid, detail): long-axis mult,
     //                        alpha mult, contrast gate lo, gate hi; slots
     //                        [0,4096), [4096,8192), [8192,12288) stamp in this
@@ -206,9 +206,10 @@ impl RenderFeaturePostProcessPainterly {
             //          earth tint at this fraction in the blit pass, so the gaps
             //          between daubs read as the reference's toned ground carrying
             //          the picture's edge structure instead of bare kuwahara flats
+            size_jitter: 0.7, // per-stroke size spread on the long axis: x 2^(hash * +-0.7)
+            //          = ~0.6x..1.6x, a hand-painted size range not a stencil
             pad_x: 0.0,
             pad_y: 0.0,
-            pad_z: 0.0,
             // three contrast-gated layers over one draw: EACH layer gets its own
             // full 4096-ray grid (mass [0,4096), mid [4096,8192), detail the rest)
             // so the gate picks a region's stroke SCALE without ever thinning its
@@ -634,6 +635,7 @@ impl RenderFeaturePostProcessPainterly {
         drift: f32,
         life: f32,
         ground: f32,
+        size_jitter: f32,
         mass_mult: f32,
         mass_alpha: f32,
         mid_mult: f32,
@@ -672,6 +674,9 @@ impl RenderFeaturePostProcessPainterly {
         let life = life.max(0.0);
         // imprimatura strength 0..1 (0 = the old straight guide copy)
         let ground = ground.clamp(0.0, 1.0);
+        // log-uniform size exponent amplitude: 0 = every daub the same size,
+        // 1.0 = 0.5x..2x spread; past ~1.5 the field starts fighting itself
+        let size_jitter = size_jitter.clamp(0.0, 2.0);
         // layer size/alpha mults are relative to the base daub regime; the
         // two split values tile the contrast bands [0, low], [low, high],
         // [high, 1], and the boundaries must never flip
@@ -718,6 +723,7 @@ impl RenderFeaturePostProcessPainterly {
             && self.params_uniform.drift == drift
             && self.params_uniform.life == life
             && self.params_uniform.ground == ground
+            && self.params_uniform.size_jitter == size_jitter
             && self.params_uniform.layers == layers_new
         {
             return;
@@ -745,9 +751,9 @@ impl RenderFeaturePostProcessPainterly {
             drift,
             life,
             ground,
+            size_jitter,
             pad_x: 0.0,
             pad_y: 0.0,
-            pad_z: 0.0,
             layers: layers_new,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
@@ -849,6 +855,7 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
             record.drift,
             record.life,
             record.ground,
+            record.size_jitter,
             record.mass_mult,
             record.mass_alpha,
             record.mid_mult,
