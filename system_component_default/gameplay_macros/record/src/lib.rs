@@ -58,13 +58,19 @@ pub fn record(attr: TokenStream, item: TokenStream) -> TokenStream {
     let static_id = format_ident!("__RECORD_ID_{}", struct_name);
 
     // Pick the correct registration call
+    // register_with takes an explicit CONCRETE constructor: inside a generic
+    // register::<T>() body, T::default() binds through the Default bound (the
+    // derived zero impl) and a record's hand-written default() is never called.
+    // A closure written at the expansion site names the struct directly, so the
+    // record's own default() shadows the derive; records without one still fall
+    // back to the derived Default
     let register_call = if serializable {
         quote! {
             curio_core::GlobalRecords::register_serializable::<#struct_name>();
         }
     } else {
         quote! {
-            curio_core::GlobalRecords::register::<#struct_name>();
+            curio_core::GlobalRecords::register_with::<#struct_name>(|| Box::new(#struct_name::default()));
         }
     };
 

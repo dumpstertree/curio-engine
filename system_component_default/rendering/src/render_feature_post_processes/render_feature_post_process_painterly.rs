@@ -694,16 +694,6 @@ impl RenderFeaturePostProcessPainterly {
             return;
         }
 
-        // TEMPORARY diagnostic (remove once the layer look is pinned): every
-        // value that actually reaches the GPU, printed only when a knob moves.
-        // the prime suspect for "no strokes at all" is a persisted knob in the
-        // user's config (keep/alpha/life/world_size/splits) sitting far off the
-        // record default, which the shader then degenerates almost every slot
-        // for
-        eprintln!(
-            "painterly uniform -> size={size} alpha={alpha} keep={keep} life={life} world_size={world_size} world_cell={world_cell} layers={layers:?}",
-        );
-
         self.params_uniform = StrokeUniform {
             size,
             size_min,

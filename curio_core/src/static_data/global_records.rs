@@ -28,6 +28,24 @@ impl GlobalRecords {
             .lock()
             .insert(TRecord::id(), Arc::new(registration));
     }
+    /// Register TRecord with an explicit constructor. The generic register above
+    /// resolves `TRecord::default()` through the `Default` BOUND, which lands on
+    /// the derived impl and silently skips a hand-written `default()` in the
+    /// record file (every knob absent from the persisted config then starts at
+    /// zero, which is how new knobs reached the GPU as 0). The record macro
+    /// calls this from a concrete site where the record's own default() wins.
+    pub fn register_with<TRecord>(construct_fn: ConstructFn)
+    where
+        TRecord: RecordCommon + 'static,
+    {
+        // create a registration for this type
+        let registration = RecordRegistration { construct_fn, serialize_fn: None, deserialize_fn: None };
+
+        // insert into the global registry
+        GLOBAL_REGISTRY
+            .lock()
+            .insert(TRecord::id(), Arc::new(registration));
+    }
     /// Register TRecord to the GlobalRecords. This version will include any serialization data.
     pub fn register_serializable<T>()
     where
