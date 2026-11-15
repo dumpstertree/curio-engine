@@ -1,4 +1,4 @@
-use curio_core::{GraphicsMapping, Ledger, Services, Vector2};
+use curio_core::{GraphicsMapping, Ledger, Services, Severity, Vector2};
 use egui_wgpu::wgpu::{self, Buffer, BufferAddress, BufferDescriptor, BufferUsages, BlendState, CommandEncoder, ColorTargetState, ColorWrites, FragmentState, LoadOp, Operations, MultisampleState, PrimitiveState, RenderPass, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor, ShaderModuleDescriptor, VertexState, ShaderSource, StoreOp, TextureFormat, TextureView, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
 use bytemuck::{self, cast_slice};
 
@@ -116,6 +116,29 @@ impl UiOverlayPass {
         }
         if vertices.is_empty() {
             return;
+        }
+
+        // diagnostic while wiring is unconfirmed: what actually reaches the
+        // swapchain. drop this once the overlay paints
+        if let screen = ledger.get(0) {
+            let first = vertices[0];
+            let mut min_x: f32 = 0.0;
+            let mut max_x: f32 = 0.0;
+            if mappings.len() > 0 {
+                min_x = mappings[0].viewport_min.x;
+                max_x = mappings[0].viewport_max.x;
+            }
+            screen.log(
+                Severity::Debug,
+                &format!(
+                    "ui pass: {} vertices; first ndc x {} y {}; map x {}..{}",
+                    vertices.len(),
+                    first.position[0],
+                    first.position[1],
+                    min_x,
+                    max_x,
+                ),
+            );
         }
 
         let device = Services::get().gpu.device();
