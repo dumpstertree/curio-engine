@@ -152,8 +152,26 @@ impl Habit for Instance {
 
         // this screen's cursor and click, for hover/click feedback
         let state_input = ledger.read::<SysRecordInput>();
-        let cursor = state_input.raw.get_axis(&AxisCode::Cursor).position;
+        let cursor_raw = state_input.raw.get_axis(&AxisCode::Cursor).position;
         let clicked = state_input.raw.get_button(&ButtonCode::MousePrimary).is_down;
+
+        // the cursor arrives in window pixels (the host feeds winit's
+        // CursorMoved position), while boxes live in viewport pixels and the
+        // overlay pass stretches that viewport across the swapchain. so the
+        // hit-test undoes the same stretch — the y axis needs no flip because
+        // the pass already maps the UI's top edge to the screen's top edge
+        let mut cursor_space = state_ui.cursor_space;
+        if !(cursor_space.x > 0.0 && cursor_space.y > 0.0) {
+            let gpu = &Services::get().gpu;
+            cursor_space = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
+        }
+        if !(cursor_space.x > 0.0 && cursor_space.y > 0.0) {
+            cursor_space = viewport;
+        }
+        let cursor = Vector2::new(
+            cursor_raw.x * (viewport.x / cursor_space.x),
+            cursor_raw.y * (viewport.y / cursor_space.y),
+        );
 
         // snapshot every UI node. taffy runs against the snapshot because
         // the world cannot stay borrowed while the tree builds
@@ -411,6 +429,32 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
             // the author's z_index wins, taffy's paint order breaks ties
             screen.draw_calls.sort_by(|a, b| (a.z_index, a.order).cmp(&(b.z_index, b.order)));
         });
+
+        // temporary, while the mouse mapping is confirmed: both cursor spaces
+        // against the first painted box, so a mismatch reads off the console.
+        // drop it once hover lands where the mouse does
+        let state_ui = ledger.read::<SysRecordUi>();
+        match state_ui.draw_calls.first() {
+            Some(first) => {
+                ledger.log(
+                    Severity::Info,
+                    &format!(
+                        "ui hit: cursor raw {},{} mapped {},{} space {},{} box {},{} {}x{}",
+                        cursor_raw.x,
+                        cursor_raw.y,
+                        cursor.x,
+                        cursor.y,
+                        cursor_space.x,
+                        cursor_space.y,
+                        first.rect.x,
+                        first.rect.y,
+                        first.rect.width,
+                        first.rect.height,
+                    ),
+                );
+            }
+            None => {}
+        }
     }
 }
 
