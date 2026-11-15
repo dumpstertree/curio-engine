@@ -104,13 +104,14 @@ impl UiOverlayPass {
                 let y0 = 2.0 * bottom - 1.0;
                 let y1 = 2.0 * top - 1.0;
 
-                // one quad, two triangles — no index buffer for UI boxes
-                vertices.push(UiVertex::new([x0, y1], tint));
-                vertices.push(UiVertex::new([x1, y1], tint));
+                // one quad, two triangles — wound counter-clockwise in NDC,
+                // which is wgpu's front face under the default cull mode
                 vertices.push(UiVertex::new([x0, y0], tint));
-                vertices.push(UiVertex::new([x0, y0], tint));
-                vertices.push(UiVertex::new([x1, y1], tint));
                 vertices.push(UiVertex::new([x1, y0], tint));
+                vertices.push(UiVertex::new([x0, y1], tint));
+                vertices.push(UiVertex::new([x0, y1], tint));
+                vertices.push(UiVertex::new([x1, y0], tint));
+                vertices.push(UiVertex::new([x1, y1], tint));
             }
         }
         if vertices.is_empty() {
