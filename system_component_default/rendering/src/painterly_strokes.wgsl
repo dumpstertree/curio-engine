@@ -444,8 +444,19 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
             out.fade = 0.0;
             return out;
         }
-        anchor = proj.xy;
-        viewW = proj.w;
+        // the snapped lattice point may sit up to one (coarse) cell off the
+        // SURFACE: the mass layer's 3x cells let a daub float a quarter meter
+        // in front of a wall, and such strokes parallax across silhouette
+        // edges and paint the wrong geometry (the mush reading over every
+        // seam). the cell keeps the IDENTITY; the position re-snaps to the
+        // surface at the anchor's own projected pixel — occ already holds
+        // that pixel's depth from the occlusion test — so a stroke always
+        // sits ON the geometry it was assigned to, and its world size then
+        // uses the surface distance, not the float's
+        let surf = unprojectWorld(proj.xy, occ);
+        let surf_proj = projectUv(surf);
+        anchor = surf_proj.xy;
+        viewW = surf_proj.w;
         // cell-hash identity: continuous in value but constant per cell
         hashKey = hxy * 131.0 + hzx * 17.0 + hyz;
     }
