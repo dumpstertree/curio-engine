@@ -82,7 +82,7 @@ fn build_brush_mask() -> Vec<u8> {
     return bytes;
 }
 
-/// CPU-side mirror of the WGSL StrokeParams struct: 18 scalars then 2 pads so
+/// CPU-side mirror of the WGSL StrokeParams struct: 19 scalars then 1 pad so
 /// the vp composite lands on offset 80 exactly as naga lays it out (144 bytes)
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
@@ -106,8 +106,8 @@ pub struct StrokeUniform {
     //                     focal length, so distant strokes shrink with the scene
     time: f32, // rolling CPU clock, feeds the world-anchor temporal drift
     world_cell: f32, // world-space lattice spacing the ray hits snap to
-    pad_x: f32, // pads keep vp 16-byte aligned at offset 80
-    pad_y: f32,
+    drift: f32, // world-anchor breathing as a fraction of one lattice cell
+    pad_x: f32, // one pad: 19 scalars now, keeps vp 16-byte aligned at 80
     vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
 }
 
@@ -179,8 +179,10 @@ impl RenderFeaturePostProcessPainterly {
             world_size: 0.0,
             time: 0.0, // CPU clock starts here, advanced once per frame
             world_cell: 0.25, // reference-scale daub lattice, world units
+            drift: 0.02, // sinusoidal sway of a daub inside its own lattice
+            // cell: 2% of a cell is a hair of motion, enough to read as
+            // brush breathing rather than as the field sliding
             pad_x: 0.0,
-            pad_y: 0.0,
             vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
         };
 
@@ -593,6 +595,7 @@ impl RenderFeaturePostProcessPainterly {
         color_jitter: f32,
         world_size: f32,
         world_cell: f32,
+        drift: f32,
     ) {
         // headroom up to 128 px so the stamps can be compared against the
         // reference daub scale without re-touching the WGSL
@@ -616,6 +619,9 @@ impl RenderFeaturePostProcessPainterly {
         // the lattice spacing the unprojected hit points snap to; never zero
         // or the WGSL divide in floor(world / cell) is undefined
         let world_cell = world_cell.max(0.001);
+        // the sway is a fraction of a cell; past a quarter of one it stops
+        // breathing and starts reading as a sliding field again
+        let drift = drift.clamp(0.0, 0.25);
 
         if self.params_uniform.size == size
             && self.params_uniform.size_min == size_min
@@ -633,6 +639,7 @@ impl RenderFeaturePostProcessPainterly {
             && self.params_uniform.color_jitter == color_jitter
             && self.params_uniform.world_size == world_size
             && self.params_uniform.world_cell == world_cell
+            && self.params_uniform.drift == drift
         {
             return;
         }
@@ -656,8 +663,8 @@ impl RenderFeaturePostProcessPainterly {
             world_size,
             time: self.params_uniform.time, // rolled separately, every frame
             world_cell,
+            drift,
             pad_x: 0.0,
-            pad_y: 0.0,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
 
@@ -755,6 +762,7 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
             record.color_jitter,
             record.world_size,
             record.world_cell,
+            record.drift,
         );
     }
 

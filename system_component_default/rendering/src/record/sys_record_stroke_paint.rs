@@ -21,6 +21,7 @@ pub struct SysRecordStrokePaint {
     pub color_jitter: f32,
     pub world_size: f32,
     pub world_cell: f32,
+    pub drift: f32,
 }
 
 impl SysRecordStrokePaint {
@@ -43,6 +44,7 @@ impl SysRecordStrokePaint {
             color_jitter: 0.16, // forced per-channel deviation from the guide colour (minimum 0.6 * this), so stamps are distinguishable inside flat kuwahara blocks
             world_size: 0.0, // 0 = daub long axis stays in px; > 0 = WORLD units through the focal length, so distant paint shrinks with the scene
             world_cell: 0.25, // world-space lattice the unprojected ray hits snap to: the anchor's identity, ~25 cm cells at reference scale
+            drift: 0.02, // sinusoidal sway inside a stroke's own lattice cell, as a fraction of that cell: a hair of motion so the paint breathes instead of sitting dead flat
         }
     }
 }
@@ -67,6 +69,7 @@ impl RecordOverride for SysRecordStrokePaint {
             "color_jitter" => { self.color_jitter = val }
             "world_size" => { self.world_size = val }
             "world_cell" => { self.world_cell = val }
+            "drift" => { self.drift = val }
             _ => {}
         }
     }
@@ -88,6 +91,7 @@ impl RecordOverride for SysRecordStrokePaint {
             FieldState::new("color_jitter", self.color_jitter),
             FieldState::new("world_size", self.world_size),
             FieldState::new("world_cell", self.world_cell),
+            FieldState::new("drift", self.drift),
         ]
     }
 }

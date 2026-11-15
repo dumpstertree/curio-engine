@@ -15,7 +15,7 @@
 // group(0) binding(1): guide texture (the COLOUR source; only the stamp
 //                       VERTEX samples it, plus the blit FRAGMENT, so this
 //                       binding is visible to both stages)
-// group(0) binding(2): StrokeParams uniform (18 scalars + 2 pads put vp on
+// group(0) binding(2): StrokeParams uniform (19 scalars + 1 pad put vp on
 //                       offset 80, matching the #[repr(C)] CPU mirror; total
 //                       144 bytes)
 // group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
@@ -34,9 +34,11 @@
 //                       + camera position + focal length in px, per camera)
 //
 // temporal history WITHOUT a history texture: a slot's identity is its world
-// anchor, which is stable across frames; a hash of that anchor against a
-// rolling time (StrokeParams.time, advanced per frame on the CPU) gives
-// sub-pixel jitter and a birth/death phase that reads as accumulation.
+// anchor, which is stable across frames; a CONTINUOUS function of the rolling
+// time (StrokeParams.time, advanced per frame on the CPU) keyed on a per-cell
+// phase sways each stroke in place, which reads as accumulation-style
+// breathing. hashing the time instead re-rolls the offset every frame, and a
+// daub that hops 60 times a second reads as the whole field still moving.
 
 struct StrokeParams {
     size: f32, // long-axis daub length in the FLAT-area case, px
@@ -60,8 +62,10 @@ struct StrokeParams {
     time: f32, // rolling seconds (CPU-advanced each frame): drives the
     //                     temporal drift of world-anchored daubs
     world_cell: f32, // world-space lattice spacing the hit points snap to
-    pad_x: f32, // pads: 18 scalars now, two of them keep vp 16-byte aligned
-    pad_y: f32,
+    drift: f32, // world-anchor breathing as a fraction of one lattice cell
+    //                     (0 = strokes pinned dead still; the default is a
+    //                     sub-pixel sway, not a hop)
+    pad_x: f32, // pads: 19 scalars now, one of them keeps vp 16-byte aligned
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
@@ -352,18 +356,22 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         let hxy = ditherHash(vec2<f32>(cell.x, cell.y), 0.0);
         let hzx = ditherHash(vec2<f32>(cell.z, cell.x + 17.0), 0.0);
         let hyz = ditherHash(vec2<f32>(cell.y + 41.0, cell.z), 0.0);
-        // sub-pixel temporal drift: hashing the rolling time against the
-        // cell moves the daub a hair every frame, the accumulation-style
-        // liveliness of reference painterly. no history texture is needed:
-        // the cell IS the stroke's identity, so it is the same daub drifting,
-        // not a new one popping in
         let t = paint_params.time;
+        // the drift must be CONTINUOUS in time: ditherHash(cell, t) is a step
+        // function, so hashing the clock re-rolls a fresh random offset every
+        // frame and each daub HOPS inside its cell 60 times a second (and at
+        // 0.1 of a cell that is several px close up), which reads exactly as
+        // "the strokes still move". a sinusoid keyed on a per-cell PHASE (a
+        // hash of the cell alone, so stable per stroke) sways continuously and
+        // returns to its start, which is the breathing accumulation painterly
+        // has instead of crawling
+        let phase = vec3<f32>(hxy, hyz, hzx) * 6.2831853;
         let drift = vec3<f32>(
-            ditherHash(vec2<f32>(cell.x + 7.0, t), 0.0),
-            ditherHash(vec2<f32>(cell.y + 23.0, t), 0.0),
-            ditherHash(vec2<f32>(cell.z + 61.0, t), 0.0),
-        ) - vec3<f32>(0.5);
-        let anchorWorld = (cell + vec3<f32>(hxy, hyz, hzx) + drift * 0.1) * paint_params.world_cell;
+            sin(t * 0.7 + phase.x),
+            sin(t * 0.9 + phase.y * 0.5),
+            sin(t * 1.1 + phase.z * 0.25),
+        );
+        let anchorWorld = (cell + vec3<f32>(hxy, hyz, hzx) + drift * paint_params.drift) * paint_params.world_cell;
         let proj = projectUv(anchorWorld);
         // behind the camera: degenerate quad, free
         if (proj.w <= 0.01) {
