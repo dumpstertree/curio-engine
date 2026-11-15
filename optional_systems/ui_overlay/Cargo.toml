@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 # ECS glue
 curio_core = { workspace = true }
+hecs = "0.10.5" # same pin as gameplay/physics — the test world below builds one
 gameplay = { workspace = true }
 input = { workspace = true }
 facet = { workspace = true }
