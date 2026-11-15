@@ -1,5 +1,5 @@
 use curio_core::{GraphicsMapping, Ledger, Services, Severity, Vector2};
-use egui_wgpu::wgpu::{self, Buffer, BufferAddress, BufferDescriptor, BufferUsages, BlendState, CommandEncoder, ColorTargetState, ColorWrites, FragmentState, LoadOp, Operations, MultisampleState, PrimitiveState, RenderPass, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor, ShaderModuleDescriptor, VertexState, ShaderSource, StoreOp, TextureFormat, TextureView, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
+use egui_wgpu::wgpu::{self, Buffer, BufferAddress, BufferDescriptor, BufferUsages, BlendState, Color, CommandEncoder, ColorTargetState, ColorWrites, FragmentState, LoadOp, Operations, MultisampleState, PrimitiveState, RenderPass, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor, ShaderModuleDescriptor, VertexState, ShaderSource, StoreOp, TextureFormat, TextureView, VertexAttribute, VertexBufferLayout, VertexFormat, VertexStepMode};
 use bytemuck::{self, cast_slice};
 
 use crate::{SysRecordUi, UiColor, UiDrawCall, UiKind, UiRect};
@@ -140,6 +140,28 @@ impl UiOverlayPass {
                 ),
             );
         }
+
+        // TARGET TEST (temporary): a no-draw red clear of output_view. If the
+        // window turns red, this encoder+view does reach presentation, and an
+        // invisible pipeline means a pipeline/buffer problem; if nothing
+        // changes, output_view is not what gets shown.
+        if let screen = ledger.get(0) {
+            let mut debug_pass = encoder.begin_render_pass(&RenderPassDescriptor {
+                label: Some("ui target test"),
+                color_attachments: &[Some(RenderPassColorAttachment {
+                    view: output_view,
+                    resolve_target: None,
+                    ops: Operations {
+                        load: LoadOp::Clear(Color::RED),
+                        store: StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+        }
+        return;
 
         let device = Services::get().gpu.device();
         let queue = Services::get().gpu.queue();
