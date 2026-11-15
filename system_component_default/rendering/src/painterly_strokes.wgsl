@@ -399,10 +399,17 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         // three DIFFERENT cell-coordinate pairs per hash: ditherHash xors a
         // p.x term with a p.y term, so two calls sharing a coordinate pair
         // would be tied by a constant xor, the same structural trap that
-        // made the old screen anchor scatter sparse
-        let hxy = ditherHash(vec2<f32>(cell.x, cell.y), 0.0);
-        let hzx = ditherHash(vec2<f32>(cell.z, cell.x + 17.0), 0.0);
-        let hyz = ditherHash(vec2<f32>(cell.y + 41.0, cell.z), 0.0);
+        // made the old screen anchor scatter sparse. each call also carries
+        // the SLOT with a different irrational slope: hashing on the cell
+        // ALONE makes every ray hitting one cell collapse onto the cell's
+        // single deterministic point (one identical stroke per cell => a
+        // visibly periodic lattice pattern on big flat surfaces, whose
+        // period is one cell: huge for the mass layer's 3x cells). the slot
+        // term scatters multiple distinct strokes per cell while a slot
+        // returning to the same cell reproduces the same stroke exactly
+        let hxy = ditherHash(vec2<f32>(cell.x + s * 0.011719, cell.y + s * 0.033931), seed);
+        let hzx = ditherHash(vec2<f32>(cell.z + s * 0.072107, cell.x + s * 0.053349 + 17.0), seed);
+        let hyz = ditherHash(vec2<f32>(cell.y + s * 0.029301 + 41.0, cell.z + s * 0.019127), seed);
         let t = paint_params.time;
         // the drift must be CONTINUOUS in time: ditherHash(cell, t) is a step
         // function, so hashing the clock re-rolls a fresh random offset every
