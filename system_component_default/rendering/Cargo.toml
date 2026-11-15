@@ -16,6 +16,7 @@ record = { workspace = true }
 ctor = "0.8.0"
 curio_core = { workspace = true }
 camera = { workspace = true }
+cgmath = "0.18"
 lighting = { workspace = true }
 skybox = { workspace = true }
 

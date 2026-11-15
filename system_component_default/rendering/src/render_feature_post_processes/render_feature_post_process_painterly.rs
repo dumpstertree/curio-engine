@@ -1,9 +1,12 @@
+use camera::SysRecordCamera;
 use curio_core::{GraphicsMapping, Ledger, Services};
 use egui_wgpu::wgpu::{self, BindGroup};
 use egui_wgpu::wgpu::util::DeviceExt;
 use std::borrow::Cow;
 use std::num::NonZeroU64;
 use std::sync::Arc;
+
+use cgmath::{Matrix4, SquareMatrix};
 
 use bytemuck::{Pod, Zeroable, cast_slice};
 
@@ -79,8 +82,8 @@ fn build_brush_mask() -> Vec<u8> {
     return bytes;
 }
 
-/// CPU-side mirror of the WGSL StrokeParams struct: 15 scalars then 1 pad so
-/// the vp composite lands on offset 64 exactly as naga lays it out (128 bytes)
+/// CPU-side mirror of the WGSL StrokeParams struct: 18 scalars then 2 pads so
+/// the vp composite lands on offset 80 exactly as naga lays it out (144 bytes)
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 pub struct StrokeUniform {
@@ -99,8 +102,29 @@ pub struct StrokeUniform {
     flow: f32, // 0 = constant elongation, 1 = shape follows tensor anisotropy
     bristle: f32, // 0 = analytic alpha, 1 = fully masked by the brush texture
     color_jitter: f32, // 0 = exact guide colour, per-stamp hue/lightness shift
-    pad_x: f32, // one pad only: 15 scalars now, vp is a composite and must
+    world_size: f32, // 0 = px daubs; > 0 = world-unit long axis through the
+    //                     focal length, so distant strokes shrink with the scene
+    time: f32, // rolling CPU clock, feeds the world-anchor temporal drift
+    world_cell: f32, // world-space lattice spacing the ray hits snap to
+    pad_x: f32, // pads keep vp 16-byte aligned at offset 80
+    pad_y: f32,
     vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
+}
+
+/// CPU mirror of the WGSL WorldAnchorParams struct (160 bytes): the matrices
+/// bind exactly as the 3D pass' CameraUniform does (column arrays, so the WGSL
+/// mat4x4 sees the same layout), and the inverse is what unprojects the depth
+/// buffer into the world lattice
+#[repr(C)]
+#[derive(Copy, Clone, PartialEq, Pod, Zeroable)]
+pub struct WorldAnchorUniform {
+    view_proj: [[f32; 4]; 4],
+    inv_view_proj: [[f32; 4]; 4],
+    cam_pos: [f32; 4], // world-space camera position (kept for distance fades)
+    focal_px: f32, // capture focal length in pixels (y axis)
+    pad_x: f32,
+    pad_y: f32,
+    pad_z: f32,
 }
 
 pub struct RenderFeaturePostProcessPainterly {
@@ -111,6 +135,9 @@ pub struct RenderFeaturePostProcessPainterly {
     bind_group_b: wgpu::BindGroup, // guide = view_b
     params: wgpu::Buffer, // StrokeUniform, rewritten per frame
     params_uniform: StrokeUniform,
+    world_anchor: wgpu::Buffer, // WorldAnchorUniform, rewritten per frame
+    world_anchor_uniform: WorldAnchorUniform,
+    stroke_time: f32, // rolling clock, advanced in update_params each frame
     brush_texture: wgpu::Texture, // procedural bristle alpha mask (R8Unorm)
     brush_view: wgpu::TextureView, // bound as binding(3) for the stamp fragment
 }
@@ -122,8 +149,10 @@ impl RenderFeaturePostProcessPainterly {
         post_resources: &PostProcessResources,
         // the stamp pass sobels the GUIDE, never the depth buffer: keeping the
         // pass free of kuwahara's flow textures is what lets the two features
-        // own their resources independently
-        _depth_view: &wgpu::TextureView,
+        // own their resources independently. the one exception is the depth
+        // TEXTURE itself: the world anchor unprojects the slot ray to the
+        // surface it hits, which is what stops strokes sliding over the screen
+        depth_view: &wgpu::TextureView,
         offscreen_view: &wgpu::TextureView,
     ) -> Box<Self> {
         let params_uniform = StrokeUniform {
@@ -144,8 +173,39 @@ impl RenderFeaturePostProcessPainterly {
             flow: 1.0, // daub SHAPE follows the tensor's anisotropy
             bristle: 0.75, // brush mask drives the stamp alpha
             color_jitter: 0.16, // forced per-stamp deviation from the guide (each channel moves by at least 0.6 * this), which is what makes coverage read as paint
+            // daub SCALE stays in px by default: the world anchor only pins
+            // WHERE strokes sit; a positive world_size switches the long axis
+            // to world units, shrinking distant paint with the scene
+            world_size: 0.0,
+            time: 0.0, // CPU clock starts here, advanced once per frame
+            world_cell: 0.25, // reference-scale daub lattice, world units
             pad_x: 0.0,
+            pad_y: 0.0,
             vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
+        };
+
+        // identity anchor pair until the per-frame camera sync rewrites it: an
+        // identity view_proj unprojects the slot ray straight through the
+        // depth value, which keeps the construction safe if no camera record
+        // is present yet
+        let world_anchor_uniform = WorldAnchorUniform {
+            view_proj: [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            inv_view_proj: [
+                [1.0, 0.0, 0.0, 0.0],
+                [0.0, 1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ],
+            cam_pos: [0.0, 0.0, 0.0, 1.0],
+            focal_px: 1.0,
+            pad_x: 0.0,
+            pad_y: 0.0,
+            pad_z: 0.0,
         };
 
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
@@ -208,6 +268,12 @@ impl RenderFeaturePostProcessPainterly {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
+        let world_anchor = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("painterly world anchor"),
+            contents: cast_slice(&[world_anchor_uniform]),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
         // one bind layout for both passes: the guide texture is read by the
         // blit FRAGMENT and by the stamp VERTEX stage (its sobel taps), so its
         // visibility spans both
@@ -240,7 +306,7 @@ impl RenderFeaturePostProcessPainterly {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(128),
+                        min_binding_size: NonZeroU64::new(144),
                     },
                     count: None,
                 },
@@ -265,6 +331,32 @@ impl RenderFeaturePostProcessPainterly {
                         sample_type: wgpu::TextureSampleType::Float { filterable: false },
                         view_dimension: wgpu::TextureViewDimension::D2,
                         multisampled: false,
+                    },
+                    count: None,
+                },
+                // scene depth: the world anchor unprojects the slot ray to the
+                // surface it hits (and re-tests that surface at the projected
+                // pixel so occluded lattice points never paint); stamp VERTEX
+                // only, so the blit pass never sees it
+                wgpu::BindGroupLayoutEntry {
+                    binding: 5,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Depth,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+                // the 3D pass' view_proj plus its CPU inverse: unprojection
+                // for the anchor and re-projection to put the daub back
+                wgpu::BindGroupLayoutEntry {
+                    binding: 6,
+                    visibility: wgpu::ShaderStages::VERTEX,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: NonZeroU64::new(160),
                     },
                     count: None,
                 },
@@ -365,6 +457,18 @@ impl RenderFeaturePostProcessPainterly {
                     binding: 4,
                     resource: wgpu::BindingResource::TextureView(offscreen_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(depth_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &world_anchor,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
             ],
         });
 
@@ -395,6 +499,18 @@ impl RenderFeaturePostProcessPainterly {
                 wgpu::BindGroupEntry {
                     binding: 4,
                     resource: wgpu::BindingResource::TextureView(offscreen_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(depth_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &world_anchor,
+                        offset: 0,
+                        size: None,
+                    }),
                 },
             ],
         });
@@ -427,6 +543,18 @@ impl RenderFeaturePostProcessPainterly {
                     binding: 4,
                     resource: wgpu::BindingResource::TextureView(offscreen_view),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: wgpu::BindingResource::TextureView(depth_view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                        buffer: &world_anchor,
+                        offset: 0,
+                        size: None,
+                    }),
+                },
             ],
         });
 
@@ -438,6 +566,9 @@ impl RenderFeaturePostProcessPainterly {
             bind_group_b,
             params,
             params_uniform,
+            world_anchor,
+            world_anchor_uniform,
+            stroke_time: 0.0,
             brush_texture,
             brush_view,
         })
@@ -460,6 +591,8 @@ impl RenderFeaturePostProcessPainterly {
         flow: f32,
         bristle: f32,
         color_jitter: f32,
+        world_size: f32,
+        world_cell: f32,
     ) {
         // headroom up to 128 px so the stamps can be compared against the
         // reference daub scale without re-touching the WGSL
@@ -477,6 +610,12 @@ impl RenderFeaturePostProcessPainterly {
         let flow = flow.clamp(0.0, 1.0);
         let bristle = bristle.clamp(0.0, 1.0);
         let color_jitter = color_jitter.clamp(0.0, 0.3);
+        // world units: 0 keeps px daubs; 0.25 puts a reference-scale daub
+        // roughly a quarter of a metre across
+        let world_size = world_size.max(0.0);
+        // the lattice spacing the unprojected hit points snap to; never zero
+        // or the WGSL divide in floor(world / cell) is undefined
+        let world_cell = world_cell.max(0.001);
 
         if self.params_uniform.size == size
             && self.params_uniform.size_min == size_min
@@ -492,6 +631,8 @@ impl RenderFeaturePostProcessPainterly {
             && self.params_uniform.flow == flow
             && self.params_uniform.bristle == bristle
             && self.params_uniform.color_jitter == color_jitter
+            && self.params_uniform.world_size == world_size
+            && self.params_uniform.world_cell == world_cell
         {
             return;
         }
@@ -512,7 +653,11 @@ impl RenderFeaturePostProcessPainterly {
             flow,
             bristle,
             color_jitter,
+            world_size,
+            time: self.params_uniform.time, // rolled separately, every frame
+            world_cell,
             pad_x: 0.0,
+            pad_y: 0.0,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
 
@@ -548,7 +693,51 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
         }
 
         let Some(ledger) = ledger.first() else { return };
+
+        // world anchor: the SAME camera record the 3D pass bound, read straight
+        // from the ledger. the post-process runs on the whole capture, so the
+        // projection uses the capture extent; per-seat split screens would
+        // want one anchor per seat, but the vp rects keep the seats visually
+        // clean today and a shared anchor is the honest single-camera path
+        let state_camera = ledger.read::<SysRecordCamera>();
+        let s = Services::get();
+        let cap_w = s.gpu.capture_width as i32;
+        let cap_h = s.gpu.capture_height as i32;
+        let cam_uniform = state_camera.cameras.get_uniform(cap_w, cap_h);
+        let view: Matrix4<f32> = cam_uniform.view_proj.into();
+        // a singular matrix (a degenerate frustum) falls back to identity and
+        // degrades to the screen anchor the WGSL far test then produces
+        let inv = view.invert().unwrap_or(Matrix4::identity());
+        // the projection's y scale survives the GL -> WGPU z rewrite untouched,
+        // so [1][1] is 1 / tan(fovy / 2) and the capture focal length follows
+        let proj_cols: [[f32; 4]; 4] = state_camera.cameras.get_projection(cap_w, cap_h).calc_matrix().into();
+        let anchor_new = WorldAnchorUniform {
+            view_proj: cam_uniform.view_proj,
+            inv_view_proj: inv.into(),
+            cam_pos: cam_uniform.view_position,
+            focal_px: 0.5 * cap_h as f32 * proj_cols[1][1],
+            pad_x: 0.0,
+            pad_y: 0.0,
+            pad_z: 0.0,
+        };
+        if self.world_anchor_uniform != anchor_new {
+            self.world_anchor_uniform = anchor_new;
+            let queue = s.gpu.queue();
+            queue.write_buffer(&self.world_anchor, 0, cast_slice(&[self.world_anchor_uniform]));
+        }
+
         let record = ledger.read::<SysRecordStrokePaint>();
+
+        // the rolling clock only feeds the temporal drift of world-anchored
+        // daubs: the WGSL never reads absolute seconds, only a monotone roll,
+        // so a fixed 60 Hz step is enough and no clock source is needed
+        self.stroke_time += 1.0 / 60.0;
+        if self.params_uniform.time != self.stroke_time {
+            self.params_uniform.time = self.stroke_time;
+            let queue = s.gpu.queue();
+            queue.write_buffer(&self.params, 0, cast_slice(&[self.params_uniform]));
+        }
+
         self.update(
             record.size,
             record.size_min,
@@ -564,6 +753,8 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
             record.flow,
             record.bristle,
             record.color_jitter,
+            record.world_size,
+            record.world_cell,
         );
     }
 

@@ -15,9 +15,9 @@
 // group(0) binding(1): guide texture (the COLOUR source; only the stamp
 //                       VERTEX samples it, plus the blit FRAGMENT, so this
 //                       binding is visible to both stages)
-// group(0) binding(2): StrokeParams uniform (15 scalars + 1 pad puts vp on
-//                       offset 64, matching the #[repr(C)] CPU mirror; total
-//                       128 bytes)
+// group(0) binding(2): StrokeParams uniform (18 scalars + 2 pads put vp on
+//                       offset 80, matching the #[repr(C)] CPU mirror; total
+//                       144 bytes)
 // group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
 //                       procedural bristle mask shared by every daub)
 // group(0) binding(4): ORIGINAL FRAME (stamp VERTEX only; every size and
@@ -26,6 +26,17 @@
 //                       piecewise CONSTANT, so window differences over a
 //                       flat block read exactly null and the whole stamp
 //                       layer degenerates to a static screen-space lattice)
+// group(0) binding(5): scene depth (stamp VERTEX: unprojects each slot
+//                       anchor to a world point so strokes sit in the scene
+//                       instead of sliding over the screen; full capture
+//                       resolution)
+// group(0) binding(6): WorldAnchorParams uniform (view_proj + its CPU inverse
+//                       + camera position + focal length in px, per camera)
+//
+// temporal history WITHOUT a history texture: a slot's identity is its world
+// anchor, which is stable across frames; a hash of that anchor against a
+// rolling time (StrokeParams.time, advanced per frame on the CPU) gives
+// sub-pixel jitter and a birth/death phase that reads as accumulation.
 
 struct StrokeParams {
     size: f32, // long-axis daub length in the FLAT-area case, px
@@ -43,7 +54,14 @@ struct StrokeParams {
     flow: f32, // how much the daub SHAPE follows the tensor's anisotropy
     bristle: f32, // how much the brush art drives the stamp alpha
     color_jitter: f32, // per-stamp colour jitter amplitude (0 = guide colour)
-    pad_x: f32, // one pad only: 15 scalars now, vp is a composite and must
+    world_size: f32, // 0 = daub long axis stays in px; > 0 = WORLD units,
+    //                     projected through the focal length so distant
+    //                     strokes shrink with the scene
+    time: f32, // rolling seconds (CPU-advanced each frame): drives the
+    //                     temporal drift of world-anchored daubs
+    world_cell: f32, // world-space lattice spacing the hit points snap to
+    pad_x: f32, // pads: 18 scalars now, two of them keep vp 16-byte aligned
+    pad_y: f32,
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
@@ -68,6 +86,59 @@ var brushTex: texture_2d<f32>;
 
 @group(0) @binding(4)
 var sceneTex: texture_2d<f32>;
+
+@group(0) @binding(5)
+var sceneDepthTex: texture_depth_2d;
+
+// world anchor plumbing: the exact view_proj the 3D pass bound, plus its CPU
+// inverse. unprojecting the depth buffer through the inverse and re-projecting
+// the snapped world point needs no znear/zfar anywhere: the depth texture
+// already stores the same non-linear [0, 1] values the projection wrote, and
+// the matrices invert and re-apply them as a pair
+struct WorldAnchorParams {
+    view_proj: mat4x4<f32>, // world -> clip (column-major, as every pass binds it)
+    inv_view_proj: mat4x4<f32>, // clip -> world
+    cam_pos: vec4<f32>, // world-space camera position (kept for distance fades)
+    focal_px: f32, // capture focal length in pixels (y): px per world unit at z = 1
+    _pad_x: f32,
+    _pad_y: f32,
+    _pad_z: f32,
+};
+
+@group(0) @binding(6)
+var<uniform> world_anchor: WorldAnchorParams;
+
+// capture-space uv (uv.y = 0 at the TOP row, the blit pass' convention) at a
+// stored depth value, as a clip-space position for the inverse matrix
+fn uvToClip(uv: vec2<f32>, depth: f32) -> vec4<f32> {
+    return vec4<f32>(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, depth, 1.0);
+}
+
+// depth at a uv of the capture: the depth texture keeps the FULL capture
+// resolution while the guide may be half-res, so the uv must scale by the
+// texture's own dimensions, never by the guide's
+fn sceneDepthUv(uv: vec2<f32>) -> f32 {
+    let d = textureDimensions(sceneDepthTex);
+    let c = vec2<i32>(
+        clamp(i32(uv.x * f32(d.x)), 0, i32(d.x) - 1),
+        clamp(i32(uv.y * f32(d.y)), 0, i32(d.y) - 1),
+    );
+    return textureLoad(sceneDepthTex, c, 0);
+}
+
+fn unprojectWorld(uv: vec2<f32>, depth: f32) -> vec3<f32> {
+    let w4 = world_anchor.inv_view_proj * uvToClip(uv, depth);
+    return w4.xyz / w4.w;
+}
+
+// world -> uv.xy of the capture, clip z in .z (still the non-linear [0, 1]
+// depth space the texture stores, so it compares straight against a tap) and
+// the view distance in .w (<= 0 is behind the camera)
+fn projectUv(world: vec3<f32>) -> vec4<f32> {
+    let clip = world_anchor.view_proj * vec4<f32>(world, 1.0);
+    let ndc = clip.xyz / clip.w;
+    return vec4<f32>(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5, ndc.z, clip.w);
+}
 
 // --- blit pass: guide copied through untouched, so the daubs read as an
 // overlay on a coherent painterly palette instead of raw scene colour ---
@@ -241,20 +312,88 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // feeding both anchors the same slot coordinate would tie anchor.y to
     // anchor.x by one fixed xor - every point on one digital line, only
     // 1/8 of any cell grid ever receiving a daub (the sparse-scatter bug)
-    var anchor = vec2<f32>(
+    let cell_px = 1.0 / sqrt(f32(SLOT_COUNT));
+    var rayUv = vec2<f32>(
         ditherHash(vec2<f32>(s, 3.0 + seed), seed),
         ditherHash(vec2<f32>(97.0 + seed, s), seed),
     );
-    let cell = 1.0 / sqrt(f32(SLOT_COUNT));
     let jx = ditherHash(vec2<f32>(s, 11.0 + seed), seed) - 0.5;
     let jy = ditherHash(vec2<f32>(71.0 + seed, s), seed) - 0.5; // inputs swapped:
     // sharing p.x = s would tie jy to jx by a fixed xor again (sub-cell
     // amplitude, so cosmetic, but the same structural trap)
-    anchor = anchor + vec2<f32>(jx, jy) * paint_params.jitter * cell;
-    anchor = anchor - floor(anchor); // wrap back into the texture
+    rayUv = rayUv + vec2<f32>(jx, jy) * paint_params.jitter * cell_px;
+    rayUv = rayUv - floor(rayUv); // wrap back into the texture
 
     let guideDims = textureDimensions(guideTex); // vec2<u32>
     let dims = vec2<f32>(f32(guideDims.x), f32(guideDims.y));
+
+    // the WORLD anchor (what reference painterly does and the last missing
+    // piece here): the hashed uv is only a RAY into the scene. its hit point
+    // snaps to a world lattice cell - floor(world / cell_world) is camera-
+    // invariant - the daub sits at a cell-hash position inside that cell, and
+    // the point is re-projected through the 3D pass' view_proj. anchors then
+    // translate, scale and rotate WITH the geometry instead of sliding over
+    // the screen, and every hash below keys on the CELL identity, so a stroke
+    // keeps its colour and angle while the camera moves: the shimmer of a
+    // purely screen-space anchor field disappears. cells stay implicit (no
+    // world stroke list): the slot only chooses which ray to shoot, and
+    // surfaces the camera reveals between old frames simply get hit later
+    let hitDepth = sceneDepthUv(rayUv);
+    var anchor = rayUv; // uv of the anchor, whatever the source was
+    var hashKey = s; // identity for the angle/colour hashes below
+    var viewW = 0.0; // view-space distance (clip.w); 0 = screen fallback
+    if (hitDepth < 0.9999) { // a real surface under the ray
+        let world = unprojectWorld(rayUv, hitDepth);
+        let cell = floor(world / paint_params.world_cell);
+        // three DIFFERENT cell-coordinate pairs per hash: ditherHash xors a
+        // p.x term with a p.y term, so two calls sharing a coordinate pair
+        // would be tied by a constant xor, the same structural trap that
+        // made the old screen anchor scatter sparse
+        let hxy = ditherHash(vec2<f32>(cell.x, cell.y), 0.0);
+        let hzx = ditherHash(vec2<f32>(cell.z, cell.x + 17.0), 0.0);
+        let hyz = ditherHash(vec2<f32>(cell.y + 41.0, cell.z), 0.0);
+        // sub-pixel temporal drift: hashing the rolling time against the
+        // cell moves the daub a hair every frame, the accumulation-style
+        // liveliness of reference painterly. no history texture is needed:
+        // the cell IS the stroke's identity, so it is the same daub drifting,
+        // not a new one popping in
+        let t = paint_params.time;
+        let drift = vec3<f32>(
+            ditherHash(vec2<f32>(cell.x + 7.0, t), 0.0),
+            ditherHash(vec2<f32>(cell.y + 23.0, t), 0.0),
+            ditherHash(vec2<f32>(cell.z + 61.0, t), 0.0),
+        ) - vec3<f32>(0.5);
+        let anchorWorld = (cell + vec3<f32>(hxy, hyz, hzx) + drift * 0.1) * paint_params.world_cell;
+        let proj = projectUv(anchorWorld);
+        // behind the camera: degenerate quad, free
+        if (proj.w <= 0.01) {
+            out.pos = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+            out.local = vec2<f32>(0.0, 0.0);
+            out.uv = vec2<f32>(0.0, 0.0);
+            out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+            out.color = vec3<f32>(0.0, 0.0, 0.0);
+            return out;
+        }
+        // depth-occlusion: the stored depth at the PROJECTED pixel against
+        // the anchor's own clip z (both the same non-linear [0, 1] space, so
+        // they compare straight). an anchor floating behind real geometry
+        // must not paint over it; the small bias absorbs the non-linearity
+        let occ = sceneDepthUv(proj.xy);
+        if (occ + 0.002 < proj.z) {
+            out.pos = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+            out.local = vec2<f32>(0.0, 0.0);
+            out.uv = vec2<f32>(0.0, 0.0);
+            out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+            out.color = vec3<f32>(0.0, 0.0, 0.0);
+            return out;
+        }
+        anchor = proj.xy;
+        viewW = proj.w;
+        // cell-hash identity: continuous in value but constant per cell
+        hashKey = hxy * 131.0 + hzx * 17.0 + hyz;
+    }
+    // sky / far: no surface to sit on, keep the plain screen anchor there
+
     let center = anchor * dims; // texture pixels
     let pxi = vec2<i32>(i32(center.x), i32(center.y));
 
@@ -299,7 +438,15 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let anisotropy = clamp(lam2 / max(lam1, 0.000001), 0.0, 1.0); // 1 = isotropic
     let contrast = clamp(max(sqrt(lam1) * paint_params.mag_scale, lineContrast), 0.0, 1.0);
 
-    let longPx = mix(paint_params.size, paint_params.size * paint_params.size_min, contrast);
+    var longPx = mix(paint_params.size, paint_params.size * paint_params.size_min, contrast);
+    if (paint_params.world_size > 0.0 && viewW > 0.0) {
+        // world-sized daub: a fixed world length through the capture's focal
+        // length, so distant strokes shrink WITH the scene; the contrast mix
+        // still modulates, busy neighbourhoods take their fraction of it
+        longPx = mix(1.0, paint_params.size_min, contrast)
+            * world_anchor.focal_px * paint_params.world_size / max(viewW, 0.01);
+    }
+
     // SHAPE follows the flow: a strongly directional neighbourhood (a real
     // edge, anisotropy near 0) carries the full elongation, a near-isotropic
     // one falls back to aspect_min. flow = 0 keeps one constant elongation
@@ -314,12 +461,14 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // fallback now fires only on genuinely empty regions (bare floor, fog),
     // because the raw frame is never piecewise constant: over the walls the
     // surface detail gives a real tangent for almost every stamp, which is
-    // what stops the paint from sitting as a fixed screen-space pattern
-    var angle = (ditherHash(vec2<f32>(s, 211.0 + seed), seed) - 0.5) * 6.2831853;
+    // what stops the paint from sitting as a fixed screen-space pattern. the
+    // angle keys on the world CELL, so a stroke turns with the geometry
+    // instead of re-rolling per screen position
+    var angle = (ditherHash(vec2<f32>(hashKey, 211.0 + seed), seed) - 0.5) * 6.2831853;
     if (lam1 > 0.000001) {
         angle = 0.5 * atan2(2.0 * tf.y, tf.x - tf.z) + 1.5707963;
     }
-    angle = angle + (ditherHash(vec2<f32>(s, 307.0 + seed), seed) - 0.5) * paint_params.wobble;
+    angle = angle + (ditherHash(vec2<f32>(hashKey, 307.0 + seed), seed) - 0.5) * paint_params.wobble;
 
     let ca = cos(angle);
     let sa = sin(angle);
@@ -364,9 +513,9 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     var col = colorAtGuide(pxi);
     let cj = paint_params.color_jitter;
     if (cj > 0.0) {
-        let hr = ditherHash(vec2<f32>(s, 541.0 + seed), seed) * 2.0 - 1.0;
-        let hl = ditherHash(vec2<f32>(s, 613.0 + seed), seed) * 2.0 - 1.0;
-        let hs = ditherHash(vec2<f32>(s, 727.0 + seed), seed) * 2.0 - 1.0;
+        let hr = ditherHash(vec2<f32>(hashKey, 541.0 + seed), seed) * 2.0 - 1.0;
+        let hl = ditherHash(vec2<f32>(hashKey, 613.0 + seed), seed) * 2.0 - 1.0;
+        let hs = ditherHash(vec2<f32>(hashKey, 727.0 + seed), seed) * 2.0 - 1.0;
         // select not sign: sign(0.0) is 0, which would let a rare slot land on
         // the guide colour exactly
         let dr = select(-1.0, 1.0, hr >= 0.0) * (0.6 + 0.4 * abs(hr));

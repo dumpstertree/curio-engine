@@ -3876,6 +3876,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "camera",
+ "cgmath",
  "ctor",
  "curio_core",
  "egui",

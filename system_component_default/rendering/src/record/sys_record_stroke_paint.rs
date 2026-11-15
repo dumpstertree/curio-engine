@@ -19,6 +19,8 @@ pub struct SysRecordStrokePaint {
     pub flow: f32,
     pub bristle: f32,
     pub color_jitter: f32,
+    pub world_size: f32,
+    pub world_cell: f32,
 }
 
 impl SysRecordStrokePaint {
@@ -39,6 +41,8 @@ impl SysRecordStrokePaint {
             flow: 1.0, // daub shape follows the tensor's anisotropy
             bristle: 0.75, // brush mask drives the stamp alpha
             color_jitter: 0.16, // forced per-channel deviation from the guide colour (minimum 0.6 * this), so stamps are distinguishable inside flat kuwahara blocks
+            world_size: 0.0, // 0 = daub long axis stays in px; > 0 = WORLD units through the focal length, so distant paint shrinks with the scene
+            world_cell: 0.25, // world-space lattice the unprojected ray hits snap to: the anchor's identity, ~25 cm cells at reference scale
         }
     }
 }
@@ -61,6 +65,8 @@ impl RecordOverride for SysRecordStrokePaint {
             "flow" => { self.flow = val }
             "bristle" => { self.bristle = val }
             "color_jitter" => { self.color_jitter = val }
+            "world_size" => { self.world_size = val }
+            "world_cell" => { self.world_cell = val }
             _ => {}
         }
     }
@@ -80,6 +86,8 @@ impl RecordOverride for SysRecordStrokePaint {
             FieldState::new("flow", self.flow),
             FieldState::new("bristle", self.bristle),
             FieldState::new("color_jitter", self.color_jitter),
+            FieldState::new("world_size", self.world_size),
+            FieldState::new("world_cell", self.world_cell),
         ]
     }
 }
