@@ -413,3 +413,59 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
         });
     }
 }
+
+#[test]
+fn ui_nodes_author_as_a_taffy_tree() {
+    use curio_core::Color;
+
+    let world = std::rc::Rc::new(std::cell::RefCell::new(hecs::World::new()));
+    let mut context = Context3D::new(world.clone());
+
+    // a Panel arranges its children; taffy gives it the whole viewport
+    let panel = context
+        .spawner("hud")
+        .facet(UiNode::builder().gap(12.0).min_size(400.0, 200.0).build())
+        .spawn();
+
+    // a Button paints a box and gets hover/click feedback for free
+    let button = context
+        .spawner("fire")
+        .facet(
+            UiNode::builder()
+                .kind(UiKind::Button)
+                .size(120.0, 32.0)
+                .z_index(1)
+                .color(Color::new_01(0.8, 0.2, 0.2, 1.0))
+                .build(),
+        )
+        .spawn();
+
+    // the builder does not attach children — set_parent is what wires the tree
+    button.set_parent(Some(panel.clone()));
+
+    // UI forms place with Transform2D, in pixels below-right of their UI parent
+    let mut shift = Transform2D::default();
+    shift.position = Vector2::new(40.0, 20.0);
+    // add_facet consumes and returns the form, so the handle is rebound
+    let button = button.add_facet(shift);
+
+    // the button hangs under the panel and owns exactly one UiNode
+    let mut attached = false;
+    if let Some(parent) = button.parent() {
+        attached = parent.instance_id() == panel.instance_id();
+    }
+    assert!(attached);
+
+    let mut authored = false;
+    if let Some(node) = button.get_facet::<UiNode>() {
+        authored = node.kind == UiKind::Button && node.width == 120.0 && node.height == 32.0
+            && node.z_index == 1 && !node.hovered;
+    }
+    assert!(authored);
+
+    let mut placed = false;
+    if let Some(transform) = button.get_facet::<Transform2D>() {
+        placed = transform.position.x == 40.0 && transform.position.y == 20.0;
+    }
+    assert!(placed);
+}

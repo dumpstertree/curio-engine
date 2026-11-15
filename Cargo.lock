@@ -5133,6 +5133,7 @@ dependencies = [
  "facet",
  "gameplay",
  "habit",
+ "hecs",
  "input",
  "record",
  "serde",
