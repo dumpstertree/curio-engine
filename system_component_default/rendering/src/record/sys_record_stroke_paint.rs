@@ -23,6 +23,14 @@ pub struct SysRecordStrokePaint {
     pub world_cell: f32,
     pub drift: f32,
     pub life: f32,
+    pub mass_mult: f32,
+    pub mass_alpha: f32,
+    pub mid_mult: f32,
+    pub mid_alpha: f32,
+    pub fine_mult: f32,
+    pub fine_alpha: f32,
+    pub contrast_split_low: f32,
+    pub contrast_split_high: f32,
 }
 
 impl SysRecordStrokePaint {
@@ -47,6 +55,15 @@ impl SysRecordStrokePaint {
             world_cell: 0.25, // world-space lattice the unprojected ray hits snap to: the anchor's identity, ~25 cm cells at reference scale
             drift: 0.02, // sinusoidal sway inside a stroke's own lattice cell, as a fraction of that cell: a hair of motion so the paint breathes instead of sitting dead flat
             life: 4.0, // mean birth/death cycle in seconds (0 = hard pops kept): each stroke fades up and down on a phase keyed on its own identity, so what the camera reveals and retires lands mid-fade instead of popping at full alpha
+            // three contrast-gated layers over one draw: slots [0,512) are mass (long-axis mult x3 of the base size, lattice scaled to match, painted UNDER everything), [512,1536) mid, the rest detail
+            mass_mult: 3.0, // mass layer long axis as a mult of the base size
+            mass_alpha: 0.45, // masses stay quiet so they read as underpainting
+            mid_mult: 1.5, // mid-tone layer long-axis mult
+            mid_alpha: 0.8,
+            fine_mult: 1.0, // detail layer keeps the existing daub regime
+            fine_alpha: 1.0,
+            contrast_split_low: 0.35, // mass paints only where local contrast is below this: broad strokes stay in FLAT neighbourhoods (the research fix for large daubs landing on detailed zones)
+            contrast_split_high: 0.7, // detail paints only above this; mid fills the band between the two splits
         }
     }
 }
@@ -73,6 +90,14 @@ impl RecordOverride for SysRecordStrokePaint {
             "world_cell" => { self.world_cell = val }
             "drift" => { self.drift = val }
             "life" => { self.life = val }
+            "mass_mult" => { self.mass_mult = val }
+            "mass_alpha" => { self.mass_alpha = val }
+            "mid_mult" => { self.mid_mult = val }
+            "mid_alpha" => { self.mid_alpha = val }
+            "fine_mult" => { self.fine_mult = val }
+            "fine_alpha" => { self.fine_alpha = val }
+            "contrast_split_low" => { self.contrast_split_low = val }
+            "contrast_split_high" => { self.contrast_split_high = val }
             _ => {}
         }
     }
@@ -96,6 +121,14 @@ impl RecordOverride for SysRecordStrokePaint {
             FieldState::new("world_cell", self.world_cell),
             FieldState::new("drift", self.drift),
             FieldState::new("life", self.life),
+            FieldState::new("mass_mult", self.mass_mult),
+            FieldState::new("mass_alpha", self.mass_alpha),
+            FieldState::new("mid_mult", self.mid_mult),
+            FieldState::new("mid_alpha", self.mid_alpha),
+            FieldState::new("fine_mult", self.fine_mult),
+            FieldState::new("fine_alpha", self.fine_alpha),
+            FieldState::new("contrast_split_low", self.contrast_split_low),
+            FieldState::new("contrast_split_high", self.contrast_split_high),
         ]
     }
 }

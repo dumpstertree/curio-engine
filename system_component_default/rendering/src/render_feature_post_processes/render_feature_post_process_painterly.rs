@@ -82,9 +82,9 @@ fn build_brush_mask() -> Vec<u8> {
     return bytes;
 }
 
-/// CPU-side mirror of the WGSL StrokeParams struct: 20 scalars, no pad needed
-/// (the count itself lands the vp composite on offset 80 exactly as naga lays
-/// it out, 144 bytes)
+/// CPU-side mirror of the WGSL StrokeParams struct: 20 scalars, then the 3-vec4
+/// layers array at offset 80 and the 4-vec4 vp at 128 exactly as naga lays it
+/// out (192 bytes total)
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 pub struct StrokeUniform {
@@ -109,6 +109,10 @@ pub struct StrokeUniform {
     world_cell: f32, // world-space lattice spacing the ray hits snap to
     drift: f32, // world-anchor breathing as a fraction of one lattice cell
     life: f32, // birth/death cycle mean in seconds (0 = hard pops kept)
+    layers: [[f32; 4]; 3], // per layer (mass, mid, detail): long-axis mult,
+    //                        alpha mult, contrast gate lo, gate hi; slots
+    //                        [0,512), [512,1536), [1536,4096) stamp in this
+    //                        order, so mass sits UNDER the fine layer
     vp: [[f32; 4]; 4], // viewport rects in uv: minx, miny, maxx, maxy
 }
 
@@ -185,6 +189,14 @@ impl RenderFeaturePostProcessPainterly {
             // brush breathing rather than as the field sliding
             life: 4.0, // mean birth/death cycle: each stroke fades up and down
             //          on a phase of its own, so camera reveals land mid-fade
+            // three size-graded layers gated by contrast band: mass only in
+            // flat areas, detail only in busy ones, mid in between; alpha
+            // mult keeps the masses quiet so they read as an underpainting
+            layers: [
+                [3.0, 0.45, 0.0, 0.35], // mass: broad low-alpha value masses
+                [1.5, 0.8, 0.35, 0.7], // mid-tone strokes over the masses
+                [1.0, 1.0, 0.7, 1.0], // detail: the existing daub regime
+            ],
             vp: [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
         };
 
@@ -310,7 +322,7 @@ impl RenderFeaturePostProcessPainterly {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(144),
+                        min_binding_size: NonZeroU64::new(192),
                     },
                     count: None,
                 },
@@ -599,6 +611,14 @@ impl RenderFeaturePostProcessPainterly {
         world_cell: f32,
         drift: f32,
         life: f32,
+        mass_mult: f32,
+        mass_alpha: f32,
+        mid_mult: f32,
+        mid_alpha: f32,
+        fine_mult: f32,
+        fine_alpha: f32,
+        contrast_split_low: f32,
+        contrast_split_high: f32,
     ) {
         // headroom up to 128 px so the stamps can be compared against the
         // reference daub scale without re-touching the WGSL
@@ -627,6 +647,23 @@ impl RenderFeaturePostProcessPainterly {
         let drift = drift.clamp(0.0, 0.25);
         // mean seconds of the birth/death cycle; 0 disables the fade
         let life = life.max(0.0);
+        // layer size/alpha mults are relative to the base daub regime; the
+        // two split values tile the contrast bands [0, low], [low, high],
+        // [high, 1], and the boundaries must never flip
+        let mass_mult = mass_mult.clamp(0.05, 8.0);
+        let mid_mult = mid_mult.clamp(0.05, 8.0);
+        let fine_mult = fine_mult.clamp(0.05, 8.0);
+        let mass_alpha = mass_alpha.clamp(0.0, 1.0);
+        let mid_alpha = mid_alpha.clamp(0.0, 1.0);
+        let fine_alpha = fine_alpha.clamp(0.0, 1.0);
+        let contrast_split_low = contrast_split_low.clamp(0.0, 1.0);
+        let contrast_split_high = contrast_split_high.clamp(0.0, 1.0).max(contrast_split_low);
+        // composite the tiling gates into the layer vec4 (mult, alpha, lo, hi)
+        let layers_new = [
+            [mass_mult, mass_alpha, 0.0, contrast_split_low],
+            [mid_mult, mid_alpha, contrast_split_low, contrast_split_high],
+            [fine_mult, fine_alpha, contrast_split_high, 1.0],
+        ];
 
         if self.params_uniform.size == size
             && self.params_uniform.size_min == size_min
@@ -646,6 +683,7 @@ impl RenderFeaturePostProcessPainterly {
             && self.params_uniform.world_cell == world_cell
             && self.params_uniform.drift == drift
             && self.params_uniform.life == life
+            && self.params_uniform.layers == layers_new
         {
             return;
         }
@@ -671,6 +709,7 @@ impl RenderFeaturePostProcessPainterly {
             world_cell,
             drift,
             life,
+            layers: layers_new,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
 
@@ -770,6 +809,14 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
             record.world_cell,
             record.drift,
             record.life,
+            record.mass_mult,
+            record.mass_alpha,
+            record.mid_mult,
+            record.mid_alpha,
+            record.fine_mult,
+            record.fine_alpha,
+            record.contrast_split_low,
+            record.contrast_split_high,
         );
     }
 

@@ -15,9 +15,9 @@
 // group(0) binding(1): guide texture (the COLOUR source; only the stamp
 //                       VERTEX samples it, plus the blit FRAGMENT, so this
 //                       binding is visible to both stages)
-// group(0) binding(2): StrokeParams uniform (20 scalars, no pad: the count
-//                       itself puts vp on offset 80, matching the #[repr(C)]
-//                       CPU mirror; total 144 bytes)
+// group(0) binding(2): StrokeParams uniform (20 scalars, then a 3-vec4 layers
+//                       array at offset 80 and 4-vec4 vp at 128, matching the
+//                       #[repr(C)] CPU mirror; total 192 bytes)
 // group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
 //                       procedural bristle mask shared by every daub)
 // group(0) binding(4): ORIGINAL FRAME (stamp VERTEX only; every size and
@@ -73,7 +73,15 @@ struct StrokeParams {
     life: f32, // birth/death cycle mean in seconds (0 = hard pops kept):
     //                     each stroke fades up and down on a phase keyed on
     //                     its own identity, softening camera pop-in
-    //                     (20 scalars now: the count itself keeps vp aligned)
+    //                     (20 scalars then the two vec4 arrays: 192 bytes)
+    layers: array<vec4<f32>, 3>, // per layer (mass, mid, detail): long-axis
+    //                     mult, alpha mult, contrast gate lo, gate hi; slot
+    //                     index ranges draw mass..mid..detail in submission
+    //                     order, so the mass layer sits UNDER the detail,
+    //                     which is the reference structure: broad value
+    //                     masses first, finer strokes on top, each layer
+    //                     gated to its own contrast band (the research
+    //                     fix for large daubs landing in detailed zones)
     vp: array<vec4<f32>, 4>, // viewport rects in uv: minx, miny, maxx, maxy
 };
 
@@ -83,6 +91,14 @@ struct StrokeParams {
 // 1920x1080 capture against a 22 px daub, so only busy edges caught any
 // paint. 4096 puts mean spacing at ~22 px, i.e. one daub per coverage cell
 const SLOT_COUNT: i32 = 4096;
+
+// layer split by slot INDEX range: a slot's ray is a hash of its index, so
+// ANY contiguous range is still uniform over the screen, and vertex
+// submission order makes the ranges come back-to-front for free: mass is
+// stamped under mid is stamped under detail. coverage scales as length
+// squared, so the 3x-longer mass layer needs only ~1/9 the slots
+const SLOT_MASS_END: u32 = 512u;
+const SLOT_MID_END: u32 = 1536u;
 
 @group(0) @binding(0)
 var paintSampler: sampler;
@@ -300,6 +316,17 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let s = f32(slot);
     let seed = paint_params.seed;
 
+    // layer from the slot range (see SLOT_MASS_END/SLOT_MID_END): mass strokes
+    // are submitted FIRST so they rasterise UNDER the mid and detail layers,
+    // which is the reference's back-to-front structure for free
+    var layer_i: u32 = 2;
+    if (slot < SLOT_MASS_END) {
+        layer_i = 0;
+    } else if (slot < SLOT_MID_END) {
+        layer_i = 1;
+    }
+    let L = paint_params.layers[layer_i];
+
     // keep test first: a rejected slot degenerates the whole quad, which costs
     // nothing in the rasteriser and needs no list compaction
     let keepNoise = ditherHash(vec2<f32>(s, 137.0 + seed), seed);
@@ -358,7 +385,11 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     var viewW = 0.0; // view-space distance (clip.w); 0 = screen fallback
     if (hitDepth < 0.9999) { // a real surface under the ray
         let world = unprojectWorld(rayUv, hitDepth);
-        let cell = floor(world / paint_params.world_cell);
+        // the lattice scales WITH the layer's stroke length: mass daubs sit
+        // one per larger cell instead of many stacking on the same fine cell,
+        // and each layer's cells stay camera-invariant identity-wise
+        let cell_world = paint_params.world_cell * L.x;
+        let cell = floor(world / cell_world);
         // three DIFFERENT cell-coordinate pairs per hash: ditherHash xors a
         // p.x term with a p.y term, so two calls sharing a coordinate pair
         // would be tied by a constant xor, the same structural trap that
@@ -381,7 +412,7 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
             sin(t * 0.9 + phase.y * 0.5),
             sin(t * 1.1 + phase.z * 0.25),
         );
-        let anchorWorld = (cell + vec3<f32>(hxy, hyz, hzx) + drift * paint_params.drift) * paint_params.world_cell;
+        let anchorWorld = (cell + vec3<f32>(hxy, hyz, hzx) + drift * paint_params.drift) * cell_world;
         let proj = projectUv(anchorWorld);
         // behind the camera: degenerate quad, free
         if (proj.w <= 0.01) {
@@ -431,15 +462,18 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         // triangle ramp with a plateau: UP over the first 30 % of a cycle,
         // full through the middle 40 %, DOWN over the last 30 %
         fade = smoothstep(0.0, 0.3, cyc) * (1.0 - smoothstep(0.7, 1.0, cyc));
-        if (fade < 0.02) {
-            out.pos = vec4<f32>(0.0, 0.0, 0.0, 1.0);
-            out.local = vec2<f32>(0.0, 0.0);
-            out.uv = vec2<f32>(0.0, 0.0);
-            out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
-            out.color = vec3<f32>(0.0, 0.0, 0.0);
-            out.fade = 0.0;
-            return out;
-        }
+    }
+    // the layer's alpha rides the same interpolator as the birth/death ramp,
+    // so an alpha-0 layer degenerates every one of its slots for free
+    fade = fade * L.y;
+    if (fade < 0.02) {
+        out.pos = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+        out.local = vec2<f32>(0.0, 0.0);
+        out.uv = vec2<f32>(0.0, 0.0);
+        out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+        out.color = vec3<f32>(0.0, 0.0, 0.0);
+        out.fade = 0.0;
+        return out;
     }
 
     let center = anchor * dims; // texture pixels
@@ -451,7 +485,9 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // collapsing to zero over every kuwahara block, and the tensor is read
     // over the extent the stamp covers, so a daub always belongs to the
     // edge it sits on
-    let gradRadius = clamp(paint_params.size * 0.35, 1.5, 24.0);
+    // the probe covers the extent the stamp draws, so it scales with the
+    // layer's long axis too
+    let gradRadius = clamp(paint_params.size * L.x * 0.35, 1.5, 24.0);
     let tf = sceneTensor(center + vec2<f32>(0.5, 0.5), gradRadius);
 
     // a stamp sitting exactly on a grout or crack line straddles it
@@ -486,6 +522,20 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     let anisotropy = clamp(lam2 / max(lam1, 0.000001), 0.0, 1.0); // 1 = isotropic
     let contrast = clamp(max(sqrt(lam1) * paint_params.mag_scale, lineContrast), 0.0, 1.0);
 
+    // the layer's contrast band gate: mass paints only in FLAT neighbourhoods,
+    // detail only in busy ones, mid in between. this is the research paper's
+    // fix for "large strokes ending up in detailed zones even after
+    // rescaling", and it reuses the contrast the size mix already samples
+    if (contrast < L.z || contrast > L.w) {
+        out.pos = vec4<f32>(0.0, 0.0, 0.0, 1.0);
+        out.local = vec2<f32>(0.0, 0.0);
+        out.uv = vec2<f32>(0.0, 0.0);
+        out.rect = vec4<f32>(0.0, 0.0, 1.0, 1.0);
+        out.color = vec3<f32>(0.0, 0.0, 0.0);
+        out.fade = 0.0;
+        return out;
+    }
+
     var longPx = mix(paint_params.size, paint_params.size * paint_params.size_min, contrast);
     if (paint_params.world_size > 0.0 && viewW > 0.0) {
         // world-sized daub: a fixed world length through the capture's focal
@@ -494,6 +544,9 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         longPx = mix(1.0, paint_params.size_min, contrast)
             * world_anchor.focal_px * paint_params.world_size / max(viewW, 0.01);
     }
+    // layer size mult: mass is a longer brush over the same contrast mix,
+    // in BOTH the px and the world-sized mode
+    longPx = longPx * L.x;
 
     // SHAPE follows the flow: a strongly directional neighbourhood (a real
     // edge, anisotropy near 0) carries the full elongation, a near-isotropic
