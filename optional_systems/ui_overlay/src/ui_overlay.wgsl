@@ -2,7 +2,8 @@
 // positions arrive as normalized device coordinates, colours as rgba.
 
 struct VSOut {
-    @builtin(position) clip_position: vec2<f32>,
+    // the position built-in is a vec4 in clip space — wgpu rejects a vec2
+    @builtin(position) clip_position: vec4<f32>,
     @location(0) tint: vec4<f32>,
 };
 
@@ -12,7 +13,8 @@ fn vs_main(
     @location(1) tint: vec4<f32>,
 ) -> VSOut {
     var out: VSOut;
-    out.clip_position = position;
+    // positions are already NDC from the pass; z stays 0 and w stays 1
+    out.clip_position = vec4<f32>(position, 0.0, 1.0);
     out.tint = tint;
     return out;
 }
