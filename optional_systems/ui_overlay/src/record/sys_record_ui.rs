@@ -9,6 +9,10 @@ pub struct SysRecordUi {
     /// the size of this screen in pixels. The layout habit falls back to the
     /// capture size when this is left at zero.
     pub viewport: Vector2,
+    /// the pixel space the `AxisCode::Cursor` arrives in — usually the window
+    /// size. Zero falls back to the capture size. Boxes are laid out in
+    /// `viewport` pixels, so the hit-test scales the cursor by the two.
+    pub cursor_space: Vector2,
 }
 
 impl SysRecordUi {
@@ -16,6 +20,7 @@ impl SysRecordUi {
         SysRecordUi {
             draw_calls: Vec::new(),
             viewport: Vector2::new(1280.0, 720.0),
+            cursor_space: Vector2::zero(),
         }
     }
     /// The screen size to lay out against. Zero axes mean "not authored" — the
@@ -29,6 +34,8 @@ impl RecordOverride for SysRecordUi {
         match field {
             "width" => self.viewport.x = value.parse().unwrap_or(self.viewport.x),
             "height" => self.viewport.y = value.parse().unwrap_or(self.viewport.y),
+            "cursor_width" => self.cursor_space.x = value.parse().unwrap_or(self.cursor_space.x),
+            "cursor_height" => self.cursor_space.y = value.parse().unwrap_or(self.cursor_space.y),
             _ => {}
         }
     }
@@ -37,6 +44,8 @@ impl RecordOverride for SysRecordUi {
             FieldState::new("calls", self.draw_calls.len()),
             FieldState::new("width", self.viewport.x),
             FieldState::new("height", self.viewport.y),
+            FieldState::new("cursor_width", self.cursor_space.x),
+            FieldState::new("cursor_height", self.cursor_space.y),
         ]
     }
 }
