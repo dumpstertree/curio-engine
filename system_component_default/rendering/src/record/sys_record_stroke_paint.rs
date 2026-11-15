@@ -23,6 +23,7 @@ pub struct SysRecordStrokePaint {
     pub world_cell: f32,
     pub drift: f32,
     pub life: f32,
+    pub ground: f32,
     pub mass_mult: f32,
     pub mass_alpha: f32,
     pub mid_mult: f32,
@@ -55,6 +56,7 @@ impl SysRecordStrokePaint {
             world_cell: 0.25, // world-space lattice the unprojected ray hits snap to: the anchor's identity, ~25 cm cells at reference scale
             drift: 0.02, // sinusoidal sway inside a stroke's own lattice cell, as a fraction of that cell: a hair of motion so the paint breathes instead of sitting dead flat
             life: 4.0, // mean birth/death cycle in seconds (0 = hard pops kept): each stroke fades up and down on a phase keyed on its own identity, so what the camera reveals and retires lands mid-fade instead of popping at full alpha
+            ground: 0.5, // imprimatura strength: the blit multiplies the guide toward a dark warm earth tint at this fraction, so gaps between daubs read as a toned ground carrying the picture's edge structure (the reference's readability WITHOUT outlines comes from this base, plus value-preserving stroke jitter and the CPU alpha cap that keeps the ground bleeding)
             // three contrast-gated layers over one draw, each with its OWN full
             // grid: slots [0,4096) are mass (long-axis mult x3 of the base size,
             // lattice scaled to match, painted UNDER everything), [4096,8192) mid,
@@ -93,6 +95,7 @@ impl RecordOverride for SysRecordStrokePaint {
             "world_cell" => { self.world_cell = val }
             "drift" => { self.drift = val }
             "life" => { self.life = val }
+            "ground" => { self.ground = val }
             "mass_mult" => { self.mass_mult = val }
             "mass_alpha" => { self.mass_alpha = val }
             "mid_mult" => { self.mid_mult = val }
@@ -124,6 +127,7 @@ impl RecordOverride for SysRecordStrokePaint {
             FieldState::new("world_cell", self.world_cell),
             FieldState::new("drift", self.drift),
             FieldState::new("life", self.life),
+            FieldState::new("ground", self.ground),
             FieldState::new("mass_mult", self.mass_mult),
             FieldState::new("mass_alpha", self.mass_alpha),
             FieldState::new("mid_mult", self.mid_mult),

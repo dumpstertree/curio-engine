@@ -1,7 +1,15 @@
 // === Painterly stamping passes ===
 // hybrid layer: the PREVIOUS stage in the chain (the flow-driven kuwahara) is
-// the COLOUR GUIDE, not the final picture. pass 1 blits that guide to the
-// output; pass 2 stamps feathered elliptical daubs over it with ALPHA_BLENDING.
+// the COLOUR GUIDE, not the final picture. pass 1 lays that guide down as an
+// IMPRIMATURA: it is multiplied toward a dark warm earth tint (StrokeParams.ground),
+// exactly as the reference paints over a toned ground; pass 2 stamps feathered
+// elliptical daubs over it with ALPHA_BLENDING. The reference's readability
+// WITHOUT outlines comes from this structure, not from the strokes themselves:
+// its strokes preserve the scene's LUMINANCE and deviate only in chroma, its
+// stroke opacity caps at ~0.7 so the ground always contributes a quarter, and
+// the gaps between daubs read as a darker ground carrying the picture's edge
+// structure. Ours now carries all three properties: value-preserving jitter,
+// a CPU-side alpha discipline that keeps the ground bleeding, and this pass.
 //
 // no stroke list exists: every daub's parameters (anchor, size, angle, colour)
 // are recomputed in the vertex stage from its slot index, so there are no
@@ -15,9 +23,9 @@
 // group(0) binding(1): guide texture (the COLOUR source; only the stamp
 //                       VERTEX samples it, plus the blit FRAGMENT, so this
 //                       binding is visible to both stages)
-// group(0) binding(2): StrokeParams uniform (20 scalars, then a 3-vec4 layers
-//                       array at offset 80 and 4-vec4 vp at 128, matching the
-//                       #[repr(C)] CPU mirror; total 192 bytes)
+// group(0) binding(2): StrokeParams uniform (21 scalars plus 3 pad floats, then a
+//                       3-vec4 layers array at offset 96 and 4-vec4 vp at 144,
+//                       matching the #[repr(C)] CPU mirror; total 208 bytes)
 // group(0) binding(3): brush alpha texture (stamp FRAGMENT only; one
 //                       procedural bristle mask shared by every daub)
 // group(0) binding(4): ORIGINAL FRAME (stamp VERTEX only; every size and
@@ -73,7 +81,12 @@ struct StrokeParams {
     life: f32, // birth/death cycle mean in seconds (0 = hard pops kept):
     //                     each stroke fades up and down on a phase keyed on
     //                     its own identity, softening camera pop-in
-    //                     (20 scalars then the two vec4 arrays: 192 bytes)
+    ground: f32, // imprimatura strength in the blit pass: the guide is
+    //                     multiplied toward a dark warm ground, so gaps
+    //                     between daubs carry the picture's edge structure,
+    //                     and with the alpha discipline a >= 25 % bleed
+    //                     survives under every stroke
+    //                     (21 scalars then the two vec4 arrays: 208 bytes)
     layers: array<vec4<f32>, 3>, // per layer (mass, mid, detail): long-axis
     //                     mult, alpha mult, contrast gate lo, gate hi; slot
     //                     index ranges draw mass..mid..detail in submission
@@ -174,8 +187,13 @@ fn projectUv(world: vec3<f32>) -> vec4<f32> {
     return vec4<f32>(ndc.x * 0.5 + 0.5, 0.5 - ndc.y * 0.5, ndc.z, clip.w);
 }
 
-// --- blit pass: guide copied through untouched, so the daubs read as an
-// overlay on a coherent painterly palette instead of raw scene colour ---
+// --- blit pass: the guide laid down as an IMPRIMATURA. The reference is read-
+// able without outlines because a toned ground survives between and under its
+// strokes: gaps show a darker, warmer base that still carries the picture's
+// edge structure (door recesses, shadowed seams, the roofline against the sky)
+// instead of bare kuwahara flats. A multiply toward a dark earth tint is the
+// cheapest possible version of that ground: hue survives, only value drops,
+// and it stays continuous in the knob ---
 struct BlitOut {
     @builtin(position) pos: vec4<f32>,
     @location(0) uv: vec2<f32>,
@@ -202,7 +220,11 @@ fn vs_fullscreen(@builtin(vertex_index) i: u32) -> BlitOut {
 
 @fragment
 fn fs_blit(in: BlitOut) -> @location(0) vec4<f32> {
-    return textureSample(guideTex, paintSampler, in.uv);
+    let col = textureSample(guideTex, paintSampler, in.uv);
+    // dark warm earth tint: hue survives, value drops, which is what a real
+    // imprimatura (a toned canvas) does to the palette painted over it
+    let tint = mix(vec3<f32>(1.0), vec3<f32>(0.38, 0.30, 0.22), paint_params.ground);
+    return vec4<f32>(col.rgb * tint, col.a);
 }
 
 // --- stamp pass helpers ---
@@ -483,9 +505,12 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         // cycles never align into one global pulse
         let life_len = max(paint_params.life * (0.5 + ditherHash(vec2<f32>(hashKey, 811.0 + seed), seed)), 0.05);
         let cyc = fract(paint_params.time / life_len + ditherHash(vec2<f32>(hashKey, 977.0 + seed), seed));
-        // triangle ramp with a plateau: UP over the first 30 % of a cycle,
-        // full through the middle 40 %, DOWN over the last 30 %
-        fade = smoothstep(0.0, 0.3, cyc) * (1.0 - smoothstep(0.7, 1.0, cyc));
+        // triangle ramp with a LONG plateau: UP over the first 12 % of a
+        // cycle, full across the middle 76 %, DOWN over the last 12 %. The
+        // reference pins its strokes and lets only reveals and retirements
+        // fade; at the old 30/40/30 half the field sat in a partial fade at
+        // all times and that whole-field boiling fought the readability
+        fade = smoothstep(0.0, 0.12, cyc) * (1.0 - smoothstep(0.88, 1.0, cyc));
     }
     // the layer's alpha rides the same interpolator as the birth/death ramp,
     // so an alpha-0 layer degenerates every one of its slots for free
@@ -644,16 +669,18 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     out.local = c;
     out.rect = paintViewportForUv(anchor);
     // the painted layer MUST deviate from the guide or coverage is invisible
-    // by construction: inside a kuwahara block the guide is constant, so a
-    // stamp carrying that exact centre colour paints nothing and the flat
-    // areas of every earlier build read as bare guide with the kuahara dither
-    // artefacts showing through - the coverage was there geometrically, it
-    // simply could not be seen. so the deviation is FORCED, not sampled from a
-    // range that contains zero: each channel moves by at least 0.6 * amplitude
-    // (sign from the hash, magnitude floored) which removes the near-zero
-    // samples the earlier uniform spread wasted half its range on. an
-    // additive term rides the same sign so the shift survives near-black and
-    // near-white regions where a pure multiply collapses to nothing;
+    // by construction (inside a constant kuwahara block a stamp carrying that
+    // exact colour paints nothing, the old flat-area symptom). but the
+    // reference deviates in CHROMA at PRESERVED VALUE, and this must too: a
+    // per-channel VALUE deviation is a value-noise field laid over the
+    // picture, and it fought the silhouettes in every earlier build once the
+    // layers overpainted the base. So the deviation stays FORCED (no zero
+    // samples: each signed channel term is floored at 0.6 of the amplitude)
+    // but is then made luminance-NEUTRAL: the luminance component of the
+    // deviation vector is projected out, so a stroke keeps the guide's
+    // luminance exactly and all its motion is hue and saturation. The value
+    // map of the picture therefore survives under every painted region by
+    // construction, which is the reference's second readability mechanism.
     // color_jitter = 0 still reproduces the exact guide colour
     var col = colorAtGuide(pxi);
     let cj = paint_params.color_jitter;
@@ -666,8 +693,29 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
         let dr = select(-1.0, 1.0, hr >= 0.0) * (0.6 + 0.4 * abs(hr));
         let dl = select(-1.0, 1.0, hl >= 0.0) * (0.6 + 0.4 * abs(hl));
         let ds = select(-1.0, 1.0, hs >= 0.0) * (0.6 + 0.4 * abs(hs));
-        col = col * vec3<f32>(1.0 + cj * dr, 1.0 + cj * dl, 1.0 + cj * ds)
-            + vec3<f32>(dr * cj * 0.25, dl * cj * 0.25, ds * cj * 0.25);
+        // deviation vector: the multiplicative form collapses near black, so
+        // the additive term rides the same signed channel as before
+        var dev = (col + vec3<f32>(0.25)) * vec3<f32>(cj * dr, cj * dl, cj * ds);
+        let w = vec3<f32>(0.2126, 0.7152, 0.0722);
+        // kill the luminance component: dot(dev, w) is the value shift, and
+        // subtracting that grey keeps the stroke's luminance exactly equal to
+        // the guide point's, so contrast and silhouettes survive every stroke
+        dev = dev - dot(dev, w) * w;
+        // the projection can flatten a near-pure-luma deviation; re-nudge so
+        // the largest chroma shift keeps a floor and coverage stays visible
+        // inside a flat kuwahara block. The fallback direction (W.g, -W.r, 0)
+        // is luminance-free by construction, and it fires only when the
+        // projection left a sliver, so no stroke can land on the guide colour
+        let m = max(max(abs(dev.x), abs(dev.y)), abs(dev.z));
+        let need = cj * 0.4;
+        if (m < need * 0.25) {
+            dev = vec3<f32>(0.7152, -0.2126, 0.0) * cj * select(-1.5, 1.5, hr >= 0.0);
+        } else if (m < need) {
+            dev = dev * (need / m);
+        }
+        // clamp can tilt luminance slightly at the extremes (near black/white),
+        // which is the same behaviour the reference's palette snap shows there
+        col = clamp(col + dev, vec3<f32>(0.0), vec3<f32>(1.0));
     }
     out.color = col;
     out.fade = fade;

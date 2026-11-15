@@ -86,9 +86,9 @@ fn build_brush_mask() -> Vec<u8> {
     return bytes;
 }
 
-/// CPU-side mirror of the WGSL StrokeParams struct: 20 scalars, then the 3-vec4
-/// layers array at offset 80 and the 4-vec4 vp at 128 exactly as naga lays it
-/// out (192 bytes total)
+/// CPU-side mirror of the WGSL StrokeParams struct: 21 scalars plus three
+/// explicit padding floats, then the 3-vec4 layers array at offset 96 and the
+/// 4-vec4 vp at 144 exactly as naga lays it out (208 bytes total)
 #[repr(C)]
 #[derive(Copy, Clone, Pod, Zeroable)]
 pub struct StrokeUniform {
@@ -113,6 +113,13 @@ pub struct StrokeUniform {
     world_cell: f32, // world-space lattice spacing the ray hits snap to
     drift: f32, // world-anchor breathing as a fraction of one lattice cell
     life: f32, // birth/death cycle mean in seconds (0 = hard pops kept)
+    ground: f32, // imprimatura: guide * mix(1, dark warm earth tint, ground) in
+    //                   the blit pass; gaps between daubs then read as a darker
+    //                   ground carrying the picture structure, and the alpha
+    //                   discipline keeps a >= 25 % bleed under every stroke
+    pad_x: f32,
+    pad_y: f32,
+    pad_z: f32,
     layers: [[f32; 4]; 3], // per layer (mass, mid, detail): long-axis mult,
     //                        alpha mult, contrast gate lo, gate hi; slots
     //                        [0,4096), [4096,8192), [8192,12288) stamp in this
@@ -193,6 +200,13 @@ impl RenderFeaturePostProcessPainterly {
             // brush breathing rather than as the field sliding
             life: 4.0, // mean birth/death cycle: each stroke fades up and down
             //          on a phase of its own, so camera reveals land mid-fade
+            ground: 0.5, // imprimatura: the guide is multiplied toward a dark warm
+            //          earth tint at this fraction in the blit pass, so the gaps
+            //          between daubs read as the reference's toned ground carrying
+            //          the picture's edge structure instead of bare kuwahara flats
+            pad_x: 0.0,
+            pad_y: 0.0,
+            pad_z: 0.0,
             // three contrast-gated layers over one draw: EACH layer gets its own
             // full 4096-ray grid (mass [0,4096), mid [4096,8192), detail the rest)
             // so the gate picks a region's stroke SCALE without ever thinning its
@@ -328,7 +342,7 @@ impl RenderFeaturePostProcessPainterly {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: NonZeroU64::new(192),
+                        min_binding_size: NonZeroU64::new(208),
                     },
                     count: None,
                 },
@@ -617,6 +631,7 @@ impl RenderFeaturePostProcessPainterly {
         world_cell: f32,
         drift: f32,
         life: f32,
+        ground: f32,
         mass_mult: f32,
         mass_alpha: f32,
         mid_mult: f32,
@@ -653,6 +668,8 @@ impl RenderFeaturePostProcessPainterly {
         let drift = drift.clamp(0.0, 0.25);
         // mean seconds of the birth/death cycle; 0 disables the fade
         let life = life.max(0.0);
+        // imprimatura strength 0..1 (0 = the old straight guide copy)
+        let ground = ground.clamp(0.0, 1.0);
         // layer size/alpha mults are relative to the base daub regime; the
         // two split values tile the contrast bands [0, low], [low, high],
         // [high, 1], and the boundaries must never flip
@@ -664,6 +681,15 @@ impl RenderFeaturePostProcessPainterly {
         let fine_alpha = fine_alpha.clamp(0.0, 1.0);
         let contrast_split_low = contrast_split_low.clamp(0.0, 1.0);
         let contrast_split_high = contrast_split_high.clamp(0.0, 1.0).max(contrast_split_low);
+        // ground-bleed discipline: a LONE max-alpha stamp must not erase the
+        // imprimatura at its own pixel, so the effective single-stroke opacity
+        // (base alpha x the strongest layer mult) is capped at 0.75 and the
+        // base keeps >= 25 % everywhere it is covered once. Overlapping stamps
+        // still stack, but a painted region can no longer be an opaque
+        // re-painting of the flattened guide: the picture's value map survives
+        // the way the reference's ~0.7 max stroke opacity does
+        let max_layer_alpha = mass_alpha.max(mid_alpha).max(fine_alpha);
+        let alpha = if max_layer_alpha > 0.0 { alpha.min(0.75 / max_layer_alpha) } else { alpha };
         // composite the tiling gates into the layer vec4 (mult, alpha, lo, hi)
         let layers_new = [
             [mass_mult, mass_alpha, 0.0, contrast_split_low],
@@ -689,6 +715,7 @@ impl RenderFeaturePostProcessPainterly {
             && self.params_uniform.world_cell == world_cell
             && self.params_uniform.drift == drift
             && self.params_uniform.life == life
+            && self.params_uniform.ground == ground
             && self.params_uniform.layers == layers_new
         {
             return;
@@ -715,6 +742,10 @@ impl RenderFeaturePostProcessPainterly {
             world_cell,
             drift,
             life,
+            ground,
+            pad_x: 0.0,
+            pad_y: 0.0,
+            pad_z: 0.0,
             layers: layers_new,
             vp: self.params_uniform.vp, // from the graphics mappings
         };
@@ -815,6 +846,7 @@ impl RenderFeaturePostProcess for RenderFeaturePostProcessPainterly {
             record.world_cell,
             record.drift,
             record.life,
+            record.ground,
             record.mass_mult,
             record.mass_alpha,
             record.mid_mult,
