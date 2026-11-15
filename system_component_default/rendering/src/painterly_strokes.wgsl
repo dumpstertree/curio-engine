@@ -535,9 +535,20 @@ fn vs_stamp(@builtin(vertex_index) i: u32) -> StampOut {
     // alpha across a feather window instead: mass falls out on busy walls,
     // detail falls out on flat floors, and no contrast value is ever
     // uncovered by all three layers at once
-    let band_weight =
-        smoothstep(L.z - BAND_FEATHER, L.z + BAND_FEATHER, contrast) *
-        (1.0 - smoothstep(L.w - BAND_FEATHER, L.w + BAND_FEATHER, contrast));
+    // the feather only works BETWEEN two layers: mass owns contrast 0 and
+    // detail owns 1, so feathering those outer boundaries inward dims flat
+    // walls (the mass layer at half weight where the old regime drew at
+    // full) and busy edges, and breaks the partition's sum-to-one. only
+    // the interior boundaries at the split knobs may feather
+    var band_lo = 1.0;
+    if (L.z > BAND_FEATHER) {
+        band_lo = smoothstep(L.z - BAND_FEATHER, L.z + BAND_FEATHER, contrast);
+    }
+    var band_hi = 1.0;
+    if (L.w < 1.0 - BAND_FEATHER) {
+        band_hi = 1.0 - smoothstep(L.w - BAND_FEATHER, L.w + BAND_FEATHER, contrast);
+    }
+    let band_weight = band_lo * band_hi;
     fade = fade * band_weight;
     // the band weight rides out.fade into the fragment, and a layer weighted
     // to nothing degenerates its slots, keeping the culled layers free
