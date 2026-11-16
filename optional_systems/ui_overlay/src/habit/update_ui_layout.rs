@@ -155,11 +155,12 @@ impl Habit for Instance {
         let cursor_raw = state_input.raw.get_axis(&AxisCode::Cursor).position;
         let clicked = state_input.raw.get_button(&ButtonCode::MousePrimary).is_down;
 
-        // the cursor arrives in window pixels (the host feeds winit's
-        // CursorMoved position), while boxes live in viewport pixels and the
-        // overlay pass stretches that viewport across the swapchain. so the
-        // hit-test undoes the same stretch — the y axis needs no flip because
-        // the pass already maps the UI's top edge to the screen's top edge
+        // the cursor arrives in the host's screen pixels: winit feeds
+        // CursorMoved (window pixels), and the egui editor maps its object-fit
+        // rect into game texture pixels. boxes live in viewport pixels, so
+        // without an authored cursor_space the hit-test assumes the cursor
+        // came in in capture size — the y axis needs no flip because the
+        // pass already maps the UI's top edge to the screen's top edge
         let mut cursor_space = state_ui.cursor_space;
         if !(cursor_space.x > 0.0 && cursor_space.y > 0.0) {
             let gpu = &Services::get().gpu;
