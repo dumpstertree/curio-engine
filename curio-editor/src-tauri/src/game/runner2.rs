@@ -75,17 +75,27 @@ impl AppInstance {
     pub fn forward_input(&mut self, event: InputEvent) {
         match event {
             InputEvent::Button { code, pressed } => {
-                // if let Some(button) = ButtonCode::from_u32(code) {
-                //     let state = if pressed { ButtonPressed::Down } else { ButtonPressed::Up };
-                //     self.app_instance.curio.input_button(button, state);
-                // }
+                // the webview sends HTML pointer button indices: 0 = primary,
+                // 2 = secondary; keyCodes have no curio mapping yet
+                let button: Option<ButtonCode> = match code {
+                    0 => Some(ButtonCode::MousePrimary),
+                    2 => Some(ButtonCode::MouseSecondary),
+                    _ => None,
+                };
+                if let Some(button) = button {
+                    let state = if pressed { ButtonPressed::Down } else { ButtonPressed::Up };
+                    self.app_instance
+                        .curio
+                        .input_button(button, state);
+                }
             }
             InputEvent::Axis { code, x, y } => {
-                // if let Some(axis) = AxisCode::from_u32(code) {
-                //     self.app_instance
-                //         .curio
-                //         .input_axis(axis, Vector3::new(x, y, 0.0));
-                // }
+                // the webview sends code 0 = AxisCode::Cursor
+                if code == 0 {
+                    self.app_instance
+                        .curio
+                        .input_axis(AxisCode::Cursor, Vector3::new(x, y, 0.0));
+                }
             }
         }
     }

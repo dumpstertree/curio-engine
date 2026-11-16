@@ -110,8 +110,17 @@ export function ViewportCanvas() {
       height={FRAME_HEIGHT}
       className="viewport-canvas"
       onPointerMove={e => {
-        const rect = (e.target as HTMLCanvasElement).getBoundingClientRect();
-        sendAxis(e.clientX - rect.left, e.clientY - rect.top);
+        const canvas = e.target as HTMLCanvasElement;
+        const rect = canvas.getBoundingClientRect();
+        // the canvas backing store is FRAME_WIDTH x FRAME_HEIGHT but the
+        // element is stretched to its CSS box — the game needs the cursor in
+        // frame pixels, so map across the element's actual display size
+        if (rect.width > 0 && rect.height > 0) {
+          sendAxis(
+            (e.clientX - rect.left) * FRAME_WIDTH / rect.width,
+            (e.clientY - rect.top) * FRAME_HEIGHT / rect.height,
+          );
+        }
       }}
       onPointerDown={e => {
         (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
