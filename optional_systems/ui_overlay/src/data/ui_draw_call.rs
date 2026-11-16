@@ -1,6 +1,6 @@
-use crate::UiColor;
 use crate::UiKind;
 use crate::UiRect;
+use curio_core::Color;
 
 /// One painted box in the UI overlay, produced every frame by the
 /// `update_ui_layout` habit and consumed by `UiOverlayPass`.
@@ -9,7 +9,7 @@ pub struct UiDrawCall {
     /// where the box landed on its screen, in pixels
     pub rect: UiRect,
     /// hover/click feedback is already folded in
-    pub color: UiColor,
+    pub color: Color,
     pub kind: UiKind,
     /// painter's order within the screen — lower draws first
     pub z_index: i32,
@@ -26,7 +26,7 @@ pub struct UiDrawCall {
 }
 
 impl UiDrawCall {
-    pub fn new(rect: UiRect, color: UiColor, kind: UiKind, z_index: i32, text: String, font_size: f32, instance_id: i32, order: u32) -> UiDrawCall {
+    pub fn new(rect: UiRect, color: Color, kind: UiKind, z_index: i32, text: String, font_size: f32, instance_id: i32, order: u32) -> UiDrawCall {
         UiDrawCall { rect, color, kind, z_index, text, font_size, instance_id, order }
     }
 }

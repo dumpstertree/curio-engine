@@ -3,7 +3,7 @@ use egui_wgpu::wgpu::{self, BindGroup, BindGroupDescriptor, BindGroupEntry, Bind
 use bytemuck::{self, cast_slice};
 use std::sync::Arc;
 
-use crate::{DEFAULT_FONT, SysRecordUi, UiColor, UiDrawCall, UiFontDesc, UiFontGrid, UiKind, UiRect};
+use crate::{DEFAULT_FONT, SysRecordUi, UiDrawCall, UiFontDesc, UiFontGrid, UiKind, UiRect};
 
 /// A painted corner of a UI quad, in normalized device coordinates.
 ///
@@ -127,7 +127,8 @@ impl UiOverlayPass {
                     continue;
                 }
                 let color = draw_call.color;
-                let tint = [color.r, color.g, color.b, color.a];
+                // curio_core Color keeps its channels private behind accessors
+                let tint = [color.as_r_01(), color.as_g_01(), color.as_b_01(), color.as_a_01()];
 
                 // UI pixels → the screen's share of the swapchain → NDC.
                 // left/right, then the y flip for the UI's down axis

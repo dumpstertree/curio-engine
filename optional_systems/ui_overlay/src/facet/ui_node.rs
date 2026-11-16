@@ -1,29 +1,46 @@
-use crate::UiColor;
 use crate::UiKind;
 use crate::UiRect;
 use curio_core::{Color, FieldState};
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
 
+/// One node of a screen's UI tree, authored on a form and laid out by
+/// `update_ui_layout`.
+///
+/// The facet holds what the author asked for (kind, requested box, flex
+/// knobs, colour, label); the layout habit writes back what taffy resolved —
+/// `rect` in screen pixels plus `hovered`/`clicked` from the cursor — every
+/// tick. A Panel only arranges children; every other kind paints one quad,
+/// and a label paints glyphs from the shared font atlas instead of a box.
+///
+/// Children are not attached by the builder: the author sets `set_parent` on
+/// the child's form, and a leaf places itself with a `Transform2D` facet, in
+/// pixels below-right of its nearest UI ancestor.
 #[facet]
 pub struct UiNode {
     pub kind: UiKind,
+    /// painter's order within the screen. The author's `z_index` wins, taffy's
+    /// own paint order breaks ties
     pub z_index: i32,
-    // requested box. 0 means "let taffy decide" (flex/auto sizing)
+    /// requested box. 0 means "let taffy decide" (flex/auto sizing)
     pub width: f32,
     pub height: f32,
     pub min_width: f32,
     pub min_height: f32,
+    /// spacing between this panel's children, in pixels
     pub gap: f32,
+    /// how much a panel child claim's leftover space in its row
     pub flex_grow: f32,
-    pub color: UiColor,
-    // label painted from the shared font atlas inside this box. Empty means
-    // no text; layout is monospace, one advance per character
+    /// paint colour. `Color`'s own default is fully clear, so the layout
+    /// habit paints white when this is left unset
+    pub color: Color,
+    /// label painted from the shared font atlas inside this box. Empty means
+    /// no text; layout is monospace, one advance per character
     pub text: String,
-    // glyph height in pixels — the shared atlas's native cells are 12 px.
-    // 0 means "don't paint text"
+    /// glyph height in pixels — the shared atlas's native cells are 12 px.
+    /// 0 means "don't paint text"
     pub font_size: f32,
-    // filled in by update_ui_layout each tick
+    /// filled in by update_ui_layout each tick
     pub rect: UiRect,
     pub hovered: bool,
     pub clicked: bool,
@@ -47,7 +64,8 @@ impl FieldOverride for UiNode {
             "min_height" => self.min_height = value.parse().unwrap_or(self.min_height),
             "gap" => self.gap = value.parse().unwrap_or(self.gap),
             "flex_grow" => self.flex_grow = value.parse().unwrap_or(self.flex_grow),
-            "color" => self.color = UiColor::from_color(value.parse().unwrap_or(self.color.to_color())),
+            // Color parses "#rrggbb[aa]" and "(r, g, b[, a])", both 0..1
+            "color" => self.color = value.parse().unwrap_or(self.color),
             "text" => self.text = value.to_string(),
             "font_size" => self.font_size = value.parse().unwrap_or(self.font_size),
             _ => {}
@@ -63,7 +81,7 @@ impl FieldOverride for UiNode {
             FieldState::new("min_height", self.min_height),
             FieldState::new("gap", self.gap),
             FieldState::new("flex_grow", self.flex_grow),
-            FieldState::new("color", self.color.to_color().as_hex()),
+            FieldState::new("color", self.color.as_hex()),
             FieldState::new("text", self.text.clone()),
             FieldState::new("font_size", self.font_size),
         ]
@@ -81,7 +99,7 @@ impl UiNode {
             min_height: 0.0,
             gap: 0.0,
             flex_grow: 0.0,
-            color: UiColor::white(),
+            color: Color::white(),
             text: String::new(),
             font_size: 12.0,
         }
@@ -92,6 +110,10 @@ impl UiNode {
     }
 }
 
+/// Builder for `UiNode` — `UiNode::builder().kind(...).size(...).build()`.
+/// Each call sets one authored field and hands the builder back, so an
+/// author writes only what the node needs and every other field keeps the
+/// panel defaults: a Panel with no requested box, flexing its children.
 pub struct UiNodeBuilder {
     kind: UiKind,
     z_index: i32,
@@ -101,7 +123,7 @@ pub struct UiNodeBuilder {
     min_height: f32,
     gap: f32,
     flex_grow: f32,
-    color: UiColor,
+    color: Color,
     text: String,
     font_size: f32,
 }
@@ -141,7 +163,7 @@ impl UiNodeBuilder {
         self
     }
     pub fn color(mut self, color: Color) -> Self {
-        self.color = UiColor::from_color(color);
+        self.color = color;
         self
     }
     pub fn text(mut self, text: &str) -> Self {

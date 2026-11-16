@@ -1,4 +1,4 @@
-use curio_core::{AxisCode, ButtonCode, Ledger, Nerve, NetworkModes, Services, Severity, Vector2};
+use curio_core::{AxisCode, ButtonCode, Color, Ledger, Nerve, NetworkModes, Services, Severity, Vector2};
 use gameplay::{
     built_in::facet::transform::transform2d::Transform2D,
     context_3d::Context3D,
@@ -65,6 +65,36 @@ fn safe_size(value: f32) -> f32 {
         1000000.0
     } else {
         value
+    }
+}
+
+// hover/click feedback scales the rgb channels and keeps the alpha. curio_core
+// only offers Color * f32, which scales alpha too — an alpha over 1 lets the
+// blend darken whatever sits behind the box
+fn clamp_01(value: f32) -> f32 {
+    if value < 0.0 {
+        0.0
+    } else if value > 1.0 {
+        1.0
+    } else {
+        value
+    }
+}
+fn brighten(color: Color, amount: f32) -> Color {
+    Color::new_01(
+        clamp_01(color.as_r_01() * amount),
+        clamp_01(color.as_g_01() * amount),
+        clamp_01(color.as_b_01() * amount),
+        color.as_a_01(),
+    )
+}
+// Color's own Default is fully clear, so an authored box that never got a
+// colour would paint nothing — white is what the author meant
+fn visible_color(color: Color) -> Color {
+    if color == Color::clear() {
+        Color::white()
+    } else {
+        color
     }
 }
 
@@ -412,11 +442,11 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
                     if !(facet.rect.width > 0.0 && facet.rect.height > 0.0) {
                         continue;
                     }
-                    let mut color = facet.color;
+                    let mut color = visible_color(facet.color);
                     if facet.clicked {
-                        color = color.brighten(1.3);
+                        color = brighten(color, 1.3);
                     } else if facet.hovered {
-                        color = color.brighten(1.1);
+                        color = brighten(color, 1.1);
                     }
                     let mut order: u32 = 0;
                     if let Some(found) = orders.get(id) {
