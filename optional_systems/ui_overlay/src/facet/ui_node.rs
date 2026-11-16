@@ -17,6 +17,12 @@ pub struct UiNode {
     pub gap: f32,
     pub flex_grow: f32,
     pub color: UiColor,
+    // label painted from the shared font atlas inside this box. Empty means
+    // no text; layout is monospace, one advance per character
+    pub text: String,
+    // glyph height in pixels — the shared atlas's native cells are 12 px.
+    // 0 means "don't paint text"
+    pub font_size: f32,
     // filled in by update_ui_layout each tick
     pub rect: UiRect,
     pub hovered: bool,
@@ -42,6 +48,8 @@ impl FieldOverride for UiNode {
             "gap" => self.gap = value.parse().unwrap_or(self.gap),
             "flex_grow" => self.flex_grow = value.parse().unwrap_or(self.flex_grow),
             "color" => self.color = UiColor::from_color(value.parse().unwrap_or(self.color.to_color())),
+            "text" => self.text = value.to_string(),
+            "font_size" => self.font_size = value.parse().unwrap_or(self.font_size),
             _ => {}
         }
     }
@@ -56,6 +64,8 @@ impl FieldOverride for UiNode {
             FieldState::new("gap", self.gap),
             FieldState::new("flex_grow", self.flex_grow),
             FieldState::new("color", self.color.to_color().as_hex()),
+            FieldState::new("text", self.text.clone()),
+            FieldState::new("font_size", self.font_size),
         ]
     }
 }
@@ -72,6 +82,8 @@ impl UiNode {
             gap: 0.0,
             flex_grow: 0.0,
             color: UiColor::white(),
+            text: String::new(),
+            font_size: 12.0,
         }
     }
     // resolved box for this node - useful for hit-testing from other systems
@@ -90,6 +102,8 @@ pub struct UiNodeBuilder {
     gap: f32,
     flex_grow: f32,
     color: UiColor,
+    text: String,
+    font_size: f32,
 }
 impl UiNodeBuilder {
     pub fn kind(mut self, kind: UiKind) -> Self {
@@ -130,6 +144,14 @@ impl UiNodeBuilder {
         self.color = UiColor::from_color(color);
         self
     }
+    pub fn text(mut self, text: &str) -> Self {
+        self.text = String::from(text);
+        self
+    }
+    pub fn font_size(mut self, font_size: f32) -> Self {
+        self.font_size = font_size;
+        self
+    }
     pub fn build(self) -> UiNode {
         UiNode {
             kind: self.kind,
@@ -141,6 +163,8 @@ impl UiNodeBuilder {
             gap: self.gap,
             flex_grow: self.flex_grow,
             color: self.color,
+            text: self.text,
+            font_size: self.font_size,
             rect: UiRect::zero(),
             hovered: false,
             clicked: false,

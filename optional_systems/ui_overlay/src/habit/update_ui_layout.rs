@@ -422,7 +422,16 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
                         order = *found;
                     }
                     screen.draw_calls.push(
-                        UiDrawCall::new(facet.rect, color, facet.kind, facet.z_index, *id, order),
+                        UiDrawCall::new(
+                            facet.rect,
+                            color,
+                            facet.kind,
+                            facet.z_index,
+                            facet.text.clone(),
+                            facet.font_size,
+                            *id,
+                            order,
+                        ),
                     );
                 }
             }
@@ -480,6 +489,8 @@ fn ui_nodes_author_as_a_taffy_tree() {
                 .size(120.0, 32.0)
                 .z_index(1)
                 .color(Color::new_01(0.8, 0.2, 0.2, 1.0))
+                .text("fire")
+                .font_size(16.0)
                 .build(),
         )
         .spawn();
@@ -503,7 +514,8 @@ fn ui_nodes_author_as_a_taffy_tree() {
     let mut authored = false;
     if let Some(node) = button.get_facet::<UiNode>() {
         authored = node.kind == UiKind::Button && node.width == 120.0 && node.height == 32.0
-            && node.z_index == 1 && !node.hovered;
+            && node.z_index == 1 && !node.hovered
+            && node.text == "fire" && node.font_size == 16.0;
     }
     assert!(authored);
 
@@ -512,4 +524,36 @@ fn ui_nodes_author_as_a_taffy_tree() {
         placed = transform.position.x == 40.0 && transform.position.y == 20.0;
     }
     assert!(placed);
+}
+
+#[test]
+fn ui_text_follows_the_shared_font_grid() {
+    use crate::{DEFAULT_FONT, UiFontDesc, UiFontGrid};
+
+    // the same descriptor 3D text's FontAsset parses — ui_overlay must read
+    // the identical grid off the identical atlas
+    let Some(desc) = UiFontDesc::parse(DEFAULT_FONT) else {
+        panic!("embedded default.font could not be parsed");
+    };
+    let grid = UiFontGrid::new(desc, 256, 128);
+    assert_eq!(grid.columns, 13);
+    assert_eq!(grid.rows, 9);
+
+    // 'A' is the first char of char_order, so it owns the top-left cell
+    match grid.glyph_uv('A') {
+        Some([u_min, v_top, u_max, v_bottom]) => {
+            assert!((u_min - 0.00390625).abs() < 0.00001, "u_min {}", u_min);
+            assert!((v_top - 0.0078125).abs() < 0.00001, "v_top {}", v_top);
+            assert!((u_max - 0.05078125).abs() < 0.00001, "u_max {}", u_max);
+            assert!((v_bottom - 0.1015625).abs() < 0.00001, "v_bottom {}", v_bottom);
+        }
+        None => { panic!("'A' has no cell in the shared grid"); }
+    }
+
+    // chars the atlas has no cell for resolve to None, so the pass skips
+    // them rather than drawing garbage from a neighbour's texels
+    match grid.glyph_uv('#') {
+        Some(_) => panic!("'#' must not resolve in the default grid"),
+        None => {}
+    }
 }
