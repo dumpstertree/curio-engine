@@ -40,6 +40,11 @@ pub struct UiNode {
     /// glyph height in pixels — the shared atlas's native cells are 12 px.
     /// 0 means "don't paint text"
     pub font_size: f32,
+    /// free-form placement: when set, this node hangs at its own `Transform2D`
+    /// offset (pixels, below-right of the nearest UI ancestor) instead of
+    /// floating in the parent panel's flex flow. Leaves are always absolute;
+    /// this lets a Panel keep a Figma-like arbitrary position
+    pub absolute: bool,
     /// filled in by update_ui_layout each tick
     pub rect: UiRect,
     pub hovered: bool,
@@ -68,6 +73,7 @@ impl FieldOverride for UiNode {
             "color" => self.color = value.parse().unwrap_or(self.color),
             "text" => self.text = value.to_string(),
             "font_size" => self.font_size = value.parse().unwrap_or(self.font_size),
+            "absolute" => self.absolute = value.parse().unwrap_or(self.absolute),
             _ => {}
         }
     }
@@ -84,6 +90,7 @@ impl FieldOverride for UiNode {
             FieldState::new("color", self.color.as_hex()),
             FieldState::new("text", self.text.clone()),
             FieldState::new("font_size", self.font_size),
+            FieldState::new("absolute", self.absolute),
         ]
     }
 }
@@ -102,6 +109,7 @@ impl UiNode {
             color: Color::white(),
             text: String::new(),
             font_size: 12.0,
+            absolute: false,
         }
     }
     // resolved box for this node - useful for hit-testing from other systems
@@ -126,6 +134,7 @@ pub struct UiNodeBuilder {
     color: Color,
     text: String,
     font_size: f32,
+    absolute: bool,
 }
 impl UiNodeBuilder {
     pub fn kind(mut self, kind: UiKind) -> Self {
@@ -174,6 +183,10 @@ impl UiNodeBuilder {
         self.font_size = font_size;
         self
     }
+    pub fn absolute(mut self, absolute: bool) -> Self {
+        self.absolute = absolute;
+        self
+    }
     pub fn build(self) -> UiNode {
         UiNode {
             kind: self.kind,
@@ -187,6 +200,7 @@ impl UiNodeBuilder {
             color: self.color,
             text: self.text,
             font_size: self.font_size,
+            absolute: self.absolute,
             rect: UiRect::zero(),
             hovered: false,
             clicked: false,

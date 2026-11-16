@@ -16,10 +16,11 @@
 //! Mapped so far (output is a ui_overlay screen: forms carry `uinode` facets
 //! that `update_ui_layout` lays out with taffy in viewport pixels, and loads
 //! through `spawn_prefab_recursive_internal` as-is):
-//! - `FRAME`/`GROUP`/`INSTANCE` -> `uinode` panels (authored box + `gap` from
-//!   Figma auto-layout `itemSpacing`); panels float in taffy row-flow, so free-
-//!   form frame offsets stay approximate until the habit grows authored absolute
-//!   placement (plan 7b gap) - leaf offsets under a panel are exact
+//! - `FRAME`/`GROUP`/`INSTANCE` -> `uinode` panels; auto-layout frames float in
+//!   taffy row-flow with `gap` from `itemSpacing`, free-form frames (no
+//!   auto-layout) get `absolute: true` + a pixel `transform2d` offset, so they
+//!   hang at Figma's own parent-relative position inside the nearest UI
+//!   ancestor (the habit's one new authored field - the rest of §7b stays open)
 //! - `TEXT` -> `uinode` kind `text` with `text`, `font_size` (px), fill `color`
 //! - `RECTANGLE`/shapes -> `uinode` kind `block` flat quads with `color`
 //! - image fills -> `uinode` kind `image` + PNGs still exported next to the
@@ -436,7 +437,19 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> P
                 node.name.clone(),
             ));
         }
+        // free-form frames (no auto-layout) keep their Figma placement: the
+        // `absolute` flag hangs the panel at its own Transform2D offset inside
+        // the nearest UI ancestor, mirroring Figma's parent-relative x/y
+        let free_form = node.layout_mode.is_empty() || node.layout_mode == "NONE";
+        if free_form {
+            fields.push(join_field("absolute", "true"));
+        }
         components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
+        if free_form {
+            let mut tf = Vec::new();
+            tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
+            components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+        }
     } else if node.kind == "TEXT" {
         let mut fields = Vec::new();
         fields.push(join_field("kind", "text"));
@@ -849,12 +862,19 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
         image_fill: true, text: None, base: None,
         children: Vec::new(),
     };
+    let card = FigmaNode {
+        id: "1:4".to_string(), name: "card".to_string(), kind: "FRAME".to_string(), visible: true,
+        tx: 60.0, ty: 30.0, roll_deg: 0.0, width: 120.0, height: 40.0,
+        layout_mode: "NONE".to_string(), item_spacing: 0.0, fill_hex: String::new(), font_size: 0.0,
+        image_fill: false, text: None, base: None,
+        children: Vec::new(),
+    };
     let doc = FigmaNode {
         id: "1:1".to_string(), name: "shop".to_string(), kind: "FRAME".to_string(), visible: true,
         tx: 0.0, ty: 0.0, roll_deg: 0.0, width: 320.0, height: 240.0,
         layout_mode: "HORIZONTAL".to_string(), item_spacing: 8.0, fill_hex: String::new(), font_size: 0.0,
         image_fill: false, text: None, base: None,
-        children: vec![title.clone(), art],
+        children: vec![title.clone(), art, card],
     };
 
     let mut warnings = Vec::new();
@@ -896,6 +916,17 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
     assert!(image_ok);
     let warned = warnings.iter().any(|w| w.contains("flat quad"));
     assert!(warned);
+
+    // free-form nested frame: absolute flag + Figma pixel offset kept
+    let mut card_ok = false;
+    for c in comp.children.get(2).unwrap().components.iter() {
+        if c.kind == "uinode" {
+            card_ok = c.fields.contains(&join_field("kind", "panel"))
+                && c.fields.contains(&join_field("absolute", "true"));
+        }
+    }
+    assert!(card_ok);
+    assert!(yaml.contains("position: (60.0,30.0)"));
 
     // the whole doc speaks the ui_overlay registry key, not the old 3D facets
     assert!(yaml.contains("uinode"));

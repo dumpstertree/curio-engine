@@ -151,9 +151,12 @@ Bake rule: purely-visual Figma features can be rasterized per-node via the Image
 **no new component**. Features that must stay live (layout, text, interactivity) need engine surface.
 
 Needed before the importer is feature-complete (new fields/facets):
-- **UiNode flex fields** — biggest win: `update_ui_layout.rs` runs on taffy but hardcodes
+- ~~`absolute`~~ **done** (2026-11): `UiNode` grew an `absolute` bool; `ui_style` hangs flagged panels
+  at their own `Transform2D` offset via taffy `Position::Absolute` + insets, and the importer sets
+  it on frames without auto-layout — free-form Figma placement survives at all nesting levels.
+- **UiNode flex fields** — biggest win left: `update_ui_layout.rs` runs on taffy but hardcodes
   `flex_direction: Row` and defaults. Add `direction`, `justify`, `align_items`, `align_self`,
-  `layout_align`, `absolute` → taffy supports all natively, near-free.
+  `layout_align` → taffy supports all natively, near-free.
 - **RendererText**: `line_height`, `letter_spacing` fields; mixed-style runs = split runs into
   sibling leaves or a `RendererRichText` facet (baking kills localization).
 - **RendererImage**: `crop:x,y,w,h` + `tile` for FILL/FIT/CROP/TILE modes — or rely on
