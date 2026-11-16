@@ -1,0 +1,24 @@
+[package]
+name = "ui_overlay"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# ECS glue
+curio_core = { workspace = true }
+hecs = "0.10.5" # same pin as gameplay/physics — the test world below builds one
+gameplay = { workspace = true }
+input = { workspace = true }
+facet = { workspace = true }
+habit = { workspace = true }
+record = { workspace = true }
+ctor = "0.8.0"
+
+# layout solver (CSS flexbox/grid as a standalone crate — powers bevy_ui, gpui, floem)
+taffy = "0.15.1"
+
+# GPU types — pinned to match curio_core's egui-wgpu exactly (see README).
+egui-wgpu = { version = "0.31.1", features = ["winit"] }
+bytemuck = { version = "1.16", features = ["derive"] }
+serde = { version = "1.0.104", features = ["derive"] }
+serde_json = "1" # parse the embedded default.font descriptor
