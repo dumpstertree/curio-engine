@@ -13,23 +13,32 @@
 //! and the engine's own runtime `fetch_remote_asset` can't set headers at all -
 //! which is a big part of why this feature is build-time/editor-side.
 //!
-//! Mapped so far (output loads through `spawn_prefab_recursive_internal` as-is):
-//! - `FRAME`/`GROUP` -> nested comp nodes; each canvas child becomes its own
-//!   `.comp` (or one file when the URL pins a `node-id` subtree)
-//! - hidden layers (`visible:false`) -> `enabled: false` (kept, not dropped)
-//! - image fills -> `rendererimage` facet + PNG exported through the Images
-//!   endpoint and written next to the `.comp`
-//! - `TEXT` -> `renderer_text` `contents` only (no font/style mapping yet)
+//! Mapped so far (output is a ui_overlay screen: forms carry `uinode` facets
+//! that `update_ui_layout` lays out with taffy in viewport pixels, and loads
+//! through `spawn_prefab_recursive_internal` as-is):
+//! - `FRAME`/`GROUP`/`INSTANCE` -> `uinode` panels (authored box + `gap` from
+//!   Figma auto-layout `itemSpacing`); panels float in taffy row-flow, so free-
+//!   form frame offsets stay approximate until the habit grows authored absolute
+//!   placement (plan 7b gap) - leaf offsets under a panel are exact
+//! - `TEXT` -> `uinode` kind `text` with `text`, `font_size` (px), fill `color`
+//! - `RECTANGLE`/shapes -> `uinode` kind `block` flat quads with `color`
+//! - image fills -> `uinode` kind `image` + PNGs still exported next to the
+//!   `.comp` (ui_overlay has no texture sampling yet - paints a flat quad, warns)
 //! - `INSTANCE` -> `base:` prefab reference named after the Figma component
+//! - hidden layers (`visible:false`) -> `enabled: false` (kept, not dropped)
 //!
-//! Parked on purpose (plan section 7b - needs new facet surface, not importer
-//! logic): auto-layout as `UiNode` panels, solid fills, gradients, strokes,
-//! image-fill crop modes, `RendererText` metrics, constraints. Those nodes
-//! still get a transform, just no paint facet, and add a warning line.
+//! Registry note: the component key is `type_name`'s last segment lowercased
+//! (`UiNode` -> `uinode`), so the importer emits `kind: "uinode"`, not `ui_node`.
 //!
-//! Coordinates: positions are parent-relative pixels (Figma's own `relativeTransform`)
-//! with the y axis flipped, since the engine's y grows up. Calibrating the
-//! whole import against `Transform2D::get_matrix`'s frustum remap is M3 - TODO.
+//! Coordinates: leaf placement is a `transform2d` position in Figma's own
+//! parent-relative pixels with y DOWN - `ui_overlay`'s UiRect grows down like
+//! Figma, so the old frustum y-flip (and its M3 calibration) is gone: UI never
+//! touches `Transform2D::get_matrix`.
+//!
+//! Still parked (plan 7b): flex direction/justify/align fields, authored
+//! absolute placement for frames, textures on image nodes, gradients/strokes/
+//! crop modes, constraints. Figma `rendererimage`/`renderer_text` 3D-scene
+//! emission was retired with this retarget.
 
 use crate::fs_ops::{get_or_create_meta, read_file_bytes, resolve_conflict, write_file_text};
 use crate::prefab_resolver::dump_raw;
@@ -124,9 +133,16 @@ pub struct FigmaNode {
     pub tx: f32,
     pub ty: f32,
     pub roll_deg: f32,
-    // absoluteBoundingBox size (kept for M3's bounds/crop work, unused now).
+    // absoluteBoundingBox size (now authored straight into UiNode width/height).
     pub width: f32,
     pub height: f32,
+    // auto-layout: "HORIZONTAL"/"VERTICAL"/"" + itemSpacing -> UiNode gap.
+    pub layout_mode: String,
+    pub item_spacing: f32,
+    // first SOLID fill as "#rrggbb" (ui_overlay quads take a Color, parsed from hex).
+    pub fill_hex: String,
+    // TEXT style fontSize in px (0 -> UiNode default 12).
+    pub font_size: f32,
     pub image_fill: bool,
     pub text: Option < String > ,
     pub base: Option < String > , // INSTANCE -> Figma component name
@@ -171,6 +187,62 @@ fn get_bool(v: &Value, key: &str, default: bool) -> bool {
         Value::Bool(b) => *b,
         _ => default,
     }
+}
+
+/// `v[key]` as a number - for `itemSpacing` and other top-level numeric fields.
+fn get_num_flat(v: &Value, key: &str, default: f64) -> f64 {
+    let Some(inner) = member(v, key) else { return default };
+    if let Value::Number(n) = inner {
+        return n.as_f64().unwrap_or(default);
+    }
+    default
+}
+
+/// f32 -> the shortest plain decimal UiNode `apply()` parses (integers lose the
+/// `.0`; anything else keeps two places, which taffy is fine with).
+pub fn numstr(value: f32) -> String {
+    if value == (value as i64 as f32) {
+        return (value as i64).to_string();
+    }
+    let neg = value < 0.0;
+    let abs = if neg { 0.0 - value } else { value };
+    let scaled = abs * 100.0 + 0.5;
+    let whole = (scaled / 100.0).floor();
+    let frac = (scaled - whole * 100.0) as i64;
+    let mut out = String::new();
+    if neg {
+        out.push('-');
+    }
+    out.push_str(&whole.to_string());
+    out.push('.');
+    if frac < 10 {
+        out.push('0');
+    }
+    out.push_str(&frac.to_string());
+    out
+}
+
+/// 0..1 channel -> two lowercase hex digits (`Color::parse` reads "#rrggbb").
+fn hex_pair(v: f64) -> String {
+    let mut n = (v * 255.0 + 0.5).floor();
+    if n < 0.0 {
+        n = 0.0;
+    }
+    if n > 255.0 {
+        n = 255.0;
+    }
+    let ni = n as i32;
+    let mut out = String::new();
+    out.push(digit_char(ni / 16));
+    out.push(digit_char(ni % 16));
+    out
+}
+
+fn digit_char(i: i32) -> char {
+    if i < 10 {
+        return ((48 + i) as u8) as char;
+    }
+    ((87 + i) as u8) as char
 }
 
 /// `v[outer][inner]` as a number - for `relativeTransform`'s matrix entries
@@ -225,6 +297,37 @@ pub fn parse_node(v: &Value) -> FigmaNode {
         }
     }
 
+    // first visible SOLID fill -> "#rrggbb" (image fills paint as quads, so
+    // the solid pass skips them).
+    let mut fill_hex = String::new();
+    if !image_fill {
+        if let Some(fills) = member(v, "fills") {
+            if let Value::Array(items) = fills {
+                for fill in items.iter() {
+                    if get_str(fill, "type") != "SOLID" {
+                        continue;
+                    }
+                    if !get_bool(fill, "visible", true) {
+                        continue;
+                    }
+                    let r = get_num(fill, "color", "r", 0.0);
+                    let g = get_num(fill, "color", "g", 0.0);
+                    let b = get_num(fill, "color", "b", 0.0);
+                    fill_hex = "#".to_string() + &hex_pair(r) + &hex_pair(g) + &hex_pair(b);
+                    break;
+                }
+            }
+        }
+    }
+
+    // auto-layout -> panel gap (flow direction is a 7b gap: taffy style is row-
+    // only today, VERTICAL frames keep child order and warn).
+    let layout_mode = get_str(v, "layoutMode");
+    let item_spacing = get_num_flat(v, "itemSpacing", 0.0);
+
+    // TEXT style fontSize in px; UiNode's own default is the atlas's 12.
+    let font_size = get_num(v, "style", "fontSize", 0.0);
+
     let text = get_opt_str(v, "characters");
 
     let base = get_opt_str(v, "componentId");
@@ -248,6 +351,10 @@ pub fn parse_node(v: &Value) -> FigmaNode {
         roll_deg: roll_deg as f32,
         width: width as f32,
         height: height as f32,
+        layout_mode: layout_mode,
+        item_spacing: item_spacing as f32,
+        fill_hex: fill_hex,
+        font_size: font_size as f32,
         image_fill: image_fill,
         text: text,
         base: base,
@@ -301,44 +408,110 @@ fn subst4(templ: &str, a: String, b: String, c: String, d: String) -> String {
 // writes is openable/inspectable by the prefab tab immediately
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub fn convert(node: FigmaNode, warnings: &mut Vec < String > ) -> PrefabGameObjectRaw {
+/// IR -> ui_overlay comp: frames/groups/instances become `uinode` panels,
+/// leaves carry a `uinode` plus a `transform2d` whose position is Figma's own
+/// parent-relative pixels (y down - UiRect grows down like Figma, no flip).
+/// Panels float in taffy flow (placement is a plan 7b gap); leaves are exact.
+pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> PrefabGameObjectRaw {
     let mut components = Vec::new();
 
-    // transform2d: parent-relative pixels with Figma's y flipped (engine y
-    // grows up). Rotation only when nonzero - the runtime default is already
-    // the identity quaternion.
-    let mut fields = Vec::new();
-    fields.push(join_field("position", &format_tuple(&[node.tx, -node.ty])));
-    if node.roll_deg.abs() > 0.001 {
-        fields.push(join_field("rotation", &format_tuple(&[0.0, 0.0, node.roll_deg])));
-    }
-    components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: fields });
+    let is_panel = node.kind == "FRAME" || node.kind == "GROUP" || node.kind == "CANVAS"
+        || node.kind == "INSTANCE";
 
-    if node.image_fill {
-        let mut image_fields = Vec::new();
-        image_fields.push(join_field("asset", &subst1("{0}.png", slugify(&node.name))));
-        components.push(PrefabComponentRaw { kind: "rendererimage".to_string(), fields: image_fields });
-    }
-    if let Some(text) = node.text.clone() {
-        let mut text_fields = Vec::new();
-        text_fields.push(join_field("contents", &text));
-        components.push(PrefabComponentRaw { kind: "renderer_text".to_string(), fields: text_fields });
-    }
-
-    let known_kind = node.kind == "FRAME" || node.kind == "GROUP" || node.kind == "CANVAS"
-        || node.kind == "INSTANCE" || node.kind == "TEXT" || node.kind == "RECTANGLE"
-        || node.kind == "VECTOR";
-    if !known_kind && !node.image_fill && node.text.is_none() {
+    if is_panel {
+        let mut fields = Vec::new();
+        fields.push(join_field("kind", "panel"));
+        if node.width > 0.0 {
+            fields.push(join_field("width", &numstr(node.width)));
+        }
+        if node.height > 0.0 {
+            fields.push(join_field("height", &numstr(node.height)));
+        }
+        if node.item_spacing > 0.0 {
+            fields.push(join_field("gap", &numstr(node.item_spacing)));
+        }
+        if node.layout_mode == "VERTICAL" {
+            warnings.push(subst1(
+                "'{0}' uses vertical auto-layout - flow is row-only today, child order kept",
+                node.name.clone(),
+            ));
+        }
+        components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
+    } else if node.kind == "TEXT" {
+        let mut fields = Vec::new();
+        fields.push(join_field("kind", "text"));
+        if let Some(text) = node.text.clone() {
+            if text.contains(":") {
+                warnings.push(subst1(
+                    "label in '{0}' contains ':' - the field parser splits on it, text gets cut",
+                    node.name.clone(),
+                ));
+            }
+            fields.push(join_field("text", &text));
+        }
+        if node.font_size > 0.0 {
+            fields.push(join_field("font_size", &numstr(node.font_size)));
+        }
+        if !node.fill_hex.is_empty() {
+            fields.push(join_field("color", &node.fill_hex));
+        }
+        fields.push(join_field("z_index", &order.to_string()));
+        components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
+        let mut tf = Vec::new();
+        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
+        components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+        if node.roll_deg.abs() > 0.001 {
+            warnings.push(subst1("'{0}' is rotated - ui_overlay offsets are axis-aligned, rotation dropped", node.name.clone()));
+        }
+    } else if node.image_fill {
+        let mut fields = Vec::new();
+        fields.push(join_field("kind", "image"));
+        if node.width > 0.0 {
+            fields.push(join_field("width", &numstr(node.width)));
+        }
+        if node.height > 0.0 {
+            fields.push(join_field("height", &numstr(node.height)));
+        }
+        fields.push(join_field("z_index", &order.to_string()));
+        components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
+        let mut tf = Vec::new();
+        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
+        components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+        warnings.push(subst1(
+            "image node '{0}' paints as a flat quad - its PNG is exported but ui_overlay has no texture sampling yet (plan 7b)",
+            node.name.clone(),
+        ));
+    } else if !node.fill_hex.is_empty() {
+        let mut fields = Vec::new();
+        fields.push(join_field("kind", "block"));
+        if node.width > 0.0 {
+            fields.push(join_field("width", &numstr(node.width)));
+        }
+        if node.height > 0.0 {
+            fields.push(join_field("height", &numstr(node.height)));
+        }
+        fields.push(join_field("color", &node.fill_hex));
+        fields.push(join_field("z_index", &order.to_string()));
+        components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
+        let mut tf = Vec::new();
+        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
+        components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+        if node.roll_deg.abs() > 0.001 {
+            warnings.push(subst1("'{0}' is rotated - ui_overlay offsets are axis-aligned, rotation dropped", node.name.clone()));
+        }
+    } else if node.children.is_empty() {
         warnings.push(subst2(
-            "'{0}' ({1}) has no paint facet yet - bake it in Figma or extend the importer",
+            "'{0}' ({1}) got no ui facet - bake it in Figma or extend the importer",
             node.name.clone(),
             node.kind.clone(),
         ));
     }
 
     let mut children_out = Vec::new();
+    let mut child_order = 0;
     for child in node.children {
-        children_out.push(convert(child, warnings));
+        children_out.push(convert(child, child_order, warnings));
+        child_order += 1;
     }
 
     let comp_base = if node.base.is_none() {
@@ -525,8 +698,10 @@ fn run_import_with_document(
 
     let mut warnings = Vec::new();
     let mut written_comps = 0;
+    let mut root_order = 0;
     for root in roots {
-        let comp = convert(root.clone(), &mut warnings);
+        let comp = convert(root.clone(), root_order, &mut warnings);
+        root_order += 1;
         match dump_raw(&comp) {
             Err(e) => warnings.push(subst2("yaml serialize failed for '{0}': {1}", comp.name, e)),
             Ok(yaml) => {
@@ -653,4 +828,76 @@ fn extract_node_id(url: &str) -> Option < String > {
         return None;
     }
     Some(val.replace("-", ":"))
+}
+
+// Mapping regression net (plan stage 7): IR -> ui_overlay comp. One frame with
+// auto-layout gap, one TEXT leaf, one image RECTANGLE - pins the `uinode`
+// registry key, pixel (y-down) placement, and the image-node flat-quad warn.
+#[test]
+fn figma_import_emits_ui_overlay_panels_and_leaves() {
+    let title = FigmaNode {
+        id: "1:2".to_string(), name: "title".to_string(), kind: "TEXT".to_string(), visible: true,
+        tx: 20.0, ty: 12.0, roll_deg: 0.0, width: 100.0, height: 16.0,
+        layout_mode: String::new(), item_spacing: 0.0, fill_hex: "#ff0000".to_string(), font_size: 16.0,
+        image_fill: false, text: Some("Buy now".to_string()), base: None,
+        children: Vec::new(),
+    };
+    let art = FigmaNode {
+        id: "1:3".to_string(), name: "icon".to_string(), kind: "RECTANGLE".to_string(), visible: true,
+        tx: 40.0, ty: 20.0, roll_deg: 0.0, width: 64.0, height: 64.0,
+        layout_mode: String::new(), item_spacing: 0.0, fill_hex: String::new(), font_size: 0.0,
+        image_fill: true, text: None, base: None,
+        children: Vec::new(),
+    };
+    let doc = FigmaNode {
+        id: "1:1".to_string(), name: "shop".to_string(), kind: "FRAME".to_string(), visible: true,
+        tx: 0.0, ty: 0.0, roll_deg: 0.0, width: 320.0, height: 240.0,
+        layout_mode: "HORIZONTAL".to_string(), item_spacing: 8.0, fill_hex: String::new(), font_size: 0.0,
+        image_fill: false, text: None, base: None,
+        children: vec![title.clone(), art],
+    };
+
+    let mut warnings = Vec::new();
+    let comp = convert(doc, 0, &mut warnings);
+    let yaml = dump_raw(&comp).unwrap();
+
+    // panel: uinode key + authored box + auto-layout gap
+    let mut panel = false;
+    for c in comp.components {
+        if c.kind == "uinode" {
+            panel = c.fields.contains(&join_field("kind", "panel"))
+                && c.fields.contains(&join_field("width", &numstr(320.0)))
+                && c.fields.contains(&join_field("gap", &numstr(8.0)));
+        }
+    }
+    assert!(panel);
+
+    // text leaf: kind text + label + px size + colour, y-down pixel offset
+    let mut text_ok = false;
+    for c in comp.children.first().unwrap().components.iter() {
+        if c.kind == "uinode" {
+            text_ok = c.fields.contains(&join_field("kind", "text"))
+                && c.fields.contains(&join_field("text", "Buy now"))
+                && c.fields.contains(&join_field("font_size", &numstr(16.0)))
+                && c.fields.contains(&join_field("color", "#ff0000"));
+        }
+    }
+    assert!(text_ok);
+    assert!(yaml.contains("position: (20.0,12.0)"));
+    assert!(!yaml.contains("(20.0,-12.0)"));
+
+    // image leaf: kind image + a flat-quad warning (no texture sampling yet)
+    let mut image_ok = false;
+    for c in comp.children.get(1).unwrap().components.iter() {
+        if c.kind == "uinode" {
+            image_ok = c.fields.contains(&join_field("kind", "image"));
+        }
+    }
+    assert!(image_ok);
+    let warned = warnings.iter().any(|w| w.contains("flat quad"));
+    assert!(warned);
+
+    // the whole doc speaks the ui_overlay registry key, not the old 3D facets
+    assert!(yaml.contains("uinode"));
+    assert!(!yaml.contains("renderer_text") && !yaml.contains("rendererimage"));
 }
