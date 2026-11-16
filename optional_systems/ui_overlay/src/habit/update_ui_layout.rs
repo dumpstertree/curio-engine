@@ -17,7 +17,7 @@ use taffy::{
 use gameplay::traits::facet_common::FacetCommon;
 use std::collections::{HashMap, HashSet};
 
-use crate::{SysRecordUi, UiDrawCall, UiKind, UiNode, UiRect};
+use crate::{SysRecordUi, UiColor, UiDrawCall, UiKind, UiNode, UiRect};
 
 // one UI node's bookkeeping for this frame, keyed by the instance id of
 // the form that owns it
@@ -381,6 +381,20 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
                             // hit-test against the box that was just resolved
                             let rect = UiRect::new(corner.x, corner.y, width, height);
                             let hovered = rect.contains(cursor.x, cursor.y);
+                            if hovered {
+                                // temporary: which box the hit-test matched
+                                ledger.log(
+                                    Severity::Info,
+                                    &format!(
+                                        "ui match: form {} box {},{} {}x{}",
+                                        id,
+                                        rect.x,
+                                        rect.y,
+                                        rect.width,
+                                        rect.height,
+                                    ),
+                                );
+                            }
                             entry.form.try_edit_facet::<UiNode>(|facet| {
                                 facet.rect = rect;
                                 facet.hovered = hovered;
@@ -438,28 +452,41 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
             }
             // the author's z_index wins, taffy's paint order breaks ties
             screen.draw_calls.sort_by(|a, b| (a.z_index, a.order).cmp(&(b.z_index, b.order)));
+
+            // temporary crosshair: a magenta dot painted at the hit-test's
+            // idea of the cursor, in viewport pixels. it must sit exactly
+            // under the mouse pointer — drop it with the ui hit logs once
+            // that is confirmed
+            screen.draw_calls.push(
+                UiDrawCall::new(
+                    UiRect::new(cursor.x - 3.0, cursor.y - 3.0, 6.0, 6.0),
+                    UiColor::new_01(1.0, 0.0, 1.0, 1.0),
+                    UiKind::Button,
+                    100,
+                    String::new(),
+                    0.0,
+                    -1,
+                    0,
+                ),
+            );
         });
 
-        // temporary, while the mouse mapping is confirmed: both cursor spaces
-        // against the first painted box, so a mismatch reads off the console.
-        // drop it once hover lands where the mouse does
+        // temporary: cursor spaces each tick — the magenta crosshair shows
+        // the mapped point on screen. drop this block with the crosshair
+        // once hover lands where the mouse does
         let state_ui = ledger.read::<SysRecordUi>();
         match state_ui.draw_calls.first() {
-            Some(first) => {
+            Some(_) => {
                 ledger.log(
                     Severity::Info,
                     &format!(
-                        "ui hit: cursor raw {},{} mapped {},{} space {},{} box {},{} {}x{}",
+                        "ui hit: cursor raw {},{} mapped {},{} space {},{}",
                         cursor_raw.x,
                         cursor_raw.y,
                         cursor.x,
                         cursor.y,
                         cursor_space.x,
                         cursor_space.y,
-                        first.rect.x,
-                        first.rect.y,
-                        first.rect.width,
-                        first.rect.height,
                     ),
                 );
             }
