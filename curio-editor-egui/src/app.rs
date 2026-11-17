@@ -123,6 +123,10 @@ impl eframe::App for CurioEditorApp {
                     .show(ctx, |ui| {
                         crate::panels::asset_tab::show_inspector_for_selected(ui, &mut self.state);
                     });
+                // "Import from Figma" dialog: floats over the tab while its own
+                // open flag is set (`panels/figma_tab.rs` draws nothing
+                // otherwise), so it must live in the same Asset-tab branch.
+                crate::panels::figma_tab::show_dialog(ctx, &mut self.state);
             }
             _ => {}
         }

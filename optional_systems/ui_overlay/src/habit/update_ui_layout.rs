@@ -129,6 +129,13 @@ fn ui_style(node: &UiNode, offset_x: f32, offset_y: f32) -> Style {
         style.position = Position::Absolute;
         style.inset.left = length(finite(offset_x));
         style.inset.top = length(finite(offset_y));
+    } else if node.absolute {
+        // an authored free-form frame: hang at its own Transform2D offset
+        // inside the nearest UI ancestor instead of floating in flex flow;
+        // it still flexes its own children
+        style.position = Position::Absolute;
+        style.inset.left = length(finite(offset_x));
+        style.inset.top = length(finite(offset_y));
     }
     if node.width > 0.0 {
         style.size.width = length(safe_size(node.width));
@@ -482,7 +489,7 @@ fn ui_nodes_author_as_a_taffy_tree() {
     // a Panel arranges its children; taffy gives it the whole viewport
     let panel = context
         .spawner("hud")
-        .facet(UiNode::builder().gap(12.0).min_size(400.0, 200.0).build())
+        .facet(UiNode::builder().gap(12.0).min_size(400.0, 200.0).absolute(true).build())
         .spawn();
 
     // a Button paints a box and gets hover/click feedback for free
@@ -523,6 +530,14 @@ fn ui_nodes_author_as_a_taffy_tree() {
             && node.text == "fire" && node.font_size == 16.0;
     }
     assert!(authored);
+
+    // the free-form flag survives onto the panel too: it hangs at its own
+    // Transform2D offset instead of floating in flow
+    let mut flagged = false;
+    if let Some(node) = panel.get_facet::<UiNode>() {
+        flagged = node.absolute;
+    }
+    assert!(flagged);
 
     let mut placed = false;
     if let Some(transform) = button.get_facet::<Transform2D>() {
