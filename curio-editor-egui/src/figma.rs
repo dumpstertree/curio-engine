@@ -667,6 +667,53 @@ fn file_snip(path: String, max: usize) -> String {
     }
 }
 
+/// Value of response header `key` (lowercase ASCII) inside a curl `-i`
+/// header block, matched case-insensitively at line starts. Figma's 429
+/// carries Retry-After / X-Figma-Plan-Tier / X-Figma-Rate-Limit-Type /
+/// X-Figma-Upgrade-Link, which tell the user whether to wait a minute or
+/// whether their seat simply has no budget. Empty when the header is absent.
+fn header_value(bytes: &Vec < u8 > , key: &String) -> String {
+    let kbs = key.as_bytes();
+    let mut limit = bytes.len();
+    if limit > 1200 {
+        limit = 1200;
+    }
+    let mut p = 0;
+    while p + kbs.len() < limit {
+        let at_start = p == 0 || bytes[p - 1] == 10;
+        if at_start {
+            let mut k = 0;
+            let mut ok = true;
+            while k < kbs.len() {
+                let mut b = bytes[p + k];
+                if b >= 65 && b <= 90 {
+                    b += 32;
+                }
+                if b != kbs[k] {
+                    ok = false;
+                }
+                k += 1;
+            }
+            if ok && bytes[p + kbs.len()] == 58 {
+                let mut v = p + kbs.len() + 1;
+                while v < limit && (bytes[v] == 32 || bytes[v] == 9) {
+                    v += 1;
+                }
+                let mut out = String::new();
+                while v < limit && bytes[v] != 13 && bytes[v] != 10 {
+                    if bytes[v] >= 32 && bytes[v] < 127 {
+                        out.push(bytes[v] as char);
+                    }
+                    v += 1;
+                }
+                return out;
+            }
+        }
+        p += 1;
+    }
+    String::new()
+}
+
 /// GET `url`, body lands in `out_path` via curl's `-o` (piping stdout back
 /// through the harness was fragile; files are the repo's own idiom -
 /// `fs_ops.rs` shuffles everything through paths). No `-f`, and no
@@ -731,8 +778,19 @@ fn curl_get(url: String, token: String, out_path: String) -> Result < (), String
                 }
                 return Ok(());
             }
-            // failure: quote the body, then drop the junk file
-            let detail = byte_snip(&bytes, 220);
+            // failure: quote Figma's JSON body (header block stripped), then
+            // drop the junk file
+            let mut detail = byte_snip(&bytes, 220);
+            match after_headers(&bytes) {
+                None => (),
+                Some(start) => {
+                    let tail = bytes[start..].to_vec();
+                    let body = byte_snip(&tail, 220);
+                    if !body.is_empty() {
+                        detail = body;
+                    }
+                }
+            }
             let _ = std::fs::remove_file(out_path);
             if http_code == "000" {
                 if complaint.is_empty() {
@@ -743,6 +801,33 @@ fn curl_get(url: String, token: String, out_path: String) -> Result < (), String
             if http_code == "200" {
                 // 200 headers but curl died mid-transfer (timeout/reset)
                 return Err(subst1("curl died mid-transfer for {0} (http was 200)", url));
+            }
+            if http_code == "429" {
+                // Figma's rate limiter tripped (per-seat/plan budget, not
+                // a token problem): surface Retry-After + the diagnostic
+                // headers the 429 carries, per Figma's own rate-limit docs.
+                let retry = header_value(&bytes, &"retry-after".to_string());
+                let tier = header_value(&bytes, &"x-figma-plan-tier".to_string());
+                let ltype = header_value(&bytes, &"x-figma-rate-limit-type".to_string());
+                let upgrade = header_value(&bytes, &"x-figma-upgrade-link".to_string());
+                let mut why = "wait a minute and try again".to_string();
+                if !retry.is_empty() {
+                    why = subst1("Figma says retry after {0}s", retry);
+                }
+                if !tier.is_empty() {
+                    why = subst2("{0}, file's plan tier {1}", why, tier);
+                }
+                if !ltype.is_empty() {
+                    why = subst2("{0}, your seat's limit type {1}", why, ltype);
+                }
+                if !upgrade.is_empty() {
+                    why = subst2("{0} (upgrade link: {1})", why, upgrade);
+                }
+                let mut msg = subst2("Figma rate-limited this request for {0}: {1}", url, why);
+                if !detail.is_empty() {
+                    msg = subst2("{0} {1}", msg, detail);
+                }
+                return Err(msg);
             }
             if detail.is_empty() {
                 return Err(subst2("request for {0} returned http {1}", url, http_code));
@@ -1068,4 +1153,34 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
     // the whole doc speaks the ui_overlay registry key, not the old 3D facets
     assert!(yaml.contains("uinode"));
     assert!(!yaml.contains("renderer_text") && !yaml.contains("rendererimage"));
+}
+
+#[test]
+fn curl_get_reports_http_status_and_diagnostics() {
+    // a curl -i response, exactly as -o stores it: header block + body
+    let blob = "HTTP/2 429 \r\nRetry-After: 60\r\nX-Figma-Plan-Tier: starter\r\nX-Figma-Rate-Limit-Type: low\r\nContent-Type: application/json; charset=utf-8\r\n\r\n{\"errors\":[\"Too Many Requests\"],\"rationale\":\"\"}".to_string();
+    let bytes = blob.as_bytes().to_vec();
+    assert_eq!(header_status(&bytes), "429".to_string());
+    assert_eq!(header_value(&bytes, &"retry-after".to_string()), "60".to_string());
+    assert_eq!(header_value(&bytes, &"x-figma-plan-tier".to_string()), "starter".to_string());
+    assert_eq!(header_value(&bytes, &"x-figma-rate-limit-type".to_string()), "low".to_string());
+    assert_eq!(header_value(&bytes, &"x-figma-upgrade-link".to_string()), String::new());
+    match after_headers(&bytes) {
+        None => assert!(false),
+        Some(start) => {
+            let tail = bytes[start..].to_vec();
+            assert_eq!(byte_snip(&tail, 64), "{\"errors\":[\"Too Many Requests\"],\"rationale\":\"\"}");
+        }
+    }
+    // 200s strip the block too, so callers still see a pure body
+    let ok = "HTTP/1.1 200 OK\r\ncontent-length: 2\r\n\r\n{}".to_string();
+    let ok_bytes = ok.as_bytes().to_vec();
+    assert_eq!(header_status(&ok_bytes), "200".to_string());
+    match after_headers(&ok_bytes) {
+        None => assert!(false),
+        Some(start) => {
+            let tail = ok_bytes[start..].to_vec();
+            assert_eq!(byte_snip(&tail, 8), "{}");
+        }
+    }
 }
