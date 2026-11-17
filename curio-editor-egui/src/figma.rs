@@ -586,22 +586,105 @@ pub fn resolve_instance_bases(nodes: &mut Vec < FigmaNode > , meta: Option < &Va
 // spawn) + full run pipeline - background thread ONLY (blocking)
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// Digits of the first `HTTP/<ver> <code>` line of a curl `-i` response
+/// file - this toolchain's curl has no `--write-out-to`, so the status
+/// travels in the header block itself. "000" = no header block at all.
+fn header_status(bytes: &Vec < u8 > ) -> String {
+    let mut limit = bytes.len();
+    if limit > 120 {
+        limit = 120;
+    }
+    let mut i = 0;
+    while i + 4 < limit {
+        if bytes[i] == 72 && bytes[i + 1] == 84 && bytes[i + 2] == 84
+            && bytes[i + 3] == 80 && bytes[i + 4] == 47 {
+            let mut j = i + 5;
+            while j < limit && bytes[j] != 32 {
+                j += 1;
+            }
+            j += 1;
+            let mut code = String::new();
+            while j < limit && code.len() < 3 && bytes[j] >= 48 && bytes[j] <= 57 {
+                code.push(bytes[j] as char);
+                j += 1;
+            }
+            if code.len() == 3 {
+                return code;
+            }
+            return "000".to_string();
+        }
+        i += 1;
+    }
+    "000".to_string()
+}
+
+/// Where a curl `-i` body starts: just past the header block terminator
+/// (CRLFCRLF, else LFLF). None means nothing to strip.
+fn after_headers(bytes: &Vec < u8 > ) -> Option < usize > {
+    let mut limit = bytes.len();
+    if limit > 4096 {
+        limit = 4096;
+    }
+    if bytes.len() < 4 {
+        return None;
+    }
+    let mut i = 0;
+    while i + 3 < limit {
+        if bytes[i] == 13 && bytes[i + 1] == 10 && bytes[i + 2] == 13 && bytes[i + 3] == 10 {
+            return Some(i + 4);
+        }
+        i += 1;
+    }
+    i = 0;
+    while i + 1 < limit {
+        if bytes[i] == 10 && bytes[i + 1] == 10 {
+            return Some(i + 2);
+        }
+        i += 1;
+    }
+    None
+}
+
+/// Printable-ASCII glimpse of a body (control chars skipped) - enough of
+/// Figma's JSON error without dumping the lot.
+fn byte_snip(bytes: &Vec < u8 > , max: usize) -> String {
+    let mut out = String::new();
+    for b in bytes.iter() {
+        if out.len() >= max {
+            break;
+        }
+        if *b >= 32 && *b < 127 {
+            out.push(*b as char);
+        }
+    }
+    out
+}
+
+fn file_snip(path: String, max: usize) -> String {
+    match read_file_bytes(&path) {
+        Err(_e) => String::new(),
+        Ok(bytes) => byte_snip(&bytes, max),
+    }
+}
+
 /// GET `url`, body lands in `out_path` via curl's `-o` (piping stdout back
 /// through the harness was fragile; files are the repo's own idiom -
-/// `fs_ops.rs` shuffles everything through paths). No `-f` any more: the
-/// final `%{http_code}` goes to a `{out_path}.http_code` sidecar via
-/// `--write-out-to`, and a failed call reports the REAL status plus a
-/// snippet of Figma's JSON error body (the old "offline? bad token 403?
-/// bad file key 404?" was guesswork) before deleting the junk body file.
+/// `fs_ops.rs` shuffles everything through paths). No `-f`, and no
+/// `-w/--write-out-to` sidecar either - this toolchain's curl rejects that
+/// option outright, which used to masquerade as "offline?". Instead `-i`
+/// prefixes the header block to `out_path` itself: the REAL status comes
+/// from its first line ("HTTP/2 403") and is stripped off before Ok(), so
+/// callers still see a pure body. `--stderr` keeps curl's own complaint
+/// (unknown option, connect failure) for the no-response case.
 fn curl_get(url: String, token: String, out_path: String) -> Result < (), String > {
-    let code_path = subst1("{0}.http_code", out_path.clone());
+    let err_path = subst1("{0}.curl_err", out_path.clone());
     let mut command = Command::new("curl");
     command
         .arg("-s")
         .arg("--max-time").arg("30")
-        .arg("-o").arg(out_path.clone())
-        .arg("-w").arg("%{http_code}")
-        .arg("--write-out-to").arg(code_path.clone());
+        .arg("-i")
+        .arg("--stderr").arg(err_path.clone())
+        .arg("-o").arg(out_path.clone());
     if !token.is_empty() {
         command.arg("-H").arg(subst1("X-Figma-Token: {0}", token));
     }
@@ -610,78 +693,64 @@ fn curl_get(url: String, token: String, out_path: String) -> Result < (), String
     let mut child = match command.spawn() {
         Ok(c) => c,
         Err(e) => {
-            let _ = std::fs::remove_file(code_path.clone());
+            let _ = std::fs::remove_file(err_path.clone());
             return Err(subst1("curl failed to start: {0}", e.to_string()));
         }
     };
     let status = match child.wait() {
         Ok(s) => s,
         Err(e) => {
-            let _ = std::fs::remove_file(code_path.clone());
+            let _ = std::fs::remove_file(err_path.clone());
             return Err(subst1("curl failed: {0}", e.to_string()));
         }
     };
 
-    // Sidecar digits ("000" when curl never got a response, i.e. offline).
-    let mut http_code = String::new();
-    match read_file_bytes(&code_path) {
-        Err(_e) => http_code = "000".to_string(),
-        Ok(bytes) => {
-            match String::from_utf8(bytes) {
-                Err(_e) => http_code = "000".to_string(),
-                Ok(text) => {
-                    for c in text.chars() {
-                        if c >= '0' && c <= '9' {
-                            http_code.push(c);
-                        }
-                    }
-                    if http_code.is_empty() {
-                        http_code = "000".to_string();
-                    }
-                }
-            }
-        }
-    }
-    let _ = std::fs::remove_file(code_path.clone());
+    let complaint = file_snip(err_path.clone(), 160);
+    let _ = std::fs::remove_file(err_path);
 
-    if status.success() && http_code == "200" {
-        return Ok(());
-    }
-
-    // A failed call's body is Figma's JSON error (or garbage) - keep a
-    // ~220-char snippet for the dialog, then drop the junk file so a later
-    // read_json_file can't mistake an error body for a document.
-    let mut detail = String::new();
     match read_file_bytes(&out_path) {
-        Err(_e) => (),
+        Err(_e) => {
+            // curl died before writing any response (offline, bad option)
+            if complaint.is_empty() {
+                return Err(subst1("could not reach {0} (offline?)", url));
+            }
+            Err(subst2("curl could not fetch {0}: {1}", url, complaint))
+        }
         Ok(bytes) => {
-            match String::from_utf8(bytes) {
-                Err(_e) => (),
-                Ok(text) => {
-                    for c in text.chars() {
-                        if detail.len() >= 220 {
-                            break;
+            let http_code = header_status(&bytes);
+            if status.success() && http_code == "200" {
+                // hand the caller back a pure body: strip curl's header block
+                match after_headers(&bytes) {
+                    None => (),
+                    Some(start) => {
+                        match std::fs::write(out_path, bytes[start..].to_vec()) {
+                            Err(e) => return Err(subst1("could not store response body: {0}", e.to_string())),
+                            Ok(_w) => (),
                         }
-                        detail.push(c);
                     }
                 }
+                return Ok(());
             }
+            // failure: quote the body, then drop the junk file
+            let detail = byte_snip(&bytes, 220);
+            let _ = std::fs::remove_file(out_path);
+            if http_code == "000" {
+                if complaint.is_empty() {
+                    return Err(subst1("could not reach {0} (offline?)", url));
+                }
+                return Err(subst2("curl could not fetch {0}: {1}", url, complaint));
+            }
+            if http_code == "200" {
+                // 200 headers but curl died mid-transfer (timeout/reset)
+                return Err(subst1("curl died mid-transfer for {0} (http was 200)", url));
+            }
+            if detail.is_empty() {
+                return Err(subst2("request for {0} returned http {1}", url, http_code));
+            }
+            let head = subst2("request for {0} returned http {1}:", url, http_code);
+            Err(subst2("{0} {1}", head, detail))
         }
     }
-    let _ = std::fs::remove_file(out_path);
-
-    if http_code == "000" {
-        return Err(subst1("could not reach {0} (offline?)", url));
-    }
-    if http_code == "200" {
-        // 200 headers but curl died mid-transfer (timeout/reset).
-        return Err(subst1("curl died mid-transfer for {0} (http was 200)", url));
-    }
-    if detail.is_empty() {
-        return Err(subst2("request for {0} returned http {1}", url, http_code));
-    }
-    let head = subst2("request for {0} returned http {1}:", url, http_code);
-    Err(subst2("{0} {1}", head, detail))
 }
 
 /// The Images endpoint's render URLs are absolute and pre-signed - no token
