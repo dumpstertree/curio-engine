@@ -588,15 +588,20 @@ pub fn resolve_instance_bases(nodes: &mut Vec < FigmaNode > , meta: Option < &Va
 
 /// GET `url`, body lands in `out_path` via curl's `-o` (piping stdout back
 /// through the harness was fragile; files are the repo's own idiom -
-/// `fs_ops.rs` shuffles everything through paths). `-f` makes curl exit
-/// nonzero on 4xx/5xx so `wait()`/`success()` sees bad token/key/expiry.
+/// `fs_ops.rs` shuffles everything through paths). No `-f` any more: the
+/// final `%{http_code}` goes to a `{out_path}.http_code` sidecar via
+/// `--write-out-to`, and a failed call reports the REAL status plus a
+/// snippet of Figma's JSON error body (the old "offline? bad token 403?
+/// bad file key 404?" was guesswork) before deleting the junk body file.
 fn curl_get(url: String, token: String, out_path: String) -> Result < (), String > {
+    let code_path = subst1("{0}.http_code", out_path.clone());
     let mut command = Command::new("curl");
     command
         .arg("-s")
-        .arg("-f")
         .arg("--max-time").arg("30")
-        .arg("-o").arg(out_path);
+        .arg("-o").arg(out_path.clone())
+        .arg("-w").arg("%{http_code}")
+        .arg("--write-out-to").arg(code_path.clone());
     if !token.is_empty() {
         command.arg("-H").arg(subst1("X-Figma-Token: {0}", token));
     }
@@ -604,16 +609,79 @@ fn curl_get(url: String, token: String, out_path: String) -> Result < (), String
 
     let mut child = match command.spawn() {
         Ok(c) => c,
-        Err(e) => return Err(subst1("curl failed to start: {0}", e.to_string())),
+        Err(e) => {
+            let _ = std::fs::remove_file(code_path.clone());
+            return Err(subst1("curl failed to start: {0}", e.to_string()));
+        }
     };
     let status = match child.wait() {
         Ok(s) => s,
-        Err(e) => return Err(subst1("curl failed: {0}", e.to_string())),
+        Err(e) => {
+            let _ = std::fs::remove_file(code_path.clone());
+            return Err(subst1("curl failed: {0}", e.to_string()));
+        }
     };
-    if !status.success() {
-        return Err(subst1("request for {0} failed (offline? bad token 403? bad file key 404?)", url));
+
+    // Sidecar digits ("000" when curl never got a response, i.e. offline).
+    let mut http_code = String::new();
+    match read_file_bytes(&code_path) {
+        Err(_e) => http_code = "000".to_string(),
+        Ok(bytes) => {
+            match String::from_utf8(bytes) {
+                Err(_e) => http_code = "000".to_string(),
+                Ok(text) => {
+                    for c in text.chars() {
+                        if c >= '0' && c <= '9' {
+                            http_code.push(c);
+                        }
+                    }
+                    if http_code.is_empty() {
+                        http_code = "000".to_string();
+                    }
+                }
+            }
+        }
     }
-    Ok(())
+    let _ = std::fs::remove_file(code_path.clone());
+
+    if status.success() && http_code == "200" {
+        return Ok(());
+    }
+
+    // A failed call's body is Figma's JSON error (or garbage) - keep a
+    // ~220-char snippet for the dialog, then drop the junk file so a later
+    // read_json_file can't mistake an error body for a document.
+    let mut detail = String::new();
+    match read_file_bytes(&out_path) {
+        Err(_e) => (),
+        Ok(bytes) => {
+            match String::from_utf8(bytes) {
+                Err(_e) => (),
+                Ok(text) => {
+                    for c in text.chars() {
+                        if detail.len() >= 220 {
+                            break;
+                        }
+                        detail.push(c);
+                    }
+                }
+            }
+        }
+    }
+    let _ = std::fs::remove_file(out_path);
+
+    if http_code == "000" {
+        return Err(subst1("could not reach {0} (offline?)", url));
+    }
+    if http_code == "200" {
+        // 200 headers but curl died mid-transfer (timeout/reset).
+        return Err(subst1("curl died mid-transfer for {0} (http was 200)", url));
+    }
+    if detail.is_empty() {
+        return Err(subst2("request for {0} returned http {1}", url, http_code));
+    }
+    let head = subst2("request for {0} returned http {1}:", url, http_code);
+    Err(subst2("{0} {1}", head, detail))
 }
 
 /// The Images endpoint's render URLs are absolute and pre-signed - no token
