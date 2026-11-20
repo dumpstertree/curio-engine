@@ -32,13 +32,8 @@ const MAX_TOTAL_DABS: usize = 24000;
 pub struct Instance {
     demo_done: bool,
 }
-impl Instance {
-    pub fn new() -> Box<Instance> {
-        Box::new(Instance {
-            demo_done: false,
-        })
-    }
-}
+// the macro derives Default — demo_done starts false, which is all the
+// per-screen instance needs
 impl Scope for Instance {
     fn is_enabled(&mut self, _ledger: &mut Ledger) -> bool {
         true

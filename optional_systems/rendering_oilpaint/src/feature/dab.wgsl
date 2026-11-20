@@ -29,6 +29,17 @@ struct DabIn {
     @location(4) seed: vec4<f32>, // x hue/palette, yzw per-dab randoms
 }
 
+// phase 4 rigid pin: the form's matrix as a second per-instance attribute
+// (four columns, locations 5-8 — same convention as the engine's lit.wgsl).
+// the paint is sampled ONCE in object space; moving the form moves its
+// strokes for free — no re-sampling, no CPU bake
+struct ModelIn {
+    @location(5) col0: vec4<f32>,
+    @location(6) col1: vec4<f32>,
+    @location(7) col2: vec4<f32>,
+    @location(8) col3: vec4<f32>,
+}
+
 struct VSOut {
     @builtin(position) clip: vec4<f32>,
     @location(0) uv: vec2<f32>, // u along stroke, v across — [0,1]
@@ -48,23 +59,32 @@ fn hash11(p: vec2<f32>) -> f32 {
 }
 
 @vertex
-fn vs_main(quad: QuadCorner, inst: DabIn) -> VSOut {
+fn vs_main(quad: QuadCorner, inst: DabIn, model_in: ModelIn) -> VSOut {
     let right = scene.cam_right.xyz;
     let up = scene.cam_up.xyz;
 
+    // rigid pin: object-local → world through the form's matrix (point
+    // with w=1, direction with w=0); the stroke size picks up the form's
+    // scale as the mean basis-column length
+    let model = mat4x4<f32>(model_in.col0, model_in.col1, model_in.col2, model_in.col3);
+    let pin = (model * vec4<f32>(inst.pin, 1.0)).xyz;
+    let dir = (model * vec4<f32>(inst.dir, 0.0)).xyz;
+    let scale = (length(model[0]) + length(model[1]) + length(model[2])) / 3.0;
+    let size = inst.size * scale;
+
     // stroke direction projected onto the view plane — screen angle of the
     // brush regardless of camera roll/orbit
-    var d2 = vec2<f32>(dot(inst.dir, right), dot(inst.dir, up));
+    var d2 = vec2<f32>(dot(dir, right), dot(dir, up));
     if length(d2) < 0.0001 {
         d2 = vec2<f32>(1.0, 0.0); // dir points at camera: fallback run
     }
     let run = normalize(d2);
 
     // world-space basis of the quad, in the view plane through pin
-    let along = (right * run.x + up * run.y) * inst.size.y;
-    let across = (right * -run.y + up * run.x) * inst.size.x;
+    let along = (right * run.x + up * run.y) * size.y;
+    let across = (right * -run.y + up * run.x) * size.x;
 
-    let world = inst.pin + along * quad.corner.x + across * quad.corner.y;
+    let world = pin + along * quad.corner.x + across * quad.corner.y;
 
     var out: VSOut;
     out.clip = scene.view_proj * vec4<f32>(world, 1.0);
@@ -89,7 +109,7 @@ fn vs_main(quad: QuadCorner, inst: DabIn) -> VSOut {
 
     // sun term from the stroke's flow against light — dabs running with
     // the light read lit, against it read shadowed
-    let dn = inst.dir / max(length(inst.dir), 0.0001);
+    let dn = dir / max(length(dir), 0.0001);
     let sd = dot(dn, scene.sun.xyz);
     let sun_k = 0.78 + 0.34 * (0.5 + 0.5 * sd);
 
@@ -97,7 +117,7 @@ fn vs_main(quad: QuadCorner, inst: DabIn) -> VSOut {
     // viewport height turns NDC into pixels, clip.w is the depth
     let proj_scale = abs(scene.view_proj[1][1]);
     let px = 0.5 * proj_scale * scene.misc.y / max(out.clip.w, 0.0001);
-    out.meta = vec4<f32>(tone, sun_k, inst.size.y * px, inst.size.x * px);
+    out.meta = vec4<f32>(tone, sun_k, size.y * px, size.x * px);
 
     return out;
 }

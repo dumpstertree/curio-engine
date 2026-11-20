@@ -1,5 +1,5 @@
 use camera::SysRecordCamera;
-use curio_core::{GraphicsMapping, Ledger, Matrix4x4, Services, TextureAsset, Vector4};
+use curio_core::{GraphicsMapping, Ledger, Matrix4x4, Services, TextureAsset};
 use lighting::SysRecordSun;
 
 use crate::SysRecordOilPaint;
@@ -98,8 +98,11 @@ pub trait OilPaintFeature {
 pub struct RenderFeatureDrawDabs {
     pub tick_count: usize,
     pub dabs: Vec<Dab>, // submission list — phase 3 grows this from facets
-    pub dab_capacity: usize, // dab_buffer's instance count — grown in
-    // powers when authored paint exceeds it
+    pub models: Vec<Matrix4x4>, // parallel to dabs — phase 4 uploads these
+    // as the second instance attribute so painted forms pin rigidly on the
+    // GPU (no CPU bake)
+    pub instance_capacity: usize, // dab_buffer/models_buffer's instance
+    // count — grown in powers when authored paint exceeds it
 
     // built on the first frame that has dabs
     pipeline: Option<RenderPipeline>,
@@ -110,21 +113,24 @@ pub struct RenderFeatureDrawDabs {
     quad_buffer: Option<Buffer>,
     index_buffer: Option<Buffer>,
     dab_buffer: Option<Buffer>,
+    models_buffer: Option<Buffer>, // parallel instance stream: one Matrix4x4
+    // per dab (phase 4 rigid pin)
     depth: Option<TextureAsset>, // own depth — the mesh pass' texture is
     // local to draw_3d_features and already gone when this pass runs
 }
 
 impl RenderFeatureDrawDabs {
+    // nothing pre-seeded — the proof patch materializes in draw_dabs only
+    // while nothing authored paint, alongside identity pins
     pub fn new() -> RenderFeatureDrawDabs {
-        let mut feature = Self::blank();
-        feature.dabs = Self::proof_dabs();
-        feature
+        Self::blank()
     }
     pub fn blank() -> RenderFeatureDrawDabs {
         RenderFeatureDrawDabs {
             tick_count: 0,
             dabs: Vec::new(),
-            dab_capacity: 0,
+            models: Vec::new(),
+            instance_capacity: 0,
             pipeline: None,
             bind_group: None,
             bind_group_layout: None,
@@ -133,6 +139,7 @@ impl RenderFeatureDrawDabs {
             quad_buffer: None,
             index_buffer: None,
             dab_buffer: None,
+            models_buffer: None,
             depth: None,
         }
     }
@@ -213,55 +220,35 @@ impl RenderFeatureDrawDabs {
         return (x >> 40) as f32 / 0xFFFFFF as f32;
     }
 
-    // ── phase 3: record-driven submission ───────────────────────────────
-    // CPU bake of the record: world = model × local. Phase 4 deletes
-    // this and hands the matrix to the vertex shader as a second
-    // instance attribute so painted forms can move for free.
-    pub fn bake(&mut self, dabs: &[Dab], models: &[Matrix4x4]) {
-        self.dabs.clear();
-        let n = if dabs.len() < models.len() { dabs.len() } else { models.len() };
-        for i in 0..n {
-            let d = &dabs[i];
-            let m = &models[i];
-            // pin transforms as a point (w=1), dir as a direction (w=0);
-            // the dir is renormalized so the shader's sun term stays a
-            // pure flow-against-light blend
-            let p = m.multiply_vec4(Vector4::new(d.pin[0], d.pin[1], d.pin[2], 1.0));
-            let v = m.multiply_vec4(Vector4::new(d.dir[0], d.dir[1], d.dir[2], 0.0));
-            let vlen = (v.x * v.x + v.y * v.y + v.z * v.z).sqrt();
-            let v_inv = if vlen < 0.0001 { 0.0 } else { 1.0 / vlen };
-            // stroke size picks up the form's scale — mean of the three
-            // basis column lengths. Near-uniform forms are exact;
-            // stretched forms stretch their strokes with themselves, so
-            // stretched demo forms author dab_size against that mean
-            let c0 = (m.model[0][0] * m.model[0][0] + m.model[0][1] * m.model[0][1] + m.model[0][2] * m.model[0][2]).sqrt();
-            let c1 = (m.model[1][0] * m.model[1][0] + m.model[1][1] * m.model[1][1] + m.model[1][2] * m.model[1][2]).sqrt();
-            let c2 = (m.model[2][0] * m.model[2][0] + m.model[2][1] * m.model[2][1] + m.model[2][2] * m.model[2][2]).sqrt();
-            let scale = (c0 + c1 + c2) / 3.0;
-            self.dabs.push(
-                Dab {
-                    pin: [p.x, p.y, p.z],
-                    dir: [v.x * v_inv, v.y * v_inv, v.z * v_inv],
-                    size: [d.size[0] * scale, d.size[1] * scale],
-                    seed: d.seed,
-                },
-            );
-        }
-    }
+    // ── phase 4: rigid pin, no CPU bake ─────────────────────────────────
+    // the record's dabs (object-local) and their parallel form matrices go
+    // straight to the GPU as two instance streams; the vertex shader
+    // multiplies pin with w=1 and dir with w=0, and the stroke picks up
+    // the matrix's mean basis-column length as scale. A painted form
+    // translating/scaling therefore costs only its Transform3D update —
+    // the paint never re-samples
 
-    // vertex buffers cannot be resized in place — re-create at the new
-    // capacity. Nothing to preserve: draw_dabs re-uploads right after
-    pub fn grow_dab_buffer(&mut self, device: &Device) {
+    // vertex buffers cannot be resized in place — re-create both at the
+    // new capacity. Nothing to preserve: draw_dabs re-uploads right after
+    pub fn grow_instance_buffers(&mut self, device: &Device) {
         let want = self.dabs.len();
-        let mut capacity = if self.dab_capacity < 1 { 1 } else { self.dab_capacity };
+        let mut capacity = if self.instance_capacity < 1 { 1 } else { self.instance_capacity };
         while capacity < want {
             capacity = capacity * 2;
         }
-        self.dab_capacity = capacity;
+        self.instance_capacity = capacity;
         self.dab_buffer = Some(
             device.create_buffer(&BufferDescriptor {
                 label: Some("dab instances"),
                 size: (capacity * std::mem::size_of::<Dab>()) as u64,
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            }),
+        );
+        self.models_buffer = Some(
+            device.create_buffer(&BufferDescriptor {
+                label: Some("dab model matrices"),
+                size: (capacity * std::mem::size_of::<Matrix4x4>()) as u64,
                 usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
@@ -275,16 +262,29 @@ impl RenderFeatureDrawDabs {
         self.tick_count += 1;
 
         // Paint source: this screen's OilPaint record — the habit refills
-        // it each tick from the world's PaintOil forms. Dabs are object-
-        // LOCAL, so the CPU bakes them through their form matrices into
-        // world space (phase 4 deletes the bake and uploads the matrices
-        // to the vertex shader instead). Until anything authored exists,
-        // the phase-1 proof patch stays on the submission list.
+        // it each tick from the world's PaintOil forms. Dabs and their
+        // form matrices go straight to the GPU as two parallel instance
+        // streams (phase 4 rigid pin: moving a painted form moves its
+        // strokes for free, no CPU bake, no re-sampling). Until anything
+        // authored exists, the phase-1 proof patch stays on the
+        // submission list with identity pins.
         let paint = ledger.read::<SysRecordOilPaint>();
         if !paint.dabs.is_empty() {
-            self.bake(&paint.dabs, &paint.models);
+            self.dabs = paint.dabs.to_vec();
+            self.models = paint.models.to_vec();
         } else if self.dabs.is_empty() {
             self.dabs = Self::proof_dabs();
+            let id = Matrix4x4::from_raw(
+                [
+                    [1.0, 0.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0, 0.0],
+                    [0.0, 0.0, 1.0, 0.0],
+                    [0.0, 0.0, 0.0, 1.0],
+                ],
+            );
+            while self.models.len() < self.dabs.len() {
+                self.models.push(id);
+            }
         }
 
         if self.dabs.is_empty() || screen >= mappings.len() {
@@ -299,13 +299,14 @@ impl RenderFeatureDrawDabs {
             self.init_gpu(device);
         }
 
-        // instance stream: padded capacity, grown in powers when the
+        // instance streams: padded capacity, grown in powers when the
         // authored paint outgrows it, re-uploaded every frame (the record
         // is refilled each tick)
-        if self.dabs.len() > self.dab_capacity {
-            self.grow_dab_buffer(device);
+        if self.dabs.len() > self.instance_capacity {
+            self.grow_instance_buffers(device);
         }
         queue.write_buffer(self.dab_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.dabs));
+        queue.write_buffer(self.models_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.models));
 
         // first frame: tell the user where the sample curio camera sits so
         // the proof patch can be judged on their machine
@@ -375,6 +376,9 @@ impl RenderFeatureDrawDabs {
         pass.set_viewport(vx, vy, vw, vh, 0.0, 1.0);
         pass.set_vertex_buffer(0, self.quad_buffer.as_ref().unwrap().slice(..));
         pass.set_vertex_buffer(1, self.dab_buffer.as_ref().unwrap().slice(0..(self.dabs.len() as BufferAddress * std::mem::size_of::<Dab>() as BufferAddress)));
+        // phase 4 rigid pin: one model matrix per dab, sliced to the very
+        // same instance count — the two streams grow and upload together
+        pass.set_vertex_buffer(2, self.models_buffer.as_ref().unwrap().slice(0..(self.dabs.len() as BufferAddress * std::mem::size_of::<Matrix4x4>() as BufferAddress)));
         pass.set_index_buffer(self.index_buffer.as_ref().unwrap().slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
 
         pass.draw_indexed(0..6, 0, 0..(self.dabs.len() as u32));
@@ -392,8 +396,8 @@ impl RenderFeatureDrawDabs {
     fn init_gpu(&mut self, device: &Device) {
         let queue = Services::get().gpu.queue();
         // two triangles per dab quad; corner is [-0.5,0.5], x along stroke.
-        // written once — phase 3 grows the buffer via the mesh feature's
-        // capacity pattern instead
+        // written once — the instance streams grow in powers via
+        // grow_instance_buffers instead
         let quad = [
             [-0.5, -0.5],
             [0.5, -0.5],
@@ -422,14 +426,22 @@ impl RenderFeatureDrawDabs {
         );
         queue.write_buffer(self.index_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&indices));
 
-        // capacity starts padded so the first authored frames never
-        // reallocate; grow_dab_buffer doubles beyond it. No upload here —
-        // draw_dabs uploads after the growth check, every frame
-        self.dab_capacity = if self.dabs.len() < 4096 { 4096 } else { self.dabs.len() };
+        // instance streams share one padded capacity so they can never
+        // desync; grow_instance_buffers doubles both together. No upload
+        // here — draw_dabs uploads both after the growth check, every frame
+        self.instance_capacity = if self.dabs.len() < 4096 { 4096 } else { self.dabs.len() };
         self.dab_buffer = Some(
             device.create_buffer(&BufferDescriptor {
                 label: Some("dab instances"),
-                size: (self.dab_capacity * std::mem::size_of::<Dab>()) as u64,
+                size: (self.instance_capacity * std::mem::size_of::<Dab>()) as u64,
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            }),
+        );
+        self.models_buffer = Some(
+            device.create_buffer(&BufferDescriptor {
+                label: Some("dab model matrices"),
+                size: (self.instance_capacity * std::mem::size_of::<Matrix4x4>()) as u64,
                 usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
@@ -524,7 +536,7 @@ impl RenderFeatureDrawDabs {
                 vertex: VertexState {
                     module: &shader,
                     entry_point: Some("vs_main"),
-                    buffers: &[QuadCorner::desc(), Dab::desc()],
+                    buffers: &[QuadCorner::desc(), Dab::desc(), Matrix4x4::desc()],
                     compilation_options: Default::default(),
                 },
                 fragment: Some(
