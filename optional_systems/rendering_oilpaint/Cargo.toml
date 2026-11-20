@@ -8,8 +8,15 @@ edition = "2024"
 curio_core = { workspace = true }
 camera = { workspace = true } # SysRecordCamera + CameraSnapshot/get_uniform
 lighting = { workspace = true } # SysRecordSun — sun term on the dabs
+facet = { workspace = true } # PaintOil facet (phase 3)
+habit = { workspace = true } # paint habit (phase 3)
+record = { workspace = true } # SysRecordOilPaint (phase 3)
+gameplay = { workspace = true } # Context3D queries + Transform3D
+ctor = "0.8.0" # #[habit]/#[record] registration, same pin as ui_overlay
+rendering_static = { workspace = true } # ModelAsset + procedural Primitives for the demo scene
+ext_rendering = { workspace = true } # Mesh/Vertex — the surface sampler's input
 
-# no direct math dep — Matrix4 types flow in through camera's API
+# no direct math dep — Matrix4 types flow in through camera/curio_core's API
 
 # GPU types — pinned to match curio_core's egui-wgpu exactly (see README)
 egui-wgpu = { version = "0.31.1", features = ["winit"] }

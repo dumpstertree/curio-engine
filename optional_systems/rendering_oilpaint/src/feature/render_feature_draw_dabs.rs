@@ -1,6 +1,8 @@
 use camera::SysRecordCamera;
-use curio_core::{GraphicsMapping, Ledger, Services, TextureAsset};
+use curio_core::{GraphicsMapping, Ledger, Matrix4x4, Services, TextureAsset, Vector4};
 use lighting::SysRecordSun;
+
+use crate::SysRecordOilPaint;
 use egui_wgpu::wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, Buffer, BufferAddress, BufferDescriptor, BufferUsages, ColorTargetState, ColorWrites, CommandEncoder, CompareFunction, Device, Extent3d, FragmentState, LoadOp, Operations, PrimitiveState, RenderPassColorAttachment, RenderPassDescriptor, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, PipelineLayout, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource, ShaderStages, StoreOp, TextureFormat, TextureView, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
 use egui_wgpu::wgpu::{BufferBinding, BufferBindingType};
 use bytemuck::{self};
@@ -96,6 +98,8 @@ pub trait OilPaintFeature {
 pub struct RenderFeatureDrawDabs {
     pub tick_count: usize,
     pub dabs: Vec<Dab>, // submission list — phase 3 grows this from facets
+    pub dab_capacity: usize, // dab_buffer's instance count — grown in
+    // powers when authored paint exceeds it
 
     // built on the first frame that has dabs
     pipeline: Option<RenderPipeline>,
@@ -120,6 +124,7 @@ impl RenderFeatureDrawDabs {
         RenderFeatureDrawDabs {
             tick_count: 0,
             dabs: Vec::new(),
+            dab_capacity: 0,
             pipeline: None,
             bind_group: None,
             bind_group_layout: None,
@@ -208,11 +213,79 @@ impl RenderFeatureDrawDabs {
         return (x >> 40) as f32 / 0xFFFFFF as f32;
     }
 
+    // ── phase 3: record-driven submission ───────────────────────────────
+    // CPU bake of the record: world = model × local. Phase 4 deletes
+    // this and hands the matrix to the vertex shader as a second
+    // instance attribute so painted forms can move for free.
+    pub fn bake(&mut self, dabs: &[Dab], models: &[Matrix4x4]) {
+        self.dabs.clear();
+        let n = if dabs.len() < models.len() { dabs.len() } else { models.len() };
+        for i in 0..n {
+            let d = &dabs[i];
+            let m = &models[i];
+            // pin transforms as a point (w=1), dir as a direction (w=0);
+            // the dir is renormalized so the shader's sun term stays a
+            // pure flow-against-light blend
+            let p = m.multiply_vec4(Vector4::new(d.pin[0], d.pin[1], d.pin[2], 1.0));
+            let v = m.multiply_vec4(Vector4::new(d.dir[0], d.dir[1], d.dir[2], 0.0));
+            let vlen = (v.x * v.x + v.y * v.y + v.z * v.z).sqrt();
+            let v_inv = if vlen < 0.0001 { 0.0 } else { 1.0 / vlen };
+            // stroke size picks up the form's scale — mean of the three
+            // basis column lengths. Near-uniform forms are exact;
+            // stretched forms stretch their strokes with themselves, so
+            // stretched demo forms author dab_size against that mean
+            let c0 = (m.model[0][0] * m.model[0][0] + m.model[0][1] * m.model[0][1] + m.model[0][2] * m.model[0][2]).sqrt();
+            let c1 = (m.model[1][0] * m.model[1][0] + m.model[1][1] * m.model[1][1] + m.model[1][2] * m.model[1][2]).sqrt();
+            let c2 = (m.model[2][0] * m.model[2][0] + m.model[2][1] * m.model[2][1] + m.model[2][2] * m.model[2][2]).sqrt();
+            let scale = (c0 + c1 + c2) / 3.0;
+            self.dabs.push(
+                Dab {
+                    pin: [p.x, p.y, p.z],
+                    dir: [v.x * v_inv, v.y * v_inv, v.z * v_inv],
+                    size: [d.size[0] * scale, d.size[1] * scale],
+                    seed: d.seed,
+                },
+            );
+        }
+    }
+
+    // vertex buffers cannot be resized in place — re-create at the new
+    // capacity. Nothing to preserve: draw_dabs re-uploads right after
+    pub fn grow_dab_buffer(&mut self, device: &Device) {
+        let want = self.dabs.len();
+        let mut capacity = if self.dab_capacity < 1 { 1 } else { self.dab_capacity };
+        while capacity < want {
+            capacity = capacity * 2;
+        }
+        self.dab_capacity = capacity;
+        self.dab_buffer = Some(
+            device.create_buffer(&BufferDescriptor {
+                label: Some("dab instances"),
+                size: (capacity * std::mem::size_of::<Dab>()) as u64,
+                usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            }),
+        );
+    }
+
     // ── frame pass ──────────────────────────────────────────────────────
     // pub so the rendering crate can call it directly; the trait below
     // delegates, mirroring the ui_overlay precedent
     pub fn draw_dabs(&mut self, encoder: &mut CommandEncoder, target_view: &TextureView, ledger: &Ledger, mappings: &[GraphicsMapping], screen: usize) {
         self.tick_count += 1;
+
+        // Paint source: this screen's OilPaint record — the habit refills
+        // it each tick from the world's PaintOil forms. Dabs are object-
+        // LOCAL, so the CPU bakes them through their form matrices into
+        // world space (phase 4 deletes the bake and uploads the matrices
+        // to the vertex shader instead). Until anything authored exists,
+        // the phase-1 proof patch stays on the submission list.
+        let paint = ledger.read::<SysRecordOilPaint>();
+        if !paint.dabs.is_empty() {
+            self.bake(&paint.dabs, &paint.models);
+        } else if self.dabs.is_empty() {
+            self.dabs = Self::proof_dabs();
+        }
 
         if self.dabs.is_empty() || screen >= mappings.len() {
             return;
@@ -225,6 +298,14 @@ impl RenderFeatureDrawDabs {
         if self.pipeline.is_none() {
             self.init_gpu(device);
         }
+
+        // instance stream: padded capacity, grown in powers when the
+        // authored paint outgrows it, re-uploaded every frame (the record
+        // is refilled each tick)
+        if self.dabs.len() > self.dab_capacity {
+            self.grow_dab_buffer(device);
+        }
+        queue.write_buffer(self.dab_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.dabs));
 
         // first frame: tell the user where the sample curio camera sits so
         // the proof patch can be judged on their machine
@@ -293,7 +374,7 @@ impl RenderFeatureDrawDabs {
         pass.set_bind_group(0, self.bind_group.as_ref().unwrap(), &[]);
         pass.set_viewport(vx, vy, vw, vh, 0.0, 1.0);
         pass.set_vertex_buffer(0, self.quad_buffer.as_ref().unwrap().slice(..));
-        pass.set_vertex_buffer(1, self.dab_buffer.as_ref().unwrap().slice(..));
+        pass.set_vertex_buffer(1, self.dab_buffer.as_ref().unwrap().slice(0..(self.dabs.len() as BufferAddress * std::mem::size_of::<Dab>() as BufferAddress)));
         pass.set_index_buffer(self.index_buffer.as_ref().unwrap().slice(..), egui_wgpu::wgpu::IndexFormat::Uint32);
 
         pass.draw_indexed(0..6, 0, 0..(self.dabs.len() as u32));
@@ -341,15 +422,18 @@ impl RenderFeatureDrawDabs {
         );
         queue.write_buffer(self.index_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&indices));
 
+        // capacity starts padded so the first authored frames never
+        // reallocate; grow_dab_buffer doubles beyond it. No upload here —
+        // draw_dabs uploads after the growth check, every frame
+        self.dab_capacity = if self.dabs.len() < 4096 { 4096 } else { self.dabs.len() };
         self.dab_buffer = Some(
             device.create_buffer(&BufferDescriptor {
                 label: Some("dab instances"),
-                size: (self.dabs.len() * std::mem::size_of::<Dab>()) as u64,
+                size: (self.dab_capacity * std::mem::size_of::<Dab>()) as u64,
                 usage: BufferUsages::VERTEX | BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
         );
-        queue.write_buffer(self.dab_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.dabs));
 
         self.scene_buffer = Some(
             device.create_buffer(&BufferDescriptor {
