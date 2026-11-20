@@ -6,6 +6,9 @@ edition = "2024"
 [dependencies]
 # ECS glue
 curio_core = { workspace = true }
+camera = { workspace = true } # SysRecordCamera + CameraSnapshot/get_uniform
+
+# no direct math dep — Matrix4 types flow in through camera's API
 
 # GPU types — pinned to match curio_core's egui-wgpu exactly (see README)
 egui-wgpu = { version = "0.31.1", features = ["winit"] }

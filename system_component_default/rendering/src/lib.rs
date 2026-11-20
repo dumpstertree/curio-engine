@@ -30,7 +30,7 @@ use egui_wgpu::wgpu::{Texture, TextureView};
 use ext_rendering::SysRecordRendering;
 use lighting::SysRecordSun;
 use ui_overlay::{SysRecordUi, UiOverlayPass};
-use rendering_oilpaint::{RenderFeatureDrawDabs, OilPaintFeature};
+use rendering_oilpaint::{RenderFeatureDrawDabs};
 use winit::event::WindowEvent;
 
 pub struct SystemComponentDefaultGraphics {
@@ -83,7 +83,7 @@ impl PluginCommon for SystemComponentDefaultGraphics {
         // the replace-the-mesh look, revisit if dabs ever coexist
         for i in 0..ledger.len() {
             self.oil_paint_feature
-                .render(&mut encoder, &self.offscreen_view, &ledger[i]);
+                .draw_dabs(&mut encoder, &self.offscreen_view, &ledger[i], &self.graphics_mappings, i);
         }
 
         // post-process offscreen → swapchain
