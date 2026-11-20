@@ -1,5 +1,6 @@
 use camera::SysRecordCamera;
 use curio_core::{GraphicsMapping, Ledger, Services, TextureAsset};
+use lighting::SysRecordSun;
 use egui_wgpu::wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, Buffer, BufferAddress, BufferDescriptor, BufferUsages, ColorTargetState, ColorWrites, CommandEncoder, CompareFunction, Device, Extent3d, FragmentState, LoadOp, Operations, PrimitiveState, RenderPassColorAttachment, RenderPassDescriptor, RenderPassDepthStencilAttachment, RenderPipeline, RenderPipelineDescriptor, PipelineLayout, PipelineLayoutDescriptor, ShaderModuleDescriptor, ShaderSource, ShaderStages, StoreOp, TextureFormat, TextureView, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
 use egui_wgpu::wgpu::{BufferBinding, BufferBindingType};
 use bytemuck::{self};
@@ -73,7 +74,10 @@ impl QuadCorner {
 
 // group 0 — our own per-screen scene uniform. the engine's CameraUniform
 // carries view_proj only; strokes also need the camera BASIS so the vertex
-// shader can orient them in the view plane without extracting V.
+// shader can orient them in the view plane without extracting V. sun feeds
+// the phase-2 shading term; misc.x is a clock (tick count — no engine time
+// yet) and misc.y the screen's pixel height, both reserved for wind (P5)
+// until then misc.y just drives pixel-size convergence. 144 B.
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct SceneUniform {
@@ -81,6 +85,8 @@ struct SceneUniform {
     pub view_pos: [f32; 4],
     pub cam_right: [f32; 4],
     pub cam_up: [f32; 4],
+    pub sun: [f32; 4], // normalized sun direction
+    pub misc: [f32; 4], // x time (ticks), y pixel height
 }
 
 pub trait OilPaintFeature {
@@ -248,11 +254,21 @@ impl RenderFeatureDrawDabs {
 
         let cam = snapshot.get_uniform(vw as i32, vh as i32);
         let view = snapshot.calc_matrix(); // cgmath columns: row i is [col][i]
+
+        // sun for the dab shading term — normalized so the fs term is a
+        // pure flow-against-light blend
+        let state_sun = ledger.read::<SysRecordSun>();
+        let sd = state_sun.direction;
+        let sun_len = (sd.x * sd.x + sd.y * sd.y + sd.z * sd.z).sqrt();
+        let sun_inv = if sun_len < 0.0001 { 0.0 } else { 1.0 / sun_len };
+
         let scene = SceneUniform {
             view_proj: cam.view_proj,
             view_pos: cam.view_position,
             cam_right: [view[0][0], view[1][0], view[2][0], 0.0],
             cam_up: [view[0][1], view[1][1], view[2][1], 0.0],
+            sun: [sd.x * sun_inv, sd.y * sun_inv, sd.z * sun_inv, 0.0],
+            misc: [self.tick_count as f32, vh, 0.0, 0.0],
         };
         queue.write_buffer(self.scene_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&[scene]));
 
