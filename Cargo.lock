@@ -3882,6 +3882,7 @@ dependencies = [
  "egui-winit",
  "ext_rendering",
  "lighting",
+ "rendering_oilpaint",
  "skybox",
  "ui_overlay",
  "winit",
@@ -3927,6 +3928,16 @@ dependencies = [
  "record",
  "rendering_static",
  "serde",
+]
+
+[[package]]
+name = "rendering_oilpaint"
+version = "0.1.0"
+dependencies = [
+ "bytemuck",
+ "camera",
+ "curio_core",
+ "egui-wgpu",
 ]
 
 [[package]]
