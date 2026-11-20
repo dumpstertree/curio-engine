@@ -3936,8 +3936,16 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "camera",
+ "ctor",
  "curio_core",
  "egui-wgpu",
+ "ext_rendering",
+ "facet",
+ "gameplay",
+ "habit",
+ "lighting",
+ "record",
+ "rendering_static",
 ]
 
 [[package]]
