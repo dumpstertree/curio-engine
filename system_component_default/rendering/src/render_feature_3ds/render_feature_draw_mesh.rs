@@ -66,7 +66,12 @@ impl RenderFeatureDrawMesh {
         let mut batches_with_offsets: Vec<(Arc<Mesh>, Arc<Material>, Vec<Matrix4x4>, usize)> = Vec::new();
 
         for ((mesh, material), matrix) in &batching {
-            queue.write_buffer(self.instance_buffer.as_ref().unwrap(), (offset * std::mem::size_of::<Matrix4x4>()) as u64, bytemuck::cast_slice(matrix));
+            if bytemuck::cast_slice(matrix).len() as u64 + (offset * std::mem::size_of::<Matrix4x4>()) as u64 >
+            self.instance_buffer.as_ref().unwrap().size()
+        {
+            println!("[gpu-diag] mesh instance buffer size={} write offset={}", self.instance_buffer.as_ref().unwrap().size(), offset);
+        }
+        queue.write_buffer(self.instance_buffer.as_ref().unwrap(), (offset * std::mem::size_of::<Matrix4x4>()) as u64, bytemuck::cast_slice(matrix));
             batches_with_offsets.push((mesh.clone(), material.clone(), matrix.clone(), offset));
             offset += matrix.len();
         }

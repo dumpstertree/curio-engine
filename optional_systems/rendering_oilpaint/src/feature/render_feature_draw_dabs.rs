@@ -305,6 +305,22 @@ impl RenderFeatureDrawDabs {
         if self.dabs.len() > self.instance_capacity {
             self.grow_instance_buffers(device);
         }
+        if let buffer = self.dab_buffer.as_ref().unwrap() {
+            if bytemuck::cast_slice(&self.dabs).len() as u64 > buffer.size() {
+                println!("[gpu-diag] dab instances size={} write={}", buffer.size(), bytemuck::cast_slice(&self.dabs).len());
+            }
+        }
+        if let buffer = self.models_buffer.as_ref().unwrap() {
+            if bytemuck::cast_slice(&self.models).len() as u64 > buffer.size() {
+                println!(
+                    "[gpu-diag] dab models size={} write={} dabs={} models={}",
+                    buffer.size(),
+                    bytemuck::cast_slice(&self.models).len(),
+                    self.dabs.len(),
+                    self.models.len(),
+                );
+            }
+        }
         queue.write_buffer(self.dab_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.dabs));
         queue.write_buffer(self.models_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.models));
 
@@ -352,6 +368,9 @@ impl RenderFeatureDrawDabs {
             sun: [sd.x * sun_inv, sd.y * sun_inv, sd.z * sun_inv, 0.0],
             misc: [self.tick_count as f32, vh, 0.0, 0.0],
         };
+        if bytemuck::cast_slice(&[scene]).len() as u64 > self.scene_buffer.as_ref().unwrap().size() {
+            println!("[gpu-diag] dab scene size={} write={}", self.scene_buffer.as_ref().unwrap().size(), bytemuck::cast_slice(&[scene]).len());
+        }
         queue.write_buffer(self.scene_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&[scene]));
 
         // second 3D pass on the same offscreen: LOAD keeps what the mesh
@@ -414,6 +433,11 @@ impl RenderFeatureDrawDabs {
                 mapped_at_creation: false,
             }),
         );
+        if let buffer = self.quad_buffer.as_ref().unwrap() {
+            if bytemuck::cast_slice(&quad).len() as u64 > buffer.size() {
+                println!("[gpu-diag] dab quad corners size={} write={}", buffer.size(), bytemuck::cast_slice(&quad).len());
+            }
+        }
         queue.write_buffer(self.quad_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&quad));
 
         self.index_buffer = Some(
@@ -424,6 +448,9 @@ impl RenderFeatureDrawDabs {
                 mapped_at_creation: false,
             }),
         );
+        if bytemuck::cast_slice(&indices).len() as u64 > self.index_buffer.as_ref().unwrap().size() {
+            println!("[gpu-diag] dab indices size={} write={}", self.index_buffer.as_ref().unwrap().size(), bytemuck::cast_slice(&indices).len());
+        }
         queue.write_buffer(self.index_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&indices));
 
         // instance streams share one padded capacity so they can never
@@ -580,3 +607,4 @@ impl OilPaintFeature for RenderFeatureDrawDabs {
         self.draw_dabs(encoder, target_view, ledger, mappings, screen);
     }
 }
+

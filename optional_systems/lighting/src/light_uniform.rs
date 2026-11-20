@@ -130,6 +130,9 @@ impl LightSystem {
             Self::add_light(light, &mut bytes);
         }
 
+        if bytes.len() as u64 > self.buffer.size() {
+            println!("[gpu-diag] light uniform buffer size={} write={}", self.buffer.size(), bytes.len());
+        }
         queue.write_buffer(&self.buffer, 0, &bytes);
     }
 

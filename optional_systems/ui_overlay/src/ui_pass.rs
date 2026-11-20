@@ -323,6 +323,14 @@ impl UiOverlayPass {
             }));
             self.vertex_capacity = vertices.len();
         }
+        if bytemuck::cast_slice(&vertices).len() as u64 > self.vertex_buffer.as_ref().unwrap().size() {
+            println!(
+                "[gpu-diag] ui vertices size={} write={} count={}",
+                self.vertex_buffer.as_ref().unwrap().size(),
+                bytemuck::cast_slice(&vertices).len(),
+                vertices.len(),
+            );
+        }
         queue.write_buffer(
             self.vertex_buffer.as_ref().unwrap(),
             0,

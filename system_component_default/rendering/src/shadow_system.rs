@@ -329,6 +329,19 @@ impl ShadowSystem {
         let light_proj = Matrix4x4::orthographic_lh_zo(-20.0, 20.0, -20.0, 20.0, 0.1, 200.0);
         let light_view_proj = Matrix4x4::multiply(&light_proj, &light_view);
 
+        if let buffer = &self.buffers[screen_index] {
+            // wgpu aborts with "Copy of 0..64 ... Destination buffer of size 32" on this
+            // user's machine — print the real numbers here so the culprit is identifiable
+            // on retest (pre-fix diagnostic, harmless while sizes agree)
+            if bytemuck::bytes_of(&light_view_proj).len() as u64 > buffer.size() {
+                println!(
+                    "[gpu-diag] shadow buffer[{}] size={} write={}B",
+                    screen_index,
+                    buffer.size(),
+                    bytemuck::bytes_of(&light_view_proj).len(),
+                );
+            }
+        }
         queue.write_buffer(&self.buffers[screen_index], 0, bytemuck::bytes_of(&light_view_proj));
     }
 
