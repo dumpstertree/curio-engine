@@ -34,6 +34,7 @@ members = [
     "optional_systems/tween",
     "optional_systems/ui_overlay",
     "optional_systems/animators",
+    "optional_systems/rendering_oilpaint",
 
 ]
 
@@ -68,6 +69,7 @@ skybox = { path = "optional_systems/skybox" }
 tween = { path = "optional_systems/tween" }
 animators = { path = "optional_systems/animators" }
 ui_overlay = { path = "optional_systems/ui_overlay" }
+rendering_oilpaint = { path = "optional_systems/rendering_oilpaint" }
 curio_editor_egui = { path = "curio-editor-egui" }
 
 

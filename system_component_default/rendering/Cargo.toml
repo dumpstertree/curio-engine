@@ -17,6 +17,7 @@ camera = { workspace = true }
 lighting = { workspace = true }
 skybox = { workspace = true }
 ui_overlay = { workspace = true }
+rendering_oilpaint = { workspace = true }
 
 
 egui = "0.31.1"

@@ -30,6 +30,7 @@ use egui_wgpu::wgpu::{Texture, TextureView};
 use ext_rendering::SysRecordRendering;
 use lighting::SysRecordSun;
 use ui_overlay::{SysRecordUi, UiOverlayPass};
+use rendering_oilpaint::{RenderFeatureDrawDabs, OilPaintFeature};
 use winit::event::WindowEvent;
 
 pub struct SystemComponentDefaultGraphics {
@@ -39,6 +40,7 @@ pub struct SystemComponentDefaultGraphics {
     // render_feature_2d_helper: RenderFeature2DHelper,
     render_feature_3d_helper: RenderFeature3DHelper,
     render_feature_pp_helper: RenderFeaturePostProcessHelper,
+    oil_paint_feature: RenderFeatureDrawDabs, // world-pinned paint dabs — own 3D pass, runs after meshes
     // ECS UI boxes (taffy layout habit) drawn over the swapchain
     ui_overlay_pass: UiOverlayPass,
     graphics_mappings: Vec<GraphicsMapping>,
@@ -73,6 +75,16 @@ impl PluginCommon for SystemComponentDefaultGraphics {
 
         self.render_feature_3d_helper
             .draw_3d_features(&mut self.graphics_mappings, ledger, &mut encoder, &mut self.offscreen_view, &self.shadow_system);
+
+        // dabs of painted forms — second 3D pass on the same offscreen, after
+        // meshes so painted forms overwrite their footprint. painted forms
+        // push NO DrawCall; depth-share with the mesh pass is not wired yet
+        // (the mesh depth texture is local to draw_3d_features) — fine for
+        // the replace-the-mesh look, revisit if dabs ever coexist
+        for i in 0..ledger.len() {
+            self.oil_paint_feature
+                .render(&mut encoder, &self.offscreen_view, &ledger[i]);
+        }
 
         // post-process offscreen → swapchain
         self.render_feature_pp_helper
@@ -212,6 +224,7 @@ impl SystemComponentDefaultGraphics {
             // render_feature_2d_helper: RenderFeature2DHelper::new(),
             render_feature_3d_helper: RenderFeature3DHelper::new(),
             render_feature_pp_helper: RenderFeaturePostProcessHelper::new(&offscreen_view),
+            oil_paint_feature: RenderFeatureDrawDabs::new(),
             ui_overlay_pass: UiOverlayPass::new(),
             // offscreen_texture,
             offscreen_view,
