@@ -44,7 +44,8 @@ impl Dab {
                     format: VertexFormat::Float32x2,
                 },
                 egui_wgpu::wgpu::VertexAttribute {
-                    offset: 36,
+                    offset: 32, // pin 12 + dir 12 + size 8 — 36 here would run the
+                    // seed's 16 B past the 48 B stride (wgpu rejected the pipeline)
                     shader_location: 4,
                     format: VertexFormat::Float32x4,
                 },
