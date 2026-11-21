@@ -69,7 +69,7 @@ impl RenderFeatureDrawMesh {
             if ((matrix.len() + offset) * std::mem::size_of::<Matrix4x4>()) as u64 >
             self.instance_buffer.as_ref().unwrap().size()
         {
-            println!("[gpu-diag] mesh instance buffer size={} write offset={}", self.instance_buffer.as_ref().unwrap().size(), offset);
+            eprintln!("[gpu-diag] mesh instance buffer size={} write offset={}", self.instance_buffer.as_ref().unwrap().size(), offset);
         }
         queue.write_buffer(self.instance_buffer.as_ref().unwrap(), (offset * std::mem::size_of::<Matrix4x4>()) as u64, bytemuck::cast_slice(matrix));
             batches_with_offsets.push((mesh.clone(), material.clone(), matrix.clone(), offset));

@@ -77,7 +77,7 @@ impl CameraRenderingComponents {
 
         // Write the entire CameraUniform, which now includes tint (e.g. vec4<f32>)
         if std::mem::size_of_val(camera_uniform) as u64 + offset > self.camera_buffer.size() {
-            println!("[gpu-diag] camera buffer size={} write at offset={}", self.camera_buffer.size(), offset);
+            eprintln!("[gpu-diag] camera buffer size={} write at offset={}", self.camera_buffer.size(), offset);
         }
         queue.write_buffer(&self.camera_buffer, offset, bytemuck::cast_slice(&[*camera_uniform]));
     }

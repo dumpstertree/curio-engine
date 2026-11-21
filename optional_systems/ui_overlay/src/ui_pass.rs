@@ -322,9 +322,14 @@ impl UiOverlayPass {
                 mapped_at_creation: false,
             }));
             self.vertex_capacity = vertices.len();
+            eprintln!(
+                "[gpu-diag] ui vertex buffer created: size={}B for {} vertices",
+                self.vertex_buffer.as_ref().unwrap().size(),
+                vertices.len(),
+            );
         }
         if (vertices.len() * std::mem::size_of::<UiVertex>()) as u64 > self.vertex_buffer.as_ref().unwrap().size() {
-            println!(
+            eprintln!(
                 "[gpu-diag] ui vertices size={} write={} count={}",
                 self.vertex_buffer.as_ref().unwrap().size(),
                 vertices.len() * std::mem::size_of::<UiVertex>(),

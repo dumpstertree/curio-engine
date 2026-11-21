@@ -123,6 +123,10 @@ impl RenderFeatureDrawDabs {
     // nothing pre-seeded — the proof patch materializes in draw_dabs only
     // while nothing authored paint, alongside identity pins
     pub fn new() -> RenderFeatureDrawDabs {
+        // armed marker on STDERR so it survives stdout redirection in run.sh
+        // even when the process aborts: if this line is missing on retest,
+        // the binary being run was not built from the guarded branch head
+        eprintln!("[oil-paint] armed: gpu-diag guards (build 8ce67f4+)");
         Self::blank()
     }
     pub fn blank() -> RenderFeatureDrawDabs {
@@ -307,12 +311,12 @@ impl RenderFeatureDrawDabs {
         }
         if let buffer = self.dab_buffer.as_ref().unwrap() {
             if (self.dabs.len() * std::mem::size_of::<Dab>()) as u64 > buffer.size() {
-                println!("[gpu-diag] dab instances size={} write={}", buffer.size(), self.dabs.len() * std::mem::size_of::<Dab>());
+                eprintln!("[gpu-diag] dab instances size={} write={}", buffer.size(), self.dabs.len() * std::mem::size_of::<Dab>());
             }
         }
         if let buffer = self.models_buffer.as_ref().unwrap() {
             if (self.models.len() * std::mem::size_of::<Matrix4x4>()) as u64 > buffer.size() {
-                println!(
+                eprintln!(
                     "[gpu-diag] dab models size={} write={} dabs={} models={}",
                     buffer.size(),
                     self.models.len() * std::mem::size_of::<Matrix4x4>(),
@@ -321,6 +325,21 @@ impl RenderFeatureDrawDabs {
                 );
             }
         }
+        // first frame: print every one of our own write sizes unconditionally
+        // on STDERR so a retest can tell which site (if any) is the last one
+        // reached before the abort; on later frames only real mismatches
+        // print, to keep the noise down
+        if self.tick_count == 1 {
+            eprintln!(
+                "[gpu-diag] dab uploads: dabs={} write={}B into {}B; models={} write={}B into {}B",
+                self.dabs.len(),
+                self.dabs.len() * std::mem::size_of::<Dab>(),
+                self.dab_buffer.as_ref().unwrap().size(),
+                self.models.len(),
+                self.models.len() * std::mem::size_of::<Matrix4x4>(),
+                self.models_buffer.as_ref().unwrap().size(),
+            );
+        }
         queue.write_buffer(self.dab_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.dabs));
         queue.write_buffer(self.models_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&self.models));
 
@@ -328,7 +347,7 @@ impl RenderFeatureDrawDabs {
         // the proof patch can be judged on their machine
         if self.tick_count == 1 {
             let state_camera = ledger.read::<SysRecordCamera>();
-            println!(
+            eprintln!(
                 "[oil-paint] {} dabs armed; camera at ({:.2},{:.2},{:.2})",
                 self.dabs.len(),
                 state_camera.cameras.position.x,
@@ -369,7 +388,7 @@ impl RenderFeatureDrawDabs {
             misc: [self.tick_count as f32, vh, 0.0, 0.0],
         };
         if std::mem::size_of::<SceneUniform>() as u64 > self.scene_buffer.as_ref().unwrap().size() {
-            println!("[gpu-diag] dab scene size={} write={}", self.scene_buffer.as_ref().unwrap().size(), std::mem::size_of::<SceneUniform>());
+            eprintln!("[gpu-diag] dab scene size={} write={}", self.scene_buffer.as_ref().unwrap().size(), std::mem::size_of::<SceneUniform>());
         }
         queue.write_buffer(self.scene_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&[scene]));
 
@@ -433,9 +452,18 @@ impl RenderFeatureDrawDabs {
                 mapped_at_creation: false,
             }),
         );
+        // init_gpu runs exactly once per process — print real sizes
+        // unconditionally on STDERR: a [gpu-diag] line for EVERY write, in
+        // order, so the line right before an abort names the culprit even
+        // if a guard's own arithmetic is what's wrong
+        eprintln!(
+            "[gpu-diag] dab quad corners: buffer={}B write={}B (quad corners)",
+            self.quad_buffer.as_ref().unwrap().size(),
+            quad.len() * std::mem::size_of::<[f32; 2]>(),
+        );
         if let buffer = self.quad_buffer.as_ref().unwrap() {
             if (quad.len() * std::mem::size_of::<QuadCorner>()) as u64 > buffer.size() {
-                println!("[gpu-diag] dab quad corners size={} write={}", buffer.size(), quad.len() * std::mem::size_of::<QuadCorner>());
+                eprintln!("[gpu-diag] dab quad corners size={} write={}", buffer.size(), quad.len() * std::mem::size_of::<QuadCorner>());
             }
         }
         queue.write_buffer(self.quad_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&quad));
@@ -448,8 +476,13 @@ impl RenderFeatureDrawDabs {
                 mapped_at_creation: false,
             }),
         );
+        eprintln!(
+            "[gpu-diag] dab indices: buffer={}B write={}B",
+            self.index_buffer.as_ref().unwrap().size(),
+            indices.len() * std::mem::size_of::<i32>(),
+        );
         if (indices.len() * std::mem::size_of::<u32>()) as u64 > self.index_buffer.as_ref().unwrap().size() {
-            println!("[gpu-diag] dab indices size={} write={}", self.index_buffer.as_ref().unwrap().size(), indices.len() * std::mem::size_of::<u32>());
+            eprintln!("[gpu-diag] dab indices size={} write={}", self.index_buffer.as_ref().unwrap().size(), indices.len() * std::mem::size_of::<u32>());
         }
         queue.write_buffer(self.index_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&indices));
 
@@ -481,6 +514,12 @@ impl RenderFeatureDrawDabs {
                 usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
                 mapped_at_creation: false,
             }),
+        );
+        eprintln!(
+            "[gpu-diag] dab buffers created: dab_buffer={}B models_buffer={}B scene_buffer={}B",
+            self.dab_buffer.as_ref().unwrap().size(),
+            self.models_buffer.as_ref().unwrap().size(),
+            self.scene_buffer.as_ref().unwrap().size(),
         );
 
         // 1280×720 matches the fixed offscreen the rendering crate makes

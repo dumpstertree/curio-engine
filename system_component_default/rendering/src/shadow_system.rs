@@ -334,7 +334,7 @@ impl ShadowSystem {
             // user's machine — print the real numbers here so the culprit is identifiable
             // on retest (pre-fix diagnostic, harmless while sizes agree)
             if std::mem::size_of::<Matrix4x4>() as u64 > buffer.size() {
-                println!(
+                eprintln!(
                     "[gpu-diag] shadow buffer[{}] size={} write={}",
                     screen_index,
                     buffer.size(),

@@ -131,7 +131,7 @@ impl LightSystem {
         }
 
         if bytes.len() as u64 > self.buffer.size() {
-            println!("[gpu-diag] light uniform buffer size={} write={}", self.buffer.size(), bytes.len());
+            eprintln!("[gpu-diag] light uniform buffer size={} write={}", self.buffer.size(), bytes.len());
         }
         queue.write_buffer(&self.buffer, 0, &bytes);
     }
