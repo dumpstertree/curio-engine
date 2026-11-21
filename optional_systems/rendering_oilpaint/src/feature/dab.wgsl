@@ -45,8 +45,8 @@ struct VSOut {
     @location(0) uv: vec2<f32>, // u along stroke, v across — [0,1]
     @location(1) tint: vec3<f32>, // raw hue; tone/sun applied in fs
     @location(2) rnd: vec3<f32>, // per-dab randoms for the hashes
-    @location(3) meta: vec4<f32>, // tone, sun_k, along_px, across_px — constant per
-    // dab so plain interpolation reproduces it exactly; naga rejects bare `flat`
+    @location(3) info: vec4<f32>, // tone, sun_k, along_px, across_px — constant per
+    // dab so plain interpolation reproduces it exactly ("meta" was a WGSL keyword)
 }
 
 // cheap 2D→1D hash; inputs already carry per-dab randoms so neighbouring
@@ -118,7 +118,7 @@ fn vs_main(quad: QuadCorner, inst: DabIn, model_in: ModelIn) -> VSOut {
     // viewport height turns NDC into pixels, clip.w is the depth
     let proj_scale = abs(scene.view_proj[1][1]);
     let px = 0.5 * proj_scale * scene.misc.y / max(out.clip.w, 0.0001);
-    out.meta = vec4<f32>(tone, sun_k, size.y * px, size.x * px);
+    out.info = vec4<f32>(tone, sun_k, size.y * px, size.x * px);
 
     return out;
 }
@@ -126,7 +126,7 @@ fn vs_main(quad: QuadCorner, inst: DabIn, model_in: ModelIn) -> VSOut {
 @fragment
 fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
     // sub-pixel strokes shrink to nothing — no distant mud
-    if in.meta.w < 1.3 {
+    if in.info.w < 1.3 {
         discard;
     }
 
@@ -134,8 +134,8 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
 
     // nibble amplitude is ~one pixel in uv terms, so far dabs converge
     // back to a clean quad instead of jittering per frame
-    let amp_a = min(0.34, 1.6 / max(in.meta.z, 1.0));
-    let amp_c = min(0.42, 1.6 / max(in.meta.w, 1.0));
+    let amp_a = min(0.34, 1.6 / max(in.info.z, 1.0));
+    let amp_c = min(0.42, 1.6 / max(in.info.w, 1.0));
 
     // edge hash: along-position drives the run-edge nibbles, across the
     // biting ends — seeded with this dab's randoms
@@ -158,6 +158,6 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
 
     // misc.x (the clock) is deliberately unsampled here: the paint look is
     // static, wind (P5) is what will put it to work
-    let col = in.tint * in.meta.x * in.meta.y * streak * rim;
+    let col = in.tint * in.info.x * in.info.y * streak * rim;
     return vec4<f32>(clamp(col, vec3<f32>(0.0), vec3<f32>(1.0)), 1.0);
 }
