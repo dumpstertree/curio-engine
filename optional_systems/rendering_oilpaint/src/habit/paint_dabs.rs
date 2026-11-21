@@ -98,7 +98,7 @@ impl Habit for Instance {
                         // the sampler returns this mesh's dabs — budget is
                         // what's left in this screen's cap
                         let budget = if MAX_TOTAL_DABS > x.dabs.len() { MAX_TOTAL_DABS - x.dabs.len() } else { 0 };
-                        let painted = sample_mesh_surface(&m, paint.dab_size, paint.tint, seed_base, budget);
+                        let painted = sample_mesh_surface(&m, paint.dab_size, paint.tint, seed_base, budget, matrix);
                         let painted_len = painted.len();
                         x.dabs.extend(painted);
                         // parallel matrices: phase 3 bakes them in the draw
@@ -150,17 +150,18 @@ pub fn spawn_demo_scene(world: &mut Context3D, cam: &CameraSnapshot) {
         .facet(
             PaintOil::builder()
                 .asset(Some(Primitives::cube(PrimitiveResolution::Medium)))
-                // dab_size is object-LOCAL — the draw pass bakes size by
-                // the matrix's mean column length (~9 for this slab), so
-                // 0.035 lands at a ~0.3 m world stroke
-                .dab_size(0.035)
+                // dab_size is object-LOCAL — the sampler counts wants by
+                // world area and the shader grows strokes by the mean
+                // column length (~19 for this slab), so 0.016 lands at a
+                // ~0.3 m world stroke across 32×24 m of floor
+                .dab_size(0.016)
                 .tint(Color::new_hex("8a7355"))
                 .build(),
         )
         .spawn();
     let mut t = Transform3D::default();
     t.position = Vector3::new(p.x, ground_y, p.z);
-    t.scale = Vector3::new(16.0, 0.06, 11.0);
+    t.scale = Vector3::new(32.0, 0.06, 24.0);
     ground.add_facet(t);
 
     let ball = world

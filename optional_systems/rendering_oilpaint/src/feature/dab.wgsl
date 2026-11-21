@@ -158,6 +158,10 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
 
     // misc.x (the clock) is deliberately unsampled here: the paint look is
     // static, wind (P5) is what will put it to work
-    let col = in.tint * in.info.x * in.info.y * streak * rim;
+    // the ramp outputs full-chroma hues; real palette paint is mostly
+    // mixed toward its own luminance — pull every dab halfway to gray
+    let raw = in.tint * in.info.x * in.info.y * streak * rim;
+    let lum = dot(raw, vec3<f32>(0.3, 0.6, 0.1));
+    let col = mix(raw, vec3<f32>(lum), 0.5);
     return vec4<f32>(clamp(col, vec3<f32>(0.0), vec3<f32>(1.0)), 1.0);
 }

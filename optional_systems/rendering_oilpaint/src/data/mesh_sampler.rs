@@ -12,6 +12,8 @@ use ext_rendering::Mesh;
 use crate::Dab;
 use crate::feature::render_feature_draw_dabs::RenderFeatureDrawDabs;
 
+use curio_core::Matrix4x4;
+
 // one dab covers a brush footprint ≈ 0.6 × dab_size² of surface — strokes
 // are anisotropic (across ≈ 0.3 × along, so real coverage ≈ 0.4 dab²) and
 // 0.6 lands ~70 % dressed skin with a little overlap, the way patch's
@@ -19,13 +21,23 @@ use crate::feature::render_feature_draw_dabs::RenderFeatureDrawDabs;
 // the per-triangle clamp only stops one fat triangle in a sparse mesh
 // from hogging the budget — the global MAX_TOTAL_DABS is the real ceiling,
 // so it sits far above any single face's want
-const MAX_PER_TRIANGLE: usize = 4096;
+const MAX_PER_TRIANGLE: usize = 16384;
 
-// budget caps the dabs this call may produce
-pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u64, budget: usize) -> Vec<Dab> {
+// budget caps the dabs this call may produce. density is WORLD-aware: the
+// matrix maps local area to world area, and the vertex shader grows strokes
+// by the mean column length, so want = world face area ÷ world footprint —
+// a 30 m floor slab gets thousands of strokes per face while its 6 cm
+// sides get a handful, which local-only counting got badly wrong
+pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u64, budget: usize, matrix: Matrix4x4) -> Vec<Dab> {
     let mut out = Vec::<Dab>::new();
-    let brush = if dab_size < 0.02 { 0.2 } else { dab_size };
-    let footprint = brush * brush * 0.6;
+    let m4 = &matrix.model;
+    // mean column length — the same stroke scale the vertex shader applies
+    let s0 = (m4[0][0] * m4[0][0] + m4[1][0] * m4[1][0] + m4[2][0] * m4[2][0]).sqrt();
+    let s1 = (m4[0][1] * m4[0][1] + m4[1][1] * m4[1][1] + m4[2][1] * m4[2][1]).sqrt();
+    let s2 = (m4[0][2] * m4[0][2] + m4[1][2] * m4[1][2] + m4[2][2] * m4[2][2]).sqrt();
+    let stroke_scale = if (s0 + s1 + s2) < 0.0001 { 1.0 } else { (s0 + s1 + s2) / 3.0 };
+    let brush = if dab_size < 0.01 { 0.01 } else { dab_size };
+    let footprint = brush * brush * stroke_scale * stroke_scale * 0.6;
 
     // tint acts as a hue bias: saturated tints pin the palette slot, a
     // white/gray tint lets every dab draw its own
@@ -69,7 +81,26 @@ pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u
         if nlen < 0.000001 {
             continue; // degenerate — no paint on a pinched sliver
         }
-        let area = nlen * 0.5;
+        // world-aware density + downward skip: world-space area drives how
+        // many strokes the face can hold; the orientation is the same
+        // cross product pushed through the matrix's 3x3 block
+        let e1wx = m4[0][0] * e1x + m4[1][0] * e1y + m4[2][0] * e1z;
+        let e1wy = m4[0][1] * e1x + m4[1][1] * e1y + m4[2][1] * e1z;
+        let e1wz = m4[0][2] * e1x + m4[1][2] * e1y + m4[2][2] * e1z;
+        let e2wx = m4[0][0] * e2x + m4[1][0] * e2y + m4[2][0] * e2z;
+        let e2wy = m4[0][1] * e2x + m4[1][1] * e2y + m4[2][1] * e2z;
+        let e2wz = m4[0][2] * e2x + m4[1][2] * e2y + m4[2][2] * e2z;
+        let nwx = e1wy * e2wz - e1wz * e2wy;
+        let nwy = e1wz * e2wx - e1wx * e2wz;
+        let nwz = e1wx * e2wy - e1wy * e2wx;
+        let nwlen = (nwx * nwx + nwy * nwy + nwz * nwz).sqrt();
+        if nwlen < 0.000001 {
+            continue;
+        }
+        if nwy / nwlen < -0.4 {
+            continue; // surface faces the ground — paint there reads mud
+        }
+        let area = nwlen * 0.5;
         let nnx = nx / nlen;
         let nny = ny / nlen;
         let nnz = nz / nlen;
@@ -145,7 +176,7 @@ pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u
 
             // saturated tint pins the palette slot near the tint's hue;
             // gray lets the dab draw its own
-            let hue = if sat < 0.15 { r4 } else { hue_base + (r3 - 0.5) * 0.16 };
+            let hue = if sat < 0.15 { r4 } else { hue_base + (r3 - 0.5) * 0.1 };
 
             out.push(
                 Dab {
