@@ -37,7 +37,7 @@ pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u
     let s2 = (m4[0][2] * m4[0][2] + m4[1][2] * m4[1][2] + m4[2][2] * m4[2][2]).sqrt();
     let stroke_scale = if (s0 + s1 + s2) < 0.0001 { 1.0 } else { (s0 + s1 + s2) / 3.0 };
     let brush = if dab_size < 0.01 { 0.01 } else { dab_size };
-    let footprint = brush * brush * stroke_scale * stroke_scale * 0.6;
+    let footprint = brush * brush * stroke_scale * stroke_scale * 0.42;
 
     // tint acts as a hue bias: saturated tints pin the palette slot, a
     // white/gray tint lets every dab draw its own

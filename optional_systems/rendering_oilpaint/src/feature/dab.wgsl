@@ -160,8 +160,17 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
     // static, wind (P5) is what will put it to work
     // the ramp outputs full-chroma hues; real palette paint is mostly
     // mixed toward its own luminance — pull every dab halfway to gray
+    // tone x sun x streak x rim routinely pushes past 1.0, and the naive
+    // clamp then blew every hue toward cream (white = maxed channels). cap
+    // the MAX channel at 0.95 instead: hue survives, brightness doesn't
+    // blow. then mix halfway toward luminance for the painterly mute
     let raw = in.tint * in.info.x * in.info.y * streak * rim;
-    let lum = dot(raw, vec3<f32>(0.3, 0.6, 0.1));
-    let col = mix(raw, vec3<f32>(lum), 0.5);
+    let mx = max(raw.x, max(raw.y, raw.z));
+    var base = raw;
+    if mx > 1.0 {
+        base = raw * (0.95 / mx);
+    }
+    let lum = dot(base, vec3<f32>(0.3, 0.6, 0.1));
+    let col = mix(base, vec3<f32>(lum), 0.45);
     return vec4<f32>(clamp(col, vec3<f32>(0.0), vec3<f32>(1.0)), 1.0);
 }

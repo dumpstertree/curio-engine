@@ -25,7 +25,7 @@ use crate::data::mesh_sampler::{sample_mesh_surface};
 
 // ceiling on one screen's paint — area-based density normally keeps
 // painted scenes well under this; beyond it the tail simply goes unpainted
-const MAX_TOTAL_DABS: usize = 24000;
+const MAX_TOTAL_DABS: usize = 32768;
 
 // one-shot demo authoring field (the sample curio predates this facet)
 #[habit]
