@@ -436,7 +436,11 @@ impl RenderFeatureDrawDabs {
         // two triangles per dab quad; corner is [-0.5,0.5], x along stroke.
         // written once — the instance streams grow in powers via
         // grow_instance_buffers instead
-        let quad = [
+        // ANNOTATED f32 on purpose: bare float literals in this dialect are
+        // 64-bit, so an unannotated quad is [[f64,2],4] = 64 bytes of write
+        // into a 32-byte buffer (the Queue::write_buffer 0..64/size-32 abort
+        // this fix exists for). the corners stay [-0.5,0.5], x ALONG stroke
+        let quad: [[f32; 2]; 4] = [
             [-0.5, -0.5],
             [0.5, -0.5],
             [0.5, 0.5],
