@@ -323,11 +323,11 @@ impl UiOverlayPass {
             }));
             self.vertex_capacity = vertices.len();
         }
-        if bytemuck::cast_slice(&vertices).len() as u64 > self.vertex_buffer.as_ref().unwrap().size() {
+        if (vertices.len() * std::mem::size_of::<UiVertex>()) as u64 > self.vertex_buffer.as_ref().unwrap().size() {
             println!(
                 "[gpu-diag] ui vertices size={} write={} count={}",
                 self.vertex_buffer.as_ref().unwrap().size(),
-                bytemuck::cast_slice(&vertices).len(),
+                vertices.len() * std::mem::size_of::<UiVertex>(),
                 vertices.len(),
             );
         }

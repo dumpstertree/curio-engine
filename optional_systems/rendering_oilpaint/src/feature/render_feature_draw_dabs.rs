@@ -306,16 +306,16 @@ impl RenderFeatureDrawDabs {
             self.grow_instance_buffers(device);
         }
         if let buffer = self.dab_buffer.as_ref().unwrap() {
-            if bytemuck::cast_slice(&self.dabs).len() as u64 > buffer.size() {
-                println!("[gpu-diag] dab instances size={} write={}", buffer.size(), bytemuck::cast_slice(&self.dabs).len());
+            if (self.dabs.len() * std::mem::size_of::<Dab>()) as u64 > buffer.size() {
+                println!("[gpu-diag] dab instances size={} write={}", buffer.size(), self.dabs.len() * std::mem::size_of::<Dab>());
             }
         }
         if let buffer = self.models_buffer.as_ref().unwrap() {
-            if bytemuck::cast_slice(&self.models).len() as u64 > buffer.size() {
+            if (self.models.len() * std::mem::size_of::<Matrix4x4>()) as u64 > buffer.size() {
                 println!(
                     "[gpu-diag] dab models size={} write={} dabs={} models={}",
                     buffer.size(),
-                    bytemuck::cast_slice(&self.models).len(),
+                    self.models.len() * std::mem::size_of::<Matrix4x4>(),
                     self.dabs.len(),
                     self.models.len(),
                 );
@@ -368,8 +368,8 @@ impl RenderFeatureDrawDabs {
             sun: [sd.x * sun_inv, sd.y * sun_inv, sd.z * sun_inv, 0.0],
             misc: [self.tick_count as f32, vh, 0.0, 0.0],
         };
-        if bytemuck::cast_slice(&[scene]).len() as u64 > self.scene_buffer.as_ref().unwrap().size() {
-            println!("[gpu-diag] dab scene size={} write={}", self.scene_buffer.as_ref().unwrap().size(), bytemuck::cast_slice(&[scene]).len());
+        if std::mem::size_of::<SceneUniform>() as u64 > self.scene_buffer.as_ref().unwrap().size() {
+            println!("[gpu-diag] dab scene size={} write={}", self.scene_buffer.as_ref().unwrap().size(), std::mem::size_of::<SceneUniform>());
         }
         queue.write_buffer(self.scene_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&[scene]));
 
@@ -434,8 +434,8 @@ impl RenderFeatureDrawDabs {
             }),
         );
         if let buffer = self.quad_buffer.as_ref().unwrap() {
-            if bytemuck::cast_slice(&quad).len() as u64 > buffer.size() {
-                println!("[gpu-diag] dab quad corners size={} write={}", buffer.size(), bytemuck::cast_slice(&quad).len());
+            if (quad.len() * std::mem::size_of::<QuadCorner>()) as u64 > buffer.size() {
+                println!("[gpu-diag] dab quad corners size={} write={}", buffer.size(), quad.len() * std::mem::size_of::<QuadCorner>());
             }
         }
         queue.write_buffer(self.quad_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&quad));
@@ -448,8 +448,8 @@ impl RenderFeatureDrawDabs {
                 mapped_at_creation: false,
             }),
         );
-        if bytemuck::cast_slice(&indices).len() as u64 > self.index_buffer.as_ref().unwrap().size() {
-            println!("[gpu-diag] dab indices size={} write={}", self.index_buffer.as_ref().unwrap().size(), bytemuck::cast_slice(&indices).len());
+        if (indices.len() * std::mem::size_of::<u32>()) as u64 > self.index_buffer.as_ref().unwrap().size() {
+            println!("[gpu-diag] dab indices size={} write={}", self.index_buffer.as_ref().unwrap().size(), indices.len() * std::mem::size_of::<u32>());
         }
         queue.write_buffer(self.index_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&indices));
 
