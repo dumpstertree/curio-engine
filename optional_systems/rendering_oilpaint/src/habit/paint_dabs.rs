@@ -9,7 +9,7 @@
 // Sampling is deterministic per (form, triangle, slot): the dabs never
 // re-roll between frames, they shimmer-zero.
 
-use curio_core::{Ledger, Nerve, NetworkModes, Vector3};
+use curio_core::{Color, Ledger, Nerve, NetworkModes, Vector3};
 use gameplay::{
     built_in::facet::transform::transform3d::Transform3D,
     context_3d::Context3D,
@@ -19,8 +19,8 @@ use gameplay::{
 use habit::habit;
 use rendering_static::{PrimitiveResolution, Primitives};
 
-use crate::PaintOil;
-use crate::SysRecordOilPaint;
+use crate::{PaintOil, SysRecordOilPaint};
+use camera::{camera_snapshot::CameraSnapshot, SysRecordCamera};
 use crate::data::mesh_sampler::{sample_mesh_surface};
 
 // ceiling on one screen's paint — area-based density normally keeps
@@ -59,7 +59,10 @@ impl Habit for Instance {
                 }
             });
             if authored == 0 {
-                spawn_demo_scene(world);
+                // camera-placed — this habit also serves foreign curios
+                // whose cameras sit nowhere near the origin
+                let snap = &state.read::<SysRecordCamera>().cameras;
+                spawn_demo_scene(world, snap);
             }
         }
 
@@ -105,8 +108,25 @@ impl Habit for Instance {
 
 // the stand-in painted scene — procedural primitives need no asset names
 // from the curio, and Transform3D places them where the sample camera
-// looks (the same neighborhood as the phase-1 proof patch)
-pub fn spawn_demo_scene(world: &mut Context3D) {
+// looks. the phase-4 proof ran on hall-proto, whose camera sits far from
+// the origin, so placement reads CameraSnapshot: ground under the eye,
+// sphere and column a few strides ahead along the view axis. each form
+// also gets a painterly TINT — the gray default lets every dab roll its
+// own hue, which made the first demo look like confetti
+pub fn spawn_demo_scene(world: &mut Context3D, cam: &CameraSnapshot) {
+    let p = cam.position;
+    let m = cam.calc_matrix();
+    // row i of the rotation block is the camera basis axis i (view is
+    // look_to_rh: rows are right, up, BACKWARD)
+    let rx = m[0][0];
+    let rz = m[2][0];
+    let fx = -m[0][2];
+    let fz = -m[2][2];
+    let flen = (fx * fx + fz * fz).sqrt();
+    let fx = if flen < 0.0001 { 0.0 } else { fx / flen };
+    let fz = if flen < 0.0001 { 0.0 } else { fz / flen };
+    let ground_y = p.y - 1.5; // eye height above the floor
+
     let ground = world
         .spawner("oil_demo_ground")
         .facet(
@@ -116,11 +136,12 @@ pub fn spawn_demo_scene(world: &mut Context3D) {
                 // the matrix's mean column length (~9 for this slab), so
                 // 0.035 lands at a ~0.3 m world stroke
                 .dab_size(0.035)
+                .tint(Color::new_hex("8a7355"))
                 .build(),
         )
         .spawn();
     let mut t = Transform3D::default();
-    t.position = Vector3::new(0.0, -0.09, 0.0);
+    t.position = Vector3::new(p.x, ground_y, p.z);
     t.scale = Vector3::new(16.0, 0.06, 11.0);
     ground.add_facet(t);
 
@@ -130,11 +151,12 @@ pub fn spawn_demo_scene(world: &mut Context3D) {
             PaintOil::builder()
                 .asset(Some(Primitives::sphere(PrimitiveResolution::Medium)))
                 .dab_size(0.14)
+                .tint(Color::new_hex("c46b2f"))
                 .build(),
         )
         .spawn();
     let mut t = Transform3D::default();
-    t.position = Vector3::new(0.8, 1.05, -2.4);
+    t.position = Vector3::new(p.x + fx * 4.0 + rx * 1.2, ground_y + 0.85, p.z + fz * 4.0 + rz * 1.2);
     t.scale = Vector3::new(1.7, 1.7, 1.7);
     ball.add_facet(t);
 
@@ -144,11 +166,12 @@ pub fn spawn_demo_scene(world: &mut Context3D) {
             PaintOil::builder()
                 .asset(Some(Primitives::cylinder(PrimitiveResolution::Medium)))
                 .dab_size(0.16)
+                .tint(Color::new_hex("93552f"))
                 .build(),
         )
         .spawn();
     let mut t = Transform3D::default();
-    t.position = Vector3::new(-1.9, 0.78, -1.5);
+    t.position = Vector3::new(p.x + fx * 2.6 - rx * 1.6, ground_y + 0.78, p.z + fz * 2.6 - rz * 1.6);
     t.scale = Vector3::new(0.7, 1.55, 0.7);
     column.add_facet(t);
 }
