@@ -8,7 +8,7 @@ use egui_wgpu::wgpu::{BufferBinding, BufferBindingType};
 use bytemuck::{self};
 
 // ─── dab: one world-pinned brushstroke ────────────────────────────────────
-// 48 B; the layout is pinned now so later phases never re-pack the
+// 52 B; the layout is pinned now so later phases never re-pack the
 // instance stream: phase 4 multiplies pin/dir by the model matrix in the
 // vertex shader, phase 5 displaces pin by wind, phase 6 re-uploads per
 // frame for fire.
@@ -19,6 +19,7 @@ pub struct Dab {
     pub dir: [f32; 3], // which way the stroke runs
     pub size: [f32; 2], // across, along — metres (anisotropy = brush feel)
     pub seed: [f32; 4], // x hue/palette slot, yzw per-dab randoms
+    pub flex: f32, // wind bendiness: 0 rigid, 1 grass (phase 5 gust)
 }
 
 impl Dab {
@@ -45,9 +46,14 @@ impl Dab {
                 },
                 egui_wgpu::wgpu::VertexAttribute {
                     offset: 32, // pin 12 + dir 12 + size 8 — 36 here would run the
-                    // seed's 16 B past the 48 B stride (wgpu rejected the pipeline)
+                    // seed's 16 B past the stride (wgpu rejected the pipeline)
                     shader_location: 4,
                     format: VertexFormat::Float32x4,
+                },
+                egui_wgpu::wgpu::VertexAttribute {
+                    offset: 48, // after seed — the flex byte (phase 5 wind)
+                    shader_location: 9,
+                    format: VertexFormat::Float32,
                 },
             ],
         }
@@ -80,7 +86,8 @@ impl QuadCorner {
 // shader can orient them in the view plane without extracting V. sun feeds
 // the phase-2 shading term; misc.x is a clock (tick count — no engine time
 // yet) and misc.y the screen's pixel height, both reserved for wind (P5)
-// until then misc.y just drives pixel-size convergence. 144 B.
+// until then misc.y just drives pixel-size convergence. wind carries the
+// live breeze — xyz direction, w strength (phase 5 gusts). 160 B.
 #[repr(C)]
 #[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 struct SceneUniform {
@@ -90,6 +97,7 @@ struct SceneUniform {
     pub cam_up: [f32; 4],
     pub sun: [f32; 4], // normalized sun direction
     pub misc: [f32; 4], // x time (ticks), y pixel height
+    pub wind: [f32; 4], // xyz breeze direction, w strength
 }
 
 pub trait OilPaintFeature {
@@ -98,6 +106,9 @@ pub trait OilPaintFeature {
 
 pub struct RenderFeatureDrawDabs {
     pub tick_count: usize,
+    pub wind: [f32; 4], // live breeze: xyz direction, w strength — a
+    // gentle default; the gust travel itself is GPU-side (scene.misc.x
+    // clock × wind into a sine)
     pub dabs: Vec<Dab>, // submission list — phase 3 grows this from facets
     pub models: Vec<Matrix4x4>, // parallel to dabs — phase 4 uploads these
     // as the second instance attribute so painted forms pin rigidly on the
@@ -133,6 +144,7 @@ impl RenderFeatureDrawDabs {
     pub fn blank() -> RenderFeatureDrawDabs {
         RenderFeatureDrawDabs {
             tick_count: 0,
+            wind: [0.92, 0.09, 0.32, 0.4], // gentle default breeze
             dabs: Vec::new(),
             models: Vec::new(),
             instance_capacity: 0,
@@ -178,6 +190,7 @@ impl RenderFeatureDrawDabs {
                         dir: [flow.cos(), 0.0, flow.sin()],
                         size: [0.26 + d * 0.2, 0.5 + a * 0.35],
                         seed: [Self::hash01(i as u64, 5), a, b, c],
+                        flex: 0.0,
                     },
                 );
                 i += 1;
@@ -206,6 +219,7 @@ impl RenderFeatureDrawDabs {
                         dir: [flow.cos(), flow.sin(), 0.0],
                         size: [0.3 + d * 0.16, 0.62 + a * 0.4],
                         seed: [Self::hash01(i as u64, 6), a, b, c],
+                        flex: 0.0,
                     },
                 );
                 i += 1;
@@ -387,6 +401,7 @@ impl RenderFeatureDrawDabs {
             cam_up: [view[0][1], view[1][1], view[2][1], 0.0],
             sun: [sd.x * sun_inv, sd.y * sun_inv, sd.z * sun_inv, 0.0],
             misc: [self.tick_count as f32, vh, 0.0, 0.0],
+            wind: self.wind,
         };
         if std::mem::size_of::<SceneUniform>() as u64 > self.scene_buffer.as_ref().unwrap().size() {
             eprintln!("[gpu-diag] dab scene size={} write={}", self.scene_buffer.as_ref().unwrap().size(), std::mem::size_of::<SceneUniform>());

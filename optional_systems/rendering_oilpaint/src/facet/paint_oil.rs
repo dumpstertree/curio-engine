@@ -24,6 +24,10 @@ pub struct PaintOil {
     /// saturated tints bias the dab palette toward the tint's hue;
     /// white/gray lets every dab draw its own slot
     pub tint: Color,
+    /// how much the wind bends this form's dabs: 0 rigid (walls, floor,
+    /// furniture), 1 grass-like full sway — phase 5 bends these with a
+    /// traveling gust on the GPU
+    pub flexibility: f32,
 }
 
 impl PaintOil {
@@ -33,6 +37,7 @@ impl PaintOil {
             enabled: true,
             dab_size: 0.18,
             tint: Color::white(),
+            flexibility: 0.0,
             owner: None,
         }
     }
@@ -42,6 +47,7 @@ impl PaintOil {
             enabled: true,
             dab_size: 0.18,
             tint: Color::white(),
+            flexibility: 0.0,
         }
     }
 }
@@ -59,6 +65,7 @@ impl FieldOverride for PaintOil {
             "enabled" => self.enabled = value.parse().unwrap_or_default(),
             "dab_size" => self.dab_size = value.parse().unwrap_or(self.dab_size),
             "tint" => self.tint = value.parse().unwrap_or(self.tint),
+            "flexibility" => self.flexibility = value.parse().unwrap_or(self.flexibility),
             _ => {}
         }
     }
@@ -69,6 +76,7 @@ impl FieldOverride for PaintOil {
             FieldState::new("enabled", self.enabled),
             FieldState::new("dab_size", self.dab_size),
             FieldState::new("tint", self.tint),
+            FieldState::new("flexibility", self.flexibility),
         ]
     }
 }
@@ -78,6 +86,7 @@ pub struct PaintOilBuilder {
     enabled: bool,
     dab_size: f32,
     tint: Color,
+    flexibility: f32,
 }
 
 impl PaintOilBuilder {
@@ -97,12 +106,17 @@ impl PaintOilBuilder {
         self.tint = tint;
         self
     }
+    pub fn flexibility(mut self, flexibility: f32) -> Self {
+        self.flexibility = flexibility;
+        self
+    }
     pub fn build(self) -> PaintOil {
         PaintOil {
             asset: self.asset,
             enabled: self.enabled,
             dab_size: self.dab_size,
             tint: self.tint,
+            flexibility: self.flexibility,
             owner: None,
         }
     }

@@ -46,8 +46,9 @@ impl Habit for Instance {
     fn did_tick(&mut self, state: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
         // demo scene, once: the prebuilt sample curio authors no PaintOil,
         // so the first tick with nothing painted spawns a small painted
-        // trio near where that curio's camera looks. A curio that authors
-        // its own PaintOil forms never sees the demo.
+        // trio plus a flexing reed bed near where that curio's camera
+        // looks. A curio that authors its own PaintOil forms never sees
+        // the demo.
         if !self.demo_done {
             self.demo_done = true;
             let mut authored = 0;
@@ -98,7 +99,7 @@ impl Habit for Instance {
                         // the sampler returns this mesh's dabs — budget is
                         // what's left in this screen's cap
                         let budget = if MAX_TOTAL_DABS > x.dabs.len() { MAX_TOTAL_DABS - x.dabs.len() } else { 0 };
-                        let painted = sample_mesh_surface(&m, paint.dab_size, paint.tint, seed_base, budget, matrix);
+                        let painted = sample_mesh_surface(&m, paint.dab_size, paint.tint, seed_base, budget, paint.flexibility, matrix);
                         let painted_len = painted.len();
                         x.dabs.extend(painted);
                         // parallel matrices: phase 3 bakes them in the draw
@@ -193,4 +194,43 @@ pub fn spawn_demo_scene(world: &mut Context3D, cam: &CameraSnapshot) {
     t.position = Vector3::new(p.x + fx * 2.6 - rx * 1.6, ground_y + 0.78, p.z + fz * 2.6 - rz * 1.6);
     t.scale = Vector3::new(0.7, 1.55, 0.7);
     column.add_facet(t);
+
+    // phase 5 wind proof: a reed bed the spawn camera faces — flex 1.0
+    // forms the GPU gust bends (ground/ball/column keep flex 0); names
+    // duplicating across the loop is fine, spawners need no uniqueness
+    for i in 0..24 {
+        let row = (i % 6) as f32;
+        let col = (i / 6) as f32;
+        let across = (row - 2.5) * 0.42 + (((i * i) % 5) as f32 - 2.0) * 0.04;
+        let ahead = 2.3 + col * 0.42 + ((i * 11) % 4) as f32 * 0.07;
+        let tall = 0.8 + ((i * 13) % 7) as f32 * 0.08;
+        let green = if i % 3 == 0 {
+            "5a7442"
+        } else if i % 3 == 1 {
+            "46633b"
+        } else {
+            "6b8a4e"
+        };
+        let reed = world
+            .spawner("oil_demo_reed")
+            .facet(
+                PaintOil::builder()
+                    .asset(Some(Primitives::cube(PrimitiveResolution::Medium)))
+                    // local dab 0.2 on a (0.09,tall,0.09) box averages a
+                    // ~0.08 m world stroke — a dozen up each stalk
+                    .dab_size(0.2)
+                    .flexibility(1.0)
+                    .tint(Color::new_hex(green))
+                    .build(),
+            )
+            .spawn();
+        let mut t = Transform3D::default();
+        t.position = Vector3::new(
+            p.x + fx * ahead + rx * across,
+            ground_y + tall * 0.5,
+            p.z + fz * ahead + rz * across,
+        );
+        t.scale = Vector3::new(0.09, tall, 0.09);
+        reed.add_facet(t);
+    }
 }

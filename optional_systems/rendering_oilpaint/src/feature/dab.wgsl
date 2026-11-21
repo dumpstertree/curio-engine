@@ -12,6 +12,7 @@ struct Scene {
     cam_up: vec4<f32>,
     sun: vec4<f32>, // normalized sun direction
     misc: vec4<f32>, // x: clock (ticks), y: screen pixel height
+    wind: vec4<f32>, // xyz: breeze direction, w: strength
 }
 @group(0) @binding(0)
 var<uniform> scene: Scene;
@@ -27,6 +28,7 @@ struct DabIn {
     @location(2) dir: vec3<f32>, // stroke run direction
     @location(3) size: vec2<f32>, // across, along — metres
     @location(4) seed: vec4<f32>, // x hue/palette, yzw per-dab randoms
+    @location(9) flex: f32, // wind bendiness: 0 rigid, 1 grass
 }
 
 // phase 4 rigid pin: the form's matrix as a second per-instance attribute
@@ -68,10 +70,21 @@ fn vs_main(quad: QuadCorner, inst: DabIn, model_in: ModelIn) -> VSOut {
     // with w=1, direction with w=0); the stroke size picks up the form's
     // scale as the mean basis-column length
     let model = mat4x4<f32>(model_in.col0, model_in.col1, model_in.col2, model_in.col3);
-    let pin = (model * vec4<f32>(inst.pin, 1.0)).xyz;
+    let pin_world = (model * vec4<f32>(inst.pin, 1.0)).xyz;
     let dir = (model * vec4<f32>(inst.dir, 0.0)).xyz;
     let scale = (length(model[0]) + length(model[1]) + length(model[2])) / 3.0;
     let size = inst.size * scale;
+
+    // wind (phase 5): a gust traveling along the breeze — pins bend by
+    // their height above the form's own origin (model column 3 is the
+    // translation, so a reed's tip swings and its base stays planted),
+    // seeded per dab so neighbours wave out of step; inst.flex is the
+    // bendiness: walls and floors keep 0, grass 1
+    let wind_dir = scene.wind.xyz / max(length(scene.wind.xyz), 0.0001);
+    let gust = sin(dot(pin_world.xz, wind_dir.xz) * 0.6 + scene.misc.x * 0.12 + inst.seed.y * 2.0);
+    let lever = pin_world.y - model[3][1];
+    let bend = min(max(lever, 0.0), 1.6) * inst.flex;
+    let pin = pin_world + wind_dir * (scene.wind.w * gust * bend);
 
     // stroke direction projected onto the view plane — screen angle of the
     // brush regardless of camera roll/orbit
@@ -156,8 +169,8 @@ fn fs_main(in: VSOut) -> @location(0) vec4<f32> {
     let br = sin((in.uv.y - 0.5) * 2.0 * 3.14159 * (3.0 + in.rnd.x * 5.0) + in.rnd.z * 6.283);
     let streak = 1.0 + 0.13 * br;
 
-    // misc.x (the clock) is deliberately unsampled here: the paint look is
-    // static, wind (P5) is what will put it to work
+    // the clock drives the wind gust in the vs; the fs paint look itself
+    // stays static per dab
     // the ramp outputs full-chroma hues; real palette paint is mostly
     // mixed toward its own luminance — pull every dab halfway to gray
     // tone x sun x streak x rim routinely pushes past 1.0, and the naive

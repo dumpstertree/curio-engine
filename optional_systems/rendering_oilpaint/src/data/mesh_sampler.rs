@@ -23,12 +23,14 @@ use curio_core::Matrix4x4;
 // so it sits far above any single face's want
 const MAX_PER_TRIANGLE: usize = 16384;
 
-// budget caps the dabs this call may produce. density is WORLD-aware: the
+// budget caps the dabs this call may produce. flex is the form's wind
+// bendiness copied onto every dab (phase 5 gusts bend flex 1 strokes);
+// density is WORLD-aware: the
 // matrix maps local area to world area, and the vertex shader grows strokes
 // by the mean column length, so want = world face area ÷ world footprint —
 // a 30 m floor slab gets thousands of strokes per face while its 6 cm
 // sides get a handful, which local-only counting got badly wrong
-pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u64, budget: usize, matrix: Matrix4x4) -> Vec<Dab> {
+pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u64, budget: usize, flex: f32, matrix: Matrix4x4) -> Vec<Dab> {
     let mut out = Vec::<Dab>::new();
     let m4 = &matrix.model;
     // mean column length — the same stroke scale the vertex shader applies
@@ -112,7 +114,8 @@ pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u
         let (tx, ty, tz) = if ref_is_x {
             (0.0, nnz, -nny) // n × X
         } else if ref_is_y {
-            (-nnz, 0.0, nnx) // n × Y
+            (0.0, 1.0, 0.0) // vertical faces (walls, reed stalks): strokes
+            // run up/down like a painter working the canvas
         } else {
             (nny, -nnx, 0.0) // n × Z
         };
@@ -184,6 +187,7 @@ pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u
                     dir: [dx, dy, dz],
                     size: [across, along],
                     seed: [hue, r1, r2, r4],
+                    flex: flex,
                 },
             );
         }
