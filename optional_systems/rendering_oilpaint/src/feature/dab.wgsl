@@ -45,7 +45,8 @@ struct VSOut {
     @location(0) uv: vec2<f32>, // u along stroke, v across — [0,1]
     @location(1) tint: vec3<f32>, // raw hue; tone/sun applied in fs
     @location(2) rnd: vec3<f32>, // per-dab randoms for the hashes
-    @location(3) flat meta: vec4<f32>, // tone, sun_k, along_px, across_px
+    @location(3) meta: vec4<f32>, // tone, sun_k, along_px, across_px — constant per
+    // dab so plain interpolation reproduces it exactly; naga rejects bare `flat`
 }
 
 // cheap 2D→1D hash; inputs already carry per-dab randoms so neighbouring
