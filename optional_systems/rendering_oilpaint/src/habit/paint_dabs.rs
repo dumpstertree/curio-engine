@@ -66,6 +66,14 @@ impl Habit for Instance {
             }
         }
 
+        // the demo floor slab rides along under the walking camera in x/z
+        // (its y stays baked at floor height) so the painted floor keeps
+        // covering the view wherever the curio's camera roams — the phase-4
+        // rigid pin makes its dabs follow the matrix for free
+        let cam_pos = state.read::<SysRecordCamera>().cameras.position;
+        let cam_x = cam_pos.x;
+        let cam_z = cam_pos.z;
+
         state.write::<SysRecordOilPaint>(|x| {
             x.dabs.clear();
             x.models.clear();
@@ -99,6 +107,16 @@ impl Habit for Instance {
                         for _ in 0..painted_len {
                             x.models.push(matrix);
                         }
+                    }
+                }
+            });
+
+            // ground follows the camera (x/z only)
+            world.edit::<(&PaintOil, &mut Transform3D)>(|query| {
+                for (_, (paint, transform)) in query {
+                    if paint.form().name() == "oil_demo_ground" {
+                        transform.position.x = cam_x;
+                        transform.position.z = cam_z;
                     }
                 }
             });

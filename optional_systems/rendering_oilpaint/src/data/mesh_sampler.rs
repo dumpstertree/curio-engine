@@ -12,16 +12,20 @@ use ext_rendering::Mesh;
 use crate::Dab;
 use crate::feature::render_feature_draw_dabs::RenderFeatureDrawDabs;
 
-// one dab covers a brush footprint ≈ 2.1 × dab_size² of surface (strokes
-// run about twice their width); the per-triangle clamp keeps one fat
-// triangle in a sparse mesh from hogging the whole budget
-const MAX_PER_TRIANGLE: usize = 64;
+// one dab covers a brush footprint ≈ 0.6 × dab_size² of surface — strokes
+// are anisotropic (across ≈ 0.3 × along, so real coverage ≈ 0.4 dab²) and
+// 0.6 lands ~70 % dressed skin with a little overlap, the way patch's
+// strokes lay themselves into paint; the old 2.1 left the floor 80 % bare.
+// the per-triangle clamp only stops one fat triangle in a sparse mesh
+// from hogging the budget — the global MAX_TOTAL_DABS is the real ceiling,
+// so it sits far above any single face's want
+const MAX_PER_TRIANGLE: usize = 4096;
 
 // budget caps the dabs this call may produce
 pub fn sample_mesh_surface(mesh: &Mesh, dab_size: f32, tint: Color, seed_base: u64, budget: usize) -> Vec<Dab> {
     let mut out = Vec::<Dab>::new();
     let brush = if dab_size < 0.02 { 0.2 } else { dab_size };
-    let footprint = brush * brush * 2.1;
+    let footprint = brush * brush * 0.6;
 
     // tint acts as a hue bias: saturated tints pin the palette slot, a
     // white/gray tint lets every dab draw its own
