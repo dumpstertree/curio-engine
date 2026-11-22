@@ -4,7 +4,7 @@ use std::rc::Rc;
 // use crate::built_in::record::sys_record_screen::SysRecordScreen;
 // use crate::built_in::record::sys_record_time::SysRecordTime;
 use crate::GlobalRecords;
-use crate::{ComponentState, Curio, CurioNetwork, LedgerEntry, ObjectState, PluginState, RecordCommon, RecordNetworkCapabilities, RecordScope, RecordSynchronizer, Services, Severity};
+use crate::{ComponentState, Curio, CurioNetwork, CurioNetworkParticipant, LedgerEntry, ObjectState, PluginState, RecordCommon, RecordNetworkCapabilities, RecordScope, RecordSynchronizer, Services, Severity};
 
 #[derive(Clone)]
 pub struct Ledger {
@@ -93,10 +93,13 @@ impl Ledger {
             entries[id as usize] = Some(LedgerEntry::new(value));
         }
 
+        // Seed a placeholder participant so `log`/`serializable` have a valid `me`
+        // (an empty network would panic in CurioNetwork::me()).
+        let placeholder = CurioNetworkParticipant::new(0, crate::NetworkModes::LocalHost);
         let ledger = Ledger {
             entries,
             network_capabilities: RecordNetworkCapabilities::new(crate::NetworkModes::LocalHost),
-            network: CurioNetwork::new(Vec::new(), 0),
+            network: CurioNetwork::new(vec![placeholder], 0),
         };
 
         ledger.log(Severity::Info, "Created (single instance)!");

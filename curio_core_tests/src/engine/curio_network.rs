@@ -41,8 +41,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn empty_network_has_no_me() {
-        // BUG surface: Ledger::new_custom builds exactly this empty network,
-        // then anything calling me() indexes out of bounds
+        // Panic-based by design (kept): me() indexes directly; callers must supply
+        // a valid seat. Ledger::new_custom no longer builds this empty network.
         let network = CurioNetwork::new(Vec::new(), 0);
         network.me();
     }

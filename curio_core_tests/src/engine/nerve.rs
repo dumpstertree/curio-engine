@@ -200,12 +200,13 @@ mod tests {
     }
 
     #[test]
-    fn delayed_event_ignores_requested_delay() {
+    fn delayed_event_honors_requested_delay() {
         ensure_services();
         GlobalImpulses::register::<NerveProbe>();
 
-        // BUG: enqueue_event_delayed discards its _delay parameter and update_timed_events
-        // hardcodes a one-second expiry, so a 30 second request fires after 1.1 seconds
+        // FIXED: enqueue_event_delayed stores the requested delay per entry and
+        // update_timed_events compares against it, so a 30 second request stays
+        // pending after 1.1 seconds
         let mut nerve = Nerve::new(seat_network(NetworkModes::LocalHost));
 
         nerve.enqueue_event_delayed(NerveProbe { value: 9 }, 30.0);
@@ -213,6 +214,6 @@ mod tests {
         nerve.update_timed_events();
 
         let drained = nerve.drain_queued_events::<NerveProbe>();
-        assert_eq!(drained.len(), 1, "delayed events fire on the hardcoded timer, not the requested delay");
+        assert_eq!(drained.len(), 0, "a 30 second request must not fire after 1.1 seconds");
     }
 }

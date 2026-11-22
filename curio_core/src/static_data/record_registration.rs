@@ -3,7 +3,7 @@ use std::any::Any;
 
 pub(crate) type ConstructFn = fn() -> Box<dyn RecordCommon>;
 pub(crate) type SerializerFn = fn(&dyn Any) -> Vec<u8>;
-pub(crate) type DeserializerFn = fn(&[u8]) -> Box<dyn RecordCommon>;
+pub(crate) type DeserializerFn = fn(&[u8]) -> Option<Box<dyn RecordCommon>>;
 
 pub struct RecordRegistration {
     pub construct_fn: ConstructFn,

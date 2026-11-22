@@ -43,8 +43,11 @@ impl GlobalRecords {
                 .expect("Type mismatch in serialization")
         });
 
-        // how to deserialize
-        let deserialize_fn: Option<DeserializerFn> = Some(|bytes| Box::new(bincode::deserialize::<T>(bytes).unwrap()));
+        // how to deserialize (corrupt payload yields None, not a panic)
+        let deserialize_fn: Option<DeserializerFn> = Some(|bytes| match bincode::deserialize::<T>(bytes) {
+            Ok(value) => Some(Box::new(value)),
+            Err(_) => None,
+        });
 
         // create a registration for this type
         let registration = RecordRegistration { construct_fn, serialize_fn, deserialize_fn };
