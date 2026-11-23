@@ -1,10 +1,24 @@
-use std::{
-    cell::RefCell,
-    path::Path,
-    sync::{Arc, LazyLock, Mutex},
-};
+//! Standalone Curio runner — opens a window and presents a compiled
+//! game plugin (`curio_init` export) directly to the screen, with no
+//! editor UI in front of it.
+//!
+//! Where the egui editor runs the same game on a private headless device
+//! and copies frames back to CPU (`curio_editor/src/runner/game_runner.rs`
+//! + `capture.rs`), this binary draws the game straight onto the swapchain
+//! and presents it through winit. This is the rendering contract the game
+//! plugins expect: `system_component_default/rendering` renders to
+//! whatever output view it is handed and only copies into
+//! `services.gpu.capture_texture` when one is set — we deliberately leave
+//! it null here, so the game's capture step is skipped.
+//!
+//! GPU setup follows the editor's proven `game_runner.rs` setup (same
+//! pinned wgpu version, same required features) so the raw-pointer casts
+//! inside the plugin's `Gpu` struct resolve to identical wgpu types.
 
-use egui_wgpu::wgpu::{Adapter, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages};
+use crate::plugin_loader::{self, load_library, lock_process_memory};
+use crate::project::Project;
+
+use libloading::Symbol;
 use pollster::FutureExt;
 use winit::{
     application::ApplicationHandler,
@@ -14,104 +28,105 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, Gpu, Identity, Portal, Services, Severity, TextureAsset, Vector3};
+use curio_core::{
+    AssetCache,
+    AssetDatabase,
+    AssetPipeline,
+    AxisCode,
+    ButtonCode,
+    ButtonPressed,
+    Curio,
+    CurioCommon,
+    Gpu,
+    Logger,
+    Portal,
+    Services,
+    Severity,
+    Vector3,
+};
 
-// static mut OPEN_DISPLAY_WINDOWS: Mutex<Vec<CabinetWindow>> = Mutex::new(Vec::new());
-static OPEN_DISPLAY_WINDOWS: LazyLock<Mutex<Vec<CabinetWindow>>> = LazyLock::new(|| Mutex::new(Vec::new()));
+use egui_wgpu::wgpu::{
+    Adapter,
+    CommandEncoderDescriptor,
+    Device,
+    DeviceDescriptor,
+    Features,
+    Instance,
+    Limits,
+    PowerPreference,
+    Queue,
+    RequestAdapterOptions,
+    Surface,
+    SurfaceConfiguration,
+    TextureFormat,
+    TextureViewDescriptor,
+    TextureUsages,
+};
+
+use std::{path::Path, ptr, sync::Arc};
 
 pub struct CurioCabinet {}
 impl CurioCabinet {
-    pub fn on_display() -> Vec<CabinetWindow> {
-        // if let Ok(meta) = unsafe { OPEN_DISPLAY_WINDOWS.lock() } {
-        //     return meta.to_vec();
-        // }
-
-        return Vec::new();
-    }
-
-    pub fn put_on_display() {
-        //
-        // register_built_in_records();
-
-        //
+    pub fn put_on_display(project: Project) {
         Curio::log(Severity::Info, "Putting Curio on display...");
 
-        // add to list of windows
-        let window_owner = CabinetWindowOwner::new(Portal::fullscreen_1080());
+        let mut window_owner = CabinetWindowOwner::new(Portal::fullscreen_1080(), project);
 
-        // wrap the window so its easily sharable
-        let mut window = CabinetWindow::new(window_owner);
-
-        // store
-        if let Ok(mut open_windows) = OPEN_DISPLAY_WINDOWS.lock() {
-            open_windows.push(window.clone());
-        }
-
-        // run the window
-        window.run();
+        window_owner.run();
     }
 }
 
-// pub fn register_built_in_records() {
-//     static_data::global_states::register_global_state::<SysRecordTime>();
-//     static_data::global_states::register_global_state::<SysRecordCamera>();
-//     static_data::global_states::register_global_state::<SysRecordDebug>();
-//     static_data::global_states::register_global_state::<SysRecordRendering>();
-//     static_data::global_states::register_global_state::<SysRecordGizmos>();
-//     static_data::global_states::register_global_state::<SysRecordDebugGui>();
-//     static_data::global_states::register_global_state::<SysRecordGui>();
-//     static_data::global_states::register_global_state::<SysRecordInput>();
-//     static_data::global_states::register_global_state::<SysRecordLights>();
-//     static_data::global_states::register_global_state::<SysRecordNetwork>();
-//     static_data::global_states::register_global_state::<SysRecordScreen>();
-//     static_data::global_states::register_global_state::<SysRecordSkybox>();
-//     static_data::global_states::register_global_state::<SysRecordSun>();
-// }
-// curio_core
 pub struct CabinetWindowOwner {
-    did_run: bool,
-    // gpu_instance: Option<Arc<GPUInstance>>,
-    // gpu: Option<Arc<SystemGPU>>,           // ← new, keeps Arc alive
-    services: Option<Box<Services>>, // ← new, Box gives stable address
-    // loaded_curio: Option<LoadedCurio>,     // ← new, keeps .so alive
+    _did_run: bool,
+    // Boxed so the Services the plugin sees has a stable heap address
+    services: Option<Box<Services>>,
+    // keeps the LoadedCurio (and its open .so) alive
     app_instance: Option<LoadedCurio>,
     _portal: Portal,
+    project: Project,
+    // both must outlive the Services pointers into them
+    logger: Box<Logger>,
+    assets: Box<AssetPipeline>,
+    window: Option<Arc<Window>>,
+    surface: Option<Arc<Surface<'static>>>,
+    adapter: Option<Arc<Adapter>>,
+    device: Option<Arc<Device>>,
+    queue: Option<Arc<Queue>>,
+    surface_config: Option<Arc<SurfaceConfiguration>>,
 }
-
 impl CabinetWindowOwner {
-    pub fn new(portal: Portal) -> CabinetWindowOwner {
+    pub fn new(portal: Portal, project: Project) -> CabinetWindowOwner {
         CabinetWindowOwner {
-            did_run: false,
-            // gpu_instance: None,
-            // gpu: None,
+            _did_run: false,
             services: None,
-            // loaded_curio: None,
             app_instance: None,
             _portal: portal,
+            project,
+            logger: Box::new(Logger::new(Severity::Info)),
+            assets: Box::new(AssetPipeline::new(AssetCache::new(100), AssetDatabase::new())),
+            window: None,
+            surface: None,
+            adapter: None,
+            device: None,
+            queue: None,
+            surface_config: None,
         }
     }
 }
 impl CabinetWindowOwner {
-    // pub fn new(/*curio: fn(*mut EngineServices) -> Box<Curio,*/ portal: WindowLayout) -> CabinetWindowOwner {
-    //     println!("Created window");
-    //     CabinetWindowOwner {
-    //         did_run: false,
-    //         gpu_instance: None,
-    //         app_instance: None,
-    //         // app_constructor: curio,
-    //         portal: portal,
-    //     }
-    // }
     pub fn run(&mut self) {
         // guard - dont run if already running
-        if self.did_run {
+        if self._did_run {
             return;
         }
 
         // enable flag
-        self.did_run = true;
+        self._did_run = true;
 
-        // build an event loop to base everthing off of
+        // the copied plugin mapping must stay pinned in RAM while it runs
+        lock_process_memory();
+
+        // build an event loop to base everything off of
         let Ok(event_loop) = EventLoop::builder().build() else {
             panic!("Failed to build an EventLoop parent for Curio");
         };
@@ -121,53 +136,104 @@ impl CabinetWindowOwner {
             panic!("Failed to run Curio");
         };
     }
-    pub fn set_curio_instance(&mut self, curio_instance: LoadedCurio) {
-        // save instance
-        self.app_instance = Some(curio_instance);
 
-        // window has now been opened and alert the app
-        if let Some(app_instance) = &mut self.app_instance {
-            app_instance.curio.window_opened();
+    // ── Frame render ─────────────────────────────────────────────────────────
+    // The game renders into the swapchain texture we hand it; nothing is
+    // copied back to CPU — what you see in this window IS the application.
+
+    fn render_frame(&mut self) {
+        let Some(app_instance) = &mut self.app_instance else {
+            return;
+        };
+        let Some(surface) = &self.surface else {
+            return;
+        };
+        let Some(device) = &self.device else {
+            return;
+        };
+        let Some(queue) = &self.queue else {
+            return;
+        };
+
+        app_instance.curio.update();
+
+        let Ok(mut current) = surface.get_current_texture() else {
+            // swapchain lost/minimized — skip this frame
+            return;
+        };
+
+        let output_view = current.texture.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
+        let mut encoder = device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor { label: Some("curio_frame_encoder") });
+
+        app_instance
+            .curio
+            .render(&current.texture, &output_view, &mut encoder);
+
+        queue.submit(std::iter::once(encoder.finish()));
+        current.present();
+    }
+
+    // ── Resize ───────────────────────────────────────────────────────────────
+    // The game reads services.gpu.capture_width/height for its viewport
+    // math, so those must follow the window.
+
+    pub fn resize_surface(&mut self, size: winit::dpi::PhysicalSize<u32>) {
+        // ignore minimizing/hide events
+        if size.width == 0 || size.height == 0 {
+            return;
+        }
+        let Some(surface) = &self.surface else {
+            return;
+        };
+        let Some(device) = &self.device else {
+            return;
+        };
+
+        if let Some(config) = &self.surface_config {
+            let mut resized = (**config).clone();
+            if resized.width == size.width && resized.height == size.height {
+                return;
+            }
+            resized.width = size.width;
+            resized.height = size.height;
+
+            surface.configure(&*device, &resized);
+            self.surface_config = Some(Arc::new(resized));
+        }
+
+        if let Some(services) = &mut self.services {
+            services.gpu.capture_width = size.width;
+            services.gpu.capture_height = size.height;
         }
     }
-    pub fn get_gpu_settings(&self) -> Arc<Gpu> {
-        if let Some(_gpu_settings) = &self.services {
-            self.get_gpu_settings() // gpu_settings.clone()
-        } else {
-            panic!("Failed to retrieve GPU");
-        }
-    }
+}
 
-    fn _get_instance() -> Instance {
-        let instance = egui_wgpu::wgpu::Instance::new(&egui_wgpu::wgpu::InstanceDescriptor {
+impl ApplicationHandler for CabinetWindowOwner {
+    fn resumed(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+        // ── window ───────────────────────────────────────────────────────────
+        let atts = Window::default_attributes()
+            .with_title("Curio")
+            .with_inner_size(PhysicalSize::new(self._portal.width, self._portal.height))
+            .with_resizable(true);
+
+        let Ok(window) = event_loop.create_window(atts) else {
+            panic!("Failed to create Window");
+        };
+        let window = Arc::new(window);
+
+        // ── gpu stack (same shape as the editor's game_runner setup) ─────────
+        let instance = Instance::new(&egui_wgpu::wgpu::InstanceDescriptor {
             backends: egui_wgpu::wgpu::Backends::all(),
             ..Default::default()
         });
 
-        instance
-    }
-    fn _get_window(event_loop: &ActiveEventLoop, meta: &Identity, portal: &Portal) -> Arc<Window> {
-        // populate all the attributes to spawn the window
-        let atts = Window::default_attributes()
-            .with_title(format!(" {} - {}.{}.{}", meta.name, meta.version.major, meta.version.minor, meta.version.patch))
-            .with_inner_size(PhysicalSize::new(portal.width, portal.height))
-            .with_resizable(true);
-
-        // create the window we are using
-        let Ok(window) = event_loop.create_window(atts) else {
-            panic!("Failed to create Window");
+        let Ok(surface) = instance.create_surface(window.clone()) else {
+            panic!("Failed to create Surface for Window");
         };
 
-        Arc::new(window)
-    }
-    fn _get_surface(instance: &Instance, window: &Arc<Window>) -> Arc<Surface<'static>> {
-        let surface = instance.create_surface(window.clone()).unwrap();
-        Arc::new(surface)
-    }
-    fn _get_adapter(instance: &Instance, surface: &Arc<Surface>) -> Arc<Adapter> {
         let Some(adapter) = instance
             .request_adapter(&RequestAdapterOptions {
-                power_preference: PowerPreference::default(),
+                power_preference: PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
             })
@@ -176,13 +242,10 @@ impl CabinetWindowOwner {
             panic!("Failed to create Adapter");
         };
 
-        Arc::new(adapter)
-    }
-    fn _get_device_queue(adapter: &Arc<Adapter>) -> (Arc<Device>, Arc<Queue>) {
         let Ok(device_queue) = adapter
             .request_device(
                 &DeviceDescriptor {
-                    label: None,
+                    label: Some("curio_runner_device"),
                     required_features: Features::POLYGON_MODE_LINE | Features::BUFFER_BINDING_ARRAY,
                     required_limits: Limits::default(),
                     memory_hints: Default::default(),
@@ -193,9 +256,11 @@ impl CabinetWindowOwner {
         else {
             panic!("Failed to create Device or Queue");
         };
-        (Arc::new(device_queue.0), Arc::new(device_queue.1))
-    }
-    fn _get_config(surface: &Surface, adapter: &Adapter, portal: &Portal) -> Arc<SurfaceConfiguration> {
+        let device = Arc::new(device_queue.0);
+        let queue = Arc::new(device_queue.1);
+        let adapter = Arc::new(adapter);
+
+        // ── swapchain config ─────────────────────────────────────────────────
         let surface_capabilities = surface.get_capabilities(&adapter);
 
         let surface_format: TextureFormat = surface_capabilities
@@ -205,105 +270,81 @@ impl CabinetWindowOwner {
             .find(|f| f.is_srgb())
             .unwrap_or(surface_capabilities.formats[0]);
 
+        let window_size = window.inner_size();
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
             format: surface_format,
-            width: portal.width as u32,
-            height: portal.height as u32,
+            width: window_size.width,
+            height: window_size.height,
             present_mode: surface_capabilities.present_modes[0],
             alpha_mode: surface_capabilities.alpha_modes[0],
             view_formats: vec![],
             desired_maximum_frame_latency: 2,
         };
 
-        Arc::new(config)
-    }
-}
+        surface.configure(&*device, &config);
 
-#[unsafe(no_mangle)]
-pub extern "C" fn set_resolution(_x: i32, _y: i32) {}
-#[unsafe(no_mangle)]
-pub extern "C" fn set_fullscreen(_x: bool) {}
-#[unsafe(no_mangle)]
-pub extern "C" fn set_cursor_visible(_x: bool) {}
-impl ApplicationHandler for CabinetWindowOwner {
-    fn resumed(&mut self, _event_loop: &ActiveEventLoop) {
-        println!("SERVICES NOT BUILT");
-
-        // let instance = Self::get_instance();
-        // let window = Self::get_window(event_loop, &CurioMetadata::new("", "", Version::new(0, 0, 0)), &self.portal);
-        // let surface = Self::get_surface(&instance, &window);
-        // let adapter = Self::get_adapter(&instance, &surface);
-        // let (device, queue) = Self::get_device_queue(&adapter);
-        // let config = Self::get_config(&surface, &adapter, &self.portal);
-        // let depth_texture = Arc::new(create_depth_texture(&device, "DEPTH"));
-
-        // self.gpu_instance = Some(Arc::new(GPUInstance {
-        //     device,
-        //     queue,
-        //     surface,
-        //     adapter,
-        //     window,
-        //     config,
-        //     depth_texture: depth_texture.clone(),
-        // }));
-
-        // gpu lives on self — Arc won't drop until CabinetWindowOwner drops
-        // let gpu = Arc::new(SystemGPU::new(
-        //     self.gpu_instance.as_ref().unwrap().clone(), // clone the Arc, don't move
-        // ));
-        // let Some(ref gpu) = self.gpu_instance else {
-        //     panic!();
-        // };
-
+        // ── services ─────────────────────────────────────────────────────────
         // services is Boxed so it has a stable heap address
         // the Box lives on self — won't drop until CabinetWindowOwner drops
+        self.services = Some(Box::new(Services {
+            assets: self.assets.as_mut() as *mut AssetPipeline,
+            logger: self.logger.as_mut() as *mut Logger,
+            gpu: Gpu {
+                device: Arc::as_ptr(&device) as *const (),
+                queue: Arc::as_ptr(&queue) as *const (),
+                // no capture texture — the game draws straight to the swapchain
+                capture_texture: ptr::null(),
+                capture_width: config.width,
+                capture_height: config.height,
+            },
+        }));
 
-        // self.services = Some(Box::new(EngineServices {
-        //     gpu: GpuHandle {
-        //         device: Arc::as_ptr(&device) as *const (),
-        //         queue: Arc::as_ptr(&queue) as *const (),
-        //         config: Arc::as_ptr(&config) as *const (),
-        //         window: Arc::as_ptr(&window) as *const (),
-        //         surface: Arc::as_ptr(&surface) as *const (),
-        //         depth: Arc::as_ptr(&depth_texture) as *const (),
-        //         capture_texture: todo!(),
-        //         capture_width: todo!(),
-        //         capture_height: todo!(),
-        //     },
-        //     set_fullscreen: set_fullscreen,
-        //     set_resolution: set_resolution,
-        //     set_cursor_visible: set_cursor_visible,
-        // }));
-
-        // self.gpu = Some(gpu);
-
-        // get a raw pointer to the Boxed services — stable as long as Box lives
+        // get a raw pointer to the Boxed services — stable as long as the Box
+        // lives on self
         let services_ptr: *const Services = self.services.as_deref().unwrap();
 
-        // keep LoadedCurio on self so the .so stays loaded
-        let mut loaded = load_curio(Path::new("./plugins"), services_ptr);
+        // the one static — the plugin's curio_init resolves it
+        Services::set(services_ptr);
+
+        // ── load the application plugin and open ─────────────────────────────
+        let path = format!("{}/target/release/", self.project.project_path);
+        let stem = expected_plugin_stem(self.project.project_path.as_str());
+        let mut loaded = load_curio(Path::new(&path), services_ptr, stem.as_deref());
 
         loaded.curio.window_opened();
 
-        // self.app_instance = Some(loaded.curio);
-        self.app_instance = Some(loaded); // ← Library kept alive here
+        // keep LoadedCurio on self so the .so stays loaded
+        self.app_instance = Some(loaded);
+
+        self.window = Some(window);
+        self.surface = Some(Arc::new(surface));
+        self.adapter = Some(adapter);
+        self.device = Some(device);
+        self.queue = Some(queue);
+        self.surface_config = Some(Arc::new(config));
+
+        // kick off the redraw loop — the first frame renders the application
+        if let Some(window) = &self.window {
+            window.request_redraw();
+        }
     }
+
     fn window_event(&mut self, _: &winit::event_loop::ActiveEventLoop, _: winit::window::WindowId, event: winit::event::WindowEvent) {
         match event {
             WindowEvent::RedrawRequested => {
-                if let Some(app_instance) = &mut self.app_instance {
-                    app_instance.curio.update();
-                }
+                self.render_frame();
 
-                // if let Some(x) = &self.services {
-                //     x.gpu.window().request_redraw()
-                // };
+                // keep the loop going — this window IS the application
+                if let Some(window) = &self.window {
+                    window.request_redraw();
+                }
             }
-            WindowEvent::Resized(_physical_size) => {
+            WindowEvent::Resized(physical_size) => {
                 if let Some(app_instance) = &mut self.app_instance {
                     app_instance.curio.window_resized();
                 }
+                self.resize_surface(physical_size);
             }
             WindowEvent::Moved(_physical_position) => {
                 if let Some(app_instance) = &mut self.app_instance {
@@ -323,12 +364,12 @@ impl ApplicationHandler for CabinetWindowOwner {
             WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _ } => {
                 if let Some(app_instance) = &mut self.app_instance {
                     if let Some(button_code) = ButtonCode::from_winit_physical_key(event.physical_key) {
-                        // get the current button state to propogate
+                        // get the current button state to propagate
                         let state = if event.state.is_pressed() { ButtonPressed::Down } else { ButtonPressed::Up };
 
-                        // if button was resolved we propogate the event
+                        // if button was resolved we propagate the event
                         app_instance.curio.input_button(button_code, state);
-                    };
+                    }
                 }
             }
             WindowEvent::CursorMoved { device_id: _, position } => {
@@ -341,14 +382,14 @@ impl ApplicationHandler for CabinetWindowOwner {
             WindowEvent::MouseWheel { device_id: _, delta: _, phase: _ } => {}
             WindowEvent::MouseInput { device_id: _, state, button } => {
                 if let Some(app_instance) = &mut self.app_instance {
-                    // if button was resolved we propogate the event
+                    // if button was resolved we propagate the event
                     if let Some(button_code) = ButtonCode::from_winit_mousebutton(button) {
-                        // get the current button state to propogate
+                        // get the current button state to propagate
                         let state = if state.is_pressed() { ButtonPressed::Down } else { ButtonPressed::Up };
 
-                        // if button was resolved we propogate the event
+                        // if button was resolved we propagate the event
                         app_instance.curio.input_button(button_code, state);
-                    };
+                    }
                 }
             }
 
@@ -357,142 +398,80 @@ impl ApplicationHandler for CabinetWindowOwner {
     }
 }
 
-#[derive(Clone)]
-pub struct CabinetWindow {
-    owner: Arc<RefCell<CabinetWindowOwner>>,
-}
+// ─────────────────────────────────────────────────────────────────────────────
+// Plugin loading — same contract as the editor's runner: the project's own
+// crate is tried first ('first .so with a curio_init wins' can never boot
+// somebody else's game), and a plugin that panics in curio_init must not
+// take the host down with it.
+// ─────────────────────────────────────────────────────────────────────────────
 
-unsafe impl Send for CabinetWindow {}
-unsafe impl Sync for CabinetWindow {}
-impl CabinetWindow {
-    pub fn new(window: CabinetWindowOwner) -> CabinetWindow {
-        CabinetWindow { owner: Arc::new(RefCell::new(window)) }
+type InitCurioFn = unsafe extern "C" fn(gpu: *const Services) -> *mut Curio;
+
+/// Derive the plugin file stem the project's own crate produces
+/// (`package.name` with dashes as underscores, cargo's `lib` prefix).
+pub fn expected_plugin_stem(project_path: &str) -> Option<String> {
+    let manifest = std::fs::read_to_string(format!("{project_path}/Cargo.toml")).ok()?;
+    let mut in_package = false;
+    for line in manifest.lines() {
+        let line = line.trim();
+        if line.starts_with('[') {
+            in_package = line == "[package]";
+            continue;
+        }
+        if in_package && line.starts_with("name") {
+            let name = line.split('=').nth(1)?.trim().trim_matches(['"', '\'']);
+            return Some(format!("lib{}", name.replace('-', "_")));
+        }
     }
-    pub fn run(&mut self) {
-        self.owner.borrow_mut().run();
-    }
-    // pub fn curio(&self) -> CurioMetadata {
-    //     self.owner
-    //         .borrow()
-    //         .app_instance
-    //         .as_ref()
-    //         .unwrap()
-    //         .meta
-    //         .clone()
-    // }
-}
-
-pub fn create_depth_texture(device: &Device, label: &str) -> TextureAsset {
-    // let config = gpu.config;
-    let size = egui_wgpu::wgpu::Extent3d {
-        width: 1920,
-        height: 1080,
-        // width: config.width.max(1),
-        // height: config.height.max(1),
-        depth_or_array_layers: 1,
-    };
-
-    // println!("create depth with size {}, {}", config.width.max(1), config.height.max(1));
-    let desc = egui_wgpu::wgpu::TextureDescriptor {
-        label: Some(label),
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: egui_wgpu::wgpu::TextureDimension::D2,
-        format: TextureAsset::DEPTH_FORMAT,
-        usage: egui_wgpu::wgpu::TextureUsages::RENDER_ATTACHMENT // 3.
-                |  egui_wgpu::wgpu::TextureUsages::TEXTURE_BINDING,
-        view_formats: &[],
-        size,
-    };
-
-    let texture = device.create_texture(&desc);
-    let view = texture.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
-    let sampler = device.create_sampler(&egui_wgpu::wgpu::SamplerDescriptor {
-        // 4.
-        address_mode_u: egui_wgpu::wgpu::AddressMode::ClampToEdge,
-        address_mode_v: egui_wgpu::wgpu::AddressMode::ClampToEdge,
-        address_mode_w: egui_wgpu::wgpu::AddressMode::ClampToEdge,
-        mag_filter: egui_wgpu::wgpu::FilterMode::Linear,
-        min_filter: egui_wgpu::wgpu::FilterMode::Linear,
-        mipmap_filter: egui_wgpu::wgpu::FilterMode::Nearest,
-        compare: Some(egui_wgpu::wgpu::CompareFunction::LessEqual), // 5.
-        lod_min_clamp: 0.0,
-        lod_max_clamp: 100.0,
-        ..Default::default()
-    });
-
-    TextureAsset {
-        // width: size.width as i32,
-        // height: size.height as i32,
-        sampler: sampler,
-        texture: texture,
-        view: view,
-    }
+    None
 }
 
 pub struct LoadedCurio {
     pub curio: Box<Curio>,
 }
 
-pub fn load_curio(folder: &Path, gpu: *const Services) -> LoadedCurio {
-    let entries = std::fs::read_dir(folder).expect("plugins folder not found");
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-
-        let is_plugin = match path.extension().and_then(|e| e.to_str()) {
-            Some("so") | Some("dll") | Some("dylib") => true,
-            _ => false,
-        };
-
-        if !is_plugin {
+pub fn load_curio(folder: &Path, gpu: *const Services, preferred_stem: Option<&str>) -> LoadedCurio {
+    println!("folder: {}", folder.as_os_str().to_str().unwrap());
+    let entries = std::fs::read_dir(folder).unwrap_or_else(|e| panic!("plugins folder not found at {:?}: {e}", folder));
+    let mut plugins: Vec<_> = entries.flatten().map(|path| path.path()).filter(|path| matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"))).collect();
+    // A build dir may hold plugins from other projects (shared targets,
+    // leftovers). Always try this project's own crate first.
+    if let Some(stem) = preferred_stem {
+        plugins.sort_by_key(|path| if path.file_stem().and_then(|s| s.to_str()) == Some(stem) { 0 } else { 1 });
+    }
+    for path in plugins {
+        if let Err(e) = load_library(&path) {
+            eprintln!("load_library failed for {:?}: {}", path, e);
             continue;
         }
-
-        let _ = load_library(&path);
-
-        let l2 = plugin_loader::library_slot().lock();
-        let lib = match l2 {
-            Ok(l) => l,
-            Err(e) => {
-                panic!("failed to load {:?}: {}", path, e);
-            }
+        let lib = plugin_loader::library_slot().lock().unwrap();
+        let Some(lib) = lib.as_ref() else {
+            continue;
         };
-
-        // let lib = match lib {
-        //     Some(x) => {
-        //         x
-        //     },
-        //     None => {
-        //         panic!("failed to load {:?}: {}", path, e)
-        //     }
-        // };
-
-        let lib = lib.as_ref().unwrap();
-
         let curio = unsafe {
-            // look for curio_init — if not found this .so isn't a curio game
-            let init_fn: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
-
-            let raw = init_fn(gpu);
-
-            if raw.is_null() {
-                eprintln!("curio_init returned null for {:?}", path);
-                continue;
+            // look for curio_init — if not found this .so isn't a curio app
+            let f: Symbol<InitCurioFn> = if let Ok(f) = lib.get(b"curio_init") { f } else { continue };
+            // a plugin that panics in curio_init must not take the runner
+            // down with it — catch, report, and skip this library
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| f(gpu))) {
+                Ok(raw) if !raw.is_null() => Box::from_raw(raw),
+                Ok(_) => {
+                    eprintln!("curio_init null for {:?}", path);
+                    continue;
+                }
+                Err(payload) => {
+                    let msg = payload
+                        .downcast_ref::<String>()
+                        .cloned()
+                        .or_else(|| payload.downcast_ref::<&str>().map(|s| s.to_string()))
+                        .unwrap_or_else(|| "panic with no message".to_string());
+                    eprintln!("CURIO PLUGIN PANIC in {:?}:\n  {msg}\n  (the application crashed while initializing)", path);
+                    continue;
+                }
             }
-
-            Box::from_raw(raw)
         };
-
         eprintln!("loaded: {}", curio.identity.name);
-
         return LoadedCurio { curio };
     }
-
-    panic!("");
+    panic!("No curio plugin found");
 }
-use libloading::Symbol;
-
-use crate::plugin_loader::{self, load_library};
-
-type InitCurioFn = unsafe extern "C" fn(gpu: *const Services) -> *mut Curio;
