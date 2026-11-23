@@ -1,0 +1,21 @@
+[package]
+name = "curio_editor_headless"
+version = "0.1.0"
+authors = ["dumpstertree@gmail.com"]
+edition = "2018"
+
+[dependencies]
+curio_core = { workspace = true }
+curio_engine = { workspace = true }
+# the time system crate — typed `Ledger::write::<SysRecordTime>` injection
+time = { workspace = true }
+# gpu — same pinned version as engine/editor so raw-pointer casts inside
+# plugin .so files resolve to identical wgpu types
+egui-wgpu = { version = "0.31.1" }
+pollster = "0.3"
+# scenario / ledger dumps
+serde = { version = "1.0.104", features = ["derive"] }
+serde_yaml = "0.9.34"
+serde_json = "1.0.48"
+# screenshot encoding
+image = { version = "0.25", default-features = false, features = ["png"] }
