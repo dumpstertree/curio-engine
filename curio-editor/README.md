@@ -595,7 +595,7 @@ next to** `curio_core/`:
 ```
 your-repo/
   curio_core/
-  curio-editor-egui/   <- this project
+  curio-editor/       <- this project
 ```
 
 If you place it elsewhere, fix the `path` in `Cargo.toml`.
