@@ -65,7 +65,7 @@ collision = { path = "optional_systems/collision" }
 skybox = { path = "optional_systems/skybox" }
 tween = { path = "optional_systems/tween" }
 animators = { path = "optional_systems/animators" }
-curio_editor_egui = { path = "curio-editor-egui" }
+curio_editor = { path = "curio-editor-egui" }
 
 
 [workspace.package]
