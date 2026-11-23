@@ -1,12 +1,12 @@
 [package]
-name = "curio-editor"
+name = "curio_editor"
 version = "0.2.0"
 description = "Curio engine editor (egui/eframe, native)"
 authors = ["you"]
 edition = "2021"
 
 [[bin]]
-name = "curio-editor"
+name = "curio_editor"
 path = "src/main.rs"
 
 [dependencies]

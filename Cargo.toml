@@ -20,7 +20,7 @@ members = [
     "system_component_default/networking",
     # "system_component_default/animation",
     "system_component_default/input",
-    "curio-editor",
+    "curio_editor",
     "optional_systems/camera",
     "optional_systems/rendering_static",
     "optional_systems/rendering_dynamic",
@@ -65,7 +65,7 @@ collision = { path = "optional_systems/collision" }
 skybox = { path = "optional_systems/skybox" }
 tween = { path = "optional_systems/tween" }
 animators = { path = "optional_systems/animators" }
-curio_editor = { path = "curio-editor" }
+curio_editor = { path = "curio_editor" }
 
 
 [workspace.package]
