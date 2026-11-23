@@ -998,6 +998,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "curio_engine-tests"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
+ "curio_engine",
+ "tempfile",
+]
+
+[[package]]
 name = "curio_entry"
 version = "0.1.0"
 dependencies = [

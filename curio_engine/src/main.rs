@@ -1,12 +1,8 @@
 // Prevents an additional console window on Windows in release builds.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod plugin_loader;
-mod project;
-mod curio_cabinet;
-
-use curio_cabinet::CurioCabinet;
-use project::Project;
+use curio_engine::curio_cabinet::CurioCabinet;
+use curio_engine::project::Project;
 
 fn main() {
     // A game plugin panicking while running used to abort with nothing but a

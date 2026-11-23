@@ -5,6 +5,7 @@ members = [
     "curio_core_tests",
     "optional_systems_tests",
     "curio_engine",
+    "curio_engine_tests",
     "system_component_default/gameplay",
     "system_component_default/gameplay_macros/curio_entry",
     "system_component_default/gameplay_macros/impulse",
@@ -37,6 +38,7 @@ members = [
 
 [workspace.dependencies]
 curio_engine = { path = "curio_engine" }
+curio_engine_tests = { path = "curio_engine_tests" }
 curio_core = { path = "curio_core" }
 curio_core_tests = { path = "curio_core_tests" }
 # record = { path = "system_component_default/gameplay_macros/record" }
