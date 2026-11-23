@@ -20,7 +20,6 @@ members = [
     "system_component_default/networking",
     # "system_component_default/animation",
     "system_component_default/input",
-    # "curio-editor/src-tauri",
     "curio-editor-egui",
     "optional_systems/camera",
     "optional_systems/rendering_static",
@@ -54,7 +53,7 @@ input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
 
 # animation = { path = "system_component_default/animation" }
-# curio_editor = { path = "curio-editor/src-tauri" }
+
 camera = { path = "optional_systems/camera" }
 ext_rendering = { path = "optional_systems/rendering" }
 rendering_static = { path = "optional_systems/rendering_static" }
