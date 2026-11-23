@@ -966,6 +966,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "curio_editor_headless"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
+ "curio_engine",
+ "egui-wgpu",
+ "image 0.25.10",
+ "pollster 0.3.0",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "time 0.1.0",
+]
+
+[[package]]
 name = "curio_engine"
 version = "0.1.0"
 dependencies = [
