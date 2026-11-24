@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct RecordSynchronizer {
     pub record_id: i32,
     pub record_scope: RecordScope,
-    payload: Vec<u8>, // serialized data
+    pub payload: Vec<u8>, // serialized data
 }
 
 impl RecordSynchronizer {
@@ -56,8 +56,8 @@ impl RecordSynchronizer {
             return None;
         };
 
-        // return result
-        Some(deserialize_fn(&bytes.as_slice()))
+        // return result (None propagates from a corrupt payload)
+        (deserialize_fn)(&bytes.as_slice())
     }
     fn serialize_from_global<T>(id: &i32, value: &T) -> Option<Vec<u8>>
     where

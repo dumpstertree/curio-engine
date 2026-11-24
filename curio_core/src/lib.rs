@@ -13,6 +13,7 @@ pub use crate::math::vector4_int::Vector4Int;
 
 // collections
 pub use crate::collections::any_map::AnyMap;
+pub use crate::collections::any_map::GetError;
 pub use crate::collections::any_queue::AnyQueue;
 pub use crate::collections::event_runner::EventRunner;
 

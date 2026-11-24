@@ -225,16 +225,18 @@ mod tests {
     }
 
     // =========================================================
-    // Known bug: new_custom is unusable
+    // new_custom (previously unusable: empty network panicked)
     // =========================================================
 
     #[test]
-    #[should_panic]
-    fn new_custom_panics_on_empty_network() {
+    fn new_custom_constructs_with_placeholder_network() {
         ensure_services();
-        // BUG: new_custom leaves CurioNetwork empty, then logs through
-        // self.network.me() - which indexes an empty vec. Every call panics.
+        // FIXED: new_custom seeds a placeholder CurioNetworkParticipant, so
+        // log/serializable have a valid me() and construction succeeds
         let entries: Vec<(i32, Box<dyn RecordCommon>)> = vec![(9001, Box::new(LedgerProbeLocal { value: 3 }))];
-        Ledger::new_custom(entries);
+        let ledger = Ledger::new_custom(entries);
+
+        let record = ledger.read::<LedgerProbeLocal>();
+        assert_eq!(record.value, 3, "entries must be reachable after construction");
     }
 }

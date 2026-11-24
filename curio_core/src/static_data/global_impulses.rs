@@ -30,10 +30,10 @@ impl GlobalImpulses {
                 .expect("Type mismatch in serialization")
         };
 
-        // how to deserialize
-        let deserialize_fn: DeserializerFn = |bytes| {
-            let obj: TImpulse = bincode::deserialize(bytes).unwrap();
-            Box::new(obj)
+        // how to deserialize (corrupt payload yields None, not a panic)
+        let deserialize_fn: DeserializerFn = |bytes| match bincode::deserialize::<TImpulse>(bytes) {
+            Ok(obj) => Some(Box::new(obj)),
+            Err(_) => None,
         };
 
         // create a registration for this type

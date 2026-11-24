@@ -6,7 +6,7 @@ use crate::{engine::curio_network::CurioNetwork, AnyQueue, Curio, ImpulseCommon,
 pub struct Nerve {
     cache: HashMap<i32, AnyQueue>,
     network_capabilities: ImpulseNetworkCapabilities,
-    delayed: Vec<(Instant, i32, Box<dyn Any>, Option<ImpulseSynchronizer>)>,
+    delayed: Vec<(Instant, f32, i32, Box<dyn Any>, Option<ImpulseSynchronizer>)>,
     pub network: CurioNetwork,
 }
 impl Nerve {
@@ -25,8 +25,8 @@ impl Nerve {
         // Take ownership of all delayed events temporarily
         let mut remaining = Vec::with_capacity(self.delayed.len());
 
-        for (timer, uid, event, ownership) in self.delayed.drain(..) {
-            if timer.elapsed().as_secs_f32() > 1.0 {
+        for (timer, delay, uid, event, ownership) in self.delayed.drain(..) {
+            if timer.elapsed().as_secs_f32() > delay {
                 // Move the Box<dyn Any> here (no borrowing)
                 self.cache
                     .entry(uid)
@@ -39,7 +39,7 @@ impl Nerve {
                 }
             } else {
                 // Keep events that haven't fired yet
-                remaining.push((timer, uid, event, ownership));
+                remaining.push((timer, delay, uid, event, ownership));
             }
         }
 
@@ -47,7 +47,7 @@ impl Nerve {
     }
 
     /// Add an event that should be invoked after a delay
-    pub fn enqueue_event_delayed<T>(&mut self, event: T, _delay: f32)
+    pub fn enqueue_event_delayed<T>(&mut self, event: T, delay: f32)
     where
         T: Clone + ImpulseCommon + Serialize + DeserializeOwned + Display + 'static,
     {
@@ -63,7 +63,7 @@ impl Nerve {
         }
 
         self.delayed
-            .push((Instant::now(), T::id(), Box::new(event), sync_event));
+            .push((Instant::now(), delay, T::id(), Box::new(event), sync_event));
     }
 
     /// Add an event that will be run at the end of this frame

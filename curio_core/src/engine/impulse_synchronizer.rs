@@ -6,7 +6,7 @@ use std::any::Any;
 pub struct ImpulseSynchronizer {
     pub impulse_id: i32,
     pub impulse_scope: ImpulseScope,
-    payload: Vec<u8>,
+    pub payload: Vec<u8>,
 }
 impl ImpulseSynchronizer {
     /// Creates an ImpulseSynchronizer from the provided Impulse. Will fail if Impulse is not registered with GlobalImpulses
@@ -44,8 +44,8 @@ impl ImpulseSynchronizer {
             return None;
         };
 
-        // return result
-        Some((impluse_reg.deserialize_fn)(&bytes.as_slice()))
+        // return result (None propagates from a corrupt payload)
+        (impluse_reg.deserialize_fn)(&bytes.as_slice())
     }
 
     fn serialize_from_global<T>(id: &i32, value: &T) -> Option<Vec<u8>>

@@ -10,44 +10,7 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
 
 ## A. Bugs — open (tests document them, no fix applied yet)
 
-1. **`Ledger::new_custom` always panics** — `[open]`
-   - `curio_core/src/engine/ledger.rs` (~L88-104): builds `network: CurioNetwork::new(Vec::new(), 0)`
-     then calls `ledger.log(...)`, which evaluates `self.network.me()` — index into empty `all` vec.
-   - Effect: public API unusable on every call. Comment says "Expect this to eventually be
-     deprecated", so options: delete, or make `log`/`serializable` tolerate an empty network,
-     or seed a placeholder `CurioNetworkParticipant`.
-   - Test: `curio_core_tests/src/engine/ledger.rs :: new_custom_panics_on_empty_network` (`#[should_panic]`).
-
-2. **`Nerve::enqueue_event_delayed` ignores its `_delay` parameter** — `[open]`
-   - `curio_core/src/engine/nerve.rs` (~L49-67): signature takes `_delay: f32`; the timer stored
-     is `Instant::now()` and `update_timed_events` (~L29) hardcodes expiry `> 1.0` seconds.
-   - Fix direction: store the requested delay per delayed entry
-     (`(timer, delay, uid, event, ownership)`) and compare `elapsed() > delay`.
-   - Tests: `nerve.rs :: delayed_event_ignores_requested_delay` (30 s request fires after 1.1 s),
-     plus `delayed_event_does_not_fire_immediately` / `delayed_event_fires_after_one_second`.
-
-3. **`CurioNetwork::me()` panics on empty network or out-of-range index** — `[open]` (defensive?)
-   - `curio_core/src/engine/curio_network.rs` (~L21-23): `&self.all[self.me_index]`.
-   - Root cause of bug 1 (same path). Decide whether `me()` stays panic-based (documented)
-     or the constructor validates `me < all.len()`.
-   - Tests: `curio_network.rs :: empty_network_has_no_me`, `me_index_out_of_bounds_panics`.
-
-4. **Registration serde fns panic on corrupt payloads** — `[open]` (design decision pending)
-   - `curio_core/src/static_data/global_records.rs` (~L40-47): `bincode::serialize(v).unwrap()`,
-     `.expect("Type mismatch...")`, `bincode::deserialize::<T>(bytes).unwrap()`;
-     `global_impulses.rs` registers the same pattern. Network data from a desynced/evil source
-     is an unrecoverable panic, not a `None`.
-   - No test (unreachable: see item A5) — noted in comments in both synchronizer test files.
-
-5. **Synchronizer `payload` field is private** — `[untestable]` externally
-   - `record_synchronizer.rs` L9, `impulse_synchronizer.rs` L9 (`payload: Vec<u8>` with no `pub`):
-     a `RecordSynchronizer`/`ImpulseSynchronizer` can only be produced by a *successful* `serialize`,
-     so the deserialize-`None` paths (unregistered id, registration without deserialize_fn)
-     and the corrupt-payload panic are unreachable from tests.
-   - Resolution options: make `payload` `pub` (it is `Serialize`/`Deserialize`-roundtrippable anyway),
-     or add a test-visible constructor; then A4 becomes testable.
-
-6. **`Ledger::read::<T>()` panics for unregistered records** — `[by design]`, flag only
+1. **`Ledger::read::<T>()` panics for unregistered records** — `[by design]`, flag only
    - `ledger.rs` ~L113-129 via `get_entry`/`get_entry_mut` `panic!` incl. guid, type_name, id.
    - Panic-based API kept; test asserts it (`unregistered_record_read_panics`). Only "resolve"
      if the API is ever moved to `Option`.
@@ -122,7 +85,38 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
   + `particle.wgsl` written and wired into `shaders.rs` (replaced `panic!()` `LazyLock`s).
   Left untouched: the old multi-file fragment pair `shader_vegetation.wgsl` + `helper_wind.wgsl`
   (still WIP; drop-in compatible with the mesh pipeline is the new modules).
-- API-affecting change from fixes: `Curio::portal` is now a public field (only breaking surface).
+- `[fixed 56eb8c2]` **bug-fixes branch** (branched off origin/main tip `0cd5dcc`), audit items
+  A1/A2/A4/A5 + G1/G2, all re-pinned by `curio_core_tests` (suite: 220 tests, 0 failed):
+  - A2: `Nerve::enqueue_event_delayed` now stores the requested delay per entry
+    (`(Instant, f32, i32, Box, sync)` tuple) and `update_timed_events` compares `elapsed() > delay`.
+    Test renamed `delayed_event_ignores_requested_delay` → `delayed_event_honors_requested_delay`.
+  - A1: `Ledger::new_custom` seeds a placeholder `CurioNetworkParticipant(0, LocalHost)`
+    instead of an empty network, so `log`/`serializable` have a valid `me()`. Test renamed
+    `new_custom_panics_on_empty_network` → `new_custom_constructs_with_placeholder_network`
+    (no longer `#[should_panic]`).
+  - A5: `RecordSynchronizer::payload` and `ImpulseSynchronizer::payload` are now `pub`
+    (roundtrippable anyway), making the deserialize-failure paths externally constructible.
+  - A4: `DeserializerFn` (record + impulse aliases) now returns `Option<Box<…>>`;
+    global registrations map a bincode `Err` to `None` instead of `unwrap()`-panicking,
+    and both synchronizers propagate that `None`. New tests:
+    `corrupt_payload_deserializes_to_none` (record + impulse),
+    `unregistered_id_deserializes_to_none`, `registration_without_deserialize_fn_deserializes_to_none`.
+    Kept as-is: the serialize-side `downcast`/`unwrap` (programming-error path, the caller owns
+    the typed value — not network-reachable).
+  - G1: `pub use crate::collections::any_map::GetError;` added at the crate root;
+    `any_map.rs :: get_result_separates_ok_from_err` now pins `Err(GetError::EmptyKey)` vs
+    `Err(GetError::MismatchedType)` via `matches!`.
+  - G2: `EventRunner::post_and_drain` walks the queue with a head cursor and clears at the end
+    (was O(n²) via `remove(0)`; linear now, same FIFO semantics).
+- `[fixed 56eb8c2]` decision, not a code change: A3 `CurioNetwork::me()` kept panic-based
+  and documented ("callers must supply a valid seat"); the `empty_network_has_no_me` /
+  `me_index_out_of_bounds_panics` tests still pin the panic. A1's fix removes the only
+  engine path that built such an invalid network.
+- H3 (`InputMapped::get_button_or_default` doc says "returns NONE"): verified already corrected
+  in the pushed tree (both `_or_default` doc comments read "returns a default version");
+  nothing to fix.
+- API-affecting changes from fixes: `Curio::portal` is now a public field (only breaking surface);
+  synchronizer `payload` fields are now public; `GetError` gains a root re-export.
 
 ## E. Test-plan groups (1-3 committed in `560a4a6`, 4-7 pending)
 
@@ -145,26 +139,13 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
 
 ## G. Group 2 findings — collections (`any_queue`, `event_runner`, `any_map`)
 
-1. **`GetError` is unreachable from outside `curio_core`** — `[open]` (export gap)
-   - `curio_core/src/lib.rs` ~L197-200: `pub mod collections { pub(crate) mod any_map; ... }` —
-     only `AnyMap`, `AnyQueue`, `EventRunner` have root re-exports (L15-17). So
-     `AnyMap::get_result`'s `Err(GetError::EmptyKey)` vs `Err(GetError::MismatchedType)`
-     distinction cannot be observed/tested from `curio_core_tests` (only `is_err()`).
-   - Fix: add `pub use crate::collections::any_map::GetError;` to the root.
-   - Test with comment: `any_map.rs :: get_result_separates_ok_from_err`.
-
-2. **`EventRunner::post_and_drain` is O(n²)** — `[open]` (perf, not correctness)
-   - `curio_core/src/collections/event_runner.rs` (~L24-37): each iteration does
-     `self.queue.remove(0)` (O(n) memmove) on a `Vec`. Fine for small event streams,
-     quadratic for large ones. Fix direction: head index or `collections::deque::Deque`.
-   - Not pinned by a test (perf is untestable here).
-
-3. **`EventRunner` has no cycle guard** — `[open]` (design)
+1. **`EventRunner` has no cycle guard** — `[open]` (design)
    - A receiver that always returns >= 1 event makes `post_and_drain` loop forever
-     (`while self.queue.len() > 0`). Cannot be tested without hanging the binary.
+     (`while queue.len() > 0` walk). Cannot be tested without hanging the binary.
    - Fix direction: optional event budget / re-entrance depth limit in `post_and_drain`.
+     (The old O(n²) `remove(0)` issue behind it was fixed in `56eb8c2`, see D.)
 
-4. **Pinned semantics (by design, no fix):**
+2. **Pinned semantics (by design, no fix):**
    - every receiver sees every event, receivers run in registration order, events FIFO
      (`event_runner.rs :: every_receiver_gets_every_event_in_registration_order`,
      `generated_events_are_processed_fifo_until_exhausted`);
@@ -174,7 +155,7 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
    - `AnyMap` has no remove/clear API — entries can be overwritten but never deleted
      (comment in `any_map.rs`).
 
-5. **`AnyQueue`: no bugs found** — all 7 tests pass-as-spec (typed drain keeps other
+3. **`AnyQueue`: no bugs found** — all 7 tests pass-as-spec (typed drain keeps other
    types, FIFO order, `get_all` views without draining, `push_boxed` interops with `drain<T>`).
 
 ---
@@ -194,25 +175,20 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
    - Consumer code must know which container it is polling; only `InputMapped` is safe for
      "current logical control" reads.
 
-3. **Doc-comment copy/paste: `InputMapped::get_button_or_default` says "returns NONE"** — `[open]` (docs)
-   - `input_mapped.rs` L84-85: the doc mirrors `get_button`'s but the fn returns the shared
-     default `ButtonState`. Fix is a one-line doc edit (`returns a default version` already
-     implied); test pins the real behavior in `unknown_uids_are_none_but_defaults_are_available`.
-
-4. **Enum order is a wire-format dependency** — `[by design]`, partially pinned
+3. **Enum order is a wire-format dependency** — `[by design]`, partially pinned
    - `ButtonCode`/`AxisCode` are `#[non_exhaustive]` serde-derived enums: their *declaration
      order* is the serialized tag. Inserting/reordering variants silently breaks saved
      `InputMapping`s and network payloads. Order is pinned only for the codes the tests use
      (`declaration_order_is_stable` in both enum test files), not the whole enum.
 
-5. **`button_code.rs` winit mappings are untested** — `[untestable]` cheaply
+4. **`button_code.rs` winit mappings are untested** — `[untestable]` cheaply
    - `from_winit_mousebutton` / `from_winit_physical_key` / `from_winit_keycode`
      (L399-592, ~570 `=>` arms) take winit event types; testing them requires adding winit to
      `curio_core_tests` at the *exact* same version (type identity). Coverage there is manual
      review only: all arms map `KeyCode::X => ButtonCode::X` one-to-one with a `_ => None`
      fallback; no arm duplicates a KeyCode, but full 1:1 coverage is unverified.
 
-6. **Pinned semantics (by design, no fix):**
+5. **Pinned semantics (by design, no fix):**
    - `ButtonPressed` defaults to `Down` (= resting); a resting button reads `Down`
      (`button_pressed.rs :: default_is_down`);
    - `ButtonState`/`AxisState` are `Copy`: polling a stored copy never moves the original, so
@@ -228,9 +204,14 @@ from outside the crate · `[unverifiable]` no Rust toolchain in audit env, user 
 
 ## F. Git state snapshot
 
-- Tip: `560a4a6` on `main` (pushed to `git@github.com:dumpstertree/curio-engine.git`, author
-  `dumpstertree <dumpstertree@gmail.com>`); previous tips: `51ea929` shaders, `ae59b43`
-  window cmds/hooks + command-handler fixes.
-- `560a4a6` = **groups 1-3 test files + this findings file + `lib.rs`/`Cargo.toml`** (22 files,
-  2192 insertions). Tests still need a real build (`RUST_TEST_THREADS=1`); failures land here
-  as `[open]` items rather than reverting the commit.
+- `origin/main` tip: `0cd5dcc` (PR #1 `feature/taffy-ui-overlay` merged, includes groups 1-3
+  test commit `560a4a6`, findings sync `9440d35`, `d143bc7` test typo fixes, and the taffy
+  ui_overlay work `d7781ee`..`d4f0a0a`). Local `main` was left at the stale `560a4a6`.
+- **`bug-fixes` branch**: branched from `0cd5dcc`; `56eb8c2` = audit bug fixes (A1/A2/A4/A5,
+  G1/G2, A3 decision, H3 verification) + re-pinned tests, 17 files. Findings-file update
+  committed immediately after on the same branch.
+- Previous tips: `560a4a6` = **groups 1-3 test files + this findings file + `lib.rs`/`Cargo.toml`**
+  (22 files, 2192 insertions), `51ea929` shaders, `ae59b43` window cmds/hooks + command-handler
+  fixes. Author `dumpstertree <dumpstertree@gmail.com>`, remote `git@github.com:dumpstertree/curio-engine.git`.
+- Tests still need a real build (`RUST_TEST_THREADS=1`); failures land here as `[open]` items
+  rather than reverting the commit.

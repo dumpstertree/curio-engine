@@ -76,7 +76,18 @@ mod tests {
         assert_eq!(recovered.value, 77);
     }
 
-    // Note: corrupt-payload paths are not covered - the payload field is private
-    // and the registration's bincode calls unwrap(), so a bad payload is an
-    // unrecoverable panic that cannot be produced from outside the crate.
+    // =========================================================
+    // Corrupt payload handling (reachable now that payload is pub)
+    // =========================================================
+
+    #[test]
+    fn corrupt_payload_deserializes_to_none() {
+        ensure_services();
+        GlobalImpulses::register::<SyncProbe>();
+
+        // FIXED: the registration's bincode call returns None for bad bytes
+        // instead of unwrapping into an unrecoverable panic
+        let sync = ImpulseSynchronizer { impulse_id: 9201, impulse_scope: ImpulseScope::ConnectedHost, payload: vec![9, 9, 9] };
+        assert!(sync.deserialize().is_none(), "corrupt payloads must yield None, not a panic");
+    }
 }
