@@ -4,6 +4,7 @@
 mod anim_viewer;
 mod app;
 mod asset_state;
+mod figma;
 mod fs_ops;
 mod glb_viewer;
 mod icons;
