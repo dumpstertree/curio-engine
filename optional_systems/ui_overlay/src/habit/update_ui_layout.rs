@@ -1,7 +1,7 @@
-use curio_core::{AxisCode, ButtonCode, Color, Ledger, Nerve, NetworkModes, Services, Severity, Vector2};
+use curio_core::{AxisCode, ButtonCode, Color, Ledger, Nerve, NetworkModes, Quaternion, Services, Severity, Vector2, Vector3};
 use gameplay::traits::facet_common::FacetCommon;
 use gameplay::{
-    built_in::facet::transform::transform2d::Transform2D,
+    built_in::facet::transform::transform3d::Transform3D,
     context_3d::Context3D,
     form::Form,
     traits::{habit::Habit, scope::Scope},
@@ -32,9 +32,13 @@ struct UiEntry {
     pub parent_ui: Option<i32>,
     // how many UI ancestors sit above it
     pub depth: u32,
-    // its Transform2D offset, accumulated up to the UI parent, in pixels
+    // its Transform3D offset, accumulated up to the UI parent: x/y in pixels, z its layer
     pub offset_x: f32,
     pub offset_y: f32,
+    pub offset_z: f32,
+    // its own Transform3D turn (radians, counter-clockwise) and x/y scale
+    pub rotation: f32,
+    pub scale: Vector2,
 }
 
 impl UiEntry {
@@ -47,6 +51,9 @@ impl UiEntry {
             depth: 0,
             offset_x: 0.0,
             offset_y: 0.0,
+            offset_z: 0.0,
+            rotation: 0.0,
+            scale: Vector2::one(),
         }
     }
 }
@@ -64,6 +71,12 @@ fn safe_size(value: f32) -> f32 {
     } else {
         value
     }
+}
+
+// the screen is flat, so only the turn about z counts: where the x axis ends up
+fn planar_angle(rotation: Quaternion) -> f32 {
+    let axis = rotation * Vector3::new(1.0, 0.0, 0.0);
+    finite(axis.y.atan2(axis.x))
 }
 
 // hover/click feedback scales the rgb channels and keeps the alpha. curio_core
@@ -112,14 +125,14 @@ fn ui_style(node: &UiNode, offset_x: f32, offset_y: f32) -> Style {
         ..Default::default()
     };
     if node.kind != UiKind::Panel {
-        // leaves paint a box and hang at their Transform2D offset inside
+        // leaves paint a box and hang at their Transform3D offset inside
         // the nearest UI ancestor
         style.display = Display::Block;
         style.position = Position::Absolute;
         style.inset.left = length(finite(offset_x));
         style.inset.top = length(finite(offset_y));
     } else if node.absolute {
-        // an authored free-form frame: hang at its own Transform2D offset
+        // an authored free-form frame: hang at its own Transform3D offset
         // inside the nearest UI ancestor instead of floating in flex flow;
         // it still flexes its own children
         style.position = Position::Absolute;
@@ -257,23 +270,25 @@ impl Habit for Instance {
                     entry.top_id = Some(entry.form.instance_id());
                 }
             }
-            // the pixel offset through every form between here and the UI
-            // parent — my own position plus each plain form's on the way
-            let mut offset_x = 0.0;
-            let mut offset_y = 0.0;
-            if let Some(transform) = entry.form.get_facet::<Transform2D>() {
-                offset_x += finite(transform.position.x);
-                offset_y += finite(transform.position.y);
+            // the offset through every form between here and the UI parent — my
+            // own position plus each plain form's on the way. Only my own turn and scale count
+            let mut offset = Vector3::zero();
+            if let Some(transform) = entry.form.get_facet::<Transform3D>() {
+                offset = Vector3::new(finite(transform.position.x), finite(transform.position.y), finite(transform.position.z));
+                entry.rotation = planar_angle(transform.rotation);
+                entry.scale = Vector2::new(finite(transform.scale.x), finite(transform.scale.y));
             }
             let limit = if ancestor < chain.len() { ancestor } else { chain.len() };
-            for index in 0..limit {
-                if let Some(transform) = chain[index].get_facet::<Transform2D>() {
-                    offset_x += finite(transform.position.x);
-                    offset_y += finite(transform.position.y);
+            for form in chain.iter().take(limit) {
+                if let Some(transform) = form.get_facet::<Transform3D>() {
+                    offset.x += finite(transform.position.x);
+                    offset.y += finite(transform.position.y);
+                    offset.z += finite(transform.position.z);
                 }
             }
-            entry.offset_x = offset_x;
-            entry.offset_y = offset_y;
+            entry.offset_x = offset.x;
+            entry.offset_y = offset.y;
+            entry.offset_z = offset.z;
         }
 
         // direct UI children per node, in author order: a child is adopted
@@ -351,9 +366,9 @@ impl Habit for Instance {
             }
         }
 
-        // copy the boxes into world space, parents first so a child can
-        // start from its parent's corner
-        let mut absolute: HashMap<i32, Vector2> = HashMap::new();
+        // copy the boxes onto the screen, parents first so a child starts from
+        // its parent's resolved box, turn, scale and layer
+        let mut placed: HashMap<i32, (UiRect, f32, Vector2, f32)> = HashMap::new();
         let mut orders: HashMap<i32, u32> = HashMap::new();
         for pair in deepest_first.iter().rev() {
             let id = pair.1;
@@ -362,19 +377,6 @@ impl Habit for Instance {
                     match tree.layout(*node) {
                         Ok(resolved) => {
                             orders.insert(id, resolved.order);
-                            // taffy answers each node inside its parent, so
-                            // the world corner is the chain of those answers
-                            // added up
-                            let mut base_x = 0.0;
-                            let mut base_y = 0.0;
-                            if let Some(parent_id) = entry.parent_ui
-                                && let Some(parent) = absolute.get(&parent_id)
-                            {
-                                base_x = parent.x;
-                                base_y = parent.y;
-                            }
-                            let corner = Vector2::new(base_x + finite(resolved.location.x), base_y + finite(resolved.location.y));
-                            absolute.insert(id, corner);
                             // a node that flexed to nothing is still worth
                             // drawing when it asked for a box
                             let mut width = safe_size(resolved.size.width);
@@ -385,11 +387,29 @@ impl Habit for Instance {
                             if height <= 0.0 {
                                 height = safe_size(entry.node.height);
                             }
-                            // hit-test against the box that was just resolved
-                            let rect = UiRect::new(corner.x, corner.y, width, height);
-                            let hovered = rect.contains(cursor.x, cursor.y);
+                            // taffy answers each node inside its upright parent, so carry
+                            // that answer through the parent's own turn and scale
+                            let mut parent = (UiRect::zero(), 0.0, Vector2::one(), 0.0);
+                            if let Some(parent_id) = entry.parent_ui
+                                && let Some(found) = placed.get(&parent_id)
+                            {
+                                parent = *found;
+                            }
+                            let (parent_rect, parent_rotation, parent_scale, parent_depth) = parent;
+                            let local_center = Vector2::new(parent_rect.x + finite(resolved.location.x) + width * 0.5, parent_rect.y + finite(resolved.location.y) + height * 0.5);
+                            let center = parent_rect.turn_point(local_center.x, local_center.y, parent_rotation, parent_scale);
+                            let rect = UiRect::new(center.x - width * 0.5, center.y - height * 0.5, width, height);
+                            let rotation = parent_rotation + entry.rotation;
+                            let scale = Vector2::new(parent_scale.x * entry.scale.x, parent_scale.y * entry.scale.y);
+                            let depth = parent_depth + entry.offset_z;
+                            placed.insert(id, (rect, rotation, scale, depth));
+                            // hit-test against the box as it will be drawn
+                            let hovered = rect.contains_turned(cursor.x, cursor.y, rotation, scale);
                             entry.form.try_edit_facet::<UiNode>(|facet| {
                                 facet.rect = rect;
+                                facet.rotation = rotation;
+                                facet.scale = scale;
+                                facet.depth = depth;
                                 facet.hovered = hovered;
                                 facet.clicked = clicked && hovered;
                             });
@@ -428,13 +448,13 @@ impl Habit for Instance {
                     }
                     screen
                         .draw_calls
-                        .push(UiDrawCall::new(facet.rect, color, facet.kind, facet.z_index, facet.text.clone(), facet.font_size, *id, order));
+                        .push(UiDrawCall::new(facet.rect, color, facet.kind, facet.depth, facet.text.clone(), facet.font_size, *id, order).turned(facet.rotation, facet.scale));
                 }
             }
-            // the author's z_index wins, taffy's paint order breaks ties
+            // the authored depth wins, taffy's paint order breaks ties
             screen
                 .draw_calls
-                .sort_by(|a, b| (a.z_index, a.order).cmp(&(b.z_index, b.order)));
+                .sort_by(|a, b| a.depth.total_cmp(&b.depth).then(a.order.cmp(&b.order)));
         });
     }
 }
@@ -465,7 +485,6 @@ fn ui_nodes_author_as_a_taffy_tree() {
             UiNode::builder()
                 .kind(UiKind::Button)
                 .size(120.0, 32.0)
-                .z_index(1)
                 .color(Color::new_01(0.8, 0.2, 0.2, 1.0))
                 .text("fire")
                 .font_size(16.0)
@@ -476,9 +495,9 @@ fn ui_nodes_author_as_a_taffy_tree() {
     // the builder does not attach children — set_parent is what wires the tree
     button.set_parent(Some(panel.clone()));
 
-    // UI forms place with Transform2D, in pixels below-right of their UI parent
-    let mut shift = Transform2D::default();
-    shift.position = Vector2::new(40.0, 20.0);
+    // UI forms place with Transform3D, in pixels below-right of their UI parent
+    let mut shift = Transform3D::default();
+    shift.position = Vector3::new(40.0, 20.0, 1.0);
     // add_facet consumes and returns the form, so the handle is rebound
     let button = button.add_facet(shift);
 
@@ -491,12 +510,12 @@ fn ui_nodes_author_as_a_taffy_tree() {
 
     let mut authored = false;
     if let Some(node) = button.get_facet::<UiNode>() {
-        authored = node.kind == UiKind::Button && node.width == 120.0 && node.height == 32.0 && node.z_index == 1 && !node.hovered && node.text == "fire" && node.font_size == 16.0;
+        authored = node.kind == UiKind::Button && node.width == 120.0 && node.height == 32.0 && !node.hovered && node.text == "fire" && node.font_size == 16.0;
     }
     assert!(authored);
 
     // the free-form flag survives onto the panel too: it hangs at its own
-    // Transform2D offset instead of floating in flow
+    // Transform3D offset instead of floating in flow
     let mut flagged = false;
     if let Some(node) = panel.get_facet::<UiNode>() {
         flagged = node.absolute;
@@ -504,7 +523,7 @@ fn ui_nodes_author_as_a_taffy_tree() {
     assert!(flagged);
 
     let mut placed = false;
-    if let Some(transform) = button.get_facet::<Transform2D>() {
+    if let Some(transform) = button.get_facet::<Transform3D>() {
         placed = transform.position.x == 40.0 && transform.position.y == 20.0;
     }
     assert!(placed);
@@ -594,8 +613,8 @@ fn nested_leaf_under_a_negative_id_anchor_keeps_its_ui_parent() {
             .build(),
     );
     anchor.set_parent(Some(panel.clone()));
-    let mut anchor_shift = Transform2D::default();
-    anchor_shift.position = Vector2::new(300.0, 200.0);
+    let mut anchor_shift = Transform3D::default();
+    anchor_shift.position = Vector3::new(300.0, 200.0, 0.0);
     let anchor = anchor.add_facet(anchor_shift);
 
     // the leaf hangs under the anchor, inset by its own offset
@@ -609,8 +628,8 @@ fn nested_leaf_under_a_negative_id_anchor_keeps_its_ui_parent() {
         )
         .spawn();
     leaf.set_parent(Some(anchor.clone()));
-    let mut leaf_shift = Transform2D::default();
-    leaf_shift.position = Vector2::new(10.0, 5.0);
+    let mut leaf_shift = Transform3D::default();
+    leaf_shift.position = Vector3::new(10.0, 5.0, 0.0);
     let leaf = leaf.add_facet(leaf_shift);
 
     let network = CurioNetwork::new(vec![CurioNetworkParticipant::new(0, NetworkModes::LocalHost)], 0);

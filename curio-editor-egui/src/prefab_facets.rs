@@ -1,6 +1,6 @@
 //! Bridges `facet.manifest` (`fs_ops::get_facets`) into the
 //! `FieldDescriptor` lists the prefab inspector renders fields from, with
-//! builtin fallbacks for `Transform2D`/`Transform3D`/`RendererStatic`/
+//! builtin fallbacks for `Transform3D`/`RendererStatic`/
 //! `RendererDynamic` when a project's facet.manifest doesn't (yet) declare
 //! them explicitly.
 
@@ -28,7 +28,7 @@ pub fn component_fields(project_root: &str, kind: &str) -> Vec<FieldDescriptor> 
 pub fn all_component_types(project_root: &str) -> Vec<String> {
     let facets = fs_ops::get_facets(project_root);
     let mut names: Vec<String> = facets.manifest.iter().map(|c| c.name.clone()).collect();
-    for builtin in ["Transform2D", "Transform3D", "RendererStatic", "RendererDynamic"] {
+    for builtin in ["Transform3D", "RendererStatic", "RendererDynamic"] {
         if !names.iter().any(|n| n == builtin) {
             names.push(builtin.to_string());
         }

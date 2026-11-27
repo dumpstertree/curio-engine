@@ -1,13 +1,10 @@
 use crate::{
-    built_in::{
-        tween_transform2d_position::TweenTransform2DPosition, tween_transform2d_rotation::TweenTransform2DRotation, tween_transform2d_scale::TweenTransform2DScale, tween_transform3d_position::TweenTransform3DPosition, tween_transform3d_rotation::TweenTransform3DRotation,
-        tween_transform3d_scale::TweenTransform3DScale,
-    },
+    built_in::{tween_transform3d_position::TweenTransform3DPosition, tween_transform3d_rotation::TweenTransform3DRotation, tween_transform3d_scale::TweenTransform3DScale},
     facet::tween::Tween,
 };
 use curio_core::{Ledger, Nerve, NetworkModes};
 use gameplay::{
-    built_in::facet::transform::{transform2d::Transform2D, transform3d::Transform3D},
+    built_in::facet::transform::transform3d::Transform3D,
     context_3d::Context3D,
     traits::{facet_common::FacetCommon, habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
@@ -40,26 +37,6 @@ impl Habit for Instance {
                 }
                 // update
                 t.update(dt);
-            }
-        });
-
-        // pull out tween data and assign to target of type transform2d
-        context.edit::<(&Tween, &mut Transform2D)>(|q| {
-            for (_, (tween, transform)) in q {
-                // not enabled
-                if !transform.form().enabled_in_hierachy() {
-                    continue;
-                }
-                //update tween
-                for t in &tween.tweens {
-                    if let Some(p) = t.as_any().downcast_ref::<TweenTransform2DPosition>() {
-                        transform.position = p.p_t;
-                    } else if let Some(r) = t.as_any().downcast_ref::<TweenTransform2DRotation>() {
-                        transform.rotation = r.p_t;
-                    } else if let Some(s) = t.as_any().downcast_ref::<TweenTransform2DScale>() {
-                        transform.scale = s.p_t;
-                    }
-                }
             }
         });
 

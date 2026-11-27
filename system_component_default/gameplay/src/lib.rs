@@ -34,7 +34,6 @@ pub mod built_in {
         //     pub mod collider_sphere;
         // }
         pub mod transform {
-            pub mod transform2d;
             pub mod transform3d;
         }
         // pub mod renderer {

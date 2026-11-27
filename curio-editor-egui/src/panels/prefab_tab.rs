@@ -505,13 +505,13 @@ fn component_block(ui: &mut Ui, state: &EditorState, comp: &PrefabComponentRaw, 
                 .collect();
 
             for field in known_fields.iter().chain(extra_fields.iter()) {
-                field_row(ui, comp, field, comp.kind == "Transform2D", index, path, actions, project_root);
+                field_row(ui, comp, field, index, path, actions, project_root);
             }
         });
 }
 
 #[allow(clippy::too_many_arguments)]
-fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is2d: bool, comp_index: usize, path: &[usize], actions: &mut Vec<PrefabAction>, project_root: &str) {
+fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, comp_index: usize, path: &[usize], actions: &mut Vec<PrefabAction>, project_root: &str) {
     let value = comp.fields.iter().find_map(|f| {
         let (k, v) = prefab_types::split_field(f);
         (k == field.name).then_some(v)
@@ -525,10 +525,6 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
                 EntryType::Vector3 => &["x", "y", "z"],
                 _ => &["x", "y", "z", "w"],
             };
-            // Transform fields (position/rotation/scale) get the 2D/3D
-            // arity handling from prefab_types; generic Vector* facet
-            // fields just use their declared arity directly.
-            let is_transform_field = prefab_types::is_transform(&comp.kind) && matches!(field.name.as_str(), "position" | "rotation" | "scale");
 
             ui.horizontal(|ui| {
                 ui.label(
@@ -541,11 +537,6 @@ fn field_row(ui: &mut Ui, comp: &PrefabComponentRaw, field: &FieldDescriptor, is
                     nums.resize(axes.len(), 0.0);
                     let mut changed = false;
                     for (i, axis) in axes.iter().enumerate() {
-                        // For a Transform2D's position/scale, only show X/Y
-                        // (Z stays implicit), matching TransformRow's filter.
-                        if is_transform_field && is2d && field.name != "rotation" && *axis == "z" {
-                            continue;
-                        }
                         ui.label(
                             RichText::new(axis.to_uppercase())
                                 .small()

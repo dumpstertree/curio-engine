@@ -18,7 +18,7 @@
 //! through `spawn_prefab_recursive_internal` as-is):
 //! - `FRAME`/`GROUP`/`INSTANCE` -> `uinode` panels; auto-layout frames float in
 //!   taffy row-flow with `gap` from `itemSpacing`, free-form frames (no
-//!   auto-layout) get `absolute: true` + a pixel `transform2d` offset, so they
+//!   auto-layout) get `absolute: true` + a pixel `transform3d` offset, so they
 //!   hang at Figma's own parent-relative position inside the nearest UI
 //!   ancestor (the habit's one new authored field - the rest of §7b stays open)
 //! - `TEXT` -> `uinode` kind `text` with `text`, `font_size` (px), fill `color`
@@ -31,10 +31,9 @@
 //! Registry note: the component key is `type_name`'s last segment lowercased
 //! (`UiNode` -> `uinode`), so the importer emits `kind: "uinode"`, not `ui_node`.
 //!
-//! Coordinates: leaf placement is a `transform2d` position in Figma's own
+//! Coordinates: leaf placement is a `transform3d` position in Figma's own
 //! parent-relative pixels with y DOWN - `ui_overlay`'s UiRect grows down like
-//! Figma, so the old frustum y-flip (and its M3 calibration) is gone: UI never
-//! touches `Transform2D::get_matrix`.
+//! Figma, so no y-flip. Its z is the paint layer, taken from the layer order.
 //!
 //! Still parked (plan 7b): flex direction/justify/align fields, authored
 //! absolute placement for frames, textures on image nodes, gradients/strokes/
@@ -411,7 +410,7 @@ fn subst4(templ: &str, a: String, b: String, c: String, d: String) -> String {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// IR -> ui_overlay comp: frames/groups/instances become `uinode` panels,
-/// leaves carry a `uinode` plus a `transform2d` whose position is Figma's own
+/// leaves carry a `uinode` plus a `transform3d` whose position is Figma's own
 /// parent-relative pixels (y down - UiRect grows down like Figma, no flip).
 /// Panels float in taffy flow (placement is a plan 7b gap); leaves are exact.
 pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> PrefabGameObjectRaw {
@@ -435,7 +434,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
             warnings.push(subst1("'{0}' uses vertical auto-layout - flow is row-only today, child order kept", node.name.clone()));
         }
         // free-form frames (no auto-layout) keep their Figma placement: the
-        // `absolute` flag hangs the panel at its own Transform2D offset inside
+        // `absolute` flag hangs the panel at its own Transform3D offset inside
         // the nearest UI ancestor, mirroring Figma's parent-relative x/y
         let free_form = node.layout_mode.is_empty() || node.layout_mode == "NONE";
         if free_form {
@@ -444,8 +443,8 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
         components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
         if free_form {
             let mut tf = Vec::new();
-            tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
-            components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+            tf.push(join_field("position", &format_tuple(&[node.tx, node.ty, 0.0])));
+            components.push(PrefabComponentRaw { kind: "transform3d".to_string(), fields: tf });
         }
     } else if node.kind == "TEXT" {
         let mut fields = Vec::new();
@@ -462,13 +461,12 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
         if !node.fill_hex.is_empty() {
             fields.push(join_field("color", &node.fill_hex));
         }
-        fields.push(join_field("z_index", &order.to_string()));
         components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
         let mut tf = Vec::new();
-        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
-        components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty, order as f32])));
+        components.push(PrefabComponentRaw { kind: "transform3d".to_string(), fields: tf });
         if node.roll_deg.abs() > 0.001 {
-            warnings.push(subst1("'{0}' is rotated - ui_overlay offsets are axis-aligned, rotation dropped", node.name.clone()));
+            warnings.push(subst1("'{0}' is rotated - not imported yet: Figma turns about the corner, ui_overlay about the centre", node.name.clone()));
         }
     } else if node.image_fill {
         let mut fields = Vec::new();
@@ -479,11 +477,10 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
         if node.height > 0.0 {
             fields.push(join_field("height", &numstr(node.height)));
         }
-        fields.push(join_field("z_index", &order.to_string()));
         components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
         let mut tf = Vec::new();
-        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
-        components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty, order as f32])));
+        components.push(PrefabComponentRaw { kind: "transform3d".to_string(), fields: tf });
         warnings.push(subst1("image node '{0}' paints as a flat quad - its PNG is exported but ui_overlay has no texture sampling yet (plan 7b)", node.name.clone()));
     } else if !node.fill_hex.is_empty() {
         let mut fields = Vec::new();
@@ -495,13 +492,12 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
             fields.push(join_field("height", &numstr(node.height)));
         }
         fields.push(join_field("color", &node.fill_hex));
-        fields.push(join_field("z_index", &order.to_string()));
         components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
         let mut tf = Vec::new();
-        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
-        components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
+        tf.push(join_field("position", &format_tuple(&[node.tx, node.ty, order as f32])));
+        components.push(PrefabComponentRaw { kind: "transform3d".to_string(), fields: tf });
         if node.roll_deg.abs() > 0.001 {
-            warnings.push(subst1("'{0}' is rotated - ui_overlay offsets are axis-aligned, rotation dropped", node.name.clone()));
+            warnings.push(subst1("'{0}' is rotated - not imported yet: Figma turns about the corner, ui_overlay about the centre", node.name.clone()));
         }
     } else if node.children.is_empty() {
         warnings.push(subst2("'{0}' ({1}) got no ui facet - bake it in Figma or extend the importer", node.name.clone(), node.kind.clone()));
@@ -1123,8 +1119,9 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
         }
     }
     assert!(text_ok);
-    assert!(yaml.contains("position: (20.0,12.0)"));
-    assert!(!yaml.contains("(20.0,-12.0)"));
+    assert!(yaml.contains("position: (20.0,12.0,0.0)"));
+    assert!(!yaml.contains("(20.0,-12.0"));
+    assert!(yaml.contains("transform3d") && !yaml.contains("transform2d") && !yaml.contains("z_index"));
 
     // image leaf: kind image + a flat-quad warning (no texture sampling yet)
     let mut image_ok = false;
@@ -1145,7 +1142,7 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
         }
     }
     assert!(card_ok);
-    assert!(yaml.contains("position: (60.0,30.0)"));
+    assert!(yaml.contains("position: (60.0,30.0,0.0)"));
 
     // the whole doc speaks the ui_overlay registry key, not the old 3D facets
     assert!(yaml.contains("uinode"));

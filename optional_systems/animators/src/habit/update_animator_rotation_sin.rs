@@ -1,7 +1,7 @@
 use crate::facet::animator::animator_rotation_sin::AnimatorRotationSin;
 use curio_core::{Ledger, Nerve, NetworkModes, Quaternion};
 use gameplay::{
-    built_in::facet::transform::transform2d::Transform2D,
+    built_in::facet::transform::transform3d::Transform3D,
     context_3d::Context3D,
     traits::{facet_common::FacetCommon, habit::Habit, scope::Scope},
     traits_internal::world_context_common::ContextCommon,
@@ -25,8 +25,8 @@ impl Habit for Instance {
         let time = ledger.time().scaled_time as f32;
 
         // edit the forms in context
-        context3d.edit::<(&AnimatorRotationSin, &mut Transform2D)>(|x| {
-            for (_, (animator, transform2d)) in x {
+        context3d.edit::<(&AnimatorRotationSin, &mut Transform3D)>(|x| {
+            for (_, (animator, transform3d)) in x {
                 // guard - form disabled in hierarchy
                 if !animator.form().enabled_in_hierachy() {
                     continue;
@@ -36,7 +36,7 @@ impl Habit for Instance {
                 let sin = if animator.enabled { f32::sin(animator.speed * time) } else { 0.0 };
                 let delta = animator.max - animator.min;
                 let target = animator.min + (delta * ((sin + 1.0) / 2.0));
-                transform2d.rotation = Quaternion::from_euler(target);
+                transform3d.rotation = Quaternion::from_euler(target);
             }
         });
     }
