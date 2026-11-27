@@ -16,7 +16,9 @@ impl CurioNetwork {
         &self.all
     }
 
-    /// Get my CurioNetworkParticipant data in this CurioNetwork
+    /// Get my CurioNetworkParticipant data in this CurioNetwork.
+    /// Panics if the network is empty or `me` was out of range at construction
+    /// (kept panic-based by design; callers must supply a valid seat).
     pub fn me(&self) -> &CurioNetworkParticipant {
         &self.all[self.me_index]
     }

@@ -33,6 +33,8 @@ members = [
     "optional_systems/lighting",
     "optional_systems/skybox",
     "optional_systems/tween",
+    "optional_systems/ui_overlay",
+    "optional_systems/ui_overlay_tests",
     "optional_systems/animators",
 
 ]
@@ -69,6 +71,7 @@ collision = { path = "optional_systems/collision" }
 skybox = { path = "optional_systems/skybox" }
 tween = { path = "optional_systems/tween" }
 animators = { path = "optional_systems/animators" }
+ui_overlay = { path = "optional_systems/ui_overlay" }
 curio_editor = { path = "curio_editor" }
 
 

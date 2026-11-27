@@ -1,7 +1,7 @@
 use curio_core::{FieldState, RecordOverride};
 use record::record;
 
-use crate::{CollisionPair, ColliderSnapshot};
+use crate::{ColliderSnapshot, CollisionPair};
 
 /// Every collider in the game as of the current frame, written by the collector
 /// habit in this crate and read by the physics plugin.
@@ -31,10 +31,6 @@ impl RecordOverride for SysRecordCollider {
 impl RecordOverride for SysRecordCollision {
     fn set_state(&mut self, _: &str, _: &str) {}
     fn get_state(&self) -> Vec<FieldState> {
-        vec![
-            FieldState::new("overlaps", self.overlaps.len().to_string()),
-            FieldState::new("started", self.started.len().to_string()),
-            FieldState::new("ended", self.ended.len().to_string()),
-        ]
+        vec![FieldState::new("overlaps", self.overlaps.len().to_string()), FieldState::new("started", self.started.len().to_string()), FieldState::new("ended", self.ended.len().to_string())]
     }
 }

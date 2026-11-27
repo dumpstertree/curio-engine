@@ -81,7 +81,10 @@ pub fn parse_tuple(value: &str) -> Vec<f32> {
     if inner.is_empty() {
         return Vec::new();
     }
-    inner.split(',').map(|s| s.trim().parse::<f32>().unwrap_or(0.0)).collect()
+    inner
+        .split(',')
+        .map(|s| s.trim().parse::<f32>().unwrap_or(0.0))
+        .collect()
 }
 
 /// Formats a float the way Rust's `f32` Display formatting tends to look —
@@ -102,16 +105,22 @@ fn format_num(n: f32) -> String {
 }
 
 pub fn format_tuple(nums: &[f32]) -> String {
-    format!("({})", nums.iter().map(|n| format_num(*n)).collect::<Vec<_>>().join(","))
+    format!(
+        "({})",
+        nums.iter()
+            .map(|n| format_num(*n))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
 }
 
-pub fn parse_vec2(value: &str) -> Vec2 {
-    let t = parse_tuple(value);
-    Vec2 { x: t.first().copied().unwrap_or(0.0), y: t.get(1).copied().unwrap_or(0.0) }
-}
 pub fn parse_vec3(value: &str) -> Vec3 {
     let t = parse_tuple(value);
-    Vec3 { x: t.first().copied().unwrap_or(0.0), y: t.get(1).copied().unwrap_or(0.0), z: t.get(2).copied().unwrap_or(0.0) }
+    Vec3 {
+        x: t.first().copied().unwrap_or(0.0),
+        y: t.get(1).copied().unwrap_or(0.0),
+        z: t.get(2).copied().unwrap_or(0.0),
+    }
 }
 pub fn format_vec2(v: Vec2) -> String {
     format_tuple(&[v.x, v.y])
@@ -174,7 +183,7 @@ pub struct FieldDescriptor {
 }
 
 pub fn is_transform(kind: &str) -> bool {
-    kind == "Transform2D" || kind == "Transform3D"
+    kind == "Transform3D"
 }
 pub fn is_renderer(kind: &str) -> bool {
     kind == "RendererStatic" || kind == "RendererDynamic"
@@ -184,13 +193,19 @@ pub fn is_renderer(kind: &str) -> bool {
 /// in facet.manifest — mirrors `BUILTIN_COMPONENT_FIELDS`.
 pub fn builtin_component_fields(kind: &str) -> Vec<FieldDescriptor> {
     match kind {
-        "Transform2D" | "Transform3D" => vec![
+        "Transform3D" => vec![
             FieldDescriptor { name: "position".to_string(), kind: EntryType::Vector3 },
             FieldDescriptor { name: "rotation".to_string(), kind: EntryType::Vector3 },
             FieldDescriptor { name: "scale".to_string(), kind: EntryType::Vector3 },
         ],
-        "RendererStatic" => vec![FieldDescriptor { name: "asset".to_string(), kind: EntryType::Asset(".glb".to_string()) }],
-        "RendererDynamic" => vec![FieldDescriptor { name: "asset".to_string(), kind: EntryType::Asset(".anim".to_string()) }],
+        "RendererStatic" => vec![FieldDescriptor {
+            name: "asset".to_string(),
+            kind: EntryType::Asset(".glb".to_string()),
+        }],
+        "RendererDynamic" => vec![FieldDescriptor {
+            name: "asset".to_string(),
+            kind: EntryType::Asset(".anim".to_string()),
+        }],
         _ => Vec::new(),
     }
 }
@@ -202,15 +217,14 @@ pub fn builtin_component_fields(kind: &str) -> Vec<FieldDescriptor> {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TransformFields {
     pub position: Vec3,
-    pub rotation: Vec3, // euler degrees, always 3 components even for Transform2D
+    pub rotation: Vec3, // euler degrees
     pub scale: Vec3,
 }
 
-/// Reads position/rotation/scale out of a Transform2D/Transform3D
+/// Reads position/rotation/scale out of a Transform3D
 /// component's fields, applying engine defaults when a field is absent:
 /// position (0,0,0), rotation (0,0,0), scale (1,1,1).
 pub fn read_transform_fields(comp: &PrefabComponentRaw) -> TransformFields {
-    let is2d = comp.kind == "Transform2D";
     let mut position = Vec3::default();
     let mut rotation = Vec3::default();
     let mut scale = Vec3 { x: 1.0, y: 1.0, z: 1.0 };
@@ -218,23 +232,9 @@ pub fn read_transform_fields(comp: &PrefabComponentRaw) -> TransformFields {
     for f in &comp.fields {
         let (key, val) = split_field(f);
         match key.as_str() {
-            "position" => {
-                position = if is2d {
-                    let v = parse_vec2(&val);
-                    Vec3 { x: v.x, y: v.y, z: 0.0 }
-                } else {
-                    parse_vec3(&val)
-                };
-            }
+            "position" => position = parse_vec3(&val),
             "rotation" => rotation = parse_vec3(&val),
-            "scale" => {
-                scale = if is2d {
-                    let t = parse_tuple(&val);
-                    Vec3 { x: t.first().copied().unwrap_or(1.0), y: t.get(1).copied().unwrap_or(1.0), z: t.get(2).copied().unwrap_or(1.0) }
-                } else {
-                    parse_vec3(&val)
-                };
-            }
+            "scale" => scale = parse_vec3(&val),
             _ => {}
         }
     }
@@ -242,14 +242,13 @@ pub fn read_transform_fields(comp: &PrefabComponentRaw) -> TransformFields {
 }
 
 /// Writes position/rotation/scale back into the component's fields,
-/// preserving 2D vs 3D tuple arity and leaving any other fields untouched.
+/// leaving any other fields untouched.
 pub fn write_transform_fields(comp: &PrefabComponentRaw, t: TransformFields) -> PrefabComponentRaw {
-    let is2d = comp.kind == "Transform2D";
     let mut fields = comp.fields.clone();
 
-    let pos_str = if is2d { format_tuple(&[t.position.x, t.position.y]) } else { format_vec3(t.position) };
+    let pos_str = format_vec3(t.position);
     let rot_str = format_vec3(t.rotation);
-    let scale_str = if is2d { format_tuple(&[t.scale.x, t.scale.y, t.scale.z]) } else { format_vec3(t.scale) };
+    let scale_str = format_vec3(t.scale);
 
     let mut set_or_append = |key: &str, value_str: String| {
         let entry = join_field(key, &value_str);
@@ -294,7 +293,13 @@ pub fn default_component(kind: &str) -> PrefabComponentRaw {
 }
 
 pub fn default_game_object(name: &str) -> PrefabGameObjectRaw {
-    PrefabGameObjectRaw { enabled: true, name: name.to_string(), base: None, components: Vec::new(), children: Vec::new() }
+    PrefabGameObjectRaw {
+        enabled: true,
+        name: name.to_string(),
+        base: None,
+        components: Vec::new(),
+        children: Vec::new(),
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,7 +337,12 @@ pub fn set_node_at_path(root: &PrefabGameObjectRaw, path: &[usize], next: Prefab
 
 /// Add or replace a field on a component by key.
 pub fn set_component_field(comp: &PrefabComponentRaw, key: &str, value: &str) -> PrefabComponentRaw {
-    let mut fields: Vec<String> = comp.fields.iter().filter(|f| split_field(f).0 != key).cloned().collect();
+    let mut fields: Vec<String> = comp
+        .fields
+        .iter()
+        .filter(|f| split_field(f).0 != key)
+        .cloned()
+        .collect();
     fields.push(join_field(key, value));
     PrefabComponentRaw { kind: comp.kind.clone(), fields }
 }

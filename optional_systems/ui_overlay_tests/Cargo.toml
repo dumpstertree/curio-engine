@@ -1,0 +1,12 @@
+[package]
+name = "ui_overlay-tests"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ui_overlay = { workspace = true }
+curio_core = { workspace = true }
+camera = { workspace = true }
+gameplay = { workspace = true }
+hecs = "0.10.5" # same pin as gameplay — the habit tests build a world
+input = { workspace = true }

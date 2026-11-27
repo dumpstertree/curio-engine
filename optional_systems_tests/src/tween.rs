@@ -3,6 +3,7 @@ mod tests {
     use std::sync::atomic::{AtomicI32, Ordering};
     use std::sync::Arc;
 
+    use gameplay::traits::field_override::FieldOverride;
     use tween::built_in::tween_transform3d_position::TweenTransform3DPosition;
     use tween::built_in::tween_transform3d_rotation::TweenTransform3DRotation;
     use tween::data::curve::TweenCurve;
@@ -10,7 +11,6 @@ mod tests {
     use tween::data::tween_state::TweenState;
     use tween::data::tween_target::TweenTarget;
     use tween::facet::tween::Tween;
-    use gameplay::traits::field_override::FieldOverride;
 
     const EPSILON: f32 = 0.0001;
 
@@ -103,9 +103,14 @@ mod tests {
     fn finish_fires_completion_once() {
         let fired = Arc::new(AtomicI32::new(0));
         let counter = fired.clone();
-        let mut state = TweenState::new(1.0, 0.0, TweenCurve::Linear, Some(Box::new(move || {
-            counter.fetch_add(1, Ordering::SeqCst);
-        })));
+        let mut state = TweenState::new(
+            1.0,
+            0.0,
+            TweenCurve::Linear,
+            Some(Box::new(move || {
+                counter.fetch_add(1, Ordering::SeqCst);
+            })),
+        );
         state.finish();
         state.finish();
         assert_eq!(fired.load(Ordering::SeqCst), 1);
@@ -150,7 +155,10 @@ mod tests {
 
     #[test]
     fn position_tween_holds_during_delay() {
-        let mut tween = TweenTransform3DPosition::builder().delay(0.5).duration(1.0).build();
+        let mut tween = TweenTransform3DPosition::builder()
+            .delay(0.5)
+            .duration(1.0)
+            .build();
         assert!(!tween.update(0.25));
         assert!(!tween.update(0.25));
         assert!(!tween.update(0.9));
@@ -185,7 +193,9 @@ mod tests {
 
     #[test]
     fn tween_facet_apply_is_inert() {
-        let mut tween = Tween::builder().add_tween(TweenTransform3DPosition::builder().build()).build();
+        let mut tween = Tween::builder()
+            .add_tween(TweenTransform3DPosition::builder().build())
+            .build();
         tween.apply("anything", "whatever");
         assert_eq!(tween.tweens.len(), 1);
         assert!(tween.get_state().is_empty());

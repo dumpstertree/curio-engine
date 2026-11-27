@@ -63,12 +63,7 @@ impl FieldOverride for RendererDynamic {
         // ("asset: <name>"), but no name is stored on the loaded asset, so a placeholder here would
         // be fed back through apply() and fail the lookup (see FormBuilder3D::facet re-applying
         // state onto an existing facet).
-        vec![
-            FieldState::new("enabled", self.enabled),
-            FieldState::new("tint", self.tint),
-            FieldState::new("animation", self.animation.clone()),
-            FieldState::new("looping", self.looping),
-        ]
+        vec![FieldState::new("enabled", self.enabled), FieldState::new("tint", self.tint), FieldState::new("animation", self.animation.clone()), FieldState::new("looping", self.looping)]
     }
 }
 impl RendererDynamic {

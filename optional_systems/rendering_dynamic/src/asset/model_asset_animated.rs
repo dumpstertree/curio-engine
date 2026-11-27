@@ -1,5 +1,6 @@
 use curio_core::{ASSET_UID_SHADER_LIT, AssetCommon, Assets, ExtensionsF32, Matrix4x4, TextureAsset};
 
+use crate::spine::{AnimationState, AnimationStateData, Atlas, Skeleton, SkeletonData, SkeletonJson};
 use egui::ahash::HashMap;
 use ext_rendering::{
     Material, Mesh,
@@ -7,7 +8,6 @@ use ext_rendering::{
 };
 use rayon::prelude::*;
 use rendering_static::ModelAsset;
-use rusty_spine::{AnimationState, AnimationStateData, Atlas, Skeleton, SkeletonData, SkeletonJson};
 use std::{error::Error, io::Cursor};
 use std::{sync::Arc, time::Instant};
 use zip::ZipArchive;

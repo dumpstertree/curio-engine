@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::AnyMap;
+    use curio_core::{AnyMap, GetError};
 
     #[derive(Clone)]
     struct MapProbeA {
@@ -42,10 +42,7 @@ mod tests {
         map.insert(5, MapProbeA { value: 1 });
         map.insert(5, MapProbeB { value: 2 });
 
-        assert!(
-            map.get::<MapProbeA, i32>(&5).is_none(),
-            "old value must be replaced, not kept alongside",
-        );
+        assert!(map.get::<MapProbeA, i32>(&5).is_none(), "old value must be replaced, not kept alongside",);
         let Some(seen) = map.get::<MapProbeB, i32>(&5) else { panic!("expected Some") };
         assert_eq!(seen.value, 2);
     }
@@ -69,10 +66,7 @@ mod tests {
         map.insert(5, MapProbeA { value: 4 });
 
         assert!(map.get::<MapProbeA, i32>(&77).is_none(), "missing key");
-        assert!(
-            map.get::<MapProbeB, i32>(&5).is_none(),
-            "wrong type under a present key",
-        );
+        assert!(map.get::<MapProbeB, i32>(&5).is_none(), "wrong type under a present key",);
     }
 
     #[test]
@@ -81,12 +75,11 @@ mod tests {
         map.insert(5, MapProbeA { value: 4 });
 
         assert!(map.get_result::<MapProbeA, i32>(&5).is_ok());
-        assert!(map.get_result::<MapProbeA, i32>(&77).is_err());
-        assert!(map.get_result::<MapProbeB, i32>(&5).is_err());
+        assert!(matches!(map.get_result::<MapProbeA, i32>(&77), Err(GetError::EmptyKey)));
+        assert!(matches!(map.get_result::<MapProbeB, i32>(&5), Err(GetError::MismatchedType)));
 
-        // Note: GetError::EmptyKey vs GetError::MismatchedType cannot be pinned
-        // from outside the crate - the collections submodules are pub(crate)
-        // and GetError has no root re-export (see audit_findings.md).
+        // FIXED: GetError is re-exported at the crate root, so the EmptyKey vs
+        // MismatchedType distinction is now observable from outside the crate.
     }
 
     // =========================================================

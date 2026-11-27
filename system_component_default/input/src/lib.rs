@@ -111,22 +111,27 @@ impl SysRecordInput {
     /// Is the mapped action currently held down? False when unmapped.
     #[inline]
     pub fn is_down(&self, action: &str) -> bool {
-        self.first_mapped().is_some_and(|m| m.get_button_or_default(action).is_down)
+        self.first_mapped()
+            .is_some_and(|m| m.get_button_or_default(action).is_down)
     }
     /// Did the mapped action transition to down this frame? False when unmapped.
     #[inline]
     pub fn is_pressed(&self, action: &str) -> bool {
-        self.first_mapped().is_some_and(|m| m.get_button_or_default(action).went_down)
+        self.first_mapped()
+            .is_some_and(|m| m.get_button_or_default(action).went_down)
     }
     /// Did the mapped action transition to up this frame? False when unmapped.
     #[inline]
     pub fn is_released(&self, action: &str) -> bool {
-        self.first_mapped().is_some_and(|m| m.get_button_or_default(action).went_up)
+        self.first_mapped()
+            .is_some_and(|m| m.get_button_or_default(action).went_up)
     }
     /// The mapped axis value. Zero when unmapped.
     #[inline]
     pub fn axis(&self, action: &str) -> Vector2 {
-        self.first_mapped().map(|m| m.get_axis_or_default(action).position).unwrap_or_default()
+        self.first_mapped()
+            .map(|m| m.get_axis_or_default(action).position)
+            .unwrap_or_default()
     }
 }
 

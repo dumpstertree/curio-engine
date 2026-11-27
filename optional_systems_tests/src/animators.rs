@@ -16,11 +16,7 @@ mod tests {
 
     #[test]
     fn defaults_match_across_animators() {
-        let defaults = [
-            AnimatorPositionSin::default().get_state(),
-            AnimatorRotationSin::default().get_state(),
-            AnimatorScaleSin::default().get_state(),
-        ];
+        let defaults = [AnimatorPositionSin::default().get_state(), AnimatorRotationSin::default().get_state(), AnimatorScaleSin::default().get_state()];
         for fields in defaults {
             assert_eq!(state(&fields, "enabled").as_bool(), Some(false));
             assert_eq!(state(&fields, "speed").as_f64(), Some(1.0));
@@ -42,11 +38,16 @@ mod tests {
         assert_eq!(position.max, Vector3::new(3.0, 4.0, 5.0));
         assert_eq!(position.speed, 2.5);
 
-        let rotation = AnimatorRotationSin::builder().enabled(true).speed(0.25).build();
+        let rotation = AnimatorRotationSin::builder()
+            .enabled(true)
+            .speed(0.25)
+            .build();
         assert!(rotation.enabled);
         assert_eq!(rotation.speed, 0.25);
 
-        let scale = AnimatorScaleSin::builder().min(Vector3::new(0.1, 0.1, 0.1)).build();
+        let scale = AnimatorScaleSin::builder()
+            .min(Vector3::new(0.1, 0.1, 0.1))
+            .build();
         assert_eq!(scale.min, Vector3::new(0.1, 0.1, 0.1));
     }
 
@@ -94,7 +95,10 @@ mod tests {
 
     #[test]
     fn get_state_exposes_all_fields() {
-        let animator = AnimatorPositionSin::builder().enabled(true).speed(9.0).build();
+        let animator = AnimatorPositionSin::builder()
+            .enabled(true)
+            .speed(9.0)
+            .build();
         let fields = animator.get_state();
         assert_eq!(fields.len(), 4);
         assert_eq!(state(&fields, "enabled").as_bool(), Some(true));

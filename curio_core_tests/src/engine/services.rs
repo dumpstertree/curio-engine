@@ -1,10 +1,7 @@
 #[cfg(test)]
 use curio_core::{AssetCache, AssetDatabase, AssetPipeline, Gpu, Logger, Services, Severity};
 #[cfg(test)]
-use std::{
-    ptr,
-    sync::LazyLock,
-};
+use std::{ptr, sync::LazyLock};
 
 /// Initialises the global Services singleton once for the whole test binary.
 /// Engine-layer code paths (Curio::log, Ledger::write without permission,
@@ -35,8 +32,8 @@ pub fn ensure_services() {
 
 #[cfg(test)]
 mod tests {
-    use curio_core::{Curio, Services, Severity};
     use crate::engine::services::ensure_services;
+    use curio_core::{Curio, Services, Severity};
 
     // Services::get() asserts the singleton was initialised. That assert is
     // only observable before any test has called ensure_services(), and
@@ -51,7 +48,9 @@ mod tests {
         // engine logging must land in the global Logger buffer
         let entries = Services::get().logger().drain();
         assert!(
-            entries.iter().any(|entry| entry.1.contains("services initialised")),
+            entries
+                .iter()
+                .any(|entry| entry.1.contains("services initialised")),
             "Curio::log must buffer into the shared Logger",
         );
     }

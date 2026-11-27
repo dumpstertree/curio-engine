@@ -1,1 +1,3 @@
 /target
+# crash dumps from the proc-macro lib tests (vault bug b-hbqn)
+core.[0-9]*

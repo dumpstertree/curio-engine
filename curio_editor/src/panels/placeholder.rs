@@ -21,7 +21,11 @@ pub fn show(ui: &mut Ui, tab: TopTab) {
 
             ui.add_space(8.0);
             ui.label(RichText::new(label).color(theme::TEXT_SECONDARY));
-            ui.label(RichText::new("Not yet implemented").small().color(theme::TEXT_MUTED));
+            ui.label(
+                RichText::new("Not yet implemented")
+                    .small()
+                    .color(theme::TEXT_MUTED),
+            );
         });
     });
 }

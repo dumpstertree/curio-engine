@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{FieldState, GlobalRecords, RecordCommon, RecordOverride, RecordScope, RecordSynchronizer};
     use crate::engine::services::ensure_services;
+    use curio_core::{FieldState, GlobalRecords, RecordCommon, RecordOverride, RecordScope, RecordSynchronizer};
     use serde::Deserialize;
     use serde::Serialize;
 
@@ -137,8 +137,48 @@ mod tests {
         assert_eq!(recovered.value, 42);
     }
 
-    // Note: the deserialize-None paths (unregistered id / registration without
-    // deserialize_fn) are unreachable from outside the crate because the
-    // payload field is private and RecordSynchronizer can only be produced by
-    // a successful serialize.
+    // =========================================================
+    // Deserialize failures (reachable now that payload is pub)
+    // =========================================================
+
+    #[test]
+    fn unregistered_id_deserializes_to_none() {
+        ensure_services();
+        // 9992 was never registered with GlobalRecords
+        let sync = RecordSynchronizer {
+            record_id: 9992,
+            record_scope: RecordScope::Host,
+            payload: vec![],
+        };
+        assert!(sync.deserialize().is_none(), "unregistered ids must yield None");
+    }
+
+    #[test]
+    fn registration_without_deserialize_fn_deserializes_to_none() {
+        ensure_services();
+        // register() stores no deserialize fn - the deserialize attempt must bail
+        // with None rather than a panic
+        GlobalRecords::register::<RecordSyncNoSerde>();
+
+        let sync = RecordSynchronizer {
+            record_id: 9004,
+            record_scope: RecordScope::Instance,
+            payload: vec![0],
+        };
+        assert!(sync.deserialize().is_none());
+    }
+
+    #[test]
+    fn corrupt_payload_deserializes_to_none() {
+        ensure_services();
+        GlobalRecords::register_serializable::<RecordSyncProbe>();
+
+        // 3 bytes cannot be a bincode-encoded RecordSyncProbe (i32 needs 4)
+        let sync = RecordSynchronizer {
+            record_id: 9003,
+            record_scope: RecordScope::Host,
+            payload: vec![1, 2, 3],
+        };
+        assert!(sync.deserialize().is_none(), "corrupt payloads must yield None, not a panic");
+    }
 }

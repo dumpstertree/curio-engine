@@ -1,5 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use curio_core::{Services, ExtensionsF32};
+use curio_core::{ExtensionsF32, Services};
 use egui_wgpu::wgpu::{BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferDescriptor, BufferUsages, ShaderStages};
 use serde::{Deserialize, Serialize};
 use std::{hash::Hash, num::NonZeroU64};

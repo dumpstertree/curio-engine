@@ -4,14 +4,13 @@ use crate::{
         // camera::Camera,
         // light::Light,
         // renderer::{renderer_dynamic::RendererDynamic, renderer_image::RendererImage, renderer_static::RendererStatic, renderer_text::RendererText},
-        transform::{transform2d::Transform2D, transform3d::Transform3D},
+        transform::transform3d::Transform3D,
         // tween::tween::Tween,
     },
     static_data::global_components::register_global_component,
 };
 pub fn register_built_in_component() {
     register_global_component::<Transform3D>();
-    register_global_component::<Transform2D>();
     // register_global_component::<RendererStatic>();
     // register_global_component::<RendererDynamic>();
     // register_global_component::<RendererText>();

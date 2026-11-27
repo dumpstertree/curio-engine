@@ -33,7 +33,12 @@ pub fn show(ui: &mut Ui, state: &EditorState) {
 
         if let Some(tgs) = &state.tab_group_state {
             let instance_count = tgs.id_for_tabs.len();
-            let node_count: usize = tgs.id_for_tabs.values().flatten().map(|tab| count_objects(&tab.objects)).sum();
+            let node_count: usize = tgs
+                .id_for_tabs
+                .values()
+                .flatten()
+                .map(|tab| count_objects(&tab.objects))
+                .sum();
 
             if node_count > 0 {
                 ui.separator();

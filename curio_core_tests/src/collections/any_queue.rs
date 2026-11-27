@@ -78,10 +78,7 @@ mod tests {
         queue.push(QueueProbeB { value: 7 });
 
         assert!(queue.has_type::<QueueProbeB>());
-        assert!(
-            !queue.has_type::<QueueProbeA>(),
-            "absent types must report false",
-        );
+        assert!(!queue.has_type::<QueueProbeA>(), "absent types must report false",);
     }
 
     #[test]

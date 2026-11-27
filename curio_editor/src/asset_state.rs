@@ -10,6 +10,7 @@
 //! executes — this avoids fighting the borrow checker over mutating the
 //! tree while also reading it mid-traversal.
 
+use crate::figma::{FigmaEvent, FigmaState};
 use crate::fs_ops::{self, DirEntry, MetaFile};
 use std::sync::mpsc::{Receiver, TryRecvError};
 
@@ -98,6 +99,11 @@ pub struct AssetState {
     // and polling this channel each frame (see `poll_import`) keeps the UI
     // thread — and so the window's responsiveness — unaffected.
     pending_import: Option<(String, Receiver<Option<String>>)>,
+
+    // Figma import: dialog inputs + in-flight job thread's event channel.
+    // See `crate::figma::FigmaState` for what each field means; `start`
+    // spawns the job, `poll_figma` drains it.
+    pub figma: FigmaState,
 }
 
 impl AssetState {
@@ -112,6 +118,7 @@ impl AssetState {
             rename_draft: String::new(),
             confirming_delete_path: None,
             pending_import: None,
+            figma: FigmaState::new(),
         }
     }
 
@@ -171,6 +178,51 @@ impl AssetState {
             }
             Err(TryRecvError::Empty) => {} // still picking
             Err(TryRecvError::Disconnected) => self.pending_import = None,
+        }
+    }
+
+    /// Call once per frame after `poll_import` — drains whatever the Figma
+    /// import job thread (spawned by `FigmaState::start`) has reported so far,
+    // appends it to the dialog's progress list, and refreshes the tree +
+    // manifest once the run finishes (the `.comp`/PNG writes land under the
+    // job's target dir).
+    pub fn poll_figma(&mut self, project_root: &str) {
+        // Same borrow shape as `poll_import`: borrows `self.figma.job` only
+        // within this expression; everything below works on owned data.
+        let polled = self.figma.job.as_ref().map(|(dir, rx)| {
+            let mut batch: Vec<FigmaEvent> = Vec::new();
+            let mut dropped = false;
+            loop {
+                match rx.try_recv() {
+                    Ok(event) => batch.push(event),
+                    Err(TryRecvError::Empty) => break,
+                    Err(TryRecvError::Disconnected) => {
+                        dropped = true;
+                        break;
+                    }
+                }
+            }
+            (dir.clone(), batch, dropped)
+        });
+        let Some((target_dir, events, dropped)) = polled else { return };
+
+        for event in events {
+            match event {
+                FigmaEvent::Progress(msg) => {
+                    // The dialog shows these newest-last; cap keeps a
+                    // pathological warning storm from growing state forever.
+                    if self.figma.progress.len() < 80 {
+                        self.figma.progress.push(msg);
+                    }
+                }
+                FigmaEvent::Done(msg) => self.figma.summary = Some(msg),
+                FigmaEvent::Error(msg) => self.figma.error = Some(msg),
+            }
+        }
+        if dropped || self.figma.summary.is_some() || self.figma.error.is_some() {
+            self.figma.job = None;
+            self.refresh_dir(&target_dir);
+            let _ = fs_ops::rebuild_manifest(project_root);
         }
     }
 
@@ -307,6 +359,14 @@ impl AssetState {
                     let _ = fs_ops::rebuild_manifest(project_root);
                 }
             }
+
+            // Opens the dialog (`panels/figma_tab.rs`) targeting this dir -
+            // the run itself starts from the dialog's button, not here, so the
+            // user can fill the URL/token before anything hits the network.
+            TreeAction::FigmaDialog(target_dir) => {
+                self.figma.dialog_open = true;
+                self.figma.target_dir = target_dir;
+            }
         }
     }
 }
@@ -349,4 +409,5 @@ pub enum TreeAction {
     Import(String),
     NewFolder(String),
     NewComp(String),
+    FigmaDialog(String),
 }

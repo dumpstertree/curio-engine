@@ -36,7 +36,7 @@ use crate::runner::{
 use curio_core::AssetDatabase;
 use curio_core::AssetPipeline;
 use curio_core::{AssetCache, Severity};
-use curio_core::{ButtonCode, AxisCode, ButtonPressed, Vector3};
+use curio_core::{AxisCode, ButtonCode, ButtonPressed, Vector3};
 use curio_core::{ComponentState, Curio, CurioCommon, Gpu, Logger, PluginGroupState, Services};
 
 use egui_wgpu::wgpu::{Adapter, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor};
@@ -79,8 +79,15 @@ pub static SHARED_DATA: Lazy<Mutex<SharedGameData>> = Lazy::new(|| Mutex::new(Sh
 #[serde(tag = "type")]
 pub enum InputEvent {
     /// Keyboard key or mouse button (`ButtonCode::MousePrimary` / `MouseSecondary`).
-    Button { code: ButtonCode, pressed: bool },
-    Axis { code: AxisCode, x: f32, y: f32 },
+    Button {
+        code: ButtonCode,
+        pressed: bool,
+    },
+    Axis {
+        code: AxisCode,
+        x: f32,
+        y: f32,
+    },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,7 +137,9 @@ impl AppInstance {
                 self.app_instance.curio.input_button(code, state);
             }
             InputEvent::Axis { code, x, y } => {
-                self.app_instance.curio.input_axis(code, Vector3::new(x, y, 0.0));
+                self.app_instance
+                    .curio
+                    .input_axis(code, Vector3::new(x, y, 0.0));
             }
         }
     }
@@ -442,7 +451,11 @@ pub fn expected_plugin_stem(project_path: &str) -> Option<String> {
 pub fn load_curio(folder: &Path, gpu: *const Services, preferred_stem: Option<&str>) -> LoadedCurio {
     println!("folder: {}", folder.as_os_str().to_str().unwrap());
     let entries = std::fs::read_dir(folder).unwrap_or_else(|e| panic!("plugins folder not found at {:?}: {e}", folder));
-    let mut plugins: Vec<_> = entries.flatten().map(|e| e.path()).filter(|path| matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"))).collect();
+    let mut plugins: Vec<_> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|path| matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib")))
+        .collect();
     // A build dir may hold plugins from other projects (shared targets,
     // leftovers). Always try this project's own crate first, so 'first .so
     // with a curio_init wins' can never boot somebody else's game.

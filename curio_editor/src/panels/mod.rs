@@ -1,6 +1,7 @@
 pub mod asset_tab;
 pub mod asset_tree;
 pub mod center_panel;
+pub mod figma_tab;
 pub mod inspector;
 pub mod left_panel;
 pub mod object_tree;

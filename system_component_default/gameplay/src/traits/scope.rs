@@ -1,4 +1,4 @@
-use curio_core::{NetworkModes, Ledger};
+use curio_core::{Ledger, NetworkModes};
 
 pub trait Scope {
     fn is_enabled(&mut self, ledger: &mut Ledger) -> bool;
