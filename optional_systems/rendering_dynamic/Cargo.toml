@@ -17,11 +17,10 @@ record = { workspace = true }
 serde = { version = "1.0.104", features = ["derive"] }
 bytemuck = { version = "1.16", features = ["derive"] }
 ctor = "0.8.0"
-rusty_spine = { path = "../../../rusty_spine3.8" }
-zip = "0.6"
+mint = "0.5"
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
 rayon = "1.11.0"
 egui = "0.31.1"
-libc = "0.2"
 
 [dependencies.image]
 version = "0.24"

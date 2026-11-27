@@ -4,11 +4,11 @@
 //! `AnimViewport.tsx` was checked directly for this feature — it turns out
 //! to be a plain zip containing three files: `skeleton.atlas`,
 //! `skeleton.json` (Spine's "3.8 native" JSON export — no version-shim
-//! needed), and `skeleton.png`. That maps directly onto `rusty_spine`.
+//! needed), and `skeleton.png`. That maps directly onto `rendering_dynamic::spine`.
 //!
 //! Scope cuts, clearly called out:
 //! - **Single atlas page only.** The `.anim` format always bundles exactly
-//!   one `skeleton.png`, so rather than wiring up `rusty_spine`'s
+//!   one `skeleton.png`, so rather than wiring up `rendering_dynamic::spine`'s
 //!   process-global texture-callback registry (`set_create_texture_cb`/
 //!   `set_dispose_texture_cb`, meant for multi-page atlases with per-page
 //!   filtering/wrap settings), this just builds one wgpu texture from that
@@ -21,7 +21,7 @@
 //!   supports additive/multiply/screen blend modes per slot and a
 //!   premultiplied-alpha export option (see `atlas.pages().any(|p|
 //!   p.pma())`); a faithful renderer would need a small pipeline-per-blend-
-//!   state cache like the `rusty_spine` miniquad example does. Skipped here
+//!   state cache like the upstream rusty_spine miniquad example does. Skipped here
 //!   for the same reason GLB skipped materials — meaningfully separate
 //!   piece of work from "get the skeleton animating on screen."
 //! - **No dark-color tinting.** Vertex color only.
@@ -48,7 +48,7 @@
 use eframe::egui;
 use egui_wgpu::wgpu::{self, util::DeviceExt};
 use glam::Mat4;
-use rusty_spine::{
+use rendering_dynamic::spine::{
     controller::{SkeletonController, SkeletonControllerSettings},
     draw::{ColorSpace, CullDirection},
     AnimationStateData, Atlas, SkeletonJson,
@@ -164,7 +164,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 "#;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Global texture callbacks — rusty_spine requires these be set process-wide
+// Global texture callbacks — the spine runtime requires these be set process-wide
 // before parsing any Atlas. Since we bind our own single texture per
 // AnimPreview regardless of what the callback records, these just need to
 // exist (a real renderer_object must be present or the C runtime's page
@@ -177,14 +177,14 @@ static REGISTER_CALLBACKS: Once = Once::new();
 /// variables") — `()` doesn't qualify, hence this one-byte placeholder.
 /// Its value is never read; we bind our own single texture per
 /// `AnimPreview` regardless of what's stored here (see module doc).
-struct UnusedMarker(u8);
+struct UnusedMarker(#[allow(dead_code)] u8);
 
 fn ensure_callbacks_registered() {
     REGISTER_CALLBACKS.call_once(|| {
-        rusty_spine::extension::set_create_texture_cb(|atlas_page, _path| {
+        rendering_dynamic::spine::extension::set_create_texture_cb(|atlas_page, _path| {
             atlas_page.renderer_object().set(UnusedMarker(0));
         });
-        rusty_spine::extension::set_dispose_texture_cb(|atlas_page| unsafe {
+        rendering_dynamic::spine::extension::set_dispose_texture_cb(|atlas_page| unsafe {
             atlas_page.renderer_object().dispose::<UnusedMarker>();
         });
     });
