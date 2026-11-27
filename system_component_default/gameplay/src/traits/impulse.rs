@@ -1,6 +1,6 @@
 use crate::{context_3d::Context3D, traits::scope::Scope};
-use curio_core::Nerve;
 use curio_core::Ledger;
+use curio_core::Nerve;
 
 pub trait Impulse<T>: Scope
 where

@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::InputRaw;
-    use curio_core::ButtonState;
+    use curio_core::AxisCode;
     use curio_core::AxisState;
     use curio_core::ButtonCode;
-    use curio_core::AxisCode;
+    use curio_core::ButtonState;
+    use curio_core::InputRaw;
     use curio_core::Vector2;
     use std::collections::HashMap;
 

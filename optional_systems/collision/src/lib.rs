@@ -1,8 +1,8 @@
 pub use facet::collider::Collider;
 pub use facet::collider::ColliderBuilder;
 pub use facet::collider::ColliderShapeDef;
-pub use facet::collider::CollisionPair;
 pub use facet::collider::ColliderSnapshot;
+pub use facet::collider::CollisionPair;
 pub use facet::collider::Contact;
 pub use facet::collider::filters_match;
 pub use record::sys_record_physics::SysRecordCollider;

@@ -1,10 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{
-        CurioNetwork, CurioNetworkParticipant, GlobalImpulses, ImpulseCommon,
-        ImpulseScope, ImpulseSynchronizer, Nerve, NetworkModes,
-    };
     use crate::engine::services::ensure_services;
+    use curio_core::{CurioNetwork, CurioNetworkParticipant, GlobalImpulses, ImpulseCommon, ImpulseScope, ImpulseSynchronizer, Nerve, NetworkModes};
     use serde::Deserialize;
     use serde::Serialize;
     use std::{

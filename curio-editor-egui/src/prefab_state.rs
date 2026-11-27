@@ -140,7 +140,8 @@ impl PrefabState {
             }
             PrefabAction::AddChild(path) => {
                 if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
-                    node.children.push(prefab_types::default_game_object("New GameObject"));
+                    node.children
+                        .push(prefab_types::default_game_object("New GameObject"));
                 }
             }
             PrefabAction::RemoveChild(path) => {
@@ -195,7 +196,8 @@ impl PrefabState {
                 if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
                     if let Some(comp) = node.components.get_mut(comp_index) {
                         let key = prefab_types::split_field(&raw_field).0;
-                        comp.fields.retain(|f| prefab_types::split_field(f).0 != key);
+                        comp.fields
+                            .retain(|f| prefab_types::split_field(f).0 != key);
                         comp.fields.push(raw_field);
                     }
                 }
@@ -203,7 +205,8 @@ impl PrefabState {
             PrefabAction::RemoveComponentField(path, comp_index, key) => {
                 if let Some(node) = prefab_types::get_node_at_path_mut(&mut new_raw, &path) {
                     if let Some(comp) = node.components.get_mut(comp_index) {
-                        comp.fields.retain(|f| prefab_types::split_field(f).0 != key);
+                        comp.fields
+                            .retain(|f| prefab_types::split_field(f).0 != key);
                     }
                 }
             }

@@ -157,7 +157,8 @@ impl Form {
         if let Some(t) = self.get_facet::<Transform3D>() {
             return Some(t.position);
         }
-        self.get_facet::<Transform2D>().map(|t| t.position.to_vector3(0.0))
+        self.get_facet::<Transform2D>()
+            .map(|t| t.position.to_vector3(0.0))
     }
     /// Set the local position of whichever transform this form has (z is dropped for 2D).
     pub fn set_transform_position(&self, position: Vector3) {

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{GlobalImpulses, ImpulseCommon, ImpulseScope, ImpulseSynchronizer, ImpulseNetworkCapabilities, NetworkModes};
     use crate::engine::services::ensure_services;
+    use curio_core::{GlobalImpulses, ImpulseCommon, ImpulseNetworkCapabilities, ImpulseScope, ImpulseSynchronizer, NetworkModes};
     use serde::Deserialize;
     use serde::Serialize;
 
@@ -29,10 +29,7 @@ mod tests {
         // writable: instance-owned impulses never need to be sent anywhere
         for mode in NetworkModes::all() {
             let caps = ImpulseNetworkCapabilities::new(mode);
-            assert!(
-                !caps.has_write_privilege(ImpulseScope::Instance),
-                "instance-owned impulses are never synced",
-            );
+            assert!(!caps.has_write_privilege(ImpulseScope::Instance), "instance-owned impulses are never synced",);
         }
     }
 

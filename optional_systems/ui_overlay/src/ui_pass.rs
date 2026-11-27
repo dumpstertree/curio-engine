@@ -1,6 +1,10 @@
-use curio_core::{ASSET_UID_TEXTURE_FONT_ATLAS, Assets, GraphicsMapping, Ledger, Services, Severity, TextureAsset, Vector2};
-use egui_wgpu::wgpu::{self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, Buffer, BufferAddress, BufferDescriptor, BufferUsages, BlendState, CommandEncoder, ColorTargetState, ColorWrites, FragmentState, LoadOp, Operations, MultisampleState, PipelineLayout, PipelineLayoutDescriptor, PrimitiveState, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor, SamplerBindingType, ShaderModuleDescriptor, ShaderStages, ShaderSource, StoreOp, TextureFormat, TextureSampleType, TextureViewDimension, TextureView, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode};
 use bytemuck::{self, cast_slice};
+use curio_core::{ASSET_UID_TEXTURE_FONT_ATLAS, Assets, GraphicsMapping, Ledger, Services, Severity, TextureAsset, Vector2};
+use egui_wgpu::wgpu::{
+    self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingResource, BindingType, BlendState, Buffer, BufferAddress, BufferDescriptor, BufferUsages, ColorTargetState, ColorWrites, CommandEncoder, FragmentState, LoadOp,
+    MultisampleState, Operations, PipelineLayout, PipelineLayoutDescriptor, PrimitiveState, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor, SamplerBindingType, ShaderModuleDescriptor, ShaderSource, ShaderStages, StoreOp, TextureFormat, TextureSampleType,
+    TextureView, TextureViewDimension, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
+};
 use std::sync::Arc;
 
 use crate::{DEFAULT_FONT, SysRecordUi, UiDrawCall, UiFontDesc, UiFontGrid, UiKind, UiRect};
@@ -216,10 +220,7 @@ impl UiOverlayPass {
                 }
                 None => {
                     if ledger.len() > 0 {
-                        ledger[0].log(
-                            Severity::Warning,
-                            &"ui_overlay: default.font could not be parsed — text labels will be skipped",
-                        );
+                        ledger[0].log(Severity::Warning, &"ui_overlay: default.font could not be parsed — text labels will be skipped");
                     }
                 }
             }
@@ -323,11 +324,7 @@ impl UiOverlayPass {
             }));
             self.vertex_capacity = vertices.len();
         }
-        queue.write_buffer(
-            self.vertex_buffer.as_ref().unwrap(),
-            0,
-            bytemuck::cast_slice(&vertices),
-        );
+        queue.write_buffer(self.vertex_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&vertices));
 
         // load what post-process painted, blend the boxes over it
         let mut pass = encoder.begin_render_pass(&RenderPassDescriptor {

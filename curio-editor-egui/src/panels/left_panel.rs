@@ -9,20 +9,34 @@ pub fn show(ui: &mut Ui, state: &mut EditorState) {
 
         // ── Instance dropdown ───────────────────────────────────────────────
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Instance").small().color(theme::TEXT_SECONDARY));
+            ui.label(
+                RichText::new("Instance")
+                    .small()
+                    .color(theme::TEXT_SECONDARY),
+            );
 
-            let mut keys: Vec<String> = state.tab_group_state.as_ref().map(|t| t.id_for_tabs.keys().cloned().collect()).unwrap_or_default();
+            let mut keys: Vec<String> = state
+                .tab_group_state
+                .as_ref()
+                .map(|t| t.id_for_tabs.keys().cloned().collect())
+                .unwrap_or_default();
             keys.sort();
 
             let selected_label = if state.selected_instance.is_empty() { "No instances".to_string() } else { state.selected_instance.clone() };
 
-            egui::ComboBox::from_id_salt("instance_dropdown").selected_text(selected_label).width(ui.available_width()).show_ui(ui, |ui| {
-                for key in &keys {
-                    if ui.selectable_label(*key == state.selected_instance, key).clicked() {
-                        state.select_instance(key.clone());
+            egui::ComboBox::from_id_salt("instance_dropdown")
+                .selected_text(selected_label)
+                .width(ui.available_width())
+                .show_ui(ui, |ui| {
+                    for key in &keys {
+                        if ui
+                            .selectable_label(*key == state.selected_instance, key)
+                            .clicked()
+                        {
+                            state.select_instance(key.clone());
+                        }
                     }
-                }
-            });
+                });
         });
 
         ui.add_space(4.0);
@@ -42,7 +56,9 @@ pub fn show(ui: &mut Ui, state: &mut EditorState) {
                 for (idx, name) in tab_names.iter().enumerate() {
                     let active = state.active_left_tab == idx;
                     let text = if active { RichText::new(name).color(theme::TEXT_PRIMARY) } else { RichText::new(name).color(theme::TEXT_SECONDARY) };
-                    let btn = egui::Button::new(text).fill(if active { theme::BG_TERTIARY } else { egui::Color32::TRANSPARENT }).stroke(egui::Stroke::NONE);
+                    let btn = egui::Button::new(text)
+                        .fill(if active { theme::BG_TERTIARY } else { egui::Color32::TRANSPARENT })
+                        .stroke(egui::Stroke::NONE);
                     if ui.add(btn).clicked() {
                         state.set_active_left_tab(idx);
                     }

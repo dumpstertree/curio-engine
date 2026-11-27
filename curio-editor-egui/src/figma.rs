@@ -43,7 +43,7 @@
 
 use crate::fs_ops::{get_or_create_meta, read_file_bytes, resolve_conflict, write_file_text};
 use crate::prefab_resolver::dump_raw;
-use crate::prefab_types::{PrefabComponentRaw, PrefabGameObjectRaw, format_tuple, join_field};
+use crate::prefab_types::{format_tuple, join_field, PrefabComponentRaw, PrefabGameObjectRaw};
 
 use serde_json::{self, Value};
 
@@ -79,10 +79,10 @@ pub struct FigmaState {
 
     /// `(target dir, events)` while a job thread is in flight; cleared by
     /// `poll_figma` once the thread reports `Done`/`Error` or dies.
-    pub job: Option < (String, Receiver < FigmaEvent > ) > ,
-    pub progress: Vec < String > ,
-    pub summary: Option < String > ,
-    pub error: Option < String > ,
+    pub job: Option<(String, Receiver<FigmaEvent>)>,
+    pub progress: Vec<String>,
+    pub summary: Option<String>,
+    pub error: Option<String>,
 }
 
 impl FigmaState {
@@ -107,7 +107,8 @@ impl FigmaState {
         let (tx, rx) = std::sync::mpsc::channel();
         let token = self.token.trim().to_string();
         let url = self.url.trim().to_string();
-        let dir = self.target_dir.clone(); let job_dir = self.target_dir.clone();
+        let dir = self.target_dir.clone();
+        let job_dir = self.target_dir.clone();
         std::thread::spawn(move || {
             run_import(tx, token, url, dir);
         });
@@ -145,9 +146,9 @@ pub struct FigmaNode {
     // TEXT style fontSize in px (0 -> UiNode default 12).
     pub font_size: f32,
     pub image_fill: bool,
-    pub text: Option < String > ,
-    pub base: Option < String > , // INSTANCE -> Figma component name
-    pub children: Vec < FigmaNode > ,
+    pub text: Option<String>,
+    pub base: Option<String>, // INSTANCE -> Figma component name
+    pub children: Vec<FigmaNode>,
 }
 
 // serde_json member helpers. Destructuring style copied from
@@ -155,7 +156,7 @@ pub struct FigmaNode {
 // exposes Object/Array constructors; helpers return owned copies so the parse
 // pass never fights the `Value` borrow checker.
 
-fn member<'a>(v: &'a Value, key: &str) -> Option < &'a Value > {
+fn member<'a>(v: &'a Value, key: &str) -> Option<&'a Value> {
     if let Value::Object(map) = v {
         for (k, val) in map.iter() {
             if *k == key {
@@ -174,7 +175,7 @@ fn get_str(v: &Value, key: &str) -> String {
     }
 }
 
-fn get_opt_str(v: &Value, key: &str) -> Option < String > {
+fn get_opt_str(v: &Value, key: &str) -> Option<String> {
     let Some(inner) = member(v, key) else { return None };
     match inner {
         Value::String(s) => Some(s.to_string()),
@@ -413,11 +414,10 @@ fn subst4(templ: &str, a: String, b: String, c: String, d: String) -> String {
 /// leaves carry a `uinode` plus a `transform2d` whose position is Figma's own
 /// parent-relative pixels (y down - UiRect grows down like Figma, no flip).
 /// Panels float in taffy flow (placement is a plan 7b gap); leaves are exact.
-pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> PrefabGameObjectRaw {
+pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> PrefabGameObjectRaw {
     let mut components = Vec::new();
 
-    let is_panel = node.kind == "FRAME" || node.kind == "GROUP" || node.kind == "CANVAS"
-        || node.kind == "INSTANCE";
+    let is_panel = node.kind == "FRAME" || node.kind == "GROUP" || node.kind == "CANVAS" || node.kind == "INSTANCE";
 
     if is_panel {
         let mut fields = Vec::new();
@@ -432,10 +432,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> P
             fields.push(join_field("gap", &numstr(node.item_spacing)));
         }
         if node.layout_mode == "VERTICAL" {
-            warnings.push(subst1(
-                "'{0}' uses vertical auto-layout - flow is row-only today, child order kept",
-                node.name.clone(),
-            ));
+            warnings.push(subst1("'{0}' uses vertical auto-layout - flow is row-only today, child order kept", node.name.clone()));
         }
         // free-form frames (no auto-layout) keep their Figma placement: the
         // `absolute` flag hangs the panel at its own Transform2D offset inside
@@ -455,10 +452,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> P
         fields.push(join_field("kind", "text"));
         if let Some(text) = node.text.clone() {
             if text.contains(":") {
-                warnings.push(subst1(
-                    "label in '{0}' contains ':' - the field parser splits on it, text gets cut",
-                    node.name.clone(),
-                ));
+                warnings.push(subst1("label in '{0}' contains ':' - the field parser splits on it, text gets cut", node.name.clone()));
             }
             fields.push(join_field("text", &text));
         }
@@ -490,10 +484,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> P
         let mut tf = Vec::new();
         tf.push(join_field("position", &format_tuple(&[node.tx, node.ty])));
         components.push(PrefabComponentRaw { kind: "transform2d".to_string(), fields: tf });
-        warnings.push(subst1(
-            "image node '{0}' paints as a flat quad - its PNG is exported but ui_overlay has no texture sampling yet (plan 7b)",
-            node.name.clone(),
-        ));
+        warnings.push(subst1("image node '{0}' paints as a flat quad - its PNG is exported but ui_overlay has no texture sampling yet (plan 7b)", node.name.clone()));
     } else if !node.fill_hex.is_empty() {
         let mut fields = Vec::new();
         fields.push(join_field("kind", "block"));
@@ -513,11 +504,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> P
             warnings.push(subst1("'{0}' is rotated - ui_overlay offsets are axis-aligned, rotation dropped", node.name.clone()));
         }
     } else if node.children.is_empty() {
-        warnings.push(subst2(
-            "'{0}' ({1}) got no ui facet - bake it in Figma or extend the importer",
-            node.name.clone(),
-            node.kind.clone(),
-        ));
+        warnings.push(subst2("'{0}' ({1}) got no ui facet - bake it in Figma or extend the importer", node.name.clone(), node.kind.clone()));
     }
 
     let mut children_out = Vec::new();
@@ -527,11 +514,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> P
         child_order += 1;
     }
 
-    let comp_base = if node.base.is_none() {
-        None
-    } else {
-        Some(subst1("{0}.comp", slugify(&node.base.unwrap())))
-    };
+    let comp_base = if node.base.is_none() { None } else { Some(subst1("{0}.comp", slugify(&node.base.unwrap()))) };
 
     PrefabGameObjectRaw {
         enabled: node.visible,
@@ -543,7 +526,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec < String > ) -> P
 }
 
 /// Depth-first search for a pinned `node-id` ("1:23") anywhere in the tree.
-pub fn find_node(nodes: &[FigmaNode], id: &str) -> Option < FigmaNode > {
+pub fn find_node(nodes: &[FigmaNode], id: &str) -> Option<FigmaNode> {
     for node in nodes {
         if node.id == id {
             return Some(node.clone());
@@ -555,7 +538,7 @@ pub fn find_node(nodes: &[FigmaNode], id: &str) -> Option < FigmaNode > {
     None
 }
 
-pub fn collect_image_nodes(nodes: &[FigmaNode], out: &mut Vec < FigmaNode > ) {
+pub fn collect_image_nodes(nodes: &[FigmaNode], out: &mut Vec<FigmaNode>) {
     for node in nodes {
         if node.image_fill && node.visible {
             out.push(node.clone());
@@ -566,7 +549,7 @@ pub fn collect_image_nodes(nodes: &[FigmaNode], out: &mut Vec < FigmaNode > ) {
 
 /// INSTANCE nodes carry the component's *id*; the document's "components" map
 /// resolves id -> name so the emitted `base:` reads like a prefab filename.
-pub fn resolve_instance_bases(nodes: &mut Vec < FigmaNode > , meta: Option < &Value > ) {
+pub fn resolve_instance_bases(nodes: &mut Vec<FigmaNode>, meta: Option<&Value>) {
     for node in nodes {
         if let Some(id) = node.base.clone() {
             if let Some(map) = meta {
@@ -589,15 +572,14 @@ pub fn resolve_instance_bases(nodes: &mut Vec < FigmaNode > , meta: Option < &Va
 /// Digits of the first `HTTP/<ver> <code>` line of a curl `-i` response
 /// file - this toolchain's curl has no `--write-out-to`, so the status
 /// travels in the header block itself. "000" = no header block at all.
-fn header_status(bytes: &Vec < u8 > ) -> String {
+fn header_status(bytes: &Vec<u8>) -> String {
     let mut limit = bytes.len();
     if limit > 120 {
         limit = 120;
     }
     let mut i = 0;
     while i + 4 < limit {
-        if bytes[i] == 72 && bytes[i + 1] == 84 && bytes[i + 2] == 84
-            && bytes[i + 3] == 80 && bytes[i + 4] == 47 {
+        if bytes[i] == 72 && bytes[i + 1] == 84 && bytes[i + 2] == 84 && bytes[i + 3] == 80 && bytes[i + 4] == 47 {
             let mut j = i + 5;
             while j < limit && bytes[j] != 32 {
                 j += 1;
@@ -620,7 +602,7 @@ fn header_status(bytes: &Vec < u8 > ) -> String {
 
 /// Where a curl `-i` body starts: just past the header block terminator
 /// (CRLFCRLF, else LFLF). None means nothing to strip.
-fn after_headers(bytes: &Vec < u8 > ) -> Option < usize > {
+fn after_headers(bytes: &Vec<u8>) -> Option<usize> {
     let mut limit = bytes.len();
     if limit > 4096 {
         limit = 4096;
@@ -647,7 +629,7 @@ fn after_headers(bytes: &Vec < u8 > ) -> Option < usize > {
 
 /// Printable-ASCII glimpse of a body (control chars skipped) - enough of
 /// Figma's JSON error without dumping the lot.
-fn byte_snip(bytes: &Vec < u8 > , max: usize) -> String {
+fn byte_snip(bytes: &Vec<u8>, max: usize) -> String {
     let mut out = String::new();
     for b in bytes.iter() {
         if out.len() >= max {
@@ -672,7 +654,7 @@ fn file_snip(path: String, max: usize) -> String {
 /// carries Retry-After / X-Figma-Plan-Tier / X-Figma-Rate-Limit-Type /
 /// X-Figma-Upgrade-Link, which tell the user whether to wait a minute or
 /// whether their seat simply has no budget. Empty when the header is absent.
-fn header_value(bytes: &Vec < u8 > , key: &String) -> String {
+fn header_value(bytes: &Vec<u8>, key: &String) -> String {
     let kbs = key.as_bytes();
     let mut limit = bytes.len();
     if limit > 1200 {
@@ -723,15 +705,18 @@ fn header_value(bytes: &Vec < u8 > , key: &String) -> String {
 /// from its first line ("HTTP/2 403") and is stripped off before Ok(), so
 /// callers still see a pure body. `--stderr` keeps curl's own complaint
 /// (unknown option, connect failure) for the no-response case.
-fn curl_get(url: String, token: String, out_path: String) -> Result < (), String > {
+fn curl_get(url: String, token: String, out_path: String) -> Result<(), String> {
     let err_path = subst1("{0}.curl_err", out_path.clone());
     let mut command = Command::new("curl");
     command
         .arg("-s")
-        .arg("--max-time").arg("30")
+        .arg("--max-time")
+        .arg("30")
         .arg("-i")
-        .arg("--stderr").arg(err_path.clone())
-        .arg("-o").arg(out_path.clone());
+        .arg("--stderr")
+        .arg(err_path.clone())
+        .arg("-o")
+        .arg(out_path.clone());
     if !token.is_empty() {
         command.arg("-H").arg(subst1("X-Figma-Token: {0}", token));
     }
@@ -769,12 +754,10 @@ fn curl_get(url: String, token: String, out_path: String) -> Result < (), String
                 // hand the caller back a pure body: strip curl's header block
                 match after_headers(&bytes) {
                     None => (),
-                    Some(start) => {
-                        match std::fs::write(out_path, bytes[start..].to_vec()) {
-                            Err(e) => return Err(subst1("could not store response body: {0}", e.to_string())),
-                            Ok(_w) => (),
-                        }
-                    }
+                    Some(start) => match std::fs::write(out_path, bytes[start..].to_vec()) {
+                        Err(e) => return Err(subst1("could not store response body: {0}", e.to_string())),
+                        Ok(_w) => (),
+                    },
                 }
                 return Ok(());
             }
@@ -840,11 +823,11 @@ fn curl_get(url: String, token: String, out_path: String) -> Result < (), String
 
 /// The Images endpoint's render URLs are absolute and pre-signed - no token
 /// header needed (they expire ~7 days out, plenty for one import).
-fn curl_download(url: &str, out_path: &str) -> Result < (), String > {
+fn curl_download(url: &str, out_path: &str) -> Result<(), String> {
     curl_get(url.to_string(), String::new(), out_path.to_string())
 }
 
-pub fn run_import(tx: Sender < FigmaEvent > , token: String, url: String, dir: String) {
+pub fn run_import(tx: Sender<FigmaEvent>, token: String, url: String, dir: String) {
     let Some(file_key) = extract_file_key(&url) else {
         let _ = tx.send(FigmaEvent::Error("Paste a Figma file URL (figma.com/design/key/Name)".to_string()));
         return;
@@ -871,20 +854,13 @@ pub fn run_import(tx: Sender < FigmaEvent > , token: String, url: String, dir: S
 }
 
 /// Read a whole file as serde_json `Value` (curl wrote it to disk).
-fn read_json_file(path: String) -> Result < Value, String > {
+fn read_json_file(path: String) -> Result<Value, String> {
     let bytes = read_file_bytes(&path)?;
     let text = String::from_utf8(bytes).map_err(|e| e.to_string())?;
     serde_json::from_str(&text).map_err(|e| e.to_string())
 }
 
-fn run_import_with_document(
-    tx: Sender < FigmaEvent > ,
-    token: String,
-    file_key: String,
-    pinned: Option < String > ,
-    dir: String,
-    doc: &Value,
-) {
+fn run_import_with_document(tx: Sender<FigmaEvent>, token: String, file_key: String, pinned: Option<String>, dir: String, doc: &Value) {
     let Some(document) = member(doc, "document") else {
         let _ = tx.send(FigmaEvent::Error("Figma response has no 'document' subtree (empty file?)".to_string()));
         return;
@@ -919,9 +895,7 @@ fn run_import_with_document(
         return;
     }
 
-    let _ = tx.send(FigmaEvent::Progress(
-        subst1("fetched document: {0} top-level frame(s)", roots.len().to_string())
-    ));
+    let _ = tx.send(FigmaEvent::Progress(subst1("fetched document: {0} top-level frame(s)", roots.len().to_string())));
 
     // INSTANCE nodes' componentIds -> component names via the doc's map.
     resolve_instance_bases(&mut roots, member(doc, "components"));
@@ -952,29 +926,18 @@ fn run_import_with_document(
         }
     }
 
-    let warn_count = warnings.len(); for warning in warnings {
+    let warn_count = warnings.len();
+    for warning in warnings {
         let _ = tx.send(FigmaEvent::Progress(subst1("warning: {0}", warning)));
     }
-    let summary = subst4(
-        "Imported {0} comp(s), {1} PNG(s) into {2}; {3} warning(s)",
-        written_comps.to_string(),
-        written_pngs.to_string(),
-        dir,
-        warn_count.to_string(),
-    );
+    let summary = subst4("Imported {0} comp(s), {1} PNG(s) into {2}; {3} warning(s)", written_comps.to_string(), written_pngs.to_string(), dir, warn_count.to_string());
     let _ = tx.send(FigmaEvent::Done(summary));
 }
 
 /// One batched Images-endpoint request for every visible image fill, then one
 /// PNG per node written next to the comps (M3 will route these to
 /// assets/texture/ + real name lookups). Returns how many PNGs landed.
-fn write_images(
-    tx: Sender < FigmaEvent > ,
-    token: String,
-    file_key: String,
-    dir: String,
-    nodes: &mut Vec < FigmaNode > ,
-) -> usize {
+fn write_images(tx: Sender<FigmaEvent>, token: String, file_key: String, dir: String, nodes: &mut Vec<FigmaNode>) -> usize {
     if nodes.is_empty() {
         return 0;
     }
@@ -1003,32 +966,24 @@ fn write_images(
     let mut count = 0;
     for node in &*nodes {
         let Some(map) = images else {
-            let _ = tx.send(FigmaEvent::Progress(
-                subst1("warning: no render urls returned for '{0}'", node.name.clone())
-            ));
+            let _ = tx.send(FigmaEvent::Progress(subst1("warning: no render urls returned for '{0}'", node.name.clone())));
             continue;
         };
         let Some(link) = member(map, &node.id) else {
-            let _ = tx.send(FigmaEvent::Progress(
-                subst1("warning: no render url for '{0}'", node.name.clone())
-            ));
+            let _ = tx.send(FigmaEvent::Progress(subst1("warning: no render url for '{0}'", node.name.clone())));
             continue;
         };
         let Some(link_url) = (match link {
             Value::String(s) => Some(s.to_string()),
             _ => None,
         }) else {
-            let _ = tx.send(FigmaEvent::Progress(
-                subst1("warning: render url not a string for '{0}'", node.name.clone())
-            ));
+            let _ = tx.send(FigmaEvent::Progress(subst1("warning: render url not a string for '{0}'", node.name.clone())));
             continue;
         };
         let name = subst1("{0}.png", slugify(&node.name));
         let path = resolve_conflict(&dir, &name);
         if let Err(e) = curl_download(&link_url, &path) {
-            let _ = tx.send(FigmaEvent::Progress(
-                subst2("warning: '{0}': {1}", node.name.clone(), e)
-            ));
+            let _ = tx.send(FigmaEvent::Progress(subst2("warning: '{0}': {1}", node.name.clone(), e)));
             continue;
         }
         get_or_create_meta(&path);
@@ -1039,7 +994,7 @@ fn write_images(
 
 /// `figma.com/design/KEY/Name` | `/file/KEY` | `/proto/KEY` | `/board/KEY`
 /// -> the file key the REST endpoints want.
-fn extract_file_key(url: &str) -> Option < String > {
+fn extract_file_key(url: &str) -> Option<String> {
     let Some(at) = url.find("figma.com/") else { return None };
     let rest = &url[at + 10..];
     for kind in ["design/", "file/", "proto/", "board/"].iter() {
@@ -1055,7 +1010,7 @@ fn extract_file_key(url: &str) -> Option < String > {
 }
 
 /// `?node-id=1-23` -> "1:23" (URLs dash what the API wants colons for).
-fn extract_node_id(url: &str) -> Option < String > {
+fn extract_node_id(url: &str) -> Option<String> {
     let Some(at) = url.find("node-id=") else { return None };
     let tail = &url[at + 8..];
     let val = tail.split('&').next().unwrap_or("");
@@ -1071,31 +1026,79 @@ fn extract_node_id(url: &str) -> Option < String > {
 #[test]
 fn figma_import_emits_ui_overlay_panels_and_leaves() {
     let title = FigmaNode {
-        id: "1:2".to_string(), name: "title".to_string(), kind: "TEXT".to_string(), visible: true,
-        tx: 20.0, ty: 12.0, roll_deg: 0.0, width: 100.0, height: 16.0,
-        layout_mode: String::new(), item_spacing: 0.0, fill_hex: "#ff0000".to_string(), font_size: 16.0,
-        image_fill: false, text: Some("Buy now".to_string()), base: None,
+        id: "1:2".to_string(),
+        name: "title".to_string(),
+        kind: "TEXT".to_string(),
+        visible: true,
+        tx: 20.0,
+        ty: 12.0,
+        roll_deg: 0.0,
+        width: 100.0,
+        height: 16.0,
+        layout_mode: String::new(),
+        item_spacing: 0.0,
+        fill_hex: "#ff0000".to_string(),
+        font_size: 16.0,
+        image_fill: false,
+        text: Some("Buy now".to_string()),
+        base: None,
         children: Vec::new(),
     };
     let art = FigmaNode {
-        id: "1:3".to_string(), name: "icon".to_string(), kind: "RECTANGLE".to_string(), visible: true,
-        tx: 40.0, ty: 20.0, roll_deg: 0.0, width: 64.0, height: 64.0,
-        layout_mode: String::new(), item_spacing: 0.0, fill_hex: String::new(), font_size: 0.0,
-        image_fill: true, text: None, base: None,
+        id: "1:3".to_string(),
+        name: "icon".to_string(),
+        kind: "RECTANGLE".to_string(),
+        visible: true,
+        tx: 40.0,
+        ty: 20.0,
+        roll_deg: 0.0,
+        width: 64.0,
+        height: 64.0,
+        layout_mode: String::new(),
+        item_spacing: 0.0,
+        fill_hex: String::new(),
+        font_size: 0.0,
+        image_fill: true,
+        text: None,
+        base: None,
         children: Vec::new(),
     };
     let card = FigmaNode {
-        id: "1:4".to_string(), name: "card".to_string(), kind: "FRAME".to_string(), visible: true,
-        tx: 60.0, ty: 30.0, roll_deg: 0.0, width: 120.0, height: 40.0,
-        layout_mode: "NONE".to_string(), item_spacing: 0.0, fill_hex: String::new(), font_size: 0.0,
-        image_fill: false, text: None, base: None,
+        id: "1:4".to_string(),
+        name: "card".to_string(),
+        kind: "FRAME".to_string(),
+        visible: true,
+        tx: 60.0,
+        ty: 30.0,
+        roll_deg: 0.0,
+        width: 120.0,
+        height: 40.0,
+        layout_mode: "NONE".to_string(),
+        item_spacing: 0.0,
+        fill_hex: String::new(),
+        font_size: 0.0,
+        image_fill: false,
+        text: None,
+        base: None,
         children: Vec::new(),
     };
     let doc = FigmaNode {
-        id: "1:1".to_string(), name: "shop".to_string(), kind: "FRAME".to_string(), visible: true,
-        tx: 0.0, ty: 0.0, roll_deg: 0.0, width: 320.0, height: 240.0,
-        layout_mode: "HORIZONTAL".to_string(), item_spacing: 8.0, fill_hex: String::new(), font_size: 0.0,
-        image_fill: false, text: None, base: None,
+        id: "1:1".to_string(),
+        name: "shop".to_string(),
+        kind: "FRAME".to_string(),
+        visible: true,
+        tx: 0.0,
+        ty: 0.0,
+        roll_deg: 0.0,
+        width: 320.0,
+        height: 240.0,
+        layout_mode: "HORIZONTAL".to_string(),
+        item_spacing: 8.0,
+        fill_hex: String::new(),
+        font_size: 0.0,
+        image_fill: false,
+        text: None,
+        base: None,
         children: vec![title.clone(), art, card],
     };
 
@@ -1107,9 +1110,7 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
     let mut panel = false;
     for c in comp.components {
         if c.kind == "uinode" {
-            panel = c.fields.contains(&join_field("kind", "panel"))
-                && c.fields.contains(&join_field("width", &numstr(320.0)))
-                && c.fields.contains(&join_field("gap", &numstr(8.0)));
+            panel = c.fields.contains(&join_field("kind", "panel")) && c.fields.contains(&join_field("width", &numstr(320.0))) && c.fields.contains(&join_field("gap", &numstr(8.0)));
         }
     }
     assert!(panel);
@@ -1118,10 +1119,7 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
     let mut text_ok = false;
     for c in comp.children.first().unwrap().components.iter() {
         if c.kind == "uinode" {
-            text_ok = c.fields.contains(&join_field("kind", "text"))
-                && c.fields.contains(&join_field("text", "Buy now"))
-                && c.fields.contains(&join_field("font_size", &numstr(16.0)))
-                && c.fields.contains(&join_field("color", "#ff0000"));
+            text_ok = c.fields.contains(&join_field("kind", "text")) && c.fields.contains(&join_field("text", "Buy now")) && c.fields.contains(&join_field("font_size", &numstr(16.0))) && c.fields.contains(&join_field("color", "#ff0000"));
         }
     }
     assert!(text_ok);
@@ -1143,8 +1141,7 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
     let mut card_ok = false;
     for c in comp.children.get(2).unwrap().components.iter() {
         if c.kind == "uinode" {
-            card_ok = c.fields.contains(&join_field("kind", "panel"))
-                && c.fields.contains(&join_field("absolute", "true"));
+            card_ok = c.fields.contains(&join_field("kind", "panel")) && c.fields.contains(&join_field("absolute", "true"));
         }
     }
     assert!(card_ok);

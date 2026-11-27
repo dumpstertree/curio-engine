@@ -194,10 +194,7 @@ fn forward_input(ui: &mut Ui, state: &mut EditorState, response: &egui::Response
     // are always forwarded so the game can never get a stuck button from a
     // drag-release outside the viewport. (`clicked_by` fires on release, so
     // the old version that used it as "press" never released the button.)
-    for (button, code) in [
-        (egui::PointerButton::Primary, ButtonCode::MousePrimary),
-        (egui::PointerButton::Secondary, ButtonCode::MouseSecondary),
-    ] {
+    for (button, code) in [(egui::PointerButton::Primary, ButtonCode::MousePrimary), (egui::PointerButton::Secondary, ButtonCode::MouseSecondary)] {
         let (pressed, released, press_origin) = ui.input(|i| (i.pointer.button_pressed(button), i.pointer.button_released(button), i.pointer.press_origin()));
         if pressed && press_origin.is_some_and(|p| rect.contains(p)) {
             state.send_input(InputEvent::Button { code, pressed: true });

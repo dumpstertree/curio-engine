@@ -14,12 +14,12 @@ use std::{
 pub mod query;
 pub use query::PhysicsQuery;
 
-use collision::{CollisionPair, ColliderShapeDef, ColliderSnapshot, Contact, SysRecordCollider, SysRecordCollision};
+use collision::{ColliderShapeDef, ColliderSnapshot, CollisionPair, Contact, SysRecordCollider, SysRecordCollision};
 use curio_core::{Ledger, Matrix4x4, Nerve, PluginCommon, Vector3};
 use rapier3d::{
     na::{self, Isometry3},
     parry::{
-        query::{contact, intersection_test, Ray},
+        query::{Ray, contact, intersection_test},
         shape::{Ball, Capsule, Cuboid, Shape},
     },
 };
@@ -119,11 +119,7 @@ fn overlaps_between(prepared: &[PreparedCollider]) -> Vec<CollisionPair> {
                     continue;
                 };
                 Some(Contact {
-                    point: Vector3::new(
-                        (c.point1.x + c.point2.x) * 0.5,
-                        (c.point1.y + c.point2.y) * 0.5,
-                        (c.point1.z + c.point2.z) * 0.5,
-                    ),
+                    point: Vector3::new((c.point1.x + c.point2.x) * 0.5, (c.point1.y + c.point2.y) * 0.5, (c.point1.z + c.point2.z) * 0.5),
                     normal_a: Vector3::new(c.normal1.x, c.normal1.y, c.normal1.z),
                     normal_b: Vector3::new(c.normal2.x, c.normal2.y, c.normal2.z),
                 })
@@ -165,11 +161,7 @@ fn diff_pairs(overlaps: &[CollisionPair], previous: &HashMap<(i32, i32), Collisi
 }
 
 fn pair_key(a: &i32, b: &i32) -> (i32, i32) {
-    if a <= b {
-        (*a, *b)
-    } else {
-        (*b, *a)
-    }
+    if a <= b { (*a, *b) } else { (*b, *a) }
 }
 
 // ────────────────────────────── shapes ──────────────────────────────
@@ -245,10 +237,7 @@ impl PreparedCollider {
         Some(PreparedCollider {
             guid: snapshot.guid,
             sensor: snapshot.sensor,
-            isometry: Isometry3::from_parts(
-                na::Vector3::new(position.x, position.y, position.z).into(),
-                rotation,
-            ),
+            isometry: Isometry3::from_parts(na::Vector3::new(position.x, position.y, position.z).into(), rotation),
             shape,
             snapshot,
         })
@@ -373,17 +362,17 @@ fn rays_against(colliders: &[PreparedCollider], query: &RayQuery) -> Vec<RayHit>
         let local_dir = collider.isometry.inverse_transform_vector(&dir);
         let ray = Ray::new(local_origin, local_dir);
 
-        if let Some(hit) = collider.shape.as_shape().cast_local_ray_and_get_normal(&ray, query.max_distance, query.solid) {
+        if let Some(hit) = collider
+            .shape
+            .as_shape()
+            .cast_local_ray_and_get_normal(&ray, query.max_distance, query.solid)
+        {
             let normal = collider.isometry.transform_vector(&hit.normal);
             hits.push(RayHit {
                 guid: collider.guid,
                 hit_sensor: collider.sensor,
                 distance: hit.time_of_impact,
-                point: Vector3::new(
-                    query.origin.x + direction.x * hit.time_of_impact,
-                    query.origin.y + direction.y * hit.time_of_impact,
-                    query.origin.z + direction.z * hit.time_of_impact,
-                ),
+                point: Vector3::new(query.origin.x + direction.x * hit.time_of_impact, query.origin.y + direction.y * hit.time_of_impact, query.origin.z + direction.z * hit.time_of_impact),
                 normal: Vector3::new(normal.x, normal.y, normal.z),
             });
         }
@@ -412,14 +401,7 @@ mod tests {
     fn snapshot(guid: i32, position: Vector3, shape: ColliderShapeDef) -> ColliderSnapshot {
         snapshot_with(guid, position, shape, false, 0, 0)
     }
-    fn snapshot_with(
-        guid: i32,
-        position: Vector3,
-        shape: ColliderShapeDef,
-        sensor: bool,
-        filter_group: u32,
-        filter_mask: u32,
-    ) -> ColliderSnapshot {
+    fn snapshot_with(guid: i32, position: Vector3, shape: ColliderShapeDef, sensor: bool, filter_group: u32, filter_mask: u32) -> ColliderSnapshot {
         ColliderSnapshot {
             guid,
             matrix: Matrix4x4::new(position, Quaternion::identity(), Vector3::one()),
@@ -443,7 +425,9 @@ mod tests {
         let overlaps = overlaps_between(&prepared);
         assert_eq!(overlaps.len(), 1);
         assert!(overlaps[0].involves(1) && overlaps[0].involves(2));
-        let contact = overlaps[0].contact.expect("solid pair should have a contact");
+        let contact = overlaps[0]
+            .contact
+            .expect("solid pair should have a contact");
         // box a faces -x towards b... contact sits between them, normals along x
         assert!(approx(contact.normal_a.x.abs(), 1.0));
         assert!(contact.point.x > 0.0 && contact.point.x < 1.0);
@@ -530,7 +514,10 @@ mod tests {
         let snapshots = vec![snapshot(7, Vector3::new(0.0, 0.0, -5.0), ColliderShapeDef::Sphere { diameter: 2.0 })];
         let prepared = prepare_colliders(&snapshots);
         let query = RayQuery::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, -1.0));
-        let hit = rays_against(&prepared, &query).into_iter().next().expect("should hit");
+        let hit = rays_against(&prepared, &query)
+            .into_iter()
+            .next()
+            .expect("should hit");
         assert_eq!(hit.guid, 7);
         assert!(approx(hit.distance, 4.0));
         assert!(approx(hit.normal.z, 1.0));
@@ -550,14 +537,7 @@ mod tests {
 
     #[test]
     fn ray_sensor_inclusion() {
-        let snapshots = vec![snapshot_with(
-            7,
-            Vector3::new(0.0, 0.0, -5.0),
-            ColliderShapeDef::Box { size: Vector3::new(1.0, 1.0, 1.0) },
-            true,
-            0,
-            0,
-        )];
+        let snapshots = vec![snapshot_with(7, Vector3::new(0.0, 0.0, -5.0), ColliderShapeDef::Box { size: Vector3::new(1.0, 1.0, 1.0) }, true, 0, 0)];
         let prepared = prepare_colliders(&snapshots);
         let query = RayQuery::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, -1.0));
         assert!(rays_against(&prepared, &query).is_empty());
@@ -576,12 +556,18 @@ mod tests {
         ];
         let prepared = prepare_colliders(&snapshots);
         let query = RayQuery::new(Vector3::new(0.0, 0.0, 0.0), Vector3::new(0.0, 0.0, -1.0));
-        let hit = rays_against(&prepared, &query).into_iter().next().expect("should hit capsule");
+        let hit = rays_against(&prepared, &query)
+            .into_iter()
+            .next()
+            .expect("should hit capsule");
         assert_eq!(hit.guid, 1);
         assert!(approx(hit.distance, 4.5));
 
         let query = RayQuery::new(Vector3::new(3.0, 0.0, 0.0), Vector3::new(0.0, 0.0, -1.0));
-        let hit = rays_against(&prepared, &query).into_iter().next().expect("should hit box");
+        let hit = rays_against(&prepared, &query)
+            .into_iter()
+            .next()
+            .expect("should hit box");
         assert_eq!(hit.guid, 2);
         assert!(approx(hit.distance, 4.5));
     }

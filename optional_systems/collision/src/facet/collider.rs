@@ -62,12 +62,7 @@ impl FieldOverride for Collider {
         }
     }
     fn get_state(&self) -> Vec<FieldState> {
-        vec![
-            FieldState::new("shape", self.shape.encode()),
-            FieldState::new("sensor", self.sensor),
-            FieldState::new("group", self.filter_group),
-            FieldState::new("mask", self.filter_mask),
-        ]
+        vec![FieldState::new("shape", self.shape.encode()), FieldState::new("sensor", self.sensor), FieldState::new("group", self.filter_group), FieldState::new("mask", self.filter_mask)]
     }
 }
 
@@ -177,12 +172,7 @@ pub struct ColliderSnapshot {
 impl ColliderSnapshot {
     /// Does this snapshot's filter allow it to interact with `other`?
     pub fn filter_allows(&self, other: &ColliderSnapshot) -> bool {
-        filters_match(
-            self.filter_group,
-            self.filter_mask,
-            other.filter_group,
-            other.filter_mask,
-        )
+        filters_match(self.filter_group, self.filter_mask, other.filter_group, other.filter_mask)
     }
 }
 

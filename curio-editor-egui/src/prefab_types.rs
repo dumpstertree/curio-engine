@@ -81,7 +81,10 @@ pub fn parse_tuple(value: &str) -> Vec<f32> {
     if inner.is_empty() {
         return Vec::new();
     }
-    inner.split(',').map(|s| s.trim().parse::<f32>().unwrap_or(0.0)).collect()
+    inner
+        .split(',')
+        .map(|s| s.trim().parse::<f32>().unwrap_or(0.0))
+        .collect()
 }
 
 /// Formats a float the way Rust's `f32` Display formatting tends to look —
@@ -102,16 +105,29 @@ fn format_num(n: f32) -> String {
 }
 
 pub fn format_tuple(nums: &[f32]) -> String {
-    format!("({})", nums.iter().map(|n| format_num(*n)).collect::<Vec<_>>().join(","))
+    format!(
+        "({})",
+        nums.iter()
+            .map(|n| format_num(*n))
+            .collect::<Vec<_>>()
+            .join(",")
+    )
 }
 
 pub fn parse_vec2(value: &str) -> Vec2 {
     let t = parse_tuple(value);
-    Vec2 { x: t.first().copied().unwrap_or(0.0), y: t.get(1).copied().unwrap_or(0.0) }
+    Vec2 {
+        x: t.first().copied().unwrap_or(0.0),
+        y: t.get(1).copied().unwrap_or(0.0),
+    }
 }
 pub fn parse_vec3(value: &str) -> Vec3 {
     let t = parse_tuple(value);
-    Vec3 { x: t.first().copied().unwrap_or(0.0), y: t.get(1).copied().unwrap_or(0.0), z: t.get(2).copied().unwrap_or(0.0) }
+    Vec3 {
+        x: t.first().copied().unwrap_or(0.0),
+        y: t.get(1).copied().unwrap_or(0.0),
+        z: t.get(2).copied().unwrap_or(0.0),
+    }
 }
 pub fn format_vec2(v: Vec2) -> String {
     format_tuple(&[v.x, v.y])
@@ -189,8 +205,14 @@ pub fn builtin_component_fields(kind: &str) -> Vec<FieldDescriptor> {
             FieldDescriptor { name: "rotation".to_string(), kind: EntryType::Vector3 },
             FieldDescriptor { name: "scale".to_string(), kind: EntryType::Vector3 },
         ],
-        "RendererStatic" => vec![FieldDescriptor { name: "asset".to_string(), kind: EntryType::Asset(".glb".to_string()) }],
-        "RendererDynamic" => vec![FieldDescriptor { name: "asset".to_string(), kind: EntryType::Asset(".anim".to_string()) }],
+        "RendererStatic" => vec![FieldDescriptor {
+            name: "asset".to_string(),
+            kind: EntryType::Asset(".glb".to_string()),
+        }],
+        "RendererDynamic" => vec![FieldDescriptor {
+            name: "asset".to_string(),
+            kind: EntryType::Asset(".anim".to_string()),
+        }],
         _ => Vec::new(),
     }
 }
@@ -230,7 +252,11 @@ pub fn read_transform_fields(comp: &PrefabComponentRaw) -> TransformFields {
             "scale" => {
                 scale = if is2d {
                     let t = parse_tuple(&val);
-                    Vec3 { x: t.first().copied().unwrap_or(1.0), y: t.get(1).copied().unwrap_or(1.0), z: t.get(2).copied().unwrap_or(1.0) }
+                    Vec3 {
+                        x: t.first().copied().unwrap_or(1.0),
+                        y: t.get(1).copied().unwrap_or(1.0),
+                        z: t.get(2).copied().unwrap_or(1.0),
+                    }
                 } else {
                     parse_vec3(&val)
                 };
@@ -294,7 +320,13 @@ pub fn default_component(kind: &str) -> PrefabComponentRaw {
 }
 
 pub fn default_game_object(name: &str) -> PrefabGameObjectRaw {
-    PrefabGameObjectRaw { enabled: true, name: name.to_string(), base: None, components: Vec::new(), children: Vec::new() }
+    PrefabGameObjectRaw {
+        enabled: true,
+        name: name.to_string(),
+        base: None,
+        components: Vec::new(),
+        children: Vec::new(),
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,7 +364,12 @@ pub fn set_node_at_path(root: &PrefabGameObjectRaw, path: &[usize], next: Prefab
 
 /// Add or replace a field on a component by key.
 pub fn set_component_field(comp: &PrefabComponentRaw, key: &str, value: &str) -> PrefabComponentRaw {
-    let mut fields: Vec<String> = comp.fields.iter().filter(|f| split_field(f).0 != key).cloned().collect();
+    let mut fields: Vec<String> = comp
+        .fields
+        .iter()
+        .filter(|f| split_field(f).0 != key)
+        .cloned()
+        .collect();
     fields.push(join_field(key, value));
     PrefabComponentRaw { kind: comp.kind.clone(), fields }
 }

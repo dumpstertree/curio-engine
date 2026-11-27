@@ -98,7 +98,10 @@ pub const SUPPORTED_EXTS: &[&str] = &[".png", ".glb", ".anim", ".comp"];
 
 pub fn list_dir(path: &str) -> Result<Vec<DirEntry>, String> {
     let mut entries = Vec::new();
-    for entry in std::fs::read_dir(path).map_err(|e| e.to_string())?.flatten() {
+    for entry in std::fs::read_dir(path)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
         let metadata = entry.metadata().map_err(|e| e.to_string())?;
         let name = entry.file_name().to_string_lossy().to_string();
         if is_meta(&name) {
@@ -128,7 +131,9 @@ pub fn write_file_text(path: &str, contents: &str) -> Result<(), String> {
 }
 
 pub fn copy_file(src: &str, dst: &str) -> Result<(), String> {
-    std::fs::copy(src, dst).map(|_| ()).map_err(|e| e.to_string())
+    std::fs::copy(src, dst)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
 pub fn create_comp_file(path: &str) -> Result<(), String> {
@@ -213,7 +218,12 @@ pub fn get_or_create_meta(asset_path: &str) -> MetaFile {
     if let Some(existing) = read_meta(asset_path) {
         return existing;
     }
-    let id = (std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.subsec_nanos()).unwrap_or(1) % 32767 + 1) as i16;
+    let id = (std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.subsec_nanos())
+        .unwrap_or(1)
+        % 32767
+        + 1) as i16;
     let meta = MetaFile { id, included: true };
     let _ = write_meta(asset_path, &meta);
     meta
@@ -248,10 +258,22 @@ pub fn rebuild_manifest(project_root: &str) -> Result<(), String> {
                 continue;
             }
 
-            let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or(&name).to_string();
-            let uri = path.strip_prefix(root).map(|p| p.to_string_lossy().to_string()).unwrap_or_else(|_| name.clone());
+            let stem = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or(&name)
+                .to_string();
+            let uri = path
+                .strip_prefix(root)
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|_| name.clone());
 
-            entries.push(ManifestEntry { id: meta.id, name: stem, kind: "Embedded".to_string(), uri });
+            entries.push(ManifestEntry {
+                id: meta.id,
+                name: stem,
+                kind: "Embedded".to_string(),
+                uri,
+            });
         }
         Ok(())
     }
@@ -269,7 +291,9 @@ pub fn rebuild_manifest(project_root: &str) -> Result<(), String> {
 
 pub fn read_manifest(project_root: &str) -> Vec<ManifestEntry> {
     let Ok(text) = std::fs::read_to_string(format!("{project_root}/asset.manifest")) else { return Vec::new() };
-    serde_yaml::from_str::<AssetManifest>(&text).map(|m| m.manifest).unwrap_or_default()
+    serde_yaml::from_str::<AssetManifest>(&text)
+        .map(|m| m.manifest)
+        .unwrap_or_default()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -287,5 +311,7 @@ pub fn get_facets(project_root: &str) -> FacetManifest {
 // ─────────────────────────────────────────────────────────────────────────────
 
 pub fn pick_file() -> Option<String> {
-    rfd::FileDialog::new().pick_file().map(|p| p.to_string_lossy().to_string())
+    rfd::FileDialog::new()
+        .pick_file()
+        .map(|p| p.to_string_lossy().to_string())
 }

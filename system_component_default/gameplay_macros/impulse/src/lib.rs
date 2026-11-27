@@ -141,7 +141,9 @@ pub fn curio_impulse(attr: TokenStream, item: TokenStream) -> TokenStream {
         let key = match raw.split_once('=') {
             Some((lhs, rhs)) => {
                 if lhs.trim() != "scope" {
-                    return syn::Error::new_spanned(input.ident.clone(), format!("curio_impulse: unknown argument '{lhs}' — expected scope = \"...\"")).to_compile_error().into();
+                    return syn::Error::new_spanned(input.ident.clone(), format!("curio_impulse: unknown argument '{lhs}' — expected scope = \"...\""))
+                        .to_compile_error()
+                        .into();
                 }
                 rhs.trim().trim_matches('"').to_owned()
             }
@@ -208,7 +210,9 @@ pub fn curio_ui_event(_attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    let display_arms = variants.iter().map(|v| quote! { Self::#v { .. } => write!(f, stringify!(#v)), });
+    let display_arms = variants
+        .iter()
+        .map(|v| quote! { Self::#v { .. } => write!(f, stringify!(#v)), });
     let new_instance_arms = variants.iter().map(|v| {
         let msg = format!("curio_ui_event: UIEvents::{} has no UIPanel implementation", v);
         quote! { Self::#v { .. } => unimplemented!(#msg), }

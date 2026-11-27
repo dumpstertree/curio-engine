@@ -1,23 +1,17 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::InputMapped;
-    use curio_core::InputMapping;
-    use curio_core::ButtonState;
+    use curio_core::AxisCode;
     use curio_core::AxisState;
     use curio_core::ButtonCode;
-    use curio_core::AxisCode;
+    use curio_core::ButtonState;
+    use curio_core::InputMapped;
+    use curio_core::InputMapping;
     use curio_core::Vector2;
     use std::collections::HashMap;
 
     #[test]
     fn mapping_seeds_one_state_per_uid() {
-        let mapping = InputMapping::new(
-            vec![
-                ("jump".to_string(), ButtonCode::KeyA),
-                ("fire".to_string(), ButtonCode::MousePrimary),
-            ],
-            vec![("move".to_string(), AxisCode::Cursor)],
-        );
+        let mapping = InputMapping::new(vec![("jump".to_string(), ButtonCode::KeyA), ("fire".to_string(), ButtonCode::MousePrimary)], vec![("move".to_string(), AxisCode::Cursor)]);
         let input_mapped = InputMapped::new(mapping);
 
         let Some(jump) = input_mapped.get_button("jump") else { panic!("expected Some") };
@@ -29,10 +23,7 @@ mod tests {
 
     #[test]
     fn unknown_uids_are_none_but_defaults_are_available() {
-        let mapping = InputMapping::new(
-            vec![("jump".to_string(), ButtonCode::KeyA)],
-            vec![],
-        );
+        let mapping = InputMapping::new(vec![("jump".to_string(), ButtonCode::KeyA)], vec![]);
         let input_mapped = InputMapped::new(mapping);
 
         let unknown = input_mapped.get_button("nope");
@@ -54,10 +45,7 @@ mod tests {
 
     #[test]
     fn update_drives_states_through_mapped_codes() {
-        let mapping = InputMapping::new(
-            vec![("jump".to_string(), ButtonCode::KeyA)],
-            vec![("move".to_string(), AxisCode::Cursor)],
-        );
+        let mapping = InputMapping::new(vec![("jump".to_string(), ButtonCode::KeyA)], vec![("move".to_string(), AxisCode::Cursor)]);
         let mut input_mapped = InputMapped::new(mapping);
 
         let mut raw_buttons: HashMap<ButtonCode, bool> = HashMap::new();
@@ -80,10 +68,7 @@ mod tests {
         // Contrast with InputRaw: a mapped uid polls every poll. If its
         // raw code is absent, update() feeds it false, so holding a key
         // that stops being reported reads as a release.
-        let mapping = InputMapping::new(
-            vec![("jump".to_string(), ButtonCode::KeyA)],
-            vec![],
-        );
+        let mapping = InputMapping::new(vec![("jump".to_string(), ButtonCode::KeyA)], vec![]);
         let mut input_mapped = InputMapped::new(mapping);
 
         let mut raw_buttons: HashMap<ButtonCode, bool> = HashMap::new();
@@ -102,10 +87,7 @@ mod tests {
 
     #[test]
     fn absent_axis_is_forced_to_zero() {
-        let mapping = InputMapping::new(
-            vec![],
-            vec![("move".to_string(), AxisCode::Cursor)],
-        );
+        let mapping = InputMapping::new(vec![], vec![("move".to_string(), AxisCode::Cursor)]);
         let mut input_mapped = InputMapped::new(mapping);
 
         let mut raw_buttons: HashMap<ButtonCode, bool> = HashMap::new();
@@ -125,10 +107,7 @@ mod tests {
     #[test]
     fn unmapped_raw_codes_are_ignored() {
         // Raw codes that no mapping references never reach any uid.
-        let mapping = InputMapping::new(
-            vec![("jump".to_string(), ButtonCode::KeyA)],
-            vec![],
-        );
+        let mapping = InputMapping::new(vec![("jump".to_string(), ButtonCode::KeyA)], vec![]);
         let mut input_mapped = InputMapped::new(mapping);
 
         let mut raw_buttons: HashMap<ButtonCode, bool> = HashMap::new();
@@ -142,10 +121,7 @@ mod tests {
 
     #[test]
     fn two_polls_keep_the_change_flags_per_poll() {
-        let mapping = InputMapping::new(
-            vec![("jump".to_string(), ButtonCode::KeyA)],
-            vec![],
-        );
+        let mapping = InputMapping::new(vec![("jump".to_string(), ButtonCode::KeyA)], vec![]);
         let mut input_mapped = InputMapped::new(mapping);
 
         let mut raw_buttons: HashMap<ButtonCode, bool> = HashMap::new();

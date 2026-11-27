@@ -32,6 +32,7 @@ impl UiKind {
             UiKind::Image => "image",
             UiKind::Button => "button",
             UiKind::Text => "text",
-        }.to_owned()
+        }
+        .to_owned()
     }
 }
