@@ -49,8 +49,8 @@ bytemuck = { version = "1", features = ["derive"] }
 
 # Spine (.anim) asset preview — .anim is a zip of skeleton.atlas +
 # skeleton.json + skeleton.png (Spine 3.8 native JSON export), see
-# anim_viewer.rs for details.
-rusty_spine = { path = "../../rusty_spine3.8" }
+# anim_viewer.rs for details. The spine runtime lives in rendering_dynamic::spine.
+rendering_dynamic = { path = "../optional_systems/rendering_dynamic" }
 zip = { version = "2", default-features = false, features = ["deflate"] }
 
 # Concurrency / misc
