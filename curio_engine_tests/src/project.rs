@@ -2,7 +2,7 @@
 mod tests {
     use curio_engine::project::Project;
     use std::fs;
-    use std::panic::{AssertUnwindSafe, catch_unwind};
+    use std::panic::{catch_unwind, AssertUnwindSafe};
 
     #[test]
     fn project_default_is_empty() {

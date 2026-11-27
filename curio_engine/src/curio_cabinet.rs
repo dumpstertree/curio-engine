@@ -28,40 +28,9 @@ use winit::{
     window::Window,
 };
 
-use curio_core::{
-    AssetCache,
-    AssetDatabase,
-    AssetPipeline,
-    AxisCode,
-    ButtonCode,
-    ButtonPressed,
-    Curio,
-    CurioCommon,
-    Gpu,
-    Logger,
-    Portal,
-    Services,
-    Severity,
-    Vector3,
-};
+use curio_core::{AssetCache, AssetDatabase, AssetPipeline, AxisCode, ButtonCode, ButtonPressed, Curio, CurioCommon, Gpu, Logger, Portal, Services, Severity, Vector3};
 
-use egui_wgpu::wgpu::{
-    Adapter,
-    CommandEncoderDescriptor,
-    Device,
-    DeviceDescriptor,
-    Features,
-    Instance,
-    Limits,
-    PowerPreference,
-    Queue,
-    RequestAdapterOptions,
-    Surface,
-    SurfaceConfiguration,
-    TextureFormat,
-    TextureViewDescriptor,
-    TextureUsages,
-};
+use egui_wgpu::wgpu::{Adapter, CommandEncoderDescriptor, Device, DeviceDescriptor, Features, Instance, Limits, PowerPreference, Queue, RequestAdapterOptions, Surface, SurfaceConfiguration, TextureFormat, TextureUsages, TextureViewDescriptor};
 
 use std::{path::Path, ptr, sync::Arc};
 
@@ -162,7 +131,9 @@ impl CabinetWindowOwner {
             return;
         };
 
-        let output_view = current.texture.create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
+        let output_view = current
+            .texture
+            .create_view(&egui_wgpu::wgpu::TextureViewDescriptor::default());
         let mut encoder = device.create_command_encoder(&egui_wgpu::wgpu::CommandEncoderDescriptor { label: Some("curio_frame_encoder") });
 
         app_instance
@@ -433,7 +404,11 @@ pub struct LoadedCurio {
 pub fn load_curio(folder: &Path, gpu: *const Services, preferred_stem: Option<&str>) -> LoadedCurio {
     println!("folder: {}", folder.as_os_str().to_str().unwrap());
     let entries = std::fs::read_dir(folder).unwrap_or_else(|e| panic!("plugins folder not found at {:?}: {e}", folder));
-    let mut plugins: Vec<_> = entries.flatten().map(|path| path.path()).filter(|path| matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib"))).collect();
+    let mut plugins: Vec<_> = entries
+        .flatten()
+        .map(|path| path.path())
+        .filter(|path| matches!(path.extension().and_then(|e| e.to_str()), Some("so") | Some("dll") | Some("dylib")))
+        .collect();
     // A build dir may hold plugins from other projects (shared targets,
     // leftovers). Always try this project's own crate first.
     if let Some(stem) = preferred_stem {

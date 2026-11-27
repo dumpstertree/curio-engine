@@ -17,36 +17,20 @@
 //! Exit codes: 0 done · 2 bad/missing scenario · 3 no ./test.proj ·
 //! 4 no game plugin · 5 plugin died mid-run.
 
+use curio_engine::curio_cabinet::{self, expected_plugin_stem, load_curio, LoadedCurio};
 use curio_engine::plugin_loader::lock_process_memory;
-use curio_engine::curio_cabinet::{self, load_curio, expected_plugin_stem, LoadedCurio};
 use curio_engine::project::{self, Project};
 
-use crate::scenario::{self, Scenario, InputEvent};
+use crate::scenario::{self, InputEvent, Scenario};
 
-use curio_core::{
-    AssetCache,
-    AssetDatabase,
-    AssetPipeline,
-    AxisCode,
-    ButtonCode,
-    ButtonPressed,
-    ComponentState,
-    Curio,
-    CurioCommon,
-    FieldState,
-    File,
-    Gpu,
-    Logger,
-    ObjectState,
-    PluginState,
-    Services,
-    Severity,
-    Vector3,
-};
+use curio_core::{AssetCache, AssetDatabase, AssetPipeline, AxisCode, ButtonCode, ButtonPressed, ComponentState, Curio, CurioCommon, FieldState, File, Gpu, Logger, ObjectState, PluginState, Services, Severity, Vector3};
 
 use time::SysRecordTime;
 
-use egui_wgpu::wgpu::{self, Adapter, Backends, Buffer, BufferDescriptor, BufferUsages, BufferView, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, InstanceDescriptor, Limits, Maintain, MapMode, PowerPreference, Queue, RequestAdapterOptions, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, TexelCopyBufferInfo, TexelCopyBufferLayout, TexelCopyTextureInfo, Origin3d};
+use egui_wgpu::wgpu::{
+    self, Adapter, Backends, Buffer, BufferDescriptor, BufferUsages, BufferView, CommandEncoderDescriptor, Device, DeviceDescriptor, Extent3d, Features, Instance, InstanceDescriptor, Limits, Maintain, MapMode, Origin3d, PowerPreference, Queue, RequestAdapterOptions, TexelCopyBufferInfo,
+    TexelCopyBufferLayout, TexelCopyTextureInfo, Texture, TextureAspect, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
+};
 
 use image::{save_buffer, ExtendedColorType};
 
@@ -54,8 +38,8 @@ use serde_json::{self, Value};
 
 use pollster::FutureExt;
 
-use std::{path::Path, ptr, sync::Arc, collections::HashMap};
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::{collections::HashMap, path::Path, ptr, sync::Arc};
 
 // ── Readback geometry (capture.rs utility, same padding rule) ───────────────
 
@@ -276,33 +260,36 @@ impl Simulation {
     // capture texture + ping-pong readback buffers (`capture.rs`).
 
     pub fn setup_gpu(&mut self, width: u32, height: u32) {
-        let instance = Instance::new(&InstanceDescriptor {
-            backends: Backends::all(),
-            ..Default::default()
-        });
+        let instance = Instance::new(&InstanceDescriptor { backends: Backends::all(), ..Default::default() });
 
-        let Ok(adapter_opt) = catch_unwind(AssertUnwindSafe(|| instance
-            .request_adapter(&RequestAdapterOptions {
-                power_preference: PowerPreference::HighPerformance,
-                compatible_surface: None,
-                force_fallback_adapter: false,
-            })
-            .block_on())) else {
+        let Ok(adapter_opt) = catch_unwind(AssertUnwindSafe(|| {
+            instance
+                .request_adapter(&RequestAdapterOptions {
+                    power_preference: PowerPreference::HighPerformance,
+                    compatible_surface: None,
+                    force_fallback_adapter: false,
+                })
+                .block_on()
+        })) else {
             return;
         };
         let Some(adapter) = adapter_opt else {
             return;
         };
 
-        let Ok(device_result) = catch_unwind(AssertUnwindSafe(|| adapter.request_device(
-            &DeviceDescriptor {
-                label: Some("curio_headless_device"),
-                required_features: Features::POLYGON_MODE_LINE | Features::BUFFER_BINDING_ARRAY,
-                required_limits: Limits::default(),
-                memory_hints: Default::default(),
-            },
-            None,
-        ).block_on())) else {
+        let Ok(device_result) = catch_unwind(AssertUnwindSafe(|| {
+            adapter
+                .request_device(
+                    &DeviceDescriptor {
+                        label: Some("curio_headless_device"),
+                        required_features: Features::POLYGON_MODE_LINE | Features::BUFFER_BINDING_ARRAY,
+                        required_limits: Limits::default(),
+                        memory_hints: Default::default(),
+                    },
+                    None,
+                )
+                .block_on()
+        })) else {
             return;
         };
         let Ok(device_queue) = device_result else {
@@ -314,11 +301,7 @@ impl Simulation {
 
         let capture_texture = Arc::new(device.create_texture(&TextureDescriptor {
             label: Some("headless_capture_texture"),
-            size: Extent3d {
-                width: width,
-                height: height,
-                depth_or_array_layers: 1,
-            },
+            size: Extent3d { width: width, height: height, depth_or_array_layers: 1 },
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
@@ -380,7 +363,9 @@ impl Simulation {
                     loaded.curio.input_button(*code, state);
                 }
                 if let Some(code) = &event.axis {
-                    loaded.curio.input_axis(*code, Vector3::new(event.x, event.y, 0.0));
+                    loaded
+                        .curio
+                        .input_axis(*code, Vector3::new(event.x, event.y, 0.0));
                 }
             }
         }
@@ -400,9 +385,11 @@ impl Simulation {
         };
         let mut applied = 0;
         for i in 0..loaded.curio.ledgers.len() {
-            let survived = catch_unwind(AssertUnwindSafe(|| loaded.curio.ledgers[i].write::<SysRecordTime>(|t| {
-                t.target_frame_rate = *rate;
-            })));
+            let survived = catch_unwind(AssertUnwindSafe(|| {
+                loaded.curio.ledgers[i].write::<SysRecordTime>(|t| {
+                    t.target_frame_rate = *rate;
+                })
+            }));
             if !survived.is_err() {
                 applied = applied + 1;
             }

@@ -25,8 +25,8 @@
 //!     y: -0.25
 //! ```
 
-use serde::{Deserialize, Serialize};
 use curio_core::{AxisCode, ButtonCode, ButtonPressed};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// A full run description.

@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use curio_engine::curio_cabinet::{expected_plugin_stem, CabinetWindowOwner, load_curio};
-    use curio_engine::project::Project;
     use curio_core::{Portal, Services};
+    use curio_engine::curio_cabinet::{expected_plugin_stem, load_curio, CabinetWindowOwner};
+    use curio_engine::project::Project;
+    use std::panic::{catch_unwind, AssertUnwindSafe};
     use std::{fs, ptr};
-    use std::panic::{AssertUnwindSafe, catch_unwind};
     use tempfile::tempdir;
 
     // load_library copies plugin candidates into ./data even when it then
@@ -14,7 +14,7 @@ mod tests {
             return;
         };
         for entry in entries.flatten() {
-        let file_name = entry.file_name();
+            let file_name = entry.file_name();
             let Some(name) = file_name.to_str() else {
                 continue;
             };
