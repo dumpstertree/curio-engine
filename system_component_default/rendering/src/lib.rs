@@ -183,10 +183,16 @@ impl PluginCommon for SystemComponentDefaultGraphics {
     //     // let _window = SystemGPU::get_window();
     //     // self.egui_renderer.handle_input(&window, &event);
     // }
-    fn set_formation(&mut self, _: &mut Vec<Ledger>, game_mode: &Formation) {
+    fn set_formation(&mut self, ledger: &mut Vec<Ledger>, game_mode: &Formation) {
         let mut graphics_mapping = vec![];
         for x in &game_mode.seats {
             graphics_mapping.push(x.graphics.clone());
+        }
+
+        // each screen's ui record carries its rect on the swapchain, so its
+        // real size (and the world frustum's aspect) can be read off the record
+        for (screen, mapping) in ledger.iter_mut().zip(graphics_mapping.iter()) {
+            screen.write::<SysRecordUi>(|state_ui| state_ui.mapping = mapping.clone());
         }
 
         self.render_feature_3d_helper

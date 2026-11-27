@@ -158,14 +158,19 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _nerve: &mut Nerve) {
-        // the screen size to lay out against: the record's authored viewport
-        // first, the window's capture size after that
-        let state_ui = ledger.read::<SysRecordUi>();
-        let mut viewport = state_ui.viewport;
-        if !(viewport.x > 0.0 && viewport.y > 0.0) {
-            let gpu = &Services::get().gpu;
-            viewport = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
+        // the screen size to lay out against: the record's authored viewport,
+        // or else the screen's real size on the swapchain, written into the
+        // record itself so the pass and any driver read the same value
+        let gpu = &Services::get().gpu;
+        let capture = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
+        let real_size = ledger.read::<SysRecordUi>().screen_on(capture).pixels();
+        if ledger.read::<SysRecordUi>().viewport_needs_fill(real_size) {
+            ledger.write::<SysRecordUi>(|screen| {
+                screen.fill_viewport(real_size);
+            });
         }
+        let state_ui = ledger.read::<SysRecordUi>();
+        let viewport = state_ui.viewport;
         if !(viewport.x > 0.0 && viewport.y > 0.0) {
             ledger.log(Severity::Warning, &"ui_overlay: layout habit has no viewport to lay out against");
             return;

@@ -5012,6 +5012,7 @@ name = "ui_overlay"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "camera",
  "ctor",
  "curio_core",
  "egui-wgpu",

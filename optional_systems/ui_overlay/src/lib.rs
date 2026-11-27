@@ -4,6 +4,8 @@ pub use data::ui_font::UiFontDesc;
 pub use data::ui_font_grid::UiFontGrid;
 pub use data::ui_kind::UiKind;
 pub use data::ui_rect::UiRect;
+pub use data::ui_screen::UiScreen;
+pub use data::ui_screen::UiWorldPlacement;
 pub use facet::ui_node::UiNode;
 pub use facet::ui_node::UiNodeBuilder;
 pub use record::sys_record_ui::SysRecordUi;
@@ -16,6 +18,7 @@ pub(crate) mod data {
     pub(crate) mod ui_font_grid;
     pub(crate) mod ui_kind;
     pub(crate) mod ui_rect;
+    pub(crate) mod ui_screen;
 }
 pub(crate) mod facet {
     pub(crate) mod ui_node;

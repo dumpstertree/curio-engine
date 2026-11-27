@@ -7,7 +7,7 @@ use egui_wgpu::wgpu::{
 };
 use std::sync::Arc;
 
-use crate::{DEFAULT_FONT, SysRecordUi, UiDrawCall, UiFontDesc, UiFontGrid, UiKind, UiRect};
+use crate::{DEFAULT_FONT, SysRecordUi, UiFontDesc, UiFontGrid, UiKind, UiScreen};
 
 /// A painted corner of a UI quad, in normalized device coordinates.
 ///
@@ -105,25 +105,31 @@ impl UiOverlayPass {
         // gather every screen's boxes into one vertex list
         let mut vertices: Vec<UiVertex> = Vec::new();
         let gpu = &Services::get().gpu;
+        let capture = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
         let screens = ledger.len().min(mappings.len());
         for screen_index in 0..screens {
+            // keep the record's mapping the one this pass paints with, so a
+            // driver reading SysRecordUi::screen() gets the same numbers
+            let mapping = &mappings[screen_index];
+            let recorded = ledger[screen_index].read::<SysRecordUi>().mapping.clone();
+            if recorded.viewport_min != mapping.viewport_min || recorded.viewport_max != mapping.viewport_max {
+                ledger[screen_index].write::<SysRecordUi>(|state_ui| state_ui.mapping = mapping.clone());
+            }
             let state_ui = ledger[screen_index].read::<SysRecordUi>();
             if state_ui.draw_calls.is_empty() {
                 continue;
             }
-            // the viewport the layout habit sized against, same fallback
-            // order as in the habit
-            let mut viewport = state_ui.viewport;
-            if !(viewport.x > 0.0 && viewport.y > 0.0) {
-                viewport = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
+            // the one screen mapping: the viewport the layout habit sized
+            // against (it fills an unauthored one with the real screen size),
+            // stretched onto this screen's rect on the swapchain
+            let mut screen = UiScreen::new(state_ui.viewport, mapping, capture);
+            if !screen.is_valid() {
+                // the habit has not run on this screen yet
+                screen.viewport = screen.pixels();
+                if !screen.is_valid() {
+                    continue;
+                }
             }
-            // this screen's rect on the swapchain. UI y grows down, GPU y
-            // grows up — so the UI's top edge is the mapping's max.y
-            let mapping = &mappings[screen_index];
-            let min_x = mapping.viewport_min.x;
-            let max_x = mapping.viewport_max.x;
-            let min_y = mapping.viewport_min.y;
-            let max_y = mapping.viewport_max.y;
 
             for draw_call in state_ui.draw_calls.iter() {
                 let rect = draw_call.rect;
@@ -136,8 +142,8 @@ impl UiOverlayPass {
 
                 // UI pixels → the screen's share of the swapchain → NDC.
                 // left/right, then the y flip for the UI's down axis
-                let to_x = |px| 2.0 * (min_x + px / viewport.x * (max_x - min_x)) - 1.0;
-                let to_y = |py| 2.0 * (max_y - py / viewport.y * (max_y - min_y)) - 1.0;
+                let to_x = |px| screen.to_ndc(px, 0.0)[0];
+                let to_y = |py| screen.to_ndc(0.0, py)[1];
                 let x0 = to_x(rect.x);
                 let x1 = to_x(rect.x + rect.width);
                 let y1 = to_y(rect.y);
