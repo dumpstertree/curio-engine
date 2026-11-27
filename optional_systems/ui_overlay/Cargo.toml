@@ -12,6 +12,7 @@ input = { workspace = true }
 facet = { workspace = true }
 habit = { workspace = true }
 record = { workspace = true }
+camera = { workspace = true } # CameraSnapshot for UiScreen::place_in_world
 ctor = "0.8.0"
 
 # layout solver (CSS flexbox/grid as a standalone crate — powers bevy_ui, gpui, floem)

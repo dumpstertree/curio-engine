@@ -5012,6 +5012,7 @@ name = "ui_overlay"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
+ "camera",
  "ctor",
  "curio_core",
  "egui-wgpu",
@@ -5024,6 +5025,15 @@ dependencies = [
  "serde",
  "serde_json",
  "taffy",
+]
+
+[[package]]
+name = "ui_overlay-tests"
+version = "0.1.0"
+dependencies = [
+ "camera",
+ "curio_core",
+ "ui_overlay",
 ]
 
 [[package]]
