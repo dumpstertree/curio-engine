@@ -24,10 +24,12 @@ use crate::{SysRecordUi, UiDrawCall, UiKind, UiNode, UiRect};
 struct UiEntry {
     pub form: Form,
     pub node: UiNode,
-    // this node's top form inside its UI parent (-1 when it is a root)
-    pub top_id: i32,
-    // the nearest UI ancestor above this node (-1 when it is a root)
-    pub parent_ui: i32,
+    // this node's top form inside its UI parent (None when it is a root).
+    // instance ids can be any i32, negative included, so "no parent" is
+    // never spelled as an id
+    pub top_id: Option<i32>,
+    // the nearest UI ancestor above this node (None when it is a root)
+    pub parent_ui: Option<i32>,
     // how many UI ancestors sit above it
     pub depth: u32,
     // its Transform2D offset, accumulated up to the UI parent, in pixels
@@ -40,8 +42,8 @@ impl UiEntry {
         UiEntry {
             form: node.form(),
             node,
-            top_id: -1,
-            parent_ui: -1,
+            top_id: None,
+            parent_ui: None,
             depth: 0,
             offset_x: 0.0,
             offset_y: 0.0,
@@ -245,11 +247,11 @@ impl Habit for Instance {
             }
             entry.depth = depth;
             if ancestor < chain.len() {
-                entry.parent_ui = chain[ancestor].instance_id();
+                entry.parent_ui = Some(chain[ancestor].instance_id());
                 if ancestor > 0 {
-                    entry.top_id = chain[ancestor - 1].instance_id();
+                    entry.top_id = Some(chain[ancestor - 1].instance_id());
                 } else {
-                    entry.top_id = entry.form.instance_id();
+                    entry.top_id = Some(entry.form.instance_id());
                 }
             }
             // the pixel offset through every form between here and the UI
@@ -278,10 +280,10 @@ impl Habit for Instance {
             let mut kids: Vec<i32> = Vec::new();
             for child in entry.form.children() {
                 let child_id = child.instance_id();
-                if let Some(adopted) = entries.get(&child_id) {
-                    if adopted.parent_ui == *id {
-                        kids.push(child_id);
-                    }
+                if let Some(adopted) = entries.get(&child_id)
+                    && adopted.parent_ui == Some(*id)
+                {
+                    kids.push(child_id);
                 }
             }
             ui_children.insert(*id, kids);
@@ -337,14 +339,12 @@ impl Habit for Instance {
         };
         for pair in deepest_first.iter() {
             let id = pair.1;
-            if let Some(entry) = entries.get(&id) {
-                if entry.parent_ui < 0 {
-                    if let Some(node) = taffy_nodes.get(&id) {
-                        if tree.compute_layout(*node, root_space).is_err() {
-                            ledger.log(Severity::Warning, &format!("ui_overlay: taffy layout failed at root form {}", id));
-                        }
-                    }
-                }
+            if let Some(entry) = entries.get(&id)
+                && entry.parent_ui.is_none()
+                && let Some(node) = taffy_nodes.get(&id)
+                && tree.compute_layout(*node, root_space).is_err()
+            {
+                ledger.log(Severity::Warning, &format!("ui_overlay: taffy layout failed at root form {}", id));
             }
         }
 
@@ -364,11 +364,11 @@ impl Habit for Instance {
                             // added up
                             let mut base_x = 0.0;
                             let mut base_y = 0.0;
-                            if entry.parent_ui >= 0 {
-                                if let Some(parent) = absolute.get(&entry.parent_ui) {
-                                    base_x = parent.x;
-                                    base_y = parent.y;
-                                }
+                            if let Some(parent_id) = entry.parent_ui
+                                && let Some(parent) = absolute.get(&parent_id)
+                            {
+                                base_x = parent.x;
+                                base_y = parent.y;
                             }
                             let corner = Vector2::new(base_x + finite(resolved.location.x), base_y + finite(resolved.location.y));
                             absolute.insert(id, corner);
@@ -539,4 +539,94 @@ fn ui_text_follows_the_shared_font_grid() {
         Some(_) => panic!("'#' must not resolve in the default grid"),
         None => {}
     }
+}
+
+#[test]
+fn nested_leaf_under_a_negative_id_anchor_keeps_its_ui_parent() {
+    use curio_core::{AssetCache, AssetDatabase, AssetPipeline, CurioNetwork, CurioNetworkParticipant, Gpu, Logger};
+
+    // the ledger logs through the Services singleton, so stand one up with no
+    // gpu. The habit never touches the gpu while the record has a viewport
+    static SERVICES: std::sync::LazyLock<bool> = std::sync::LazyLock::new(|| {
+        let null_void: *const () = std::ptr::null();
+        let services: *mut Services = Box::into_raw(Box::new(Services {
+            logger: Box::into_raw(Box::new(Logger::new(Severity::Info))),
+            assets: Box::into_raw(Box::new(AssetPipeline::new(AssetCache::new(10), AssetDatabase::new()))),
+            gpu: Gpu {
+                device: null_void,
+                queue: null_void,
+                capture_texture: null_void,
+                capture_width: 0,
+                capture_height: 0,
+            },
+        }));
+        Services::set(services);
+        true
+    });
+    assert!(*SERVICES);
+
+    let world = std::rc::Rc::new(std::cell::RefCell::new(hecs::World::new()));
+    let mut context = Context3D::new(world.clone());
+
+    // the panel root sits at the viewport origin
+    let panel = context
+        .spawner("hud")
+        .facet(UiNode::builder().min_size(400.0, 200.0).build())
+        .spawn();
+
+    // instance ids are random and mostly negative. The bug read any negative
+    // UI parent id as "no parent", so force the anchor onto a negative id:
+    // keep spawning plain forms until one draws one, then make that the anchor
+    let mut anchor = context.spawner("anchor").spawn();
+    let mut tries = 0;
+    while anchor.instance_id() >= 0 && tries < 1000 {
+        anchor = context.spawner("anchor").spawn();
+        tries += 1;
+    }
+    assert!(anchor.instance_id() < 0, "no negative instance id drawn in {} tries", tries);
+    let anchor = anchor.add_facet(
+        UiNode::builder()
+            .kind(UiKind::Block)
+            .size(200.0, 100.0)
+            .build(),
+    );
+    anchor.set_parent(Some(panel.clone()));
+    let mut anchor_shift = Transform2D::default();
+    anchor_shift.position = Vector2::new(300.0, 200.0);
+    let anchor = anchor.add_facet(anchor_shift);
+
+    // the leaf hangs under the anchor, inset by its own offset
+    let leaf = context
+        .spawner("plaque")
+        .facet(
+            UiNode::builder()
+                .kind(UiKind::Block)
+                .size(50.0, 20.0)
+                .build(),
+        )
+        .spawn();
+    leaf.set_parent(Some(anchor.clone()));
+    let mut leaf_shift = Transform2D::default();
+    leaf_shift.position = Vector2::new(10.0, 5.0);
+    let leaf = leaf.add_facet(leaf_shift);
+
+    let network = CurioNetwork::new(vec![CurioNetworkParticipant::new(0, NetworkModes::LocalHost)], 0);
+    let mut ledger = Ledger::new(network.clone());
+    let mut nerve = Nerve::new(network);
+    ledger.write::<SysRecordUi>(|screen| screen.viewport = Vector2::new(1280.0, 720.0));
+    let mut habit = Instance {};
+    habit.tick(&mut ledger, &mut context, &mut nerve);
+
+    let mut anchor_rect = UiRect::new(-1.0, -1.0, 0.0, 0.0);
+    if let Some(node) = anchor.get_facet::<UiNode>() {
+        anchor_rect = node.rect;
+    }
+    assert_eq!((anchor_rect.x, anchor_rect.y), (300.0, 200.0), "anchor box {:?}", (anchor_rect.x, anchor_rect.y));
+
+    // the leaf starts from the anchor's corner, not from the viewport origin
+    let mut leaf_rect = UiRect::new(-1.0, -1.0, 0.0, 0.0);
+    if let Some(node) = leaf.get_facet::<UiNode>() {
+        leaf_rect = node.rect;
+    }
+    assert_eq!((leaf_rect.x, leaf_rect.y, leaf_rect.width, leaf_rect.height), (310.0, 205.0, 50.0, 20.0));
 }
