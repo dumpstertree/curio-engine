@@ -197,12 +197,8 @@ impl Habit for Instance {
             .get_button(&ButtonCode::MousePrimary)
             .is_down;
 
-        // the cursor arrives in the host's screen pixels: winit feeds
-        // CursorMoved (window pixels), and the editor webview scales its
-        // canvas box into frame (capture) pixels. boxes live in viewport
-        // pixels, so without an authored cursor_space the hit-test assumes
-        // the cursor came in in capture size — the y axis needs no flip
-        // because the pass already maps the UI's top edge to the screen's top edge
+        // the cursor arrives in capture pixels (winit window pixels, or the editor's
+        // fitted image mapped back to frame pixels); no y flip, the pass maps the ui's top edge to the screen's top
         let mut cursor_space = state_ui.cursor_space;
         if !(cursor_space.x > 0.0 && cursor_space.y > 0.0) {
             let gpu = &Services::get().gpu;
