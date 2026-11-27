@@ -108,8 +108,7 @@ impl UiOverlayPass {
         let capture = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
         let screens = ledger.len().min(mappings.len());
         for screen_index in 0..screens {
-            // keep the record's mapping the one this pass paints with, so a
-            // driver reading SysRecordUi::screen() gets the same numbers
+            // keep the record's mapping the one this pass paints with, for SysRecordUi::screen()
             let mapping = &mappings[screen_index];
             let recorded = ledger[screen_index].read::<SysRecordUi>().mapping.clone();
             if recorded.viewport_min != mapping.viewport_min || recorded.viewport_max != mapping.viewport_max {
@@ -119,9 +118,6 @@ impl UiOverlayPass {
             if state_ui.draw_calls.is_empty() {
                 continue;
             }
-            // the one screen mapping: the viewport the layout habit sized
-            // against (it fills an unauthored one with the real screen size),
-            // stretched onto this screen's rect on the swapchain
             let mut screen = UiScreen::new(state_ui.viewport, mapping, capture);
             if !screen.is_valid() {
                 // the habit has not run on this screen yet

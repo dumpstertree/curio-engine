@@ -5028,6 +5028,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ui_overlay-tests"
+version = "0.1.0"
+dependencies = [
+ "camera",
+ "curio_core",
+ "ui_overlay",
+]
+
+[[package]]
 name = "unicase"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

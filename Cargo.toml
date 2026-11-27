@@ -33,6 +33,7 @@ members = [
     "optional_systems/skybox",
     "optional_systems/tween",
     "optional_systems/ui_overlay",
+    "optional_systems/ui_overlay_tests",
     "optional_systems/animators",
 
 ]

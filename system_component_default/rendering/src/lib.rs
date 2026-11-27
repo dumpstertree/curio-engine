@@ -189,8 +189,7 @@ impl PluginCommon for SystemComponentDefaultGraphics {
             graphics_mapping.push(x.graphics.clone());
         }
 
-        // each screen's ui record carries its rect on the swapchain, so its
-        // real size (and the world frustum's aspect) can be read off the record
+        // the ui record carries its screen's rect, so its real size can be read off the record
         for (screen, mapping) in ledger.iter_mut().zip(graphics_mapping.iter()) {
             screen.write::<SysRecordUi>(|state_ui| state_ui.mapping = mapping.clone());
         }

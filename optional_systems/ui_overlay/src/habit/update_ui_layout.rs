@@ -158,9 +158,7 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, ledger: &mut Ledger, context: &mut Context3D, _nerve: &mut Nerve) {
-        // the screen size to lay out against: the record's authored viewport,
-        // or else the screen's real size on the swapchain, written into the
-        // record itself so the pass and any driver read the same value
+        // fill an unauthored viewport in the record itself, so the pass and drivers read the same value
         let gpu = &Services::get().gpu;
         let capture = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
         let real_size = ledger.read::<SysRecordUi>().screen_on(capture).pixels();
