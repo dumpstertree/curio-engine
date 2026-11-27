@@ -129,21 +129,22 @@ impl UiOverlayPass {
 
             for draw_call in state_ui.draw_calls.iter() {
                 let rect = draw_call.rect;
-                if !(rect.width > 0.0 && rect.height > 0.0) {
+                if !(rect.width > 0.0 && rect.height > 0.0) || draw_call.scale.x == 0.0 || draw_call.scale.y == 0.0 {
                     continue;
                 }
                 let color = draw_call.color;
                 // curio_core Color keeps its channels private behind accessors
                 let tint = [color.as_r_01(), color.as_g_01(), color.as_b_01(), color.as_a_01()];
 
-                // UI pixels → the screen's share of the swapchain → NDC.
-                // left/right, then the y flip for the UI's down axis
-                let to_x = |px| screen.to_ndc(px, 0.0)[0];
-                let to_y = |py| screen.to_ndc(0.0, py)[1];
-                let x0 = to_x(rect.x);
-                let x1 = to_x(rect.x + rect.width);
-                let y1 = to_y(rect.y);
-                let y0 = to_y(rect.y + rect.height);
+                // a point of the upright box → turned and scaled about its centre → NDC
+                let place = |px: f32, py: f32| {
+                    let turned = rect.turn_point(px, py, draw_call.rotation, draw_call.scale);
+                    screen.to_ndc(turned.x, turned.y)
+                };
+                let top_left = place(rect.x, rect.y);
+                let top_right = place(rect.x + rect.width, rect.y);
+                let bottom_left = place(rect.x, rect.y + rect.height);
+                let bottom_right = place(rect.x + rect.width, rect.y + rect.height);
 
                 // a Text node with a label paints glyphs, not a box; an
                 // empty Text node still paints its placeholder quad
@@ -151,12 +152,12 @@ impl UiOverlayPass {
                     // one quad, two triangles — wound counter-clockwise in
                     // NDC. the flat uv marks the fragment's no-texture path
                     let flat_uv = [-1.0, -1.0];
-                    vertices.push(UiVertex::new([x0, y0], flat_uv, tint));
-                    vertices.push(UiVertex::new([x1, y0], flat_uv, tint));
-                    vertices.push(UiVertex::new([x0, y1], flat_uv, tint));
-                    vertices.push(UiVertex::new([x0, y1], flat_uv, tint));
-                    vertices.push(UiVertex::new([x1, y0], flat_uv, tint));
-                    vertices.push(UiVertex::new([x1, y1], flat_uv, tint));
+                    vertices.push(UiVertex::new(bottom_left, flat_uv, tint));
+                    vertices.push(UiVertex::new(bottom_right, flat_uv, tint));
+                    vertices.push(UiVertex::new(top_left, flat_uv, tint));
+                    vertices.push(UiVertex::new(top_left, flat_uv, tint));
+                    vertices.push(UiVertex::new(bottom_right, flat_uv, tint));
+                    vertices.push(UiVertex::new(top_right, flat_uv, tint));
                 }
 
                 // glyphs: monospace, one advance per character, centred in
@@ -179,19 +180,20 @@ impl UiOverlayPass {
                                 }
                                 match grid.glyph_uv(ch) {
                                     Some([u_min, v_top, u_max, v_bottom]) => {
-                                        let gx0 = to_x(pen_x);
-                                        let gx1 = to_x(pen_x + size);
-                                        let gy_top = to_y(pen_y);
-                                        let gy_bottom = to_y(pen_y + size);
+                                        // cells sit in the upright box, so they lean with it
+                                        let cell_top_left = place(pen_x, pen_y);
+                                        let cell_top_right = place(pen_x + size, pen_y);
+                                        let cell_bottom_left = place(pen_x, pen_y + size);
+                                        let cell_bottom_right = place(pen_x + size, pen_y + size);
                                         // same winding as the box quads.
                                         // the cell's top edge is v_top since
                                         // v grows downward in the texture
-                                        vertices.push(UiVertex::new([gx0, gy_bottom], [u_min, v_bottom], tint));
-                                        vertices.push(UiVertex::new([gx1, gy_bottom], [u_max, v_bottom], tint));
-                                        vertices.push(UiVertex::new([gx0, gy_top], [u_min, v_top], tint));
-                                        vertices.push(UiVertex::new([gx0, gy_top], [u_min, v_top], tint));
-                                        vertices.push(UiVertex::new([gx1, gy_bottom], [u_max, v_bottom], tint));
-                                        vertices.push(UiVertex::new([gx1, gy_top], [u_max, v_top], tint));
+                                        vertices.push(UiVertex::new(cell_bottom_left, [u_min, v_bottom], tint));
+                                        vertices.push(UiVertex::new(cell_bottom_right, [u_max, v_bottom], tint));
+                                        vertices.push(UiVertex::new(cell_top_left, [u_min, v_top], tint));
+                                        vertices.push(UiVertex::new(cell_top_left, [u_min, v_top], tint));
+                                        vertices.push(UiVertex::new(cell_bottom_right, [u_max, v_bottom], tint));
+                                        vertices.push(UiVertex::new(cell_top_right, [u_max, v_top], tint));
                                     }
                                     None => {}
                                 }

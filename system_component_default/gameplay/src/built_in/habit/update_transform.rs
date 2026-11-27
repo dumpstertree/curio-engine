@@ -1,7 +1,7 @@
 use curio_core::{Ledger, Nerve, NetworkModes};
 
 use crate::{
-    built_in::facet::transform::{transform2d::update_transform2d, transform3d::update_transform3d},
+    built_in::facet::transform::transform3d::update_transform3d,
     context_3d::Context3D,
     traits::{habit::Habit, scope::Scope},
 };
@@ -23,7 +23,6 @@ impl Scope for Instance {
 }
 impl Habit for Instance {
     fn tick(&mut self, _: &mut Ledger, world: &mut Context3D, _: &mut Nerve) {
-        update_transform2d(world);
         update_transform3d(world);
     }
 }

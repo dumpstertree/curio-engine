@@ -1,8 +1,9 @@
 /// What a UI node paints.
 ///
 /// A Panel is a flex container: taffy sizes it and arranges its children in
-/// flow. Every other kind is a leaf — its `Transform2D.position` places it in
-/// pixels (relative to the nearest UI ancestor) and it paints one quad.
+/// flow. Every other kind is a leaf — its `Transform3D.position` places it in
+/// pixels (relative to the nearest UI ancestor), z is its paint layer, its
+/// rotation (about z) and scale turn it about its centre, and it paints one quad.
 #[derive(Clone, Copy, PartialEq, Eq, Default, Debug)]
 pub enum UiKind {
     #[default]

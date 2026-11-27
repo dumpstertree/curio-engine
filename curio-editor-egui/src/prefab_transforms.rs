@@ -29,7 +29,7 @@ pub struct RenderEntry {
 }
 
 /// A node's own local transform matrix (identity if it has no
-/// `Transform2D`/`Transform3D` component at all).
+/// `Transform3D` component at all).
 pub fn local_matrix(node: &PrefabGameObjectRaw) -> Mat4 {
     let Some(transform_comp) = node.components.iter().find(|c| is_transform(&c.kind)) else {
         return Mat4::IDENTITY;

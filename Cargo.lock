@@ -3838,7 +3838,6 @@ name = "rendering_static"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
- "camera",
  "ctor",
  "curio_core",
  "ext_rendering",
@@ -5033,6 +5032,9 @@ version = "0.1.0"
 dependencies = [
  "camera",
  "curio_core",
+ "gameplay",
+ "hecs",
+ "input",
  "ui_overlay",
 ]
 

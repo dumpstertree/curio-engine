@@ -1,6 +1,6 @@
 use crate::UiKind;
 use crate::UiRect;
-use curio_core::{Color, FieldState};
+use curio_core::{Color, FieldState, Vector2};
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
 
@@ -14,14 +14,12 @@ use gameplay::traits::field_override::FieldOverride;
 /// and a label paints glyphs from the shared font atlas instead of a box.
 ///
 /// Children are not attached by the builder: the author sets `set_parent` on
-/// the child's form, and a leaf places itself with a `Transform2D` facet, in
-/// pixels below-right of its nearest UI ancestor.
+/// the child's form, and a leaf places itself with a `Transform3D` facet: x/y in
+/// pixels below-right of its nearest UI ancestor, z its paint layer, and its
+/// z-axis rotation and x/y scale turning and sizing the box about its centre.
 #[facet]
 pub struct UiNode {
     pub kind: UiKind,
-    /// painter's order within the screen. The author's `z_index` wins, taffy's
-    /// own paint order breaks ties
-    pub z_index: i32,
     /// requested box. 0 means "let taffy decide" (flex/auto sizing)
     pub width: f32,
     pub height: f32,
@@ -40,13 +38,18 @@ pub struct UiNode {
     /// glyph height in pixels — the shared atlas's native cells are 12 px.
     /// 0 means "don't paint text"
     pub font_size: f32,
-    /// free-form placement: when set, this node hangs at its own `Transform2D`
+    /// free-form placement: when set, this node hangs at its own `Transform3D`
     /// offset (pixels, below-right of the nearest UI ancestor) instead of
     /// floating in the parent panel's flex flow. Leaves are always absolute;
     /// this lets a Panel keep a Figma-like arbitrary position
     pub absolute: bool,
-    /// filled in by update_ui_layout each tick
+    /// filled in by update_ui_layout each tick. `rect` is the upright box; `rotation`
+    /// (radians, counter-clockwise) and `scale` turn it about its centre on screen
     pub rect: UiRect,
+    pub rotation: f32,
+    pub scale: Vector2,
+    /// paint layer, the summed `Transform3D.position.z` down the ui tree
+    pub depth: f32,
     pub hovered: bool,
     pub clicked: bool,
 }
@@ -60,7 +63,6 @@ impl FieldOverride for UiNode {
                     self.kind = kind;
                 }
             }
-            "z_index" => self.z_index = value.parse().unwrap_or(self.z_index),
             // a bad parse keeps the current value - 0 means auto-size and would
             // silently make an authored box collapse
             "width" => self.width = value.parse().unwrap_or(self.width),
@@ -80,7 +82,6 @@ impl FieldOverride for UiNode {
     fn get_state(&self) -> Vec<FieldState> {
         vec![
             FieldState::new("kind", UiKind::serialize(&self.kind)),
-            FieldState::new("z_index", self.z_index),
             FieldState::new("width", self.width),
             FieldState::new("height", self.height),
             FieldState::new("min_width", self.min_width),
@@ -99,7 +100,6 @@ impl UiNode {
     pub fn builder() -> UiNodeBuilder {
         UiNodeBuilder {
             kind: UiKind::Panel,
-            z_index: 0,
             width: 0.0,
             height: 0.0,
             min_width: 0.0,
@@ -112,9 +112,9 @@ impl UiNode {
             absolute: false,
         }
     }
-    // resolved box for this node - useful for hit-testing from other systems
+    /// Is a screen point inside this node's box as it was drawn, turned and scaled?
     pub fn hit_test(&self, x: f32, y: f32) -> bool {
-        self.rect.contains(x, y)
+        self.rect.contains_turned(x, y, self.rotation, self.scale)
     }
 }
 
@@ -124,7 +124,6 @@ impl UiNode {
 /// panel defaults: a Panel with no requested box, flexing its children.
 pub struct UiNodeBuilder {
     kind: UiKind,
-    z_index: i32,
     width: f32,
     height: f32,
     min_width: f32,
@@ -139,10 +138,6 @@ pub struct UiNodeBuilder {
 impl UiNodeBuilder {
     pub fn kind(mut self, kind: UiKind) -> Self {
         self.kind = kind;
-        self
-    }
-    pub fn z_index(mut self, z_index: i32) -> Self {
-        self.z_index = z_index;
         self
     }
     pub fn size(mut self, width: f32, height: f32) -> Self {
@@ -190,7 +185,6 @@ impl UiNodeBuilder {
     pub fn build(self) -> UiNode {
         UiNode {
             kind: self.kind,
-            z_index: self.z_index,
             width: self.width,
             height: self.height,
             min_width: self.min_width,
@@ -202,6 +196,9 @@ impl UiNodeBuilder {
             font_size: self.font_size,
             absolute: self.absolute,
             rect: UiRect::zero(),
+            rotation: 0.0,
+            scale: Vector2::one(),
+            depth: 0.0,
             hovered: false,
             clicked: false,
             owner: None,
