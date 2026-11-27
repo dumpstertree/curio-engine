@@ -100,8 +100,7 @@ pub struct Simulation {
     queue: Option<Arc<Queue>>,
     adapter: Option<Arc<Adapter>>,
     capture_texture: Option<Arc<Texture>>,
-    write_buf: Option<Buffer>,
-    read_buf: Option<Buffer>,
+    readback_buf: Option<Buffer>,
     gpu_ready: bool,
     // the raw pointers the Services (and the plugins) see — set once with
     // the device so no borrow of self is needed when Services is built
@@ -128,8 +127,7 @@ impl Simulation {
             queue: None,
             adapter: None,
             capture_texture: None,
-            write_buf: None,
-            read_buf: None,
+            readback_buf: None,
             gpu_ready: false,
             gpu_device_ptr: ptr::null(),
             gpu_queue_ptr: ptr::null(),
@@ -311,14 +309,8 @@ impl Simulation {
         }));
 
         let size = readback_buffer_size(width, height);
-        let write_buf = device.create_buffer(&BufferDescriptor {
-            label: Some("headless_write"),
-            size: size,
-            usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
-            mapped_at_creation: false,
-        });
-        let read_buf = device.create_buffer(&BufferDescriptor {
-            label: Some("headless_read"),
+        let readback_buf = device.create_buffer(&BufferDescriptor {
+            label: Some("headless_readback"),
             size: size,
             usage: BufferUsages::MAP_READ | BufferUsages::COPY_DST,
             mapped_at_creation: false,
@@ -330,8 +322,7 @@ impl Simulation {
         self.queue = Some(queue);
         self.adapter = Some(Arc::new(adapter));
         self.capture_texture = Some(capture_texture);
-        self.write_buf = Some(write_buf);
-        self.read_buf = Some(read_buf);
+        self.readback_buf = Some(readback_buf);
         self.gpu_ready = true;
     }
 
@@ -460,10 +451,7 @@ impl Simulation {
         let Some(texture) = &self.capture_texture else {
             return false;
         };
-        let Some(write_buf) = &mut self.write_buf else {
-            return false;
-        };
-        let Some(read_buf) = &mut self.read_buf else {
+        let Some(readback_buf) = &self.readback_buf else {
             return false;
         };
 
@@ -484,7 +472,7 @@ impl Simulation {
                 aspect: TextureAspect::All,
             },
             TexelCopyBufferInfo {
-                buffer: write_buf,
+                buffer: readback_buf,
                 layout: TexelCopyBufferLayout {
                     offset: 0,
                     bytes_per_row: Some(bytes_per_row),
@@ -496,13 +484,12 @@ impl Simulation {
 
         queue.submit(std::iter::once(encoder.finish()));
 
-        // the capture.rs readback: map_async then poll, strip the 256-aligned
-        // row padding, unmap and ping-pong the buffers
-        read_buf.slice(..).map_async(MapMode::Read, |_| {});
+        // one buffer, read right after the poll: the editor's ping-pong would save the previous capture
+        readback_buf.slice(..).map_async(MapMode::Read, |_| {});
         device.poll(Maintain::Wait);
 
         let bytes = {
-            let view: BufferView = read_buf.slice(..).get_mapped_range();
+            let view: BufferView = readback_buf.slice(..).get_mapped_range();
             let pixel_stride = (width * 4) as usize;
             let padded_stride = align_to(width * 4, 256) as usize;
             let mut out = vec![0u8; pixel_stride * height as usize];
@@ -516,8 +503,7 @@ impl Simulation {
             // view dropped here before unmap
         };
 
-        read_buf.unmap();
-        std::mem::swap(&mut self.write_buf, &mut self.read_buf);
+        readback_buf.unmap();
 
         let path = format!("{}/shot-{:06}.png", self.capture_dir, frame);
         match save_buffer(&path, &bytes, width, height, ExtendedColorType::Rgba8) {
