@@ -1,16 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{
-        FieldState,
-        GlobalRecords,
-        NetworkModes,
-        RecordCommon,
-        RecordNetworkCapabilities,
-        RecordOverride,
-        RecordScope,
-        RecordSynchronizer,
-    };
     use crate::engine::services::ensure_services;
+    use curio_core::{FieldState, GlobalRecords, NetworkModes, RecordCommon, RecordNetworkCapabilities, RecordOverride, RecordScope, RecordSynchronizer};
     use serde::Deserialize;
     use serde::Serialize;
 

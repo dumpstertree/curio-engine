@@ -42,10 +42,7 @@ mod tests {
         map.insert(5, MapProbeA { value: 1 });
         map.insert(5, MapProbeB { value: 2 });
 
-        assert!(
-            map.get::<MapProbeA, i32>(&5).is_none(),
-            "old value must be replaced, not kept alongside",
-        );
+        assert!(map.get::<MapProbeA, i32>(&5).is_none(), "old value must be replaced, not kept alongside",);
         let Some(seen) = map.get::<MapProbeB, i32>(&5) else { panic!("expected Some") };
         assert_eq!(seen.value, 2);
     }
@@ -69,10 +66,7 @@ mod tests {
         map.insert(5, MapProbeA { value: 4 });
 
         assert!(map.get::<MapProbeA, i32>(&77).is_none(), "missing key");
-        assert!(
-            map.get::<MapProbeB, i32>(&5).is_none(),
-            "wrong type under a present key",
-        );
+        assert!(map.get::<MapProbeB, i32>(&5).is_none(), "wrong type under a present key",);
     }
 
     #[test]

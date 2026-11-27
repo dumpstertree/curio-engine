@@ -26,7 +26,10 @@ mod tests {
 
     #[test]
     fn builder_without_texture_needs_no_gpu() {
-        let image = RendererImage::builder().enabled(false).tint(Color::new_hex("123456")).build();
+        let image = RendererImage::builder()
+            .enabled(false)
+            .tint(Color::new_hex("123456"))
+            .build();
         assert!(!image.enabled);
         assert_eq!(image.tint, Color::new_hex("123456"));
         assert!(image.asset.is_none());
@@ -43,7 +46,9 @@ mod tests {
 
     #[test]
     fn apply_tint_bad_keeps_current() {
-        let mut image = RendererImage::builder().tint(Color::new_hex("abcdef")).build();
+        let mut image = RendererImage::builder()
+            .tint(Color::new_hex("abcdef"))
+            .build();
         image.apply("tint", "garbage");
         assert_eq!(image.tint, Color::new_hex("abcdef"));
     }

@@ -16,17 +16,11 @@
 //! [`PhysicsQuery::new`] from inside a `context.edit::<..>`/`form.edit_facet::<..>`
 //! closure - move first, then query.
 
-use collision::{CollisionPair, Collider, ColliderSnapshot};
+use collision::{Collider, ColliderSnapshot, CollisionPair};
 use curio_core::Matrix4x4;
-use gameplay::{
-    built_in::facet::transform::transform3d::Transform3D,
-    context_3d::Context3D,
-    form::Form,
-    traits::facet_common::FacetCommon,
-    traits_internal::world_context_common::ContextCommon,
-};
+use gameplay::{built_in::facet::transform::transform3d::Transform3D, context_3d::Context3D, form::Form, traits::facet_common::FacetCommon, traits_internal::world_context_common::ContextCommon};
 
-use crate::{overlaps_between, prepare_colliders, rays_against, PreparedCollider, RayHit, RayQuery};
+use crate::{PreparedCollider, RayHit, RayQuery, overlaps_between, prepare_colliders, rays_against};
 
 /// The world's colliders, prepared from live facets, ready for immediate queries.
 pub struct PhysicsQuery {
@@ -36,9 +30,7 @@ impl PhysicsQuery {
     /// Snapshot every enabled collider in `context` using each form's *current*
     /// transform (not the world matrix cached at the last `did_tick`).
     pub fn new(context: &Context3D) -> PhysicsQuery {
-        PhysicsQuery {
-            prepared: collect_live(context),
-        }
+        PhysicsQuery { prepared: collect_live(context) }
     }
 
     /// Number of non-degenerate colliders captured by this query.
@@ -60,7 +52,10 @@ impl PhysicsQuery {
 
     /// Overlapping pairs involving the collider with this `instance_id()`.
     pub fn overlaps_guid(&self, guid: i32) -> Vec<CollisionPair> {
-        self.overlaps().into_iter().filter(|pair| pair.involves(guid)).collect()
+        self.overlaps()
+            .into_iter()
+            .filter(|pair| pair.involves(guid))
+            .collect()
     }
 
     /// Closest hit against the live colliders; see [`crate::raycast_first`].

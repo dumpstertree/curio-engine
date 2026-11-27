@@ -1,10 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{
-        CurioNetwork, CurioNetworkParticipant, FieldState, GlobalRecords, Ledger,
-        NetworkModes, RecordCommon, RecordOverride, RecordScope,
-    };
     use crate::engine::services::ensure_services;
+    use curio_core::{CurioNetwork, CurioNetworkParticipant, FieldState, GlobalRecords, Ledger, NetworkModes, RecordCommon, RecordOverride, RecordScope};
     use serde::Deserialize;
     use serde::Serialize;
 
@@ -220,7 +217,11 @@ mod tests {
 
         assert_eq!(report.1.tab_name, "Ledger");
 
-        let found = report.1.objects.iter().any(|obj| obj.object_name == "LedgerProbeLocal");
+        let found = report
+            .1
+            .objects
+            .iter()
+            .any(|obj| obj.object_name == "LedgerProbeLocal");
         assert!(found);
     }
 

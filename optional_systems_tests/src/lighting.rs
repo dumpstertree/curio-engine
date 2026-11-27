@@ -97,7 +97,11 @@ mod tests {
 
     #[test]
     fn get_state_exposes_all_fields() {
-        let light = Light::builder().light_type(LightType::Point).radius(7.0).intensity(2.0).build();
+        let light = Light::builder()
+            .light_type(LightType::Point)
+            .radius(7.0)
+            .intensity(2.0)
+            .build();
         let fields = light.get_state();
         assert_eq!(state(&fields, "type").as_str(), Some("point"));
         assert_eq!(state(&fields, "radius").as_f64(), Some(7.0));

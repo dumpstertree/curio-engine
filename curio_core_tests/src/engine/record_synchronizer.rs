@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{FieldState, GlobalRecords, RecordCommon, RecordOverride, RecordScope, RecordSynchronizer};
     use crate::engine::services::ensure_services;
+    use curio_core::{FieldState, GlobalRecords, RecordCommon, RecordOverride, RecordScope, RecordSynchronizer};
     use serde::Deserialize;
     use serde::Serialize;
 
@@ -145,7 +145,11 @@ mod tests {
     fn unregistered_id_deserializes_to_none() {
         ensure_services();
         // 9992 was never registered with GlobalRecords
-        let sync = RecordSynchronizer { record_id: 9992, record_scope: RecordScope::Host, payload: vec![] };
+        let sync = RecordSynchronizer {
+            record_id: 9992,
+            record_scope: RecordScope::Host,
+            payload: vec![],
+        };
         assert!(sync.deserialize().is_none(), "unregistered ids must yield None");
     }
 
@@ -156,7 +160,11 @@ mod tests {
         // with None rather than a panic
         GlobalRecords::register::<RecordSyncNoSerde>();
 
-        let sync = RecordSynchronizer { record_id: 9004, record_scope: RecordScope::Instance, payload: vec![0] };
+        let sync = RecordSynchronizer {
+            record_id: 9004,
+            record_scope: RecordScope::Instance,
+            payload: vec![0],
+        };
         assert!(sync.deserialize().is_none());
     }
 
@@ -166,7 +174,11 @@ mod tests {
         GlobalRecords::register_serializable::<RecordSyncProbe>();
 
         // 3 bytes cannot be a bincode-encoded RecordSyncProbe (i32 needs 4)
-        let sync = RecordSynchronizer { record_id: 9003, record_scope: RecordScope::Host, payload: vec![1, 2, 3] };
+        let sync = RecordSynchronizer {
+            record_id: 9003,
+            record_scope: RecordScope::Host,
+            payload: vec![1, 2, 3],
+        };
         assert!(sync.deserialize().is_none(), "corrupt payloads must yield None, not a panic");
     }
 }

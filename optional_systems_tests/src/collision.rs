@@ -52,7 +52,10 @@ mod tests {
 
     #[test]
     fn builder_shape_helpers_override_last_shape() {
-        let collider = Collider::builder().box_shape(Vector3::new(1.0, 2.0, 3.0)).sphere_shape(4.0).build();
+        let collider = Collider::builder()
+            .box_shape(Vector3::new(1.0, 2.0, 3.0))
+            .sphere_shape(4.0)
+            .build();
         assert_eq!(collider.shape, ColliderShapeDef::Sphere { diameter: 4.0 });
     }
 
@@ -87,11 +90,7 @@ mod tests {
 
     #[test]
     fn shape_round_trips_through_encode_decode() {
-        let shapes = vec![
-            ColliderShapeDef::Box { size: Vector3::new(1.0, 2.0, 3.0) },
-            ColliderShapeDef::Sphere { diameter: 2.5 },
-            ColliderShapeDef::Capsule { radius: 0.5, height: 1.75 },
-        ];
+        let shapes = vec![ColliderShapeDef::Box { size: Vector3::new(1.0, 2.0, 3.0) }, ColliderShapeDef::Sphere { diameter: 2.5 }, ColliderShapeDef::Capsule { radius: 0.5, height: 1.75 }];
         for shape in shapes {
             let decoded = ColliderShapeDef::decode(&shape.encode());
             assert_eq!(decoded, Some(shape.clone()), "failed to round trip {:?}", shape);
@@ -136,7 +135,11 @@ mod tests {
 
     #[test]
     fn apply_bad_values_keep_current() {
-        let mut collider = Collider::builder().sensor(true).filter_group(3).filter_mask(7).build();
+        let mut collider = Collider::builder()
+            .sensor(true)
+            .filter_group(3)
+            .filter_mask(7)
+            .build();
         collider.apply("sensor", "maybe");
         collider.apply("group", "abc");
         collider.apply("mask", "xyz");
@@ -147,7 +150,12 @@ mod tests {
 
     #[test]
     fn get_state_exposes_all_fields() {
-        let collider = Collider::builder().sphere_shape(2.0).sensor(true).filter_group(2).filter_mask(9).build();
+        let collider = Collider::builder()
+            .sphere_shape(2.0)
+            .sensor(true)
+            .filter_group(2)
+            .filter_mask(9)
+            .build();
         let fields = collider.get_state();
         assert_eq!(state(&fields, "shape").as_str(), Some("sphere 2"));
         assert_eq!(state(&fields, "sensor").as_bool(), Some(true));

@@ -260,4 +260,3 @@
 //         println!("finsihed setting global vars");
 //     }
 // }
-

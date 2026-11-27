@@ -103,11 +103,7 @@ mod tests {
         runner.enqueue(&RunnerEvent { value: 9 });
         runner.post_and_drain(&mut data);
 
-        assert_eq!(
-            data.log,
-            vec![700, 701, 900, 901],
-            "per event: receivers run in registration order, events run in enqueue order",
-        );
+        assert_eq!(data.log, vec![700, 701, 900, 901], "per event: receivers run in registration order, events run in enqueue order",);
     }
 
     // Note: an unbounded receiver (one that always returns a new event) makes

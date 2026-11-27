@@ -189,23 +189,21 @@ impl AssetState {
     pub fn poll_figma(&mut self, project_root: &str) {
         // Same borrow shape as `poll_import`: borrows `self.figma.job` only
         // within this expression; everything below works on owned data.
-        let polled = self.figma.job
-            .as_ref()
-            .map(|(dir, rx)| {
-                let mut batch: Vec<FigmaEvent> = Vec::new();
-                let mut dropped = false;
-                loop {
-                    match rx.try_recv() {
-                        Ok(event) => batch.push(event),
-                        Err(TryRecvError::Empty) => break,
-                        Err(TryRecvError::Disconnected) => {
-                            dropped = true;
-                            break;
-                        }
+        let polled = self.figma.job.as_ref().map(|(dir, rx)| {
+            let mut batch: Vec<FigmaEvent> = Vec::new();
+            let mut dropped = false;
+            loop {
+                match rx.try_recv() {
+                    Ok(event) => batch.push(event),
+                    Err(TryRecvError::Empty) => break,
+                    Err(TryRecvError::Disconnected) => {
+                        dropped = true;
+                        break;
                     }
                 }
-                (dir.clone(), batch, dropped)
-            });
+            }
+            (dir.clone(), batch, dropped)
+        });
         let Some((target_dir, events, dropped)) = polled else { return };
 
         for event in events {

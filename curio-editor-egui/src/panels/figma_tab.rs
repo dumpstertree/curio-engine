@@ -14,8 +14,8 @@
 
 use eframe::egui::{self, RichText, Ui, Window};
 
-use crate::theme;
 use crate::state::EditorState;
+use crate::theme;
 
 pub fn show_dialog(ctx: &egui::Context, state: &mut EditorState) {
     if !state.asset.figma.dialog_open {
@@ -26,12 +26,7 @@ pub fn show_dialog(ctx: &egui::Context, state: &mut EditorState) {
         .collapsible(false)
         .resizable(true)
         .show(ctx, |ui| {
-
-            ui.label(
-                RichText::new(
-                    "Paste a Figma file URL (figma.com/design/KEY/Name) and a personal access token, then hit Fetch + Import. Each top-level frame becomes a .comp with PNGs next to it; add ?node-id=1-23 to import one subtree. Files land in: "
-                ).color(theme::TEXT_PRIMARY),
-            );
+            ui.label(RichText::new("Paste a Figma file URL (figma.com/design/KEY/Name) and a personal access token, then hit Fetch + Import. Each top-level frame becomes a .comp with PNGs next to it; add ?node-id=1-23 to import one subtree. Files land in: ").color(theme::TEXT_PRIMARY));
             ui.label(&state.asset.figma.target_dir);
 
             ui.separator();
@@ -40,15 +35,9 @@ pub fn show_dialog(ctx: &egui::Context, state: &mut EditorState) {
             // back into the String it was given, so typing here *is* typing
             // into the state the job thread reads when it starts.
             ui.label("File URL");
-            ui.add(
-                egui::TextEdit::singleline(&mut state.asset.figma.url)
-                    .desired_width(ui.available_width().max(40.0))
-            );
+            ui.add(egui::TextEdit::singleline(&mut state.asset.figma.url).desired_width(ui.available_width().max(40.0)));
             ui.label("Access token");
-            ui.add(
-                egui::TextEdit::singleline(&mut state.asset.figma.token)
-                    .desired_width(ui.available_width().max(40.0))
-            );
+            ui.add(egui::TextEdit::singleline(&mut state.asset.figma.token).desired_width(ui.available_width().max(40.0)));
 
             ui.separator();
 
@@ -61,19 +50,16 @@ pub fn show_dialog(ctx: &egui::Context, state: &mut EditorState) {
 
             if !state.asset.figma.progress.is_empty() {
                 ui.label(
-                    RichText::new(&state.asset.figma.progress.join("\n")).monospace()
+                    RichText::new(&state.asset.figma.progress.join("\n"))
+                        .monospace()
                         .color(theme::TEXT_SECONDARY),
                 );
             }
             if let Some(summary) = state.asset.figma.summary.clone() {
-                ui.label(
-                    RichText::new(summary).monospace().color(theme::GREEN),
-                );
+                ui.label(RichText::new(summary).monospace().color(theme::GREEN));
             }
             if let Some(error) = state.asset.figma.error.clone() {
-                ui.label(
-                    RichText::new(error).monospace().color(theme::RED),
-                );
+                ui.label(RichText::new(error).monospace().color(theme::RED));
             }
 
             if ui.button("Close").clicked() {

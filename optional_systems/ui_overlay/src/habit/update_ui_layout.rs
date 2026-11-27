@@ -1,4 +1,5 @@
 use curio_core::{AxisCode, ButtonCode, Color, Ledger, Nerve, NetworkModes, Services, Severity, Vector2};
+use gameplay::traits::facet_common::FacetCommon;
 use gameplay::{
     built_in::facet::transform::transform2d::Transform2D,
     context_3d::Context3D,
@@ -8,14 +9,13 @@ use gameplay::{
 };
 use habit::habit;
 use input::SysRecordInput;
+use std::collections::{HashMap, HashSet};
 use taffy::{
     geometry::{Rect, Size},
     style::{AvailableSpace, Dimension, Display, FlexDirection, LengthPercentage, LengthPercentageAuto, Position, Style},
     style_helpers::{auto, length},
     tree::{NodeId, TaffyTree},
 };
-use gameplay::traits::facet_common::FacetCommon;
-use std::collections::{HashMap, HashSet};
 
 use crate::{SysRecordUi, UiDrawCall, UiKind, UiNode, UiRect};
 
@@ -51,11 +51,7 @@ impl UiEntry {
 
 // authored numbers go straight into taffy, so clamp the nonsense away
 fn finite(value: f32) -> f32 {
-    if value.is_nan() || value.is_infinite() {
-        0.0
-    } else {
-        value
-    }
+    if value.is_nan() || value.is_infinite() { 0.0 } else { value }
 }
 fn safe_size(value: f32) -> f32 {
     let value = finite(value);
@@ -81,21 +77,12 @@ fn clamp_01(value: f32) -> f32 {
     }
 }
 fn brighten(color: Color, amount: f32) -> Color {
-    Color::new_01(
-        clamp_01(color.as_r_01() * amount),
-        clamp_01(color.as_g_01() * amount),
-        clamp_01(color.as_b_01() * amount),
-        color.as_a_01(),
-    )
+    Color::new_01(clamp_01(color.as_r_01() * amount), clamp_01(color.as_g_01() * amount), clamp_01(color.as_b_01() * amount), color.as_a_01())
 }
 // Color's own Default is fully clear, so an authored box that never got a
 // colour would paint nothing — white is what the author meant
 fn visible_color(color: Color) -> Color {
-    if color == Color::clear() {
-        Color::white()
-    } else {
-        color
-    }
+    if color == Color::clear() { Color::white() } else { color }
 }
 
 // the taffy style for one node. Panels flex their children; everything else
@@ -180,17 +167,17 @@ impl Habit for Instance {
             viewport = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
         }
         if !(viewport.x > 0.0 && viewport.y > 0.0) {
-            ledger.log(
-                Severity::Warning,
-                &"ui_overlay: layout habit has no viewport to lay out against",
-            );
+            ledger.log(Severity::Warning, &"ui_overlay: layout habit has no viewport to lay out against");
             return;
         }
 
         // this screen's cursor and click, for hover/click feedback
         let state_input = ledger.read::<SysRecordInput>();
         let cursor_raw = state_input.raw.get_axis(&AxisCode::Cursor).position;
-        let clicked = state_input.raw.get_button(&ButtonCode::MousePrimary).is_down;
+        let clicked = state_input
+            .raw
+            .get_button(&ButtonCode::MousePrimary)
+            .is_down;
 
         // the cursor arrives in the host's screen pixels: winit feeds
         // CursorMoved (window pixels), and the editor webview scales its
@@ -206,10 +193,7 @@ impl Habit for Instance {
         if !(cursor_space.x > 0.0 && cursor_space.y > 0.0) {
             cursor_space = viewport;
         }
-        let cursor = Vector2::new(
-            cursor_raw.x * (viewport.x / cursor_space.x),
-            cursor_raw.y * (viewport.y / cursor_space.y),
-        );
+        let cursor = Vector2::new(cursor_raw.x * (viewport.x / cursor_space.x), cursor_raw.y * (viewport.y / cursor_space.y));
 
         // snapshot every UI node. taffy runs against the snapshot because
         // the world cannot stay borrowed while the tree builds
@@ -217,10 +201,7 @@ impl Habit for Instance {
         for node in context.get::<UiNode>() {
             let id = node.form().instance_id();
             if entries.contains_key(&id) {
-                ledger.log(
-                    Severity::Warning,
-                    &format!("ui_overlay: form {} has a second UiNode — keeping the first", id),
-                );
+                ledger.log(Severity::Warning, &format!("ui_overlay: form {} has a second UiNode — keeping the first", id));
                 continue;
             }
             entries.insert(id, UiEntry::new(node));
@@ -244,10 +225,7 @@ impl Habit for Instance {
                 }
             }
             if chain.len() >= 256 {
-                ledger.log(
-                    Severity::Error,
-                    &format!("ui_overlay: form chain past 256 parents — the composition has a cycle at form {}", entry.form.instance_id()),
-                );
+                ledger.log(Severity::Error, &format!("ui_overlay: form chain past 256 parents — the composition has a cycle at form {}", entry.form.instance_id()));
                 continue;
             }
             // the nearest UI ancestor adopts this node; deeper ones only
@@ -315,13 +293,15 @@ impl Habit for Instance {
         for (id, entry) in entries.iter() {
             deepest_first.push((entry.depth, *id));
         }
-deepest_first.sort_by(|a, b| if a.0 == b.0 {
+        deepest_first.sort_by(|a, b| {
+            if a.0 == b.0 {
                 std::cmp::Ordering::Equal
             } else if b.0 > a.0 {
                 std::cmp::Ordering::Greater
             } else {
                 std::cmp::Ordering::Less
-            });
+            }
+        });
 
         let mut tree: TaffyTree<()> = TaffyTree::new();
         let mut taffy_nodes: HashMap<i32, NodeId> = HashMap::new();
@@ -337,20 +317,13 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
             }
             if let Some(entry) = entries.get(&id) {
                 let style = ui_style(&entry.node, entry.offset_x, entry.offset_y);
-                let made = if kids.is_empty() {
-                    tree.new_leaf(style)
-                } else {
-                    tree.new_with_children(style, &kids)
-                };
+                let made = if kids.is_empty() { tree.new_leaf(style) } else { tree.new_with_children(style, &kids) };
                 match made {
                     Ok(taffy_node) => {
                         taffy_nodes.insert(id, taffy_node);
                     }
                     Err(error) => {
-                        ledger.log(
-                            Severity::Warning,
-                            &format!("ui_overlay: taffy rejected form {}: {}", id, error),
-                        );
+                        ledger.log(Severity::Warning, &format!("ui_overlay: taffy rejected form {}: {}", id, error));
                     }
                 }
             }
@@ -368,10 +341,7 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
                 if entry.parent_ui < 0 {
                     if let Some(node) = taffy_nodes.get(&id) {
                         if tree.compute_layout(*node, root_space).is_err() {
-                            ledger.log(
-                                Severity::Warning,
-                                &format!("ui_overlay: taffy layout failed at root form {}", id),
-                            );
+                            ledger.log(Severity::Warning, &format!("ui_overlay: taffy layout failed at root form {}", id));
                         }
                     }
                 }
@@ -400,10 +370,7 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
                                     base_y = parent.y;
                                 }
                             }
-                            let corner = Vector2::new(
-                                base_x + finite(resolved.location.x),
-                                base_y + finite(resolved.location.y),
-                            );
+                            let corner = Vector2::new(base_x + finite(resolved.location.x), base_y + finite(resolved.location.y));
                             absolute.insert(id, corner);
                             // a node that flexed to nothing is still worth
                             // drawing when it asked for a box
@@ -425,10 +392,7 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
                             });
                         }
                         Err(error) => {
-                            ledger.log(
-                                Severity::Warning,
-                                &format!("ui_overlay: no layout for form {}: {}", id, error),
-                            );
+                            ledger.log(Severity::Warning, &format!("ui_overlay: no layout for form {}: {}", id, error));
                         }
                     }
                 }
@@ -459,22 +423,15 @@ deepest_first.sort_by(|a, b| if a.0 == b.0 {
                     if let Some(found) = orders.get(id) {
                         order = *found;
                     }
-                    screen.draw_calls.push(
-                        UiDrawCall::new(
-                            facet.rect,
-                            color,
-                            facet.kind,
-                            facet.z_index,
-                            facet.text.clone(),
-                            facet.font_size,
-                            *id,
-                            order,
-                        ),
-                    );
+                    screen
+                        .draw_calls
+                        .push(UiDrawCall::new(facet.rect, color, facet.kind, facet.z_index, facet.text.clone(), facet.font_size, *id, order));
                 }
             }
             // the author's z_index wins, taffy's paint order breaks ties
-            screen.draw_calls.sort_by(|a, b| (a.z_index, a.order).cmp(&(b.z_index, b.order)));
+            screen
+                .draw_calls
+                .sort_by(|a, b| (a.z_index, a.order).cmp(&(b.z_index, b.order)));
         });
     }
 }
@@ -489,7 +446,13 @@ fn ui_nodes_author_as_a_taffy_tree() {
     // a Panel arranges its children; taffy gives it the whole viewport
     let panel = context
         .spawner("hud")
-        .facet(UiNode::builder().gap(12.0).min_size(400.0, 200.0).absolute(true).build())
+        .facet(
+            UiNode::builder()
+                .gap(12.0)
+                .min_size(400.0, 200.0)
+                .absolute(true)
+                .build(),
+        )
         .spawn();
 
     // a Button paints a box and gets hover/click feedback for free
@@ -525,9 +488,7 @@ fn ui_nodes_author_as_a_taffy_tree() {
 
     let mut authored = false;
     if let Some(node) = button.get_facet::<UiNode>() {
-        authored = node.kind == UiKind::Button && node.width == 120.0 && node.height == 32.0
-            && node.z_index == 1 && !node.hovered
-            && node.text == "fire" && node.font_size == 16.0;
+        authored = node.kind == UiKind::Button && node.width == 120.0 && node.height == 32.0 && node.z_index == 1 && !node.hovered && node.text == "fire" && node.font_size == 16.0;
     }
     assert!(authored);
 
@@ -567,7 +528,9 @@ fn ui_text_follows_the_shared_font_grid() {
             assert!((u_max - 0.05078125).abs() < 0.00001, "u_max {}", u_max);
             assert!((v_bottom - 0.1015625).abs() < 0.00001, "v_bottom {}", v_bottom);
         }
-        None => { panic!("'A' has no cell in the shared grid"); }
+        None => {
+            panic!("'A' has no cell in the shared grid");
+        }
     }
 
     // chars the atlas has no cell for resolve to None, so the pass skips

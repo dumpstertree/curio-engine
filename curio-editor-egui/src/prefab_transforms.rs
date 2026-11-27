@@ -61,7 +61,10 @@ pub fn world_matrices_for_path(root: &PrefabGameObjectRaw, path: &[usize]) -> (M
 /// and prefab resolver use).
 pub fn collect_render_entries(project_root: &str, root: &PrefabGameObjectRaw) -> Vec<RenderEntry> {
     let manifest = fs_ops::read_manifest(project_root);
-    let id_to_uri: std::collections::HashMap<String, String> = manifest.into_iter().map(|e| (e.id.to_string(), e.uri)).collect();
+    let id_to_uri: std::collections::HashMap<String, String> = manifest
+        .into_iter()
+        .map(|e| (e.id.to_string(), e.uri))
+        .collect();
 
     let mut out = Vec::new();
     walk(project_root, root, Mat4::IDENTITY, &[], &id_to_uri, &mut out);

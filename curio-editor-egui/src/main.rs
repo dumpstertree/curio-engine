@@ -54,7 +54,10 @@ fn main() -> eframe::Result<()> {
     let project = Project::load_local();
 
     let native_options = eframe::NativeOptions {
-        viewport: eframe::egui::ViewportBuilder::default().with_inner_size([1400.0, 900.0]).with_min_inner_size([900.0, 600.0]).with_title("Curio Editor"),
+        viewport: eframe::egui::ViewportBuilder::default()
+            .with_inner_size([1400.0, 900.0])
+            .with_min_inner_size([900.0, 600.0])
+            .with_title("Curio Editor"),
         renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };

@@ -14,7 +14,11 @@ use crate::prefab_types::{self, FieldDescriptor};
 pub fn component_fields(project_root: &str, kind: &str) -> Vec<FieldDescriptor> {
     let facets = fs_ops::get_facets(project_root);
     if let Some(comp) = facets.manifest.iter().find(|c| c.name == kind) {
-        return comp.data.iter().map(|f| FieldDescriptor { name: f.name.clone(), kind: f.data.clone() }).collect();
+        return comp
+            .data
+            .iter()
+            .map(|f| FieldDescriptor { name: f.name.clone(), kind: f.data.clone() })
+            .collect();
     }
     prefab_types::builtin_component_fields(kind)
 }

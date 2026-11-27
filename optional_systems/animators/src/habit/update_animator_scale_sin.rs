@@ -33,11 +33,7 @@ impl Habit for Instance {
                 }
 
                 // if enabled update else hold the midpoint of the range
-                let sin = if animator.enabled {
-                    f32::sin(animator.speed * time)
-                } else {
-                    0.0
-                };
+                let sin = if animator.enabled { f32::sin(animator.speed * time) } else { 0.0 };
                 let delta = animator.max - animator.min;
                 let target = animator.min + (delta * ((sin + 1.0) / 2.0));
                 transform2d.scale = target;

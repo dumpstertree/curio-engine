@@ -1,4 +1,4 @@
-use curio_core::{Services, ExtensionsF32, Matrix4x4, Random, Vector3};
+use curio_core::{ExtensionsF32, Matrix4x4, Random, Services, Vector3};
 use egui_wgpu::wgpu::{Buffer, BufferAddress, VertexAttribute, VertexBufferLayout, util::DeviceExt};
 use std::hash::Hash;
 

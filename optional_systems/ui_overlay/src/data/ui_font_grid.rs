@@ -21,10 +21,8 @@ impl UiFontGrid {
             rows: desc.rows,
             u_left: desc.padding_left as f32 / w,
             v_top: desc.padding_top as f32 / h,
-            cell_width:
-                (1.0 - desc.padding_left as f32 / w - desc.padding_right as f32 / w) / desc.columns as f32,
-            cell_height:
-                (1.0 - desc.padding_top as f32 / h - desc.padding_bottom as f32 / h) / desc.rows as f32,
+            cell_width: (1.0 - desc.padding_left as f32 / w - desc.padding_right as f32 / w) / desc.columns as f32,
+            cell_height: (1.0 - desc.padding_top as f32 / h - desc.padding_bottom as f32 / h) / desc.rows as f32,
             char_order: desc.char_order,
         }
     }
@@ -43,11 +41,6 @@ impl UiFontGrid {
         }
         let col = (index % self.columns) as f32;
         let row = (index / self.columns) as f32;
-        Some([
-            self.u_left + col * self.cell_width,
-            self.v_top + row * self.cell_height,
-            self.u_left + (col + 1.0) * self.cell_width,
-            self.v_top + (row + 1.0) * self.cell_height,
-        ])
+        Some([self.u_left + col * self.cell_width, self.v_top + row * self.cell_height, self.u_left + (col + 1.0) * self.cell_width, self.v_top + (row + 1.0) * self.cell_height])
     }
 }

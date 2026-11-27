@@ -8,10 +8,7 @@ mod tests {
 
     #[test]
     fn all_and_me_report_the_same_participants() {
-        let seats = vec![
-            CurioNetworkParticipant::new(111, NetworkModes::LocalHost),
-            CurioNetworkParticipant::new(222, NetworkModes::LocalPeer),
-        ];
+        let seats = vec![CurioNetworkParticipant::new(111, NetworkModes::LocalHost), CurioNetworkParticipant::new(222, NetworkModes::LocalPeer)];
         let network = CurioNetwork::new(seats.clone(), 1);
 
         assert_eq!(network.all().len(), 2);

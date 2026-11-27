@@ -60,7 +60,11 @@ fn load_raw_by_id_or_path(project_root: &str, id_or_path: &str) -> Result<Prefab
     let trimmed = id_or_path.trim();
     let rel_path = if !trimmed.is_empty() && trimmed.chars().all(|c| c.is_ascii_digit()) {
         let entries = fs_ops::read_manifest(project_root);
-        entries.into_iter().find(|e| e.id.to_string() == trimmed).map(|e| e.uri).ok_or_else(|| format!("No manifest entry for ID {trimmed}"))?
+        entries
+            .into_iter()
+            .find(|e| e.id.to_string() == trimmed)
+            .map(|e| e.uri)
+            .ok_or_else(|| format!("No manifest entry for ID {trimmed}"))?
     } else {
         trimmed.to_string()
     };
@@ -82,8 +86,24 @@ fn resolve_no_base(node: &PrefabGameObjectRaw, from_child: bool) -> ResolvedGame
         name: node.name.clone(),
         base: node.base.clone(),
         added_by_child: from_child,
-        components: node.components.iter().map(|c| ResolvedComponent { kind: c.kind.clone(), fields: c.fields.iter().map(|f| ResolvedField { raw: f.clone(), overridden: from_child }).collect(), added_by_child: from_child }).collect(),
-        children: node.children.iter().map(|ch| resolve_no_base(ch, from_child)).collect(),
+        components: node
+            .components
+            .iter()
+            .map(|c| ResolvedComponent {
+                kind: c.kind.clone(),
+                fields: c
+                    .fields
+                    .iter()
+                    .map(|f| ResolvedField { raw: f.clone(), overridden: from_child })
+                    .collect(),
+                added_by_child: from_child,
+            })
+            .collect(),
+        children: node
+            .children
+            .iter()
+            .map(|ch| resolve_no_base(ch, from_child))
+            .collect(),
     }
 }
 
@@ -97,9 +117,19 @@ fn resolve_no_base(node: &PrefabGameObjectRaw, from_child: bool) -> ResolvedGame
 /// a cycle is treated as if `base` were empty, matching the TS behavior
 /// (logs and falls back rather than hanging or erroring the whole load).
 pub fn resolve_node(project_root: &str, node: &PrefabGameObjectRaw, visited_paths: &mut HashSet<String>) -> ResolvedGameObject {
-    let Some(base_path) = node.base.as_deref().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string) else {
+    let Some(base_path) = node
+        .base
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+    else {
         let mut resolved = resolve_no_base(node, true);
-        resolved.children = node.children.iter().map(|ch| resolve_node(project_root, ch, visited_paths)).collect();
+        resolved.children = node
+            .children
+            .iter()
+            .map(|ch| resolve_node(project_root, ch, visited_paths))
+            .collect();
         return resolved;
     };
 
@@ -152,7 +182,11 @@ fn merge_resolved_with_child(base: &ResolvedGameObject, child: &PrefabGameObject
         .map(|bc| {
             if let Some(pos) = child_comp_map.iter().position(|cc| cc.kind == bc.kind) {
                 let cc = child_comp_map.remove(pos);
-                let mut child_field_map: Vec<(String, String)> = cc.fields.iter().map(|f| (split_field(f).0, f.clone())).collect();
+                let mut child_field_map: Vec<(String, String)> = cc
+                    .fields
+                    .iter()
+                    .map(|f| (split_field(f).0, f.clone()))
+                    .collect();
 
                 let mut fields: Vec<ResolvedField> = bc
                     .fields
@@ -178,7 +212,15 @@ fn merge_resolved_with_child(base: &ResolvedGameObject, child: &PrefabGameObject
         .collect();
 
     for cc in child_comp_map {
-        components.push(ResolvedComponent { kind: cc.kind.clone(), fields: cc.fields.iter().map(|f| ResolvedField { raw: f.clone(), overridden: true }).collect(), added_by_child: true });
+        components.push(ResolvedComponent {
+            kind: cc.kind.clone(),
+            fields: cc
+                .fields
+                .iter()
+                .map(|f| ResolvedField { raw: f.clone(), overridden: true })
+                .collect(),
+            added_by_child: true,
+        });
     }
 
     // Children merged by name
@@ -195,7 +237,14 @@ fn merge_resolved_with_child(base: &ResolvedGameObject, child: &PrefabGameObject
         }
     }
 
-    ResolvedGameObject { enabled: child.enabled, name: child.name.clone(), base: child.base.clone(), added_by_child: false, components, children: resolved_children }
+    ResolvedGameObject {
+        enabled: child.enabled,
+        name: child.name.clone(),
+        base: child.base.clone(),
+        added_by_child: false,
+        components,
+        children: resolved_children,
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -214,7 +263,15 @@ pub fn resolved_to_raw(node: &ResolvedGameObject) -> PrefabGameObjectRaw {
             .components
             .iter()
             .filter(|c| c.added_by_child || c.fields.iter().any(|f| f.overridden))
-            .map(|c| PrefabComponentRaw { kind: c.kind.clone(), fields: c.fields.iter().filter(|f| f.overridden).map(|f| f.raw.clone()).collect() })
+            .map(|c| PrefabComponentRaw {
+                kind: c.kind.clone(),
+                fields: c
+                    .fields
+                    .iter()
+                    .filter(|f| f.overridden)
+                    .map(|f| f.raw.clone())
+                    .collect(),
+            })
             .collect(),
         children: node.children.iter().map(resolved_to_raw).collect(),
     }
@@ -227,7 +284,14 @@ pub fn resolved_to_raw_full(node: &ResolvedGameObject) -> PrefabGameObjectRaw {
         enabled: node.enabled,
         name: node.name.clone(),
         base: node.base.clone(),
-        components: node.components.iter().map(|c| PrefabComponentRaw { kind: c.kind.clone(), fields: c.fields.iter().map(|f| f.raw.clone()).collect() }).collect(),
+        components: node
+            .components
+            .iter()
+            .map(|c| PrefabComponentRaw {
+                kind: c.kind.clone(),
+                fields: c.fields.iter().map(|f| f.raw.clone()).collect(),
+            })
+            .collect(),
         children: node.children.iter().map(resolved_to_raw_full).collect(),
     }
 }

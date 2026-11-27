@@ -27,6 +27,15 @@ pub struct UiDrawCall {
 
 impl UiDrawCall {
     pub fn new(rect: UiRect, color: Color, kind: UiKind, z_index: i32, text: String, font_size: f32, instance_id: i32, order: u32) -> UiDrawCall {
-        UiDrawCall { rect, color, kind, z_index, text, font_size, instance_id, order }
+        UiDrawCall {
+            rect,
+            color,
+            kind,
+            z_index,
+            text,
+            font_size,
+            instance_id,
+            order,
+        }
     }
 }

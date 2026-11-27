@@ -21,7 +21,9 @@ mod tests {
 
     #[test]
     fn builder_sets_tint() {
-        let renderer = RendererStatic::builder().tint(Color::new_hex("4488ff")).build();
+        let renderer = RendererStatic::builder()
+            .tint(Color::new_hex("4488ff"))
+            .build();
         assert_eq!(renderer.tint, Color::new_hex("4488ff"));
         assert!(renderer.asset.is_none());
     }
@@ -41,7 +43,9 @@ mod tests {
 
     #[test]
     fn apply_tint_bad_keeps_current() {
-        let mut renderer = RendererStatic::builder().tint(Color::new_hex("111111")).build();
+        let mut renderer = RendererStatic::builder()
+            .tint(Color::new_hex("111111"))
+            .build();
         renderer.apply("tint", "oops");
         assert_eq!(renderer.tint, Color::new_hex("111111"));
     }

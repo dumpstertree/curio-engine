@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use curio_core::{GlobalImpulses, ImpulseCommon, ImpulseScope, ImpulseSynchronizer};
     use crate::engine::services::ensure_services;
+    use curio_core::{GlobalImpulses, ImpulseCommon, ImpulseScope, ImpulseSynchronizer};
     use serde::Deserialize;
     use serde::Serialize;
     use std::any::Any;
@@ -87,7 +87,11 @@ mod tests {
 
         // FIXED: the registration's bincode call returns None for bad bytes
         // instead of unwrapping into an unrecoverable panic
-        let sync = ImpulseSynchronizer { impulse_id: 9201, impulse_scope: ImpulseScope::ConnectedHost, payload: vec![9, 9, 9] };
+        let sync = ImpulseSynchronizer {
+            impulse_id: 9201,
+            impulse_scope: ImpulseScope::ConnectedHost,
+            payload: vec![9, 9, 9],
+        };
         assert!(sync.deserialize().is_none(), "corrupt payloads must yield None, not a panic");
     }
 }
