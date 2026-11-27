@@ -5,6 +5,8 @@ members = [
     "curio_core_tests",
     "optional_systems_tests",
     "curio_engine",
+    "curio_engine_tests",
+    "curio_editor_headless",
     "system_component_default/gameplay",
     "system_component_default/gameplay_macros/curio_entry",
     "system_component_default/gameplay_macros/impulse",
@@ -20,8 +22,7 @@ members = [
     "system_component_default/networking",
     # "system_component_default/animation",
     "system_component_default/input",
-    # "curio-editor/src-tauri",
-    "curio-editor-egui",
+    "curio_editor",
     "optional_systems/camera",
     "optional_systems/rendering_static",
     "optional_systems/rendering_dynamic",
@@ -40,6 +41,8 @@ members = [
 
 [workspace.dependencies]
 curio_engine = { path = "curio_engine" }
+curio_engine_tests = { path = "curio_engine_tests" }
+curio_editor_headless = { path = "curio_editor_headless" }
 curio_core = { path = "curio_core" }
 curio_core_tests = { path = "curio_core_tests" }
 # record = { path = "system_component_default/gameplay_macros/record" }
@@ -56,7 +59,7 @@ input = { path = "system_component_default/input" }
 time = { path = "system_component_default/time" }
 
 # animation = { path = "system_component_default/animation" }
-# curio_editor = { path = "curio-editor/src-tauri" }
+
 camera = { path = "optional_systems/camera" }
 ext_rendering = { path = "optional_systems/rendering" }
 rendering_static = { path = "optional_systems/rendering_static" }
@@ -69,7 +72,7 @@ skybox = { path = "optional_systems/skybox" }
 tween = { path = "optional_systems/tween" }
 animators = { path = "optional_systems/animators" }
 ui_overlay = { path = "optional_systems/ui_overlay" }
-curio_editor_egui = { path = "curio-editor-egui" }
+curio_editor = { path = "curio_editor" }
 
 
 [workspace.package]

@@ -71,3 +71,31 @@ pub fn load_library(path: &Path) -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+// ── Memory locking ────────────────────────────────────────────────────────────
+// The plugin is dlopen'd from a file copied into ./data — if the process is
+// under memory pressure its text mapping can be swapped out, which makes the
+// game stutter horribly. mlockall pins every page of the process instead.
+// (Same helper the editor's runner uses.)
+
+pub fn lock_process_memory() {
+    #[cfg(unix)]
+    {
+        extern "C" {
+            fn mlockall(flags: i32) -> i32;
+        }
+        const MCL_CURRENT: i32 = 1;
+        const MCL_FUTURE: i32 = 2;
+
+        let result = unsafe { mlockall(MCL_CURRENT | MCL_FUTURE) };
+        if result != 0 {
+            eprintln!(
+                "mlockall failed ({}): process memory may be swapped. \
+                 Try: sudo setcap cap_ipc_lock+ep <path_to_binary>",
+                std::io::Error::last_os_error()
+            );
+        } else {
+            println!("mlockall: all process memory locked into RAM");
+        }
+    }
+}

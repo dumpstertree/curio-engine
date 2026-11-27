@@ -858,31 +858,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52560adf09603e58c9a7ee1fe1dcb95a16927b17c127f0ac02d6e768a0e25bc1"
 
 [[package]]
-name = "curio-editor"
-version = "0.2.0"
-dependencies = [
- "bytemuck",
- "curio_core",
- "eframe",
- "egui",
- "egui-wgpu",
- "egui_extras",
- "glam",
- "gltf",
- "image 0.25.10",
- "libloading",
- "once_cell",
- "parking_lot",
- "pollster 0.3.0",
- "rendering_dynamic",
- "rfd",
- "serde",
- "serde_json",
- "serde_yaml",
- "zip 2.4.2",
-]
-
-[[package]]
 name = "curio_core"
 version = "0.1.0"
 dependencies = [
@@ -910,6 +885,46 @@ dependencies = [
  "curio_core",
  "serde",
  "tempfile",
+]
+
+[[package]]
+name = "curio_editor"
+version = "0.2.0"
+dependencies = [
+ "bytemuck",
+ "curio_core",
+ "eframe",
+ "egui",
+ "egui-wgpu",
+ "egui_extras",
+ "glam",
+ "gltf",
+ "image 0.25.10",
+ "libloading",
+ "once_cell",
+ "parking_lot",
+ "pollster 0.3.0",
+ "rendering_dynamic",
+ "rfd",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "curio_editor_headless"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
+ "curio_engine",
+ "egui-wgpu",
+ "image 0.25.10",
+ "pollster 0.3.0",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "time 0.1.0",
 ]
 
 [[package]]
@@ -942,6 +957,15 @@ dependencies = [
  "simple_logger",
  "winit",
  "zip 0.6.6",
+]
+
+[[package]]
+name = "curio_engine-tests"
+version = "0.1.0"
+dependencies = [
+ "curio_core",
+ "curio_engine",
+ "tempfile",
 ]
 
 [[package]]
