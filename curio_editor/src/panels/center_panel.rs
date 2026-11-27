@@ -172,7 +172,7 @@ fn game_texture(ui: &mut Ui, state: &mut EditorState) {
         let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click_and_drag());
         ui.painter()
             .image(handle.id(), rect, egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
-        forward_input(ui, state, &response, rect);
+        forward_input(ui, state, &response, rect, tex_size);
     });
 }
 
@@ -180,13 +180,16 @@ fn game_texture(ui: &mut Ui, state: &mut EditorState) {
 /// game via `EditorState::send_input` (a no-op unless `mode == Playing`, same
 /// guard the old `api.sendInput` callers had). Codes are translated to curio's
 /// own `ButtonCode`/`AxisCode` space here, at the egui boundary.
-fn forward_input(ui: &mut Ui, state: &mut EditorState, response: &egui::Response, rect: egui::Rect) {
+fn forward_input(ui: &mut Ui, state: &mut EditorState, response: &egui::Response, rect: egui::Rect, tex_size: egui::Vec2) {
     use crate::input_codes::egui_key_to_button_code;
     use crate::runner::InputEvent;
 
     if let Some(pos) = response.hover_pos() {
         let local = pos - rect.min;
-        state.send_input(InputEvent::Axis { code: AxisCode::Cursor, x: local.x, y: local.y });
+        // the image is drawn fitted in egui points; the game reads the cursor in frame pixels
+        let fit = rect.size();
+        let cursor = if fit.x > 0.0 && fit.y > 0.0 { egui::vec2(local.x * tex_size.x / fit.x, local.y * tex_size.y / fit.y) } else { local };
+        state.send_input(InputEvent::Axis { code: AxisCode::Cursor, x: cursor.x, y: cursor.y });
     }
 
     // press/release per pointer button. egui reports these globally, so a
