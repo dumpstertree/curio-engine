@@ -5,6 +5,7 @@ pub mod figma_tab;
 pub mod inspector;
 pub mod left_panel;
 pub mod object_tree;
+pub mod penpot_tab;
 pub mod placeholder;
 pub mod prefab_tab;
 pub mod status_bar;
