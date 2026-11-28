@@ -7,7 +7,7 @@ pub struct ParseCtx<'a> {
     /// The file's `components` map, component id -> component.
     pub components: Option<&'a Value>,
     pub file_id: &'a str,
-    /// `(shape name, media object id, mime type)` per visible image to download.
-    pub images: Vec<(String, String, String)>,
+    /// `(shape id, shape name, media object id, mime type)` per visible image to download.
+    pub images: Vec<(String, String, String, String)>,
     pub warnings: Vec<String>,
 }
