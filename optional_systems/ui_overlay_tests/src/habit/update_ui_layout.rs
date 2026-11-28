@@ -166,6 +166,81 @@ mod tests {
         assert_eq!((corners[0].x, corners[0].y, corners[2].x, corners[2].y), (50.0, 80.0, 250.0, 160.0));
     }
 
+    // a panel at the origin with one button at (100, 100), 100 x 40
+    fn button_scene(context: &mut Context3D) -> (Form, Form) {
+        let panel = context
+            .spawner("menu")
+            .facet(UiNode::builder().min_size(1280.0, 720.0).build())
+            .spawn();
+        let panel = placed(panel, Vector3::zero(), 0.0, Vector3::one());
+        let button = context
+            .spawner("play")
+            .facet(
+                UiNode::builder()
+                    .kind(UiKind::Button)
+                    .size(100.0, 40.0)
+                    .build(),
+            )
+            .spawn();
+        button.set_parent(Some(panel.clone()));
+        let button = placed(button, Vector3::new(100.0, 100.0, 0.0), 0.0, Vector3::one());
+        (panel, button)
+    }
+
+    #[test]
+    fn a_disabled_panel_hides_its_children_and_their_input() {
+        stand_up_services();
+        let world = std::rc::Rc::new(std::cell::RefCell::new(hecs::World::new()));
+        let mut context = Context3D::new(world);
+        let (mut panel, button) = button_scene(&mut context);
+        let inside = Vector2::new(150.0, 120.0);
+
+        let ledger = tick(&mut context, inside);
+        assert!(node(&button).hovered);
+        assert_eq!(ledger.read::<SysRecordUi>().draw_calls.len(), 1);
+
+        panel.set_enabled(false);
+        let ledger = tick(&mut context, inside);
+        assert!(!node(&button).hovered, "a button under a disabled panel still reports hover");
+        assert!(!node(&button).clicked);
+        assert!(ledger.read::<SysRecordUi>().draw_calls.is_empty(), "a button under a disabled panel still paints");
+
+        panel.set_enabled(true);
+        let ledger = tick(&mut context, inside);
+        assert!(node(&button).hovered);
+        assert_eq!(ledger.read::<SysRecordUi>().draw_calls.len(), 1);
+    }
+
+    #[test]
+    fn a_disabled_leaf_is_hidden_and_its_siblings_still_paint() {
+        stand_up_services();
+        let world = std::rc::Rc::new(std::cell::RefCell::new(hecs::World::new()));
+        let mut context = Context3D::new(world);
+        let (panel, mut button) = button_scene(&mut context);
+        let label = context
+            .spawner("title")
+            .facet(
+                UiNode::builder()
+                    .kind(UiKind::Block)
+                    .size(200.0, 30.0)
+                    .build(),
+            )
+            .spawn();
+        label.set_parent(Some(panel.clone()));
+        let label = placed(label, Vector3::new(400.0, 20.0, 0.0), 0.0, Vector3::one());
+
+        button.set_enabled(false);
+        let ledger = tick(&mut context, Vector2::new(150.0, 120.0));
+        assert!(!node(&button).hovered);
+        let painted: Vec<i32> = ledger
+            .read::<SysRecordUi>()
+            .draw_calls
+            .iter()
+            .map(|call| call.instance_id)
+            .collect();
+        assert_eq!(painted, vec![label.instance_id()]);
+    }
+
     #[test]
     fn draw_calls_paint_in_depth_order() {
         stand_up_services();
