@@ -100,6 +100,24 @@ fn visible_color(color: Color) -> Color {
     if color == Color::clear() { Color::white() } else { color }
 }
 
+// a form is shown only while it and every ancestor are enabled. Walked here because
+// Form::enabled_in_hierachy stops at the parent; the cap guards against a parent cycle
+fn shown_in_hierarchy(form: &Form) -> bool {
+    let mut walker = Some(form.clone());
+    let mut steps = 0;
+    while let Some(current) = walker {
+        if !current.enabled() {
+            return false;
+        }
+        steps += 1;
+        if steps > 256 {
+            return true;
+        }
+        walker = current.parent();
+    }
+    true
+}
+
 // the taffy style for one node. Panels flex their children; everything else
 // is an absolutely-positioned leaf hung off its UI parent
 fn ui_style(node: &UiNode, offset_x: f32, offset_y: f32) -> Style {
@@ -213,7 +231,18 @@ impl Habit for Instance {
         // the world cannot stay borrowed while the tree builds
         let mut entries: HashMap<i32, UiEntry> = HashMap::new();
         for node in context.get::<UiNode>() {
-            let id = node.form().instance_id();
+            // a disabled subtree is hidden: no box, no draw call, and no stale hover or click
+            let form = node.form();
+            if !shown_in_hierarchy(&form) {
+                if node.hovered || node.clicked {
+                    form.try_edit_facet::<UiNode>(|facet| {
+                        facet.hovered = false;
+                        facet.clicked = false;
+                    });
+                }
+                continue;
+            }
+            let id = form.instance_id();
             if entries.contains_key(&id) {
                 ledger.log(Severity::Warning, &format!("ui_overlay: form {} has a second UiNode — keeping the first", id));
                 continue;
