@@ -10,3 +10,8 @@ camera = { workspace = true }
 gameplay = { workspace = true }
 hecs = "0.10.5" # same pin as gameplay — the habit tests build a world
 input = { workspace = true }
+
+[dev-dependencies]
+# the pass test renders on a real device, so it needs the same wgpu ui_overlay is built against
+egui-wgpu = { version = "0.31.1" }
+pollster = "0.3"
