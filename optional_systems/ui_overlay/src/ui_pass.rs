@@ -5,6 +5,7 @@ use egui_wgpu::wgpu::{
     MultisampleState, Operations, PipelineLayout, PipelineLayoutDescriptor, PrimitiveState, RenderPassColorAttachment, RenderPassDescriptor, RenderPipeline, RenderPipelineDescriptor, SamplerBindingType, ShaderModuleDescriptor, ShaderSource, ShaderStages, StoreOp, TextureFormat, TextureSampleType,
     TextureView, TextureViewDimension, VertexAttribute, VertexBufferLayout, VertexFormat, VertexState, VertexStepMode,
 };
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::{DEFAULT_FONT, SysRecordUi, UiFontDesc, UiFontGrid, UiKind, UiScreen};
@@ -83,6 +84,8 @@ pub struct UiOverlayPass {
     font_grid: Option<UiFontGrid>,
     font_layout: Option<BindGroupLayout>,
     font_bind_group: Option<BindGroup>,
+    // one bind group per image texture, on the font layout; None marks a uid that failed to load (logged once)
+    images: HashMap<i16, Option<(Arc<TextureAsset>, BindGroup)>>,
     // the pipeline references this by handle — it must outlive the frame
     pipeline_layout: Option<PipelineLayout>,
 }
@@ -97,6 +100,7 @@ impl UiOverlayPass {
             font_grid: None,
             font_layout: None,
             font_bind_group: None,
+            images: HashMap::new(),
             pipeline_layout: None,
         }
     }
@@ -115,6 +119,8 @@ impl UiOverlayPass {
 
         // gather every screen's boxes into one vertex list
         let mut vertices: Vec<UiVertex> = Vec::new();
+        // runs of vertices sharing one texture, in paint order: (image uid or None for the font atlas, first vertex)
+        let mut batches: Vec<(Option<i16>, usize)> = vec![(None, 0)];
         let gpu = &Services::get().gpu;
         let capture = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
         for screen_index in 0..screens {
@@ -156,9 +162,22 @@ impl UiOverlayPass {
                 let bottom_left = place(rect.x, rect.y + rect.height);
                 let bottom_right = place(rect.x + rect.width, rect.y + rect.height);
 
-                // a Text node with a label paints glyphs, not a box; an
-                // empty Text node still paints its placeholder quad
-                if !(draw_call.kind == UiKind::Text && !draw_call.text.is_empty()) {
+                let image = match draw_call.image {
+                    Some(uid) if draw_call.kind == UiKind::Image && self.image_ready(uid, &ledger[screen_index]) => Some(uid),
+                    _ => None,
+                };
+                if let Some(uid) = image {
+                    // the whole texture stretched over the box, v down like ui y
+                    switch_texture(&mut batches, Some(uid), vertices.len());
+                    vertices.push(UiVertex::new(bottom_left, [0.0, 1.0], tint));
+                    vertices.push(UiVertex::new(bottom_right, [1.0, 1.0], tint));
+                    vertices.push(UiVertex::new(top_left, [0.0, 0.0], tint));
+                    vertices.push(UiVertex::new(top_left, [0.0, 0.0], tint));
+                    vertices.push(UiVertex::new(bottom_right, [1.0, 1.0], tint));
+                    vertices.push(UiVertex::new(top_right, [1.0, 0.0], tint));
+                } else if !(draw_call.kind == UiKind::Text && !draw_call.text.is_empty()) {
+                    // a Text node with a label paints glyphs, not a box; an
+                    // empty Text node still paints its placeholder quad
                     // one quad, two triangles — wound counter-clockwise in
                     // NDC. the flat uv marks the fragment's no-texture path
                     let flat_uv = [-1.0, -1.0];
@@ -176,6 +195,7 @@ impl UiOverlayPass {
                 if !draw_call.text.is_empty() && draw_call.font_size > 0.0 {
                     match &self.font_grid {
                         Some(grid) => {
+                            switch_texture(&mut batches, None, vertices.len());
                             let size = draw_call.font_size;
                             let line_width = (draw_call.text.chars().count() as f32) * size;
                             let pen_y = if size > rect.height { rect.y } else { rect.y + (rect.height - size) * 0.5 };
@@ -218,7 +238,38 @@ impl UiOverlayPass {
         if vertices.is_empty() {
             return;
         }
-        self.submit(&vertices, encoder, output_view);
+        self.submit(&vertices, &batches, encoder, output_view);
+    }
+
+    // loads `uid` and its bind group on first use; false (and one log line) when it cannot be loaded
+    fn image_ready(&mut self, uid: i16, ledger: &Ledger) -> bool {
+        if !self.images.contains_key(&uid) {
+            let loaded = Assets::try_load_asset::<TextureAsset>(&uid).map(|texture| {
+                let bind_group = Services::get()
+                    .gpu
+                    .device()
+                    .create_bind_group(&BindGroupDescriptor {
+                        label: Some("ui image"),
+                        layout: self.font_layout.as_ref().unwrap(),
+                        entries: &[
+                            BindGroupEntry {
+                                binding: 0,
+                                resource: BindingResource::TextureView(&texture.view),
+                            },
+                            BindGroupEntry {
+                                binding: 1,
+                                resource: BindingResource::Sampler(&texture.sampler),
+                            },
+                        ],
+                    });
+                (texture, bind_group)
+            });
+            if loaded.is_none() {
+                ledger.log(Severity::Warning, &format!("ui_overlay: image texture {} is not registered or has no data, so it paints as a flat quad", uid));
+            }
+            self.images.insert(uid, loaded);
+        }
+        matches!(self.images.get(&uid), Some(Some(_)))
     }
 
     // the shared atlas, its font grid and bind group, and the pipeline; built once
@@ -330,7 +381,7 @@ impl UiOverlayPass {
         }
     }
 
-    fn submit(&mut self, vertices: &[UiVertex], encoder: &mut CommandEncoder, output_view: &TextureView) {
+    fn submit(&mut self, vertices: &[UiVertex], batches: &[(Option<i16>, usize)], encoder: &mut CommandEncoder, output_view: &TextureView) {
         let device = Services::get().gpu.device();
         let queue = Services::get().gpu.queue();
 
@@ -359,8 +410,38 @@ impl UiOverlayPass {
             occlusion_query_set: None,
         });
         pass.set_pipeline(self.pipeline.as_ref().unwrap());
-        pass.set_bind_group(0, self.font_bind_group.as_ref().unwrap(), &[]);
         pass.set_vertex_buffer(0, self.vertex_buffer.as_ref().unwrap().slice(..));
-        pass.draw(0..(vertices.len() as u32), 0..1);
+        for (index, (texture, start)) in batches.iter().enumerate() {
+            let end = batches
+                .get(index + 1)
+                .map(|next| next.1)
+                .unwrap_or(vertices.len());
+            if end == *start {
+                continue;
+            }
+            let bind_group = match texture {
+                Some(uid) => self
+                    .images
+                    .get(uid)
+                    .and_then(|slot| slot.as_ref())
+                    .map(|(_, bind_group)| bind_group),
+                None => None,
+            };
+            pass.set_bind_group(0, bind_group.unwrap_or(self.font_bind_group.as_ref().unwrap()), &[]);
+            pass.draw((*start as u32)..(end as u32), 0..1);
+        }
+    }
+}
+
+// flat quads sample nothing, so only image quads and glyphs switch textures
+fn switch_texture(batches: &mut Vec<(Option<i16>, usize)>, texture: Option<i16>, at: usize) {
+    let last = batches.last_mut().unwrap();
+    if last.0 == texture {
+        return;
+    }
+    if last.1 == at {
+        last.0 = texture;
+    } else {
+        batches.push((texture, at));
     }
 }

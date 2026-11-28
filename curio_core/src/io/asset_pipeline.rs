@@ -78,6 +78,26 @@ impl AssetPipeline {
         asset
     }
 
+    /// Like `load_asset`, but `None` instead of a panic when `uid` is not registered or its data is empty.
+    pub fn try_load_asset<T>(&mut self, uid: &i16) -> Option<Arc<T>>
+    where
+        T: AssetCommon<T>,
+    {
+        if let Some(cached_asset) = self.asset_cache.try_get_asset::<T>(uid) {
+            return Some(cached_asset);
+        }
+        if !self.asset_database.contains(uid) {
+            return None;
+        }
+        let data = self.asset_database.fetch_asset(uid);
+        if data.is_empty() {
+            return None;
+        }
+        let asset = Arc::new(T::from_bits(&data));
+        self.asset_cache.try_set_asset(uid, asset.clone());
+        Some(asset)
+    }
+
     /// Try to find the key based on the name.
     pub fn try_lookup_key_for_name(&self, name: &str) -> Option<i16> {
         self.asset_database.try_lookup_key_for_name(name)

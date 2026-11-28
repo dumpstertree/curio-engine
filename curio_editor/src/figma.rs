@@ -24,7 +24,7 @@
 //! - `TEXT` -> `uinode` kind `text` with `text`, `font_size` (px), fill `color`
 //! - `RECTANGLE`/shapes -> `uinode` kind `block` flat quads with `color`
 //! - image fills -> `uinode` kind `image` + PNGs still exported next to the
-//!   `.comp` (ui_overlay has no texture sampling yet - paints a flat quad, warns)
+//!   `.comp`; no `image` uid is written (the PNG is not a registered asset yet), so it paints a flat quad and warns
 //! - `INSTANCE` -> `base:` prefab reference named after the Figma component
 //! - hidden layers (`visible:false`) -> `enabled: false` (kept, not dropped)
 //!
@@ -481,7 +481,10 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
         let mut tf = Vec::new();
         tf.push(join_field("position", &format_tuple(&[node.tx, node.ty, order as f32])));
         components.push(PrefabComponentRaw { kind: "transform3d".to_string(), fields: tf });
-        warnings.push(subst1("image node '{0}' paints as a flat quad - its PNG is exported but ui_overlay has no texture sampling yet (plan 7b)", node.name.clone()));
+        warnings.push(subst1(
+            "image node '{0}' paints as a flat quad: its PNG is exported, but register it as a texture asset and set the uinode's `image` field to its uid to paint it",
+            node.name.clone(),
+        ));
     } else if !node.fill_hex.is_empty() {
         let mut fields = Vec::new();
         fields.push(join_field("kind", "block"));

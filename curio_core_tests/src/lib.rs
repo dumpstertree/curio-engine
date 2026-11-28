@@ -36,5 +36,6 @@ pub mod math {
 pub mod io {
     pub mod asset_cache;
     pub mod asset_database;
+    pub mod asset_pipeline;
     pub mod file;
 }

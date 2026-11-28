@@ -183,4 +183,26 @@ mod tests {
         let calls = ledger.read::<SysRecordUi>().draw_calls.clone();
         assert!((calls[1].rotation - FRAC_PI_2).abs() < 0.001);
     }
+
+    #[test]
+    fn an_image_leaf_hands_its_texture_to_the_draw_call() {
+        stand_up_services();
+        let world = std::rc::Rc::new(std::cell::RefCell::new(hecs::World::new()));
+        let mut context = Context3D::new(world);
+        let icon = context
+            .spawner("icon")
+            .facet(
+                UiNode::builder()
+                    .kind(UiKind::Image)
+                    .size(32.0, 32.0)
+                    .image(42)
+                    .build(),
+            )
+            .spawn();
+        placed(icon, Vector3::new(10.0, 10.0, 0.0), 0.0, Vector3::one());
+        let ledger = tick(&mut context, Vector2::new(-10.0, -10.0));
+        let calls = ledger.read::<SysRecordUi>().draw_calls.clone();
+        assert_eq!(calls.len(), 1);
+        assert_eq!((calls[0].kind, calls[0].image), (UiKind::Image, Some(42)));
+    }
 }

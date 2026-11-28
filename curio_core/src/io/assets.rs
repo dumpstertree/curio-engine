@@ -11,6 +11,13 @@ impl Assets {
     {
         Services::get().assets().load_asset::<T>(uid)
     }
+    /// Load an asset, or `None` when `uid` is not registered or has no data.
+    pub fn try_load_asset<T>(uid: &i16) -> Option<Arc<T>>
+    where
+        T: AssetCommon<T>,
+    {
+        Services::get().assets().try_load_asset::<T>(uid)
+    }
     /// Get a UID for name from set AssetPipeline
     pub fn try_lookup_key_for_name(name: &str) -> Option<i16> {
         Services::get().assets().try_lookup_key_for_name(name)

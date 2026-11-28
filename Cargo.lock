@@ -5059,8 +5059,10 @@ dependencies = [
  "egui-wgpu",
  "gameplay",
  "hecs",
+ "image 0.24.9",
  "input",
  "pollster 0.3.0",
+ "serde_json",
  "ui_overlay",
 ]
 

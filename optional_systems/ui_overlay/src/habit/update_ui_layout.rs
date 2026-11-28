@@ -442,9 +442,11 @@ impl Habit for Instance {
                     if let Some(found) = orders.get(id) {
                         order = *found;
                     }
-                    screen
-                        .draw_calls
-                        .push(UiDrawCall::new(facet.rect, color, facet.kind, facet.depth, facet.text.clone(), facet.font_size, *id, order).turned(facet.rotation, facet.scale));
+                    screen.draw_calls.push(
+                        UiDrawCall::new(facet.rect, color, facet.kind, facet.depth, facet.text.clone(), facet.font_size, *id, order)
+                            .turned(facet.rotation, facet.scale)
+                            .with_image(facet.image),
+                    );
                 }
             }
             // the authored depth wins, taffy's paint order breaks ties

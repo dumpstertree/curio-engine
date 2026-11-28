@@ -23,6 +23,8 @@ pub struct UiDrawCall {
     /// glyph height in pixels — the atlas's native cells are 12 px. 0
     /// means "don't paint text"
     pub font_size: f32,
+    /// texture asset uid an Image box paints, tinted by `color`; None paints it flat
+    pub image: Option<i16>,
     /// which taffy node produced this, for hit-test/debug tooling
     pub instance_id: i32,
     /// taffy's own paint order — the tie-breaker when depth matches
@@ -40,6 +42,7 @@ impl UiDrawCall {
             depth,
             text,
             font_size,
+            image: None,
             instance_id,
             order,
         }
@@ -47,6 +50,10 @@ impl UiDrawCall {
     pub fn turned(mut self, rotation: f32, scale: Vector2) -> UiDrawCall {
         self.rotation = rotation;
         self.scale = scale;
+        self
+    }
+    pub fn with_image(mut self, image: Option<i16>) -> UiDrawCall {
+        self.image = image;
         self
     }
     /// The box's four on-screen corners in pixels: top-left, top-right, bottom-right, bottom-left.
