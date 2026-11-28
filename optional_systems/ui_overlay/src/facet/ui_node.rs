@@ -1,6 +1,6 @@
 use crate::UiKind;
 use crate::UiRect;
-use curio_core::{Color, FieldState, Vector2};
+use curio_core::{Assets, Color, FieldState, Vector2};
 use facet::facet;
 use gameplay::traits::field_override::FieldOverride;
 
@@ -38,6 +38,8 @@ pub struct UiNode {
     /// glyph height in pixels — the shared atlas's native cells are 12 px.
     /// 0 means "don't paint text"
     pub font_size: f32,
+    /// texture asset uid an Image leaf paints, multiplied by `color`. None paints the flat quad
+    pub image: Option<i16>,
     /// free-form placement: when set, this node hangs at its own `Transform3D`
     /// offset (pixels, below-right of the nearest UI ancestor) instead of
     /// floating in the parent panel's flex flow. Leaves are always absolute;
@@ -76,6 +78,16 @@ impl FieldOverride for UiNode {
             "text" => self.text = value.to_string(),
             "font_size" => self.font_size = value.parse().unwrap_or(self.font_size),
             "absolute" => self.absolute = value.parse().unwrap_or(self.absolute),
+            // a uid or an asset name; empty clears it, an unknown name keeps the current one
+            "image" => {
+                if value.is_empty() {
+                    self.image = None;
+                } else if let Ok(uid) = value.parse::<i16>() {
+                    self.image = Some(uid);
+                } else if let Some(uid) = Assets::try_lookup_key_for_name(value) {
+                    self.image = Some(uid);
+                }
+            }
             _ => {}
         }
     }
@@ -92,6 +104,7 @@ impl FieldOverride for UiNode {
             FieldState::new("text", self.text.clone()),
             FieldState::new("font_size", self.font_size),
             FieldState::new("absolute", self.absolute),
+            FieldState::new("image", self.image.map(|uid| uid.to_string()).unwrap_or_default()),
         ]
     }
 }
@@ -109,6 +122,7 @@ impl UiNode {
             color: Color::white(),
             text: String::new(),
             font_size: 12.0,
+            image: None,
             absolute: false,
         }
     }
@@ -133,6 +147,7 @@ pub struct UiNodeBuilder {
     color: Color,
     text: String,
     font_size: f32,
+    image: Option<i16>,
     absolute: bool,
 }
 impl UiNodeBuilder {
@@ -178,6 +193,10 @@ impl UiNodeBuilder {
         self.font_size = font_size;
         self
     }
+    pub fn image(mut self, uid: i16) -> Self {
+        self.image = Some(uid);
+        self
+    }
     pub fn absolute(mut self, absolute: bool) -> Self {
         self.absolute = absolute;
         self
@@ -194,6 +213,7 @@ impl UiNodeBuilder {
             color: self.color,
             text: self.text,
             font_size: self.font_size,
+            image: self.image,
             absolute: self.absolute,
             rect: UiRect::zero(),
             rotation: 0.0,

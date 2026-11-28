@@ -10,14 +10,14 @@ pub mod penpot_state;
 pub use penpot_state::PenpotState;
 
 use crate::figma::{convert, slugify, FigmaEvent};
-use crate::fs_ops::{get_or_create_meta, read_file_bytes, resolve_conflict, write_file_text};
+use crate::fs_ops::{get_or_create_meta, import_texture, read_file_bytes, resolve_conflict, write_file_text};
 use crate::penpot::parse::{field, parse_page, str_of};
 use crate::penpot::parse_ctx::ParseCtx;
 use crate::prefab_resolver::dump_raw;
 
 use serde_json::Value;
 
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::sync::mpsc::Sender;
 
 const DEFAULT_HOST: &str = "https://design.penpot.app";
@@ -108,13 +108,14 @@ fn run_import_with_file(tx: Sender<FigmaEvent>, token: String, host: String, fil
     let file_name = str_of(doc, "name").unwrap_or_default();
     let _ = tx.send(FigmaEvent::Progress(format!("fetched '{file_name}': {} top-level shape(s) on {} page(s)", roots.len(), page_ids.len())));
 
-    let written_images = write_images(&tx, &token, &host, &dir, &ctx.images);
+    let textures = write_images(&tx, &token, &host, &dir, &ctx.images);
+    let written_images = textures.len();
 
     let mut warnings = ctx.warnings;
     let mut written_comps = 0;
     for (order, root) in roots.into_iter().enumerate() {
         let file = format!("{}.comp", slugify(&root.name));
-        let comp = convert(root, order as i32, &mut warnings);
+        let comp = convert(root, order as i32, &textures, &mut warnings);
         match dump_raw(&comp) {
             Err(e) => warnings.push(format!("yaml serialize failed for '{}': {e}", comp.name)),
             Ok(yaml) => {
@@ -136,25 +137,37 @@ fn run_import_with_file(tx: Sender<FigmaEvent>, token: String, host: String, fil
     let _ = tx.send(FigmaEvent::Done(format!("Imported {written_comps} comp(s), {written_images} image(s) into {dir}; {warn_count} warning(s)")));
 }
 
-/// Downloads each referenced media object once, named after the first shape using it.
-/// These are the uploaded source images, not renders of the shapes.
-fn write_images(tx: &Sender<FigmaEvent>, token: &str, host: &str, dir: &str, images: &[(String, String, String)]) -> usize {
-    let mut seen = HashSet::new();
-    let mut count = 0;
-    for (name, media_id, mtype) in images {
-        if !seen.insert(media_id.clone()) {
+/// Downloads each referenced media object once as a texture, named after the first shape using it.
+/// These are the uploaded source images, not renders of the shapes. Returns shape id -> texture uid.
+fn write_images(tx: &Sender<FigmaEvent>, token: &str, host: &str, dir: &str, images: &[(String, String, String, String)]) -> HashMap<String, i16> {
+    // media id -> its uid, None once it failed, so a shared image is fetched and reported once
+    let mut media: HashMap<String, Option<i16>> = HashMap::new();
+    let mut textures = HashMap::new();
+    for (shape_id, name, media_id, mtype) in images {
+        if let Some(done) = media.get(media_id) {
+            if let Some(uid) = done {
+                textures.insert(shape_id.clone(), *uid);
+            }
             continue;
         }
+        media.insert(media_id.clone(), None);
         let path = resolve_conflict(dir, &format!("{}.{}", slugify(name), extension(mtype)));
         let url = format!("{host}/assets/by-file-media-id/{media_id}");
         if let Err(e) = http::get(&url, token, "*/*", &path) {
             let _ = tx.send(FigmaEvent::Progress(format!("warning: image for '{name}': {e}")));
             continue;
         }
-        get_or_create_meta(&path);
-        count += 1;
+        match import_texture(&path) {
+            Ok((_, uid)) => {
+                media.insert(media_id.clone(), Some(uid));
+                textures.insert(shape_id.clone(), uid);
+            }
+            Err(e) => {
+                let _ = tx.send(FigmaEvent::Progress(format!("warning: image for '{name}': {e}")));
+            }
+        }
     }
-    count
+    textures
 }
 
 fn extension(mtype: &str) -> String {

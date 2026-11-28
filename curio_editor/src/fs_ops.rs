@@ -229,6 +229,28 @@ pub fn get_or_create_meta(asset_path: &str) -> MetaFile {
     meta
 }
 
+/// Rewrites a downloaded image as an RGBA8 PNG stretched to power-of-two sides, the only form
+/// `TextureAsset` loads, then gives it a meta. Returns the final path (a `.png`) and its asset uid.
+pub fn import_texture(path: &str) -> Result<(String, i16), String> {
+    let decoded = image::open(path).map_err(|e| format!("not a decodable image: {e}"))?;
+    let width = decoded.width().max(1).next_power_of_two();
+    let height = decoded.height().max(1).next_power_of_two();
+    let rgba = image::imageops::resize(&decoded.to_rgba8(), width, height, image::imageops::FilterType::Triangle);
+    let target = if file_ext(path).eq_ignore_ascii_case(".png") {
+        path.to_string()
+    } else {
+        let (dir, name) = path.rsplit_once('/').unwrap_or((".", path));
+        let stem = name.rsplit_once('.').map(|(stem, _)| stem).unwrap_or(name);
+        resolve_conflict(dir, &format!("{stem}.png"))
+    };
+    rgba.save_with_format(&target, image::ImageFormat::Png)
+        .map_err(|e| format!("could not write {target}: {e}"))?;
+    if target != path {
+        let _ = std::fs::remove_file(path);
+    }
+    Ok((target.clone(), get_or_create_meta(&target).id))
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Asset manifest — rebuild walks assets/, reads each .meta, writes
 // asset.manifest; read just parses it back

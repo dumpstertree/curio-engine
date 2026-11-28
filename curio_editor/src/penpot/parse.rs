@@ -214,7 +214,8 @@ pub fn parse_shape(ctx: &mut ParseCtx, id: &str, origin: (f64, f64), depth: usiz
 
     if let Some((media, mtype)) = image.clone() {
         if !bool_of(shape, "hidden") {
-            ctx.images.push((name.clone(), media, mtype));
+            ctx.images
+                .push((id.to_string(), name.clone(), media, mtype));
         }
     }
 

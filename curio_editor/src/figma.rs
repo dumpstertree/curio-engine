@@ -23,8 +23,8 @@
 //!   ancestor (the habit's one new authored field - the rest of §7b stays open)
 //! - `TEXT` -> `uinode` kind `text` with `text`, `font_size` (px), fill `color`
 //! - `RECTANGLE`/shapes -> `uinode` kind `block` flat quads with `color`
-//! - image fills -> `uinode` kind `image` + PNGs still exported next to the
-//!   `.comp` (ui_overlay has no texture sampling yet - paints a flat quad, warns)
+//! - image fills -> `uinode` kind `image` with `image` set to the uid of its PNG,
+//!   exported next to the `.comp` as a power-of-two texture asset
 //! - `INSTANCE` -> `base:` prefab reference named after the Figma component
 //! - hidden layers (`visible:false`) -> `enabled: false` (kept, not dropped)
 //!
@@ -36,16 +36,17 @@
 //! Figma, so no y-flip. Its z is the paint layer, taken from the layer order.
 //!
 //! Still parked (plan 7b): flex direction/justify/align fields, authored
-//! absolute placement for frames, textures on image nodes, gradients/strokes/
+//! absolute placement for frames, gradients/strokes/
 //! crop modes, constraints. Figma `rendererimage`/`renderer_text` 3D-scene
 //! emission was retired with this retarget.
 
-use crate::fs_ops::{get_or_create_meta, read_file_bytes, resolve_conflict, write_file_text};
+use crate::fs_ops::{get_or_create_meta, import_texture, read_file_bytes, resolve_conflict, write_file_text};
 use crate::prefab_resolver::dump_raw;
 use crate::prefab_types::{format_tuple, join_field, PrefabComponentRaw, PrefabGameObjectRaw};
 
 use serde_json::{self, Value};
 
+use std::collections::HashMap;
 use std::process::{self, Command};
 use std::sync::mpsc::{self, Receiver, Sender};
 
@@ -413,7 +414,8 @@ fn subst4(templ: &str, a: String, b: String, c: String, d: String) -> String {
 /// leaves carry a `uinode` plus a `transform3d` whose position is Figma's own
 /// parent-relative pixels (y down - UiRect grows down like Figma, no flip).
 /// Panels float in taffy flow (placement is a plan 7b gap); leaves are exact.
-pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> PrefabGameObjectRaw {
+/// `textures` maps an image node's id to the uid of its exported texture.
+pub fn convert(node: FigmaNode, order: i32, textures: &HashMap<String, i16>, warnings: &mut Vec<String>) -> PrefabGameObjectRaw {
     let mut components = Vec::new();
 
     let is_panel = node.kind == "FRAME" || node.kind == "GROUP" || node.kind == "CANVAS" || node.kind == "INSTANCE";
@@ -477,11 +479,14 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
         if node.height > 0.0 {
             fields.push(join_field("height", &numstr(node.height)));
         }
+        match textures.get(&node.id) {
+            Some(uid) => fields.push(join_field("image", &uid.to_string())),
+            None => warnings.push(subst1("image node '{0}' paints as a flat quad: its image was not exported as a texture", node.name.clone())),
+        }
         components.push(PrefabComponentRaw { kind: "uinode".to_string(), fields: fields });
         let mut tf = Vec::new();
         tf.push(join_field("position", &format_tuple(&[node.tx, node.ty, order as f32])));
         components.push(PrefabComponentRaw { kind: "transform3d".to_string(), fields: tf });
-        warnings.push(subst1("image node '{0}' paints as a flat quad - its PNG is exported but ui_overlay has no texture sampling yet (plan 7b)", node.name.clone()));
     } else if !node.fill_hex.is_empty() {
         let mut fields = Vec::new();
         fields.push(join_field("kind", "block"));
@@ -506,7 +511,7 @@ pub fn convert(node: FigmaNode, order: i32, warnings: &mut Vec<String>) -> Prefa
     let mut children_out = Vec::new();
     let mut child_order = 0;
     for child in node.children {
-        children_out.push(convert(child, child_order, warnings));
+        children_out.push(convert(child, child_order, textures, warnings));
         child_order += 1;
     }
 
@@ -899,13 +904,14 @@ fn run_import_with_document(tx: Sender<FigmaEvent>, token: String, file_key: Str
     // Image fills first: the PNG export is one batched request.
     let mut image_nodes = Vec::new();
     collect_image_nodes(&roots, &mut image_nodes);
-    let written_pngs = write_images(tx.clone(), token, file_key, dir.clone(), &mut image_nodes);
+    let textures = write_images(tx.clone(), token, file_key, dir.clone(), &mut image_nodes);
+    let written_pngs = textures.len();
 
     let mut warnings = Vec::new();
     let mut written_comps = 0;
     let mut root_order = 0;
     for root in roots {
-        let comp = convert(root.clone(), root_order, &mut warnings);
+        let comp = convert(root.clone(), root_order, &textures, &mut warnings);
         root_order += 1;
         match dump_raw(&comp) {
             Err(e) => warnings.push(subst2("yaml serialize failed for '{0}': {1}", comp.name, e)),
@@ -931,11 +937,11 @@ fn run_import_with_document(tx: Sender<FigmaEvent>, token: String, file_key: Str
 }
 
 /// One batched Images-endpoint request for every visible image fill, then one
-/// PNG per node written next to the comps (M3 will route these to
-/// assets/texture/ + real name lookups). Returns how many PNGs landed.
-fn write_images(tx: Sender<FigmaEvent>, token: String, file_key: String, dir: String, nodes: &mut Vec<FigmaNode>) -> usize {
+/// texture PNG per node written next to the comps. Returns node id -> texture uid.
+fn write_images(tx: Sender<FigmaEvent>, token: String, file_key: String, dir: String, nodes: &mut Vec<FigmaNode>) -> HashMap<String, i16> {
+    let mut textures = HashMap::new();
     if nodes.is_empty() {
-        return 0;
+        return textures;
     }
     let mut id_parts = Vec::new();
     for node in &*nodes {
@@ -946,20 +952,19 @@ fn write_images(tx: Sender<FigmaEvent>, token: String, file_key: String, dir: St
     let json_path = subst1("{0}/.figma_images.json", dir.clone());
     if let Err(e) = curl_get(img_url, token, json_path.clone()) {
         let _ = tx.send(FigmaEvent::Progress(subst1("warning: image export request failed: {0}", e)));
-        return 0;
+        return textures;
     }
 
     let images_json = match read_json_file(json_path.clone()) {
         Err(e) => {
             let _ = tx.send(FigmaEvent::Progress(subst1("warning: could not read image export: {0}", e)));
-            return 0;
+            return textures;
         }
         Ok(json) => json,
     };
     let _ = std::fs::remove_file(json_path);
 
     let images = member(&images_json, "images");
-    let mut count = 0;
     for node in &*nodes {
         let Some(map) = images else {
             let _ = tx.send(FigmaEvent::Progress(subst1("warning: no render urls returned for '{0}'", node.name.clone())));
@@ -982,10 +987,16 @@ fn write_images(tx: Sender<FigmaEvent>, token: String, file_key: String, dir: St
             let _ = tx.send(FigmaEvent::Progress(subst2("warning: '{0}': {1}", node.name.clone(), e)));
             continue;
         }
-        get_or_create_meta(&path);
-        count += 1;
+        match import_texture(&path) {
+            Ok((_, uid)) => {
+                textures.insert(node.id.clone(), uid);
+            }
+            Err(e) => {
+                let _ = tx.send(FigmaEvent::Progress(subst2("warning: '{0}': {1}", node.name.clone(), e)));
+            }
+        }
     }
-    count
+    textures
 }
 
 /// `figma.com/design/KEY/Name` | `/file/KEY` | `/proto/KEY` | `/board/KEY`
@@ -1099,7 +1110,7 @@ fn figma_import_emits_ui_overlay_panels_and_leaves() {
     };
 
     let mut warnings = Vec::new();
-    let comp = convert(doc, 0, &mut warnings);
+    let comp = convert(doc, 0, &HashMap::new(), &mut warnings);
     let yaml = dump_raw(&comp).unwrap();
 
     // panel: uinode key + authored box + auto-layout gap
