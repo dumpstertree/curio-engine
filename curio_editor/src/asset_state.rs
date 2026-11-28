@@ -12,6 +12,7 @@
 
 use crate::figma::{FigmaEvent, FigmaState};
 use crate::fs_ops::{self, DirEntry, MetaFile};
+use crate::penpot::PenpotState;
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,6 +105,9 @@ pub struct AssetState {
     // See `crate::figma::FigmaState` for what each field means; `start`
     // spawns the job, `poll_figma` drains it.
     pub figma: FigmaState,
+
+    // Penpot import: same shape as `figma`, drained by `poll_penpot`.
+    pub penpot: PenpotState,
 }
 
 impl AssetState {
@@ -119,6 +123,7 @@ impl AssetState {
             confirming_delete_path: None,
             pending_import: None,
             figma: FigmaState::new(),
+            penpot: PenpotState::new(),
         }
     }
 
@@ -221,6 +226,43 @@ impl AssetState {
         }
         if dropped || self.figma.summary.is_some() || self.figma.error.is_some() {
             self.figma.job = None;
+            self.refresh_dir(&target_dir);
+            let _ = fs_ops::rebuild_manifest(project_root);
+        }
+    }
+
+    /// Same as `poll_figma`, for the Penpot import job (`PenpotState::start`).
+    pub fn poll_penpot(&mut self, project_root: &str) {
+        let polled = self.penpot.job.as_ref().map(|(dir, rx)| {
+            let mut batch: Vec<FigmaEvent> = Vec::new();
+            let mut dropped = false;
+            loop {
+                match rx.try_recv() {
+                    Ok(event) => batch.push(event),
+                    Err(TryRecvError::Empty) => break,
+                    Err(TryRecvError::Disconnected) => {
+                        dropped = true;
+                        break;
+                    }
+                }
+            }
+            (dir.clone(), batch, dropped)
+        });
+        let Some((target_dir, events, dropped)) = polled else { return };
+
+        for event in events {
+            match event {
+                FigmaEvent::Progress(msg) => {
+                    if self.penpot.progress.len() < 80 {
+                        self.penpot.progress.push(msg);
+                    }
+                }
+                FigmaEvent::Done(msg) => self.penpot.summary = Some(msg),
+                FigmaEvent::Error(msg) => self.penpot.error = Some(msg),
+            }
+        }
+        if dropped || self.penpot.summary.is_some() || self.penpot.error.is_some() {
+            self.penpot.job = None;
             self.refresh_dir(&target_dir);
             let _ = fs_ops::rebuild_manifest(project_root);
         }
@@ -367,6 +409,11 @@ impl AssetState {
                 self.figma.dialog_open = true;
                 self.figma.target_dir = target_dir;
             }
+
+            TreeAction::PenpotDialog(target_dir) => {
+                self.penpot.dialog_open = true;
+                self.penpot.target_dir = target_dir;
+            }
         }
     }
 }
@@ -410,4 +457,5 @@ pub enum TreeAction {
     NewFolder(String),
     NewComp(String),
     FigmaDialog(String),
+    PenpotDialog(String),
 }

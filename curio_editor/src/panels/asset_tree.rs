@@ -38,6 +38,7 @@ pub fn show(ui: &mut Ui, asset: &mut AssetState, project_root: &str) {
     asset.ensure_roots(project_root);
     asset.poll_import(project_root);
     asset.poll_figma(project_root);
+    asset.poll_penpot(project_root);
 
     let mut actions = Vec::new();
     // The dragged item's path, if any — this is now owned entirely by
@@ -132,6 +133,10 @@ pub(crate) fn creation_menu(ui: &mut Ui, target_dir: &str, actions: &mut Vec<Tre
     // the network run only starts once the user hits the dialog's button.
     if ui.button("Import from Figma").clicked() {
         actions.push(TreeAction::FigmaDialog(target_dir.to_string()));
+        ui.close_menu();
+    }
+    if ui.button("Import from Penpot").clicked() {
+        actions.push(TreeAction::PenpotDialog(target_dir.to_string()));
         ui.close_menu();
     }
     if ui.button("New Folder").clicked() {

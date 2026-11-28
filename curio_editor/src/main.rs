@@ -10,6 +10,7 @@ mod glb_viewer;
 mod icons;
 mod input_codes;
 mod panels;
+mod penpot;
 mod png_viewer;
 mod prefab_facets;
 mod prefab_gizmo;

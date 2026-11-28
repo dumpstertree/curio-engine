@@ -127,6 +127,7 @@ impl eframe::App for CurioEditorApp {
                 // open flag is set (`panels/figma_tab.rs` draws nothing
                 // otherwise), so it must live in the same Asset-tab branch.
                 crate::panels::figma_tab::show_dialog(ctx, &mut self.state);
+                crate::panels::penpot_tab::show_dialog(ctx, &mut self.state);
             }
             _ => {}
         }

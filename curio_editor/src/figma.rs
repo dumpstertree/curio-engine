@@ -367,7 +367,7 @@ pub fn parse_node(v: &Value) -> FigmaNode {
 /// intact ("Hero Button" -> `hero_button`) so the `base:` prefab reference
 /// reads like a filename; `resolve_conflict` at write time is deliberate:
 /// hand-edited comps with the same slug are kept, not clobbered.
-fn slugify(name: &str) -> String {
+pub fn slugify(name: &str) -> String {
     let mut out = String::new();
     for c in name.to_lowercase().chars() {
         out.push(if c.is_alphanumeric() { c } else { '_' });
