@@ -5056,9 +5056,11 @@ version = "0.1.0"
 dependencies = [
  "camera",
  "curio_core",
+ "egui-wgpu",
  "gameplay",
  "hecs",
  "input",
+ "pollster 0.3.0",
  "ui_overlay",
 ]
 

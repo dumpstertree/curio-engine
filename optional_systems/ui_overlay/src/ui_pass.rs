@@ -102,11 +102,21 @@ impl UiOverlayPass {
     }
 
     pub fn draw_ui_overlays(&mut self, ledger: &mut Vec<Ledger>, encoder: &mut CommandEncoder, output_view: &TextureView, mappings: &[GraphicsMapping]) {
+        let screens = ledger.len().min(mappings.len());
+        // glyphs need the font grid while gathering, so build it before the first gather that has draw calls
+        if self.pipeline.is_none()
+            && ledger
+                .iter()
+                .take(screens)
+                .any(|screen| !screen.read::<SysRecordUi>().draw_calls.is_empty())
+        {
+            self.build_pipeline(ledger);
+        }
+
         // gather every screen's boxes into one vertex list
         let mut vertices: Vec<UiVertex> = Vec::new();
         let gpu = &Services::get().gpu;
         let capture = Vector2::new(gpu.capture_width as f32, gpu.capture_height as f32);
-        let screens = ledger.len().min(mappings.len());
         for screen_index in 0..screens {
             // keep the record's mapping the one this pass paints with, for SysRecordUi::screen()
             let mapping = &mappings[screen_index];
@@ -208,11 +218,12 @@ impl UiOverlayPass {
         if vertices.is_empty() {
             return;
         }
+        self.submit(&vertices, encoder, output_view);
+    }
 
+    // the shared atlas, its font grid and bind group, and the pipeline; built once
+    fn build_pipeline(&mut self, ledger: &mut Vec<Ledger>) {
         let device = Services::get().gpu.device();
-        let queue = Services::get().gpu.queue();
-
-        // lazy pipeline — first frame with boxes builds it
         if self.pipeline.is_none() {
             // the atlas is loaded once and cached on the pass. load_asset
             // hands back an Arc, so the pass keeps the Arc while bind group
@@ -317,6 +328,11 @@ impl UiOverlayPass {
             self.font_layout = Some(font_layout);
             self.pipeline_layout = Some(pipeline_layout);
         }
+    }
+
+    fn submit(&mut self, vertices: &[UiVertex], encoder: &mut CommandEncoder, output_view: &TextureView) {
+        let device = Services::get().gpu.device();
+        let queue = Services::get().gpu.queue();
 
         // one dynamic vertex buffer, grown like the mesh instance buffer
         if self.vertex_capacity < vertices.len() {
@@ -328,7 +344,7 @@ impl UiOverlayPass {
             }));
             self.vertex_capacity = vertices.len();
         }
-        queue.write_buffer(self.vertex_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(&vertices));
+        queue.write_buffer(self.vertex_buffer.as_ref().unwrap(), 0, bytemuck::cast_slice(vertices));
 
         // load what post-process painted, blend the boxes over it
         let mut pass = encoder.begin_render_pass(&RenderPassDescriptor {
